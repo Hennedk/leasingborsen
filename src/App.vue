@@ -1,15 +1,42 @@
-<template>
-  <div class="p-8 space-y-4">
-    <h1 class="text-3xl font-bold">Theme Test: Corporate</h1>
+              <template>
+                <BaseLayout>
+                  <h1 class="text-3xl font-bold mb-4">Welcome to Leasingbørsen</h1>
+                  <p class="text-gray-500 mb-6">Find or list lease takeovers with ease.</p>
 
-    <div class="card w-full max-w-md bg-base-100 shadow-xl">
-      <div class="card-body">
-        <h2 class="card-title">Styled Card</h2>
-        <p>This should look clean and bright if the corporate theme is applied.</p>
-        <div class="card-actions justify-end">
-          <button class="btn btn-primary">Click me</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="card bg-base-100 shadow-md">
+                      <div class="card-body">
+                        <h2 class="card-title">VW ID.4</h2>
+                        <p>3.200 kr/md – 18 mdr. tilbage</p>
+                        <div class="card-actions justify-end">
+                          <button class="btn btn-primary">Se mere</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="card bg-base-100 shadow-md">
+                      <div class="card-body">
+                        <h2 class="card-title">Tesla Model Y</h2>
+                        <p>4.100 kr/md – 12 mdr. tilbage</p>
+                        <div class="card-actions justify-end">
+                          <button class="btn btn-primary">Se mere</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="card bg-base-100 shadow-md">
+                      <div class="card-body">
+                        <h2 class="card-title">BMW i3</h2>
+                        <p>2.800 kr/md – 9 mdr. tilbage</p>
+                        <div class="card-actions justify-end">
+                          <button class="btn btn-primary">Se mere</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </BaseLayout>
+              </template>
+
+              <script setup>
+              import BaseLayout from './components/BaseLayout.vue'
+              </script>
