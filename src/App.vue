@@ -1,3 +1,4 @@
+
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
@@ -5,7 +6,6 @@ import TheWelcome from './components/TheWelcome.vue'
 
 <template>
   <div class="min-h-screen flex flex-col bg-base-200">
-
     <!-- 🔹 Header -->
     <header class="navbar bg-base-100 shadow">
       <div class="flex-1">
@@ -36,7 +36,6 @@ import TheWelcome from './components/TheWelcome.vue'
             </div>
           </div>
         </div>
-        <!-- Add more cards as needed -->
       </div>
     </main>
 
@@ -46,13 +45,8 @@ import TheWelcome from './components/TheWelcome.vue'
         <p>© 2025 Leasingbørsen — Built with DaisyUI</p>
       </aside>
     </footer>
-
   </div>
 </template>
-
-<script setup>
-// No JS logic needed yet
-</script>
 
 <style>
 /* Optional: global custom styles */
