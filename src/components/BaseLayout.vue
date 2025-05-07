@@ -13,9 +13,8 @@
     </header>
 
     <!-- Main content -->
-    <main class="flex-1 w-full px-4 py-6">
-      <div class="mx-auto w-full max-w-screen-2xl bg-red-100 border border-red-500">
-
+    <main class="flex-1 w-full py-6">
+      <div class="container mx-auto w-full max-w-[1440px] px-4">
         <slot />
       </div>
     </main>
