@@ -12,10 +12,12 @@
       </div>
     </header>
 
-    <!-- Main Content Slot -->
-      <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+    <!-- Main content -->
+    <main class="flex-1 w-full px-4 py-6">
+      <div class="mx-auto w-full max-w-screen-2xl bg-red-100 border border-red-500">
 
-      <slot />
+        <slot />
+      </div>
     </main>
 
     <!-- Footer -->

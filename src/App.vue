@@ -3,7 +3,8 @@
                   <h1 class="text-3xl font-bold mb-4">Welcome to Leasingbørsen</h1>
                   <p class="text-gray-500 mb-6">Find or list lease takeovers with ease.</p>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                    <div class="grid gap-6 grid-cols-[repeat(auto-fit,_minmax(250px,_1fr))]">
+
                     <div class="card bg-base-100 shadow-md">
                       <div class="card-body">
                         <h2 class="card-title">VW ID.4</h2>
