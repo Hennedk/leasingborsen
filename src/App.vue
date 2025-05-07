@@ -4,44 +4,20 @@ import TheWelcome from './components/TheWelcome.vue'
 </script>
 
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+  <div class="container mx-auto p-4">
+    <header class="flex flex-col items-center lg:flex-row lg:justify-between mb-8">
+      <img alt="Vue logo" class="w-32 h-32 mb-4 lg:mb-0" src="./assets/logo.svg" />
+      <div class="flex-1 text-center lg:text-left lg:ml-8">
+        <HelloWorld msg="Welcome to Your Vue.js App" />
+      </div>
+    </header>
 
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+    <main class="prose max-w-none">
+      <TheWelcome />
+    </main>
+  </div>
 </template>
 
 <style scoped>
-header {
-  line-height: 1.5;
-}
-
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-}
+/* Any component-specific styles can go here */
 </style>
