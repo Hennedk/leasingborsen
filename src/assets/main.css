@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 @import "./base.css";
 
 @tailwind base;
@@ -7,6 +8,7 @@
 #app {
   width: 100%;
   font-weight: normal;
+  font-family: 'Inter', sans-serif;
 }
 
 a,
@@ -21,4 +23,3 @@ a,
     background-color: hsla(160, 100%, 37%, 0.2);
   }
 }
-
