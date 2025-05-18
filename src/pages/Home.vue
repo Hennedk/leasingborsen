@@ -9,7 +9,7 @@
       <div class="hero-content text-neutral-content text-center">
         <div class="max-w-xl">
           <h1 class="text-4xl font-bold mb-6 leading-tight">
-            Find bedste privatleasing tilbud
+            This is a test
           </h1>
           <div class="flex gap-4 justify-center flex-wrap">
             <button class="btn btn-primary">Overtag leasing</button>
