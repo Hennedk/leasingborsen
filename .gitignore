@@ -23,6 +23,9 @@ coverage
 .idea
 *.suo
 *.ntvs*
-*.njsproj
+*.njsprojn
 *.sln
 *.sw?
+
+# Environment Variables
+.env

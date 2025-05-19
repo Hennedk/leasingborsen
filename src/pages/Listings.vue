@@ -24,10 +24,17 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRoute } from 'vue-router'
+
 import BaseLayout from '../components/BaseLayout.vue'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ListingResults from '../components/ListingResults.vue'
 
+const route = useRoute()
+
+// ✅ Keep this
+const filters = ref({ ...route.query })
+
 const showMobileFilter = ref(false)
-const filters = ref({})
 </script>
+
