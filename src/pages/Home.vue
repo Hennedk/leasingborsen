@@ -1,69 +1,93 @@
-<template>
-  <section class="flex-1">
-    <h1 class="text-2xl font-bold mb-6">Tilgængelige leasingbiler</h1>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <ListingCard
-        v-for="car in cars"
-        :key="car.id"
-        :car="car"
-      />
-    </div>
-  </section>
-</template>
-
 <script setup>
-import { ref, watch } from 'vue'
-import { supabase } from '../lib/supabase'
+import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
+import BaseLayout from '../components/BaseLayout.vue'
 import ListingCard from '../components/ListingCard.vue'
+import { supabase } from '../lib/supabase'
 
-const cars = ref([])
-
-const props = defineProps({
-  filters: Object
+const filters = ref({
+  make: '',
+  model: '',
+  fuel_type: '',
+  body_type: ''
 })
 
-async function fetchCars() {
-  let query = supabase.from('listings').select('*').order('created_at', { ascending: false })
+const latestListings = ref([])
 
-  if (props.filters?.make) {
-    query = query.ilike('make', `%${props.filters.make}%`)
-  }
+onMounted(async () => {
+  const { data, error } = await supabase
+    .from('listings')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(4)
 
-  if (props.filters?.model) {
-    query = query.ilike('model', `%${props.filters.model}%`)
-  }
-
-  if (props.filters?.fuel_type) {
-    query = query.eq('fuel_type', props.filters.fuel_type)
-  }
-
-  if (props.filters?.transmission) {
-    query = query.eq('transmission', props.filters.transmission)
-  }
-
-  if (props.filters?.body_type) {
-    query = query.eq('body_type', props.filters.body_type)
-  }
-
-  if (props.filters?.horsepower) {
-    query = query.gte('horsepower', props.filters.horsepower)
-  }
-
-  if (props.filters?.seats) {
-    query = query.gte('seats', props.filters.seats)
-  }
-
-  if (props.filters?.maxPrice) {
-    query = query.lte('price', props.filters.maxPrice)
-  }
-
-  const { data, error } = await query
-  if (error) {
-    console.error('Fejl ved hentning af biler:', error.message)
-  } else {
-    cars.value = data
-  }
-}
-
-watch(() => props.filters, fetchCars, { immediate: true, deep: true })
+  if (!error) latestListings.value = data
+})
 </script>
+
+<template>
+  <BaseLayout>
+    <!-- Hero Section with Filters -->
+    <section class="hero min-h-[60vh] bg-primary bg-cover bg-center text-neutral-content mb-12">
+      <div class="hero-overlay bg-opacity-60"></div>
+      <div class="hero-content w-full px-6">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 w-full">
+          <!-- Filter section (2/5) -->
+          <div class="lg:col-span-2 bg-base-100 p-6 rounded-lg shadow space-y-4 text-neutral">
+            <h2 class="text-xl font-semibold">Find din bil</h2>
+
+            <select v-model="filters.make" class="select select-bordered w-full">
+              <option value="">Alle mærker</option>
+              <option value="VW">VW</option>
+              <option value="Tesla">Tesla</option>
+              <option value="Ford">Ford</option>
+            </select>
+
+            <input
+              v-model="filters.model"
+              type="text"
+              placeholder="Model, fx ID.4"
+              class="input input-bordered w-full"
+            />
+
+            <select v-model="filters.body_type" class="select select-bordered w-full">
+              <option value="">Alle biltyper</option>
+              <option value="SUV">SUV</option>
+              <option value="Hatchback">Hatchback</option>
+            </select>
+
+            <select v-model="filters.fuel_type" class="select select-bordered w-full">
+              <option value="">Alle drivmidler</option>
+              <option value="El">El</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="Benzin">Benzin</option>
+            </select>
+
+            <RouterLink :to="{ path: '/listings', query: { ...filters } }">
+              <button class="btn btn-primary w-full">Søg</button>
+            </RouterLink>
+          </div>
+
+          <!-- Headline (3/5) -->
+          <div class="lg:col-span-3 flex flex-col justify-center items-center text-center space-y-6">
+            <h1 class="text-4xl font-bold leading-tight max-w-xl">
+              Leasing uden bøvl – find din næste bil her
+            </h1>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Latest Listings Section -->
+    <section class="max-w-screen-xl mx-auto px-4 pb-12">
+      <h2 class="text-2xl font-bold mb-6">Nyeste leasingbiler</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ListingCard
+          v-for="car in latestListings"
+          :key="car.id"
+          :car="car"
+        />
+      </div>
+    </section>
+  </BaseLayout>
+</template>
