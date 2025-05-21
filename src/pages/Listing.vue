@@ -1,13 +1,11 @@
 <template>
   <BaseLayout>
-    <div class="max-w-screen-xl mx-auto px-4 py-8 flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-8">
+    <div class="w-full py-8 flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-8">
 
       <!-- Left Column -->
       <div class="space-y-6">
         <ListingGallery :image="listing.image" :make="listing.make" :model="listing.model" />
-        
         <ListingDetails :details="listing.details" />
-
         <ListingSpecs :listing="listing" />
       </div>
 

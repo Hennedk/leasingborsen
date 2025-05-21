@@ -5,7 +5,7 @@
     <!-- Make -->
     <div>
       <label class="block text-sm font-medium mb-1">Mærke</label>
-      <select v-model="filters.make" @change="applyFilters" class="select select-bordered w-full">
+      <select v-model="localFilters.make" class="select select-bordered w-full">
         <option value="">Alle</option>
         <option value="VW">VW</option>
         <option value="Tesla">Tesla</option>
@@ -17,13 +17,13 @@
     <!-- Model -->
     <div>
       <label class="block text-sm font-medium mb-1">Model</label>
-      <input v-model="filters.model" @input="applyFilters" type="text" class="input input-bordered w-full" placeholder="f.eks. ID.4" />
+      <input v-model="localFilters.model" type="text" class="input input-bordered w-full" placeholder="f.eks. ID.4" />
     </div>
 
     <!-- Fuel Type -->
     <div>
       <label class="block text-sm font-medium mb-1">Drivmiddel</label>
-      <select v-model="filters.fuel_type" @change="applyFilters" class="select select-bordered w-full">
+      <select v-model="localFilters.fuel_type" class="select select-bordered w-full">
         <option value="">Alle</option>
         <option value="El">El</option>
         <option value="Hybrid">Hybrid</option>
@@ -35,7 +35,7 @@
     <!-- Transmission -->
     <div>
       <label class="block text-sm font-medium mb-1">Gearkasse</label>
-      <select v-model="filters.transmission" @change="applyFilters" class="select select-bordered w-full">
+      <select v-model="localFilters.transmission" class="select select-bordered w-full">
         <option value="">Alle</option>
         <option value="Automatisk">Automatisk</option>
         <option value="Manuel">Manuel</option>
@@ -45,7 +45,7 @@
     <!-- Body Type -->
     <div>
       <label class="block text-sm font-medium mb-1">Karosseri</label>
-      <select v-model="filters.body_type" @change="applyFilters" class="select select-bordered w-full">
+      <select v-model="localFilters.body_type" class="select select-bordered w-full">
         <option value="">Alle</option>
         <option value="SUV">SUV</option>
         <option value="Hatchback">Hatchback</option>
@@ -57,19 +57,19 @@
     <!-- Horsepower -->
     <div>
       <label class="block text-sm font-medium mb-1">Min. Hestekræfter</label>
-      <input v-model.number="filters.horsepower" @input="applyFilters" type="number" class="input input-bordered w-full" placeholder="f.eks. 150" />
+      <input v-model.number="localFilters.horsepower" type="number" class="input input-bordered w-full" placeholder="f.eks. 150" />
     </div>
 
     <!-- Seats -->
     <div>
       <label class="block text-sm font-medium mb-1">Min. antal sæder</label>
-      <input v-model.number="filters.seats" @input="applyFilters" type="number" class="input input-bordered w-full" placeholder="f.eks. 5" />
+      <input v-model.number="localFilters.seats" type="number" class="input input-bordered w-full" placeholder="f.eks. 5" />
     </div>
 
     <!-- Max price -->
     <div>
       <label class="block text-sm font-medium mb-1">Maks. pris (kr/md)</label>
-      <input v-model.number="filters.maxPrice" @input="applyFilters" type="number" class="input input-bordered w-full" placeholder="f.eks. 3500" />
+      <input v-model.number="localFilters.maxPrice" type="number" class="input input-bordered w-full" placeholder="f.eks. 3500" />
     </div>
 
     <button class="btn btn-outline btn-sm w-full" @click="clearFilters">Ryd filtre</button>
@@ -77,27 +77,33 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { ref, watch } from 'vue'
+
+const props = defineProps({
+  filters: {
+    type: Object,
+    required: true
+  }
+})
 
 const emit = defineEmits(['filter'])
 
-const filters = reactive({
-  make: '',
-  model: '',
-  fuel_type: '',
-  transmission: '',
-  body_type: '',
-  horsepower: null,
-  seats: null,
-  maxPrice: null
-})
+const localFilters = ref({ ...props.filters })
 
-function applyFilters() {
-  emit('filter', { ...filters })
-}
+// Update localFilters when parent filters change
+watch(() => props.filters, (newFilters) => {
+  localFilters.value = { ...newFilters }
+}, { immediate: true, deep: true })
+
+// Emit new filters on local change
+watch(localFilters, () => {
+  emit('filter', { ...localFilters.value })
+}, { deep: true })
 
 function clearFilters() {
-  Object.keys(filters).forEach(key => filters[key] = key === 'maxPrice' || key === 'horsepower' || key === 'seats' ? null : '')
-  emit('filter', { ...filters })
+  Object.keys(localFilters.value).forEach(key => {
+    localFilters.value[key] = ['horsepower', 'seats', 'maxPrice'].includes(key) ? null : ''
+  })
+  emit('filter', { ...localFilters.value })
 }
 </script>
