@@ -20,14 +20,15 @@
           :fuelType="listing.fuel_type"
         />
         <ListingPricing
-          :price="listing.price"
-          :firstPayment="listing.first_payment"
-          :periodMonths="listing.period_months"
-          :mileage="listing.mileage"
-          :allowedPeriods="[listing.period_months]"
-          :allowedMileages="listing.mileage ? [listing.mileage] : []"
-          :allowedFirstPayments="listing.first_payment ? [listing.first_payment] : []"
-        />
+  :price="listing.monthly_price"
+  :firstPayment="listing.first_payment"
+  :periodMonths="listing.period_months"
+  :mileage="listing.mileage_per_year"
+  :allowedPeriods="[listing.period_months]"
+  :allowedMileages="listing.mileage_per_year ? [listing.mileage_per_year] : []"
+  :allowedFirstPayments="listing.first_payment ? [listing.first_payment] : []"
+/>
+
       </div>
     </div>
   </BaseLayout>
@@ -49,10 +50,16 @@ const route = useRoute()
 const listing = ref({})
 
 onMounted(async () => {
+  const id = route.params.id
+  if (!id) {
+    console.error('Missing ID in route params')
+    return
+  }
+
   const { data, error } = await supabase
-    .from('listings')
+    .from('full_listing_view')
     .select('*')
-    .eq('id', route.params.id)
+    .eq('id', id)
     .single()
 
   if (error) {
@@ -61,4 +68,5 @@ onMounted(async () => {
     listing.value = data
   }
 })
+
 </script>

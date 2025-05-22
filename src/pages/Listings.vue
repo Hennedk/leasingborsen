@@ -10,8 +10,16 @@
     <div class="flex flex-col lg:flex-row gap-6">
       <!-- Sidebar -->
       <aside :class="['w-full lg:w-1/5', showMobileFilter ? 'block' : 'hidden', 'lg:block']">
-        <FilterSidebar :filters="filters" @filter="Object.assign(filters, $event)" />
-      </aside>
+  <Suspense>
+    <template #default>
+      <FilterSidebar :filters="filters" @filter="Object.assign(filters, $event)" />
+    </template>
+    <template #fallback>
+      <div>Indlæser filtre...</div>
+    </template>
+  </Suspense>
+</aside>
+
 
       <!-- Listings -->
       <section class="flex-1">
@@ -42,12 +50,24 @@ function normalizeQuery(query) {
     body_type: query.body_type || '',
     horsepower: query.horsepower ? Number(query.horsepower) : null,
     seats: query.seats ? Number(query.seats) : null,
-    maxPrice: query.maxPrice ? Number(query.maxPrice) : null
+    maxPrice: query.maxPrice ? Number(query.maxPrice) : null,
+    condition: query.condition || '',
+    listingStatus: query.listingStatus || '',
+    driveType: query.driveType || '',
+    availableBefore: query.availableBefore || ''
   }
 }
 
+function resetFilters() {
+  Object.assign(filters, normalizeQuery({}))
+}
+
+
+
 const filters = reactive(normalizeQuery(route.query))
 const showMobileFilter = ref(false)
+
+
 
 watch(filters, (newFilters) => {
   const currentQuery = route.query

@@ -37,7 +37,8 @@ defineProps({
       <!-- Price section -->
       <div class="px-4 pb-1 pt-2">
         <div class="text-xl font-bold text-neutral leading-tight">
-          {{ car.price.toLocaleString('da-DK') }} kr. / måned
+          {{ car.monthly_price ? car.monthly_price.toLocaleString('da-DK') + ' kr. / måned' : 'Pris ikke tilgængelig' }}
+
         </div>
         <p class="text-sm text-base-content/60">10.000 km/år • Udbetaling: 5.000 kr</p>
       </div>

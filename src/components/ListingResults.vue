@@ -23,7 +23,8 @@ const props = defineProps({
 })
 
 async function fetchCars() {
-  let query = supabase.from('listings').select('*').order('created_at', { ascending: false })
+  let query = supabase.from('full_listing_view').select('*')
+
 
   if (props.filters?.make) {
     query = query.ilike('make', `%${props.filters.make}%`)
@@ -54,16 +55,35 @@ async function fetchCars() {
   }
 
   if (props.filters?.maxPrice) {
-    query = query.lte('price', props.filters.maxPrice)
+    query = query.lte('monthly_price', props.filters.maxPrice)
   }
 
+  if (props.filters?.condition) {
+  query = query.eq('condition', props.filters.condition)
+}
+
+if (props.filters?.listingStatus) {
+  query = query.eq('listing_status', props.filters.listingStatus)
+}
+
+if (props.filters?.driveType) {
+  query = query.eq('drive_type', props.filters.driveType)
+}
+
+if (props.filters?.availableBefore) {
+  query = query.lte('availability_date', props.filters.availableBefore)
+}
+
+
   const { data, error } = await query
+
   if (error) {
     console.error('Fejl ved hentning af biler:', error.message)
   } else {
     cars.value = data
   }
 }
+
 
 watch(() => props.filters, fetchCars, { immediate: true, deep: true })
 </script>
