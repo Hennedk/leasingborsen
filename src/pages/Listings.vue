@@ -46,17 +46,27 @@ function normalizeQuery(query) {
     make: query.make || '',
     model: query.model || '',
     fuel_type: query.fuel_type || '',
-    transmission: query.transmission || '',
+   transmission: Array.isArray(query.transmission)
+  ? query.transmission
+  : query.transmission
+    ? [query.transmission]
+    : [],
+
     body_type: query.body_type || '',
     horsepower: query.horsepower ? Number(query.horsepower) : null,
-    seats: query.seats ? Number(query.seats) : null,
+    seats_min: query.seats_min ? Number(query.seats_min) : null,
+seats_max: query.seats_max ? Number(query.seats_max) : null,
     maxPrice: query.maxPrice ? Number(query.maxPrice) : null,
+    price_min: query.price_min ? Number(query.price_min) : null,
+price_max: query.price_max ? Number(query.price_max) : null,
+
     condition: query.condition || '',
     listingStatus: query.listingStatus || '',
     driveType: query.driveType || '',
     availableBefore: query.availableBefore || ''
   }
 }
+
 
 function resetFilters() {
   Object.assign(filters, normalizeQuery({}))

@@ -38,9 +38,10 @@ async function fetchCars() {
     query = query.eq('fuel_type', props.filters.fuel_type)
   }
 
-  if (props.filters?.transmission) {
-    query = query.eq('transmission', props.filters.transmission)
-  }
+if (Array.isArray(props.filters?.transmission) && props.filters.transmission.length) {
+  query = query.in('transmission', props.filters.transmission)
+}
+
 
   if (props.filters?.body_type) {
     query = query.eq('body_type', props.filters.body_type)
@@ -50,13 +51,20 @@ async function fetchCars() {
     query = query.gte('horsepower', props.filters.horsepower)
   }
 
-  if (props.filters?.seats) {
-    query = query.gte('seats', props.filters.seats)
-  }
+ if (props.filters.seats_min != null) {
+  query = query.gte('seats', props.filters.seats_min)
+}
+if (props.filters.seats_max != null) {
+  query = query.lte('seats', props.filters.seats_max)
+}
 
-  if (props.filters?.maxPrice) {
-    query = query.lte('monthly_price', props.filters.maxPrice)
-  }
+if (props.filters?.price_min != null) {
+  query = query.gte('monthly_price', props.filters.price_min)
+}
+if (props.filters?.price_max != null) {
+  query = query.lte('monthly_price', props.filters.price_max)
+}
+
 
   if (props.filters?.condition) {
   query = query.eq('condition', props.filters.condition)
@@ -84,6 +92,6 @@ if (props.filters?.availableBefore) {
   }
 }
 
-
+console.log('filters', props.filters)
 watch(() => props.filters, fetchCars, { immediate: true, deep: true })
 </script>

@@ -20,6 +20,15 @@
       </select>
     </div>
 
+    <!-- Body Type -->
+    <div>
+      <label class="block text-sm font-medium mb-1">Karosseri</label>
+      <select v-model="localFilters.body_type" class="select select-bordered w-full">
+        <option value="">Alle</option>
+        <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
+      </select>
+    </div>
+
     <!-- Fuel Type -->
     <div>
       <label class="block text-sm font-medium mb-1">Drivmiddel</label>
@@ -30,75 +39,73 @@
     </div>
 
     <!-- Transmission -->
-    <div>
+    <div class="mb-4">
       <label class="block text-sm font-medium mb-1">Gearkasse</label>
-      <select v-model="localFilters.transmission" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="t in transmissions" :key="t.name" :value="t.name">{{ t.name }}</option>
-      </select>
-    </div>
-
-    <!-- Body Type -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Karosseri</label>
-      <select v-model="localFilters.body_type" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
-      </select>
-    </div>
-
-    <!-- Drive Type -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Drivaksel</label>
-      <select v-model="localFilters.drive_type" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="d in driveTypes" :key="d" :value="d">{{ d }}</option>
-      </select>
-    </div>
-
-    <!-- Condition -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Stand</label>
-      <select v-model="localFilters.condition" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="c in conditions" :key="c" :value="c">{{ c }}</option>
-      </select>
-    </div>
-
-    <!-- Listing Status -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Status</label>
-      <select v-model="localFilters.listing_status" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="s in listingStatuses" :key="s" :value="s">{{ s }}</option>
-      </select>
-    </div>
-
-    <!-- Horsepower -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Min. Hestekræfter</label>
-      <input v-model.number="localFilters.horsepower" type="number" class="input input-bordered w-full" placeholder="f.eks. 150" />
+      <div class="grid grid-cols-2 gap-2">
+        <button
+          class="btn btn-sm w-full"
+          :class="localFilters.transmission.includes('Automatic') ? 'btn-primary' : 'btn-outline'"
+          @click="toggleTransmission('Automatic')"
+        >
+          Automatic
+        </button>
+        <button
+          class="btn btn-sm w-full"
+          :class="localFilters.transmission.includes('Manual') ? 'btn-primary' : 'btn-outline'"
+          @click="toggleTransmission('Manual')"
+        >
+          Manual
+        </button>
+      </div>
     </div>
 
     <!-- Seats -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Min. antal sæder</label>
-      <input v-model.number="localFilters.seats" type="number" class="input input-bordered w-full" placeholder="f.eks. 5" />
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-1">Antal sæder</label>
+      <div class="grid grid-cols-2 gap-2">
+        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_min">
+          <option :value="null">Min</option>
+          <option v-for="n in 9" :key="'min-' + n" :value="n">{{ n }}</option>
+        </select>
+        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_max">
+          <option :value="null">Max</option>
+          <option v-for="n in 9" :key="'max-' + n" :value="n">{{ n }}</option>
+        </select>
+      </div>
     </div>
 
-    <!-- Max price -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Maks. pris (kr/md)</label>
-      <input v-model.number="localFilters.monthly_price" type="number" class="input input-bordered w-full" placeholder="f.eks. 3500" />
+    <!-- Price -->
+    <div class="mb-4">
+      <label class="block text-sm font-medium mb-1">Pris</label>
+      <div class="grid grid-cols-2 gap-2">
+        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.price_min">
+          <option :value="null">Min</option>
+          <option
+            v-for="price in priceSteps.filter(p => localFilters.price_max == null || p <= localFilters.price_max)"
+            :key="'min-' + price"
+            :value="price"
+          >
+            {{ price.toLocaleString() }} kr.
+          </option>
+        </select>
+        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.price_max">
+          <option :value="null">Max</option>
+          <option
+            v-for="price in priceSteps.filter(p => localFilters.price_min == null || p >= localFilters.price_min)"
+            :key="'max-' + price"
+            :value="price"
+          >
+            {{ price.toLocaleString() }} kr.
+          </option>
+          <option
+            v-if="localFilters.price_min == null || 9999999 >= localFilters.price_min"
+            :value="9999999"
+          >
+            10.000+ kr.
+          </option>
+        </select>
+      </div>
     </div>
-
-    <!-- Available Before -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Tilgængelig før</label>
-      <input v-model="localFilters.availability_date" type="date" class="input input-bordered w-full" />
-    </div>
-
-    <button class="btn btn-outline btn-sm w-full" @click="clearFilters">Ryd filtre</button>
   </div>
 </template>
 
@@ -114,6 +121,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['filter'])
+
+const stringFields = ['make', 'model', 'fuel_type', 'body_type']
 const localFilters = ref({ ...props.filters })
 
 const makes = ref([])
@@ -121,14 +130,44 @@ const models = ref([])
 const fuelTypes = ref([])
 const transmissions = ref([])
 const bodyTypes = ref([])
-const driveTypes = ref(['fwd', 'rwd', 'awd', '4wd'])
-const conditions = ref(['new', 'used', 'demo'])
-const listingStatuses = ref(['active', 'inactive', 'archived'])
+
+const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
 
 const filteredModels = computed(() => {
   if (!localFilters.value.make) return []
   const makeId = makes.value.find(m => m.name === localFilters.value.make)?.id
   return models.value.filter(m => m.make_id === makeId)
+})
+
+function toggleTransmission(value) {
+  if (!Array.isArray(localFilters.value.transmission)) {
+    localFilters.value.transmission = []
+  }
+
+  const list = localFilters.value.transmission
+  const index = list.indexOf(value)
+
+  if (index > -1) {
+    list.splice(index, 1)
+  } else {
+    list.push(value)
+  }
+
+  localFilters.value.transmission = [...list]
+}
+
+watch(() => localFilters.value.price_min, (min) => {
+  const max = localFilters.value.price_max
+  if (min != null && max != null && max < min) {
+    localFilters.value.price_max = null
+  }
+})
+
+watch(() => localFilters.value.price_max, (max) => {
+  const min = localFilters.value.price_min
+  if (min != null && max != null && max < min) {
+    localFilters.value.price_min = null
+  }
 })
 
 onMounted(async () => {
@@ -155,7 +194,9 @@ watch(() => props.filters, (newFilters) => {
 watch(localFilters, () => {
   const cleanedFilters = { ...localFilters.value }
   Object.keys(cleanedFilters).forEach(key => {
-    if (cleanedFilters[key] === '' || cleanedFilters[key] === undefined) {
+    if (cleanedFilters[key] === undefined) {
+      cleanedFilters[key] = null
+    } else if (cleanedFilters[key] === '' && !stringFields.includes(key)) {
       cleanedFilters[key] = null
     }
   })
@@ -164,8 +205,14 @@ watch(localFilters, () => {
 
 function clearFilters() {
   Object.keys(localFilters.value).forEach(key => {
-    localFilters.value[key] = null
+    if (Array.isArray(localFilters.value[key])) {
+      localFilters.value[key] = []
+    } else {
+      localFilters.value[key] = null
+    }
   })
+  localFilters.value.seats_min = null
+  localFilters.value.seats_max = null
   emit('filter', { ...localFilters.value })
 }
 </script>
