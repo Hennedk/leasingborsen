@@ -120,7 +120,8 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['filter'])
+// Change this to emit 'update:filters' instead of 'filter'
+const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
 const localFilters = ref({ ...props.filters })
@@ -188,6 +189,7 @@ onMounted(async () => {
 })
 
 watch(() => props.filters, (newFilters) => {
+  // Create a completely new object to ensure reactivity
   localFilters.value = { ...newFilters }
 }, { immediate: true, deep: true })
 
@@ -200,7 +202,8 @@ watch(localFilters, () => {
       cleanedFilters[key] = null
     }
   })
-  emit('filter', cleanedFilters)
+  // Change this to emit 'update:filters' instead of 'filter'
+  emit('update:filters', cleanedFilters)
 }, { deep: true })
 
 function clearFilters() {
@@ -213,6 +216,5 @@ function clearFilters() {
   })
   localFilters.value.seats_min = null
   localFilters.value.seats_max = null
-  emit('filter', { ...localFilters.value })
-}
-</script>
+  emit('update:filters', { ...localFilters.value })
+}</script>
