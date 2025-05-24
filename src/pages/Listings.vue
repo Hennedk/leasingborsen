@@ -48,6 +48,7 @@ function normalizeQuery(query) {
 }
 
 const filters = ref(normalizeQuery(route.query))
+
 const showMobileFilter = ref(false)
 
 // 🔥 Watch for route query changes and sync filters

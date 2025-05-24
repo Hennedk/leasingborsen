@@ -48,7 +48,7 @@
       :class="localFilters.transmission === 'Automatic' ? 'btn-primary' : 'btn-outline'"
       @click="toggleTransmission('Automatic')"
     >
-      Automatic
+      Automatisk
     </button>
     <button
       class="btn btn-sm flex-1"
@@ -122,8 +122,10 @@ const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
 const localFilters = ref({
-  ...props.filters,
-  transmission: props.filters.transmission || ''  // Single string!
+ ...props.filters,
+  transmission: typeof props.filters.transmission === 'string'
+    ? props.filters.transmission
+    : ''  // Fallback to '' if not string
 })
 
 const makes = ref([]), models = ref([]), fuelTypes = ref([]), bodyTypes = ref([])
