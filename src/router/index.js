@@ -9,12 +9,15 @@ import About from '../pages/About.vue'
 const routes = [
   { path: '/', component: Home },
   { path: '/listings', component: Listings },
-  { path: '/listings/:id', component: Listing },
+  {
+    path: '/listing/:id',   // 🔥 Updated path to match singular form
+    name: 'Listing',        // 🔥 Added a named route
+    component: Listing,
+    props: true             // 🔥 Enable route params as props
+  },
   { path: '/create', component: ListingCreation },
   { path: '/about', component: About }
 ]
-
-
 
 export const router = createRouter({
   history: createWebHistory(),
