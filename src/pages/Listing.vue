@@ -18,7 +18,12 @@
           :bodyType="listing.body_type"
           :fuelType="listing.fuel_type"
         />
-        <ListingPricing :leaseOptions="leasePrices" />
+
+        <!-- 🔥 Only render when leasePrices is available -->
+        <ListingPricing v-if="leasePrices.length" :leaseOptions="leasePrices" />
+        <div v-else>
+          <p>Henter leasingmuligheder...</p> <!-- Optional: Replace with spinner -->
+        </div>
       </div>
     </div>
   </BaseLayout>
@@ -36,10 +41,12 @@ import ListingHeader from '../components/ListingHeader.vue'
 import ListingPricing from '../components/ListingPricing.vue'
 import ListingDetails from '../components/ListingDetails.vue'
 
+// Reactive variables
 const route = useRoute()
 const listing = ref({})
-const leasePrices = ref([])  // 🔥 Store multiple lease options
+const leasePrices = ref([])
 
+// 🔥 Load data when component is mounted
 onMounted(async () => {
   const id = route.params.id
   if (!id) {
@@ -47,34 +54,29 @@ onMounted(async () => {
     return
   }
 
-  // Fetch listing data (from full_listing_view)
-  const { data: listingData, error: listingError } = await supabase
-    .from('full_listing_view')
-    .select('*')
-    .eq('listing_id', id)
-    .single()
+  try {
+    // Fetch listing data
+    const { data: listingData, error: listingError } = await supabase
+      .from('full_listing_view')
+      .select('*')
+      .eq('listing_id', id)
+      .single()
 
-  if (listingError) {
-    console.error('Error fetching listing:', listingError.message)
-  } else if (!listingData) {
-    console.warn('No listing data found for this ID.')
-  } else {
-    listing.value = listingData
-  }
+    if (listingError) throw listingError
+    listing.value = listingData || {}
 
-  // 🔥 Fetch multiple lease options
-  const { data: leaseData, error: leaseError } = await supabase
-    .from('lease_pricing')
-    .select('*')
-    .eq('listing_id', id)
-    .order('monthly_price', { ascending: true })
+    // Fetch lease options
+    const { data: leaseData, error: leaseError } = await supabase
+      .from('lease_pricing')
+      .select('*')
+      .eq('listing_id', id)
+      .order('monthly_price', { ascending: true })
 
-  if (leaseError) {
-    console.error('Error fetching lease options:', leaseError.message)
-  } else if (!leaseData?.length) {
-    console.warn('No lease options found for this listing.')
-  } else {
-    leasePrices.value = leaseData
+    if (leaseError) throw leaseError
+    leasePrices.value = leaseData || []
+
+  } catch (error) {
+    console.error('Fejl ved hentning:', error.message)
   }
 })
 </script>
