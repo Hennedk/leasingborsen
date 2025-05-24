@@ -1,8 +1,9 @@
 <template>
   <section class="flex-1">
-    <h1 class="text-2xl font-bold mb-4">Tilgængelige leasingbiler</h1>
+<!-- Headline, only on desktop -->
+<h1 class="text-2xl font-bold mb-2 hidden lg:block">Tilgængelige leasingbiler</h1>
 
-<!-- Result Count -->
+<!-- Result Count + Chips (same as before) -->
 <p class="text-sm text-gray-500 mb-4">
   <template v-if="loading">
     Indlæser biler...
@@ -14,6 +15,7 @@
     {{ cars.length }} {{ cars.length === 1 ? 'matchende bil' : 'matchende biler' }}
   </template>
 </p>
+
 
 
 

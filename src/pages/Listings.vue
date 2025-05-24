@@ -1,10 +1,17 @@
 <template>
   <BaseLayout>
-    <div class="lg:hidden mb-4 text-right">
-      <button class="btn btn-outline btn-sm" @click="showMobileFilter = !showMobileFilter">
-        {{ showMobileFilter ? 'Skjul filter' : 'Vis filter' }}
-      </button>
-    </div>
+    <!-- Headline + Filter button row, only on mobile -->
+<div class="flex items-center justify-between mb-4 lg:hidden">
+  <h1 class="text-2xl font-bold">Tilgængelige leasingbiler</h1>
+  <button class="btn btn-circle btn-outline" @click="showMobileFilter = !showMobileFilter">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-5.414 5.414A1 1 0 0015 12v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" />
+    </svg>
+  </button>
+</div>
+
+
     <div class="flex flex-col lg:flex-row gap-6">
       <aside :class="['w-full lg:w-1/5', showMobileFilter ? 'block' : 'hidden', 'lg:block']">
         <FilterSidebar v-model:filters="filters" />
