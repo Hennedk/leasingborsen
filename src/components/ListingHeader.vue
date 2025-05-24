@@ -1,8 +1,13 @@
 <template>
-  <div class="space-y-2">
-    <h2 class="text-xl font-bold">{{ make }} {{ model }} {{ variant }}</h2>
-    <p class="text-sm text-gray-600">
-      {{ transmission }} • {{ bodyType }} • {{ fuelType }}
+  <div class="space-y-1">
+    <!-- Make + Model -->
+    <h2 class="text-2xl font-bold text-neutral">
+      {{ make }} {{ model }}
+    </h2>
+
+    <!-- Variant -->
+    <p v-if="variant" class="text-base text-neutral-content">
+      {{ variant }}
     </p>
   </div>
 </template>
@@ -11,9 +16,6 @@
 defineProps({
   make: String,
   model: String,
-  variant: String,
-  transmission: String,
-  bodyType: String,
-  fuelType: String
+  variant: String
 })
 </script>

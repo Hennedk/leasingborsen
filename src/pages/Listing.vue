@@ -8,7 +8,7 @@
         <ListingSpecs :listing="listing" />
       </div>
 
-      <!-- Right Column -->
+      <!-- Right Column (sticky with pricing and header) -->
       <div class="space-y-6 lg:sticky lg:top-4 lg:self-start">
         <ListingHeader
           :make="listing.make"
@@ -19,10 +19,12 @@
           :fuelType="listing.fuel_type"
         />
 
-        <!-- 🔥 Only render when leasePrices is available -->
-        <ListingPricing v-if="leasePrices.length" :leaseOptions="leasePrices" />
-        <div v-else>
-          <p>Henter leasingmuligheder...</p> <!-- Optional: Replace with spinner -->
+        <!-- 🔥 Lease Options Section -->
+        <div v-if="leasePrices.length" class="bg-base-100 p-4 rounded-box shadow-md space-y-4">
+          <ListingPricing :leaseOptions="leasePrices" />
+        </div>
+        <div v-else class="bg-base-100 p-4 rounded-box shadow-md text-center text-sm text-gray-500">
+          Ingen leasingmuligheder fundet for denne bil.
         </div>
       </div>
     </div>
@@ -41,12 +43,10 @@ import ListingHeader from '../components/ListingHeader.vue'
 import ListingPricing from '../components/ListingPricing.vue'
 import ListingDetails from '../components/ListingDetails.vue'
 
-// Reactive variables
 const route = useRoute()
 const listing = ref({})
 const leasePrices = ref([])
 
-// 🔥 Load data when component is mounted
 onMounted(async () => {
   const id = route.params.id
   if (!id) {
@@ -55,28 +55,29 @@ onMounted(async () => {
   }
 
   try {
-    // Fetch listing data
-    const { data: listingData, error: listingError } = await supabase
-      .from('full_listing_view')
-      .select('*')
-      .eq('listing_id', id)
-      .single()
+    // ✅ Fetch listing data from listing_view using listing_id
+   const { data: listingData, error: listingError } = await supabase
+  .from('listing_view')
+  .select('*')
+  .eq('listing_id', id)   // 🔥 Match your view column name
+  .single()
+
 
     if (listingError) throw listingError
     listing.value = listingData || {}
 
-    // Fetch lease options
+    // ✅ Fetch lease options from lease_pricing
     const { data: leaseData, error: leaseError } = await supabase
       .from('lease_pricing')
       .select('*')
-      .eq('listing_id', id)
+      .eq('listing_id', id)   // 🔥 This is fine, assuming lease_pricing has listing_id
       .order('monthly_price', { ascending: true })
 
     if (leaseError) throw leaseError
     leasePrices.value = leaseData || []
 
   } catch (error) {
-    console.error('Fejl ved hentning:', error.message)
+    console.error('Fejl ved hentning af data:', error.message)
   }
 })
 </script>

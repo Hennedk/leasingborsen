@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 
-// Define props
+// Props
 const props = defineProps({
   leaseOptions: {
     type: Array,
@@ -9,12 +9,12 @@ const props = defineProps({
   }
 })
 
-// Reactive state
+// State
 const selectedMileage = ref(null)
 const selectedPeriod = ref(null)
 const selectedUpfront = ref(null)
 
-// Derived unique options
+// Derived options
 const availableMileages = computed(() =>
   [...new Set(props.leaseOptions.map(o => o.mileage_per_year))]
 )
@@ -25,7 +25,7 @@ const availableUpfronts = computed(() =>
   [...new Set(props.leaseOptions.map(o => o.first_payment))]
 )
 
-// Computed selected option
+// Computed selected lease
 const selectedLease = computed(() =>
   props.leaseOptions.find(o =>
     o.mileage_per_year === selectedMileage.value &&
@@ -44,56 +44,46 @@ const resetToCheapest = () => {
   }
 }
 
-// Initialize selections when leaseOptions change
+// Watch for changes
 watch(() => props.leaseOptions, (newOptions) => {
-  if (newOptions.length) {
-    resetToCheapest()
-  }
+  if (newOptions.length) resetToCheapest()
 }, { immediate: true })
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-xl shadow-md space-y-6">
+  <div class="card bg-base-100 p-6 shadow rounded-lg space-y-6">
     <!-- Monthly Price -->
-    <p class="text-3xl font-bold text-primary">
+    <h3 class="text-3xl font-bold text-primary">
       {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md
-    </p>
+    </h3>
 
     <!-- Mileage Selection -->
     <div>
-      <label class="block text-sm font-medium mb-1">Hvad er dit forventede årlige kilometerforbrug?</label>
+      <label class="label text-sm font-medium">Årligt km-forbrug</label>
       <select v-model="selectedMileage" class="select select-bordered w-full">
-        <option v-for="m in availableMileages" :key="m" :value="m">
-          {{ m.toLocaleString() }} km/år
-        </option>
+        <option v-for="m in availableMileages" :key="m" :value="m">{{ m.toLocaleString() }} km/år</option>
       </select>
     </div>
 
-    <!-- Duration Selection (Dropdown) -->
+    <!-- Period Selection -->
     <div>
-      <label class="block text-sm font-medium mb-1">Hvor længe vil du have bilen? (mdr)</label>
+      <label class="label text-sm font-medium">Leasingperiode (mdr)</label>
       <select v-model="selectedPeriod" class="select select-bordered w-full">
-        <option v-for="p in availablePeriods" :key="p" :value="p">
-          {{ p }} mdr
-        </option>
+        <option v-for="p in availablePeriods" :key="p" :value="p">{{ p }} mdr</option>
       </select>
     </div>
 
-    <!-- Upfront Payment Selection (Dropdown) -->
+    <!-- Upfront Payment Selection -->
     <div>
-      <label class="block text-sm font-medium mb-1">Hvor meget vil du betale op front?</label>
+      <label class="label text-sm font-medium">Udbetaling</label>
       <select v-model="selectedUpfront" class="select select-bordered w-full">
-        <option v-for="f in availableUpfronts" :key="f" :value="f">
-          {{ f?.toLocaleString() }} kr
-        </option>
+        <option v-for="f in availableUpfronts" :key="f" :value="f">{{ f?.toLocaleString() }} kr</option>
       </select>
     </div>
 
     <!-- Reset Button -->
-    <div>
-      <button @click="resetToCheapest" class="btn btn-link text-primary">
-        Nulstil til laveste månedlige pris 🔄
-      </button>
-    </div>
+    <button @click="resetToCheapest" class="btn btn-outline w-full">
+      Nulstil til laveste pris 🔄
+    </button>
   </div>
 </template>
