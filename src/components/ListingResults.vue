@@ -2,6 +2,21 @@
   <section class="flex-1">
     <h1 class="text-2xl font-bold mb-4">Tilgængelige leasingbiler</h1>
 
+<!-- Result Count -->
+<p class="text-sm text-gray-500 mb-4">
+  <template v-if="loading">
+    Indlæser biler...
+  </template>
+  <template v-else-if="cars.length === 0">
+    Ingen matchende biler
+  </template>
+  <template v-else>
+    {{ cars.length }} {{ cars.length === 1 ? 'matchende bil' : 'matchende biler' }}
+  </template>
+</p>
+
+
+
     <div v-if="activeFilters.length" class="flex flex-wrap gap-2 mb-6">
       <div v-for="filter in activeFilters" :key="filter.key + filter.label + filter.value" class="badge badge-outline gap-1 items-center">
         {{ filter.label }}
