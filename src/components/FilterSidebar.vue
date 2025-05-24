@@ -97,10 +97,7 @@
           >
             {{ price.toLocaleString() }} kr.
           </option>
-          <option
-            v-if="localFilters.price_min == null || 9999999 >= localFilters.price_min"
-            :value="9999999"
-          >
+          <option v-if="localFilters.price_min == null || 9999999 >= localFilters.price_min" :value="9999999">
             10.000+ kr.
           </option>
         </select>
@@ -113,15 +110,13 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabase'
 
-const props = defineProps({
-  filters: Object
-})
+const props = defineProps({ filters: Object })
 const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
 const localFilters = ref({ ...props.filters })
 
-const makes = ref([]), models = ref([]), fuelTypes = ref([]), transmissions = ref([]), bodyTypes = ref([])
+const makes = ref([]), models = ref([]), fuelTypes = ref([]), bodyTypes = ref([])
 const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
 
 const filteredModels = computed(() =>
@@ -132,19 +127,21 @@ const filteredModels = computed(() =>
 function toggleTransmission(value) {
   const list = localFilters.value.transmission ?? []
   const index = list.indexOf(value)
-  index > -1 ? list.splice(index, 1) : list.push(value)
+  if (index > -1) list.splice(index, 1)
+  else list.push(value)
   localFilters.value.transmission = [...list]
+  cleanAndEmit()
 }
 
-// Clear empty or undefined fields and avoid redundant emits
 function cleanAndEmit() {
   const cleaned = { ...localFilters.value }
   Object.keys(cleaned).forEach(key => {
-    if (cleaned[key] === undefined || (cleaned[key] === '' && !stringFields.includes(key))) {
+    if (Array.isArray(cleaned[key]) && key === 'transmission') {
+      // Keep transmission array
+    } else if (cleaned[key] === undefined || (cleaned[key] === '' && !stringFields.includes(key))) {
       cleaned[key] = null
     }
   })
-  // Only emit if changed
   if (JSON.stringify(cleaned) !== JSON.stringify(props.filters)) {
     emit('update:filters', cleaned)
   }
@@ -152,6 +149,7 @@ function cleanAndEmit() {
 
 watch(() => props.filters, newFilters => {
   localFilters.value = { ...newFilters }
+  localFilters.value.transmission ??= []
 }, { immediate: true, deep: true })
 
 watch(localFilters, cleanAndEmit, { deep: true })
@@ -161,7 +159,6 @@ onMounted(async () => {
   makes.value = (await fetchData('makes')).sort((a, b) => a.name.localeCompare(b.name))
   models.value = await fetchData('models')
   fuelTypes.value = await fetchData('fuel_types')
-  transmissions.value = await fetchData('transmissions')
   bodyTypes.value = await fetchData('body_types')
 })
 </script>
