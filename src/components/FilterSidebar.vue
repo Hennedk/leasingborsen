@@ -1,15 +1,22 @@
 <template>
   <div class="bg-base-100 shadow rounded p-4 space-y-4">
-    <h2 class="text-lg font-semibold">Filtre</h2>
+  
+   <!-- 🔥 Conditionally show Reset button -->
+<a v-if="activeFilterExists" class="text-blue-500 underline cursor-pointer text-sm" @click="resetFilters">
+  Nulstil filtre
+</a>
 
-    <!-- Make -->
-    <div>
-      <label class="block text-sm font-medium mb-1">Mærke</label>
-      <select v-model="localFilters.make" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
-      </select>
-    </div>
+
+
+
+  <!-- Make -->
+  <div>
+    <label class="block text-sm font-medium mb-1">Mærke</label>
+    <select v-model="localFilters.make" class="select select-bordered w-full">
+      <option value="">Alle</option>
+      <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
+    </select>
+  </div>
 
     <!-- Model -->
     <div>
@@ -166,4 +173,32 @@ onMounted(async () => {
   fuelTypes.value = await fetchData('fuel_types')
   bodyTypes.value = await fetchData('body_types')
 })
+
+// Your existing setup...
+const activeFilterExists = computed(() => {
+  return Object.values(localFilters.value).some(value => {
+    return Array.isArray(value) ? value.length > 0 : value !== '' && value != null
+  })
+})
+
+function resetFilters() {
+  localFilters.value = {
+    make: '',
+    model: '',
+    fuel_type: '',
+    transmission: '',
+    body_type: '',
+    horsepower: null,
+    seats_min: null,
+    seats_max: null,
+    price_min: null,
+    price_max: null,
+    condition: '',
+    listingStatus: '',
+    driveType: '',
+    availableBefore: ''
+  }
+  cleanAndEmit()
+}
 </script>
+

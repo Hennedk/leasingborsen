@@ -92,9 +92,15 @@ const activeFilters = computed(() => {
   if (f.seats_min != null || f.seats_max != null) {
     list.push({ key: 'seats', label: `Sæder: ${f.seats_min ?? ''}${f.seats_max != null ? (f.seats_min ? ' - ' : ' op til ') + f.seats_max : '+'}`, value: null })
   }
-  if (f.price_min != null || f.price_max != null) {
-    list.push({ key: 'price', label: `Pris: ${f.price_min?.toLocaleString() ?? ''}${f.price_max != null ? (f.price_min ? ' - ' : ' op til ') + f.price_max.toLocaleString() : '+'} kr.`, value: null })
-  }
+if (f.price_min != null || f.price_max != null) {
+  const priceMin = f.price_min?.toLocaleString() ?? ''
+  const priceMax = (f.price_max != null && f.price_max !== 9999999)
+    ? f.price_max.toLocaleString()
+    : '10.000+'
+  const priceLabel = `Pris: ${priceMin}${f.price_max != null ? (f.price_min ? ' - ' : ' op til ') + priceMax : '+'} kr.`
+  list.push({ key: 'price', label: priceLabel, value: null })
+}
+
   return list
 })
 
