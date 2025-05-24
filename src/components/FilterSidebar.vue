@@ -114,107 +114,54 @@ import { ref, watch, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabase'
 
 const props = defineProps({
-  filters: {
-    type: Object,
-    required: true
-  }
+  filters: Object
 })
-
-// Change this to emit 'update:filters' instead of 'filter'
 const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
 const localFilters = ref({ ...props.filters })
 
-const makes = ref([])
-const models = ref([])
-const fuelTypes = ref([])
-const transmissions = ref([])
-const bodyTypes = ref([])
-
+const makes = ref([]), models = ref([]), fuelTypes = ref([]), transmissions = ref([]), bodyTypes = ref([])
 const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
 
-const filteredModels = computed(() => {
-  if (!localFilters.value.make) return []
-  const makeId = makes.value.find(m => m.name === localFilters.value.make)?.id
-  return models.value.filter(m => m.make_id === makeId)
-})
+const filteredModels = computed(() =>
+  !localFilters.value.make ? [] :
+  models.value.filter(m => m.make_id === makes.value.find(make => make.name === localFilters.value.make)?.id)
+)
 
 function toggleTransmission(value) {
-  if (!Array.isArray(localFilters.value.transmission)) {
-    localFilters.value.transmission = []
-  }
-
-  const list = localFilters.value.transmission
+  const list = localFilters.value.transmission ?? []
   const index = list.indexOf(value)
-
-  if (index > -1) {
-    list.splice(index, 1)
-  } else {
-    list.push(value)
-  }
-
+  index > -1 ? list.splice(index, 1) : list.push(value)
   localFilters.value.transmission = [...list]
 }
 
-watch(() => localFilters.value.price_min, (min) => {
-  const max = localFilters.value.price_max
-  if (min != null && max != null && max < min) {
-    localFilters.value.price_max = null
-  }
-})
-
-watch(() => localFilters.value.price_max, (max) => {
-  const min = localFilters.value.price_min
-  if (min != null && max != null && max < min) {
-    localFilters.value.price_min = null
-  }
-})
-
-onMounted(async () => {
-  const fetchRefData = async (table, sort = true) => {
-    const { data, error } = await supabase.from(table).select('*')
-    if (error) {
-      console.error(`Error fetching ${table}:`, error)
-      return []
+// Clear empty or undefined fields and avoid redundant emits
+function cleanAndEmit() {
+  const cleaned = { ...localFilters.value }
+  Object.keys(cleaned).forEach(key => {
+    if (cleaned[key] === undefined || (cleaned[key] === '' && !stringFields.includes(key))) {
+      cleaned[key] = null
     }
-    return sort ? data.sort((a, b) => a.name.localeCompare(b.name)) : data
+  })
+  // Only emit if changed
+  if (JSON.stringify(cleaned) !== JSON.stringify(props.filters)) {
+    emit('update:filters', cleaned)
   }
+}
 
-  makes.value = await fetchRefData('makes')
-  models.value = await fetchRefData('models')
-  fuelTypes.value = await fetchRefData('fuel_types')
-  transmissions.value = await fetchRefData('transmissions')
-  bodyTypes.value = await fetchRefData('body_types')
-})
-
-watch(() => props.filters, (newFilters) => {
-  // Create a completely new object to ensure reactivity
+watch(() => props.filters, newFilters => {
   localFilters.value = { ...newFilters }
 }, { immediate: true, deep: true })
 
-watch(localFilters, () => {
-  const cleanedFilters = { ...localFilters.value }
-  Object.keys(cleanedFilters).forEach(key => {
-    if (cleanedFilters[key] === undefined) {
-      cleanedFilters[key] = null
-    } else if (cleanedFilters[key] === '' && !stringFields.includes(key)) {
-      cleanedFilters[key] = null
-    }
-  })
-  // Change this to emit 'update:filters' instead of 'filter'
-  emit('update:filters', cleanedFilters)
-}, { deep: true })
+watch(localFilters, cleanAndEmit, { deep: true })
 
-function clearFilters() {
-  Object.keys(localFilters.value).forEach(key => {
-    if (Array.isArray(localFilters.value[key])) {
-      localFilters.value[key] = []
-    } else {
-      localFilters.value[key] = null
-    }
-  })
-  localFilters.value.seats_min = null
-  localFilters.value.seats_max = null
-  emit('update:filters', { ...localFilters.value })
-}</script>
+onMounted(async () => {
+  const fetchData = async (table) => (await supabase.from(table).select('*')).data ?? []
+  makes.value = (await fetchData('makes')).sort((a, b) => a.name.localeCompare(b.name))
+  models.value = await fetchData('models')
+  fuelTypes.value = await fetchData('fuel_types')
+  transmissions.value = await fetchData('transmissions')
+  bodyTypes.value = await fetchData('body_types')
+})
+</script>

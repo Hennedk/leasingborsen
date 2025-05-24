@@ -40,34 +40,25 @@ import { ref, watch, computed, nextTick } from 'vue'
 import { supabase } from '../lib/supabase'
 import ListingCard from './ListingCard.vue'
 
-const props = defineProps({
-  filters: Object
-})
+const props = defineProps({ filters: Object })
 const emit = defineEmits(['update:filters'])
 
 const filters = ref({ ...props.filters })
-const cars = ref([])
-const loading = ref(false)
+const cars = ref([]), loading = ref(false)
 let debounceTimer = null
 
-watch(() => props.filters, (newVal) => {
-  filters.value = { ...newVal }
-}, { immediate: true, deep: true })
+watch(() => props.filters, newVal => filters.value = { ...newVal }, { immediate: true, deep: true })
 
 async function fetchCars() {
   loading.value = true
-  
   try {
     let query = supabase.from('full_listing_view').select('*')
     const f = filters.value
-
     if (f.make) query = query.ilike('make', `%${f.make}%`)
     if (f.model) query = query.ilike('model', `%${f.model}%`)
     if (f.fuel_type) query = query.eq('fuel_type', f.fuel_type)
     if (f.body_type) query = query.eq('body_type', f.body_type)
-    if (Array.isArray(f.transmission) && f.transmission.length) {
-      query = query.in('transmission', f.transmission)
-    }
+    if (Array.isArray(f.transmission) && f.transmission.length) query = query.in('transmission', f.transmission)
     if (f.horsepower) query = query.gte('horsepower', f.horsepower)
     if (f.seats_min != null) query = query.gte('seats', f.seats_min)
     if (f.seats_max != null) query = query.lte('seats', f.seats_max)
@@ -79,9 +70,7 @@ async function fetchCars() {
     if (f.availableBefore) query = query.lte('availability_date', f.availableBefore)
 
     const { data, error } = await query
-    
     if (!error) {
-      // Add a small delay to prevent jarring transitions
       await nextTick()
       cars.value = data
     }
@@ -90,70 +79,45 @@ async function fetchCars() {
   }
 }
 
-// Debounce the fetch function to prevent rapid successive calls
 function debouncedFetchCars() {
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(fetchCars, 150)
 }
 
-watch(filters, debouncedFetchCars, { immediate: true, deep: true })
+watch(filters, (newFilters, oldFilters) => {
+  if (JSON.stringify(newFilters) !== JSON.stringify(oldFilters)) {
+    debouncedFetchCars()
+  }
+}, { immediate: true, deep: true })
 
 const activeFilters = computed(() => {
   const f = filters.value
   const list = []
-
   if (f.make) list.push({ key: 'make', label: f.make, value: f.make })
   if (f.model) list.push({ key: 'model', label: f.model, value: f.model })
   if (f.body_type) list.push({ key: 'body_type', label: f.body_type, value: f.body_type })
   if (f.fuel_type) list.push({ key: 'fuel_type', label: f.fuel_type, value: f.fuel_type })
   if (Array.isArray(f.transmission)) {
-    f.transmission.forEach(t => list.push({ 
-      key: 'transmission', 
-      label: `Gear: ${t}`, 
-      value: t 
-    }))
+    f.transmission.forEach(t => list.push({ key: 'transmission', label: `Gear: ${t}`, value: t }))
   }
   if (f.seats_min != null || f.seats_max != null) {
-    const min = f.seats_min
-    const max = f.seats_max
-    let label = 'Sæder: '
-    if (min != null && max != null) label += min === max ? `${min}` : `${min} - ${max}`
-    else if (min != null) label += `${min}+`
-    else if (max != null) label += `op til ${max}`
+    const label = `Sæder: ${f.seats_min ?? ''}${f.seats_max != null ? (f.seats_min ? ' - ' : 'op til ') + f.seats_max : '+'}`
     list.push({ key: 'seats', label, value: null })
   }
   if (f.price_min != null || f.price_max != null) {
-    const min = f.price_min
-    const max = f.price_max
-    let label = 'Pris: '
-    if (min != null && max != null) {
-      const maxLabel = max === 9999999 ? '10.000+' : max.toLocaleString()
-      label += min === max ? `${min.toLocaleString()} kr.` : `${min.toLocaleString()} - ${maxLabel} kr.`
-    } else if (min != null) label += `fra ${min.toLocaleString()} kr.`
-    else if (max != null) label += `op til ${max.toLocaleString()} kr.`
+    const label = `Pris: ${f.price_min?.toLocaleString() ?? ''}${f.price_max != null ? (f.price_min ? ' - ' : 'op til ') + f.price_max.toLocaleString() : '+'} kr.`
     list.push({ key: 'price', label, value: null })
   }
-
   return list
 })
 
 function removeFilter(key, value = null) {
   const updated = { ...filters.value }
-  
-  if (key === 'transmission' && value) {
-    updated.transmission = updated.transmission.filter(t => t !== value)
-  } else if (key === 'transmission') {
-    updated.transmission = []
-  } else if (key === 'seats') {
-    updated.seats_min = null
-    updated.seats_max = null
-  } else if (key === 'price') {
-    updated.price_min = null
-    updated.price_max = null
-  } else {
-    updated[key] = ''
-  }
-  
+  if (key === 'transmission' && value) updated.transmission = updated.transmission.filter(t => t !== value)
+  else if (key === 'transmission') updated.transmission = []
+  else if (key === 'seats') updated.seats_min = updated.seats_max = null
+  else if (key === 'price') updated.price_min = updated.price_max = null
+  else updated[key] = ''
   filters.value = updated
   emit('update:filters', updated)
 }
