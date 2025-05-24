@@ -1,26 +1,14 @@
 <template>
   <BaseLayout>
-    <!-- Mobile filter toggle -->
     <div class="lg:hidden mb-4 text-right">
       <button class="btn btn-outline btn-sm" @click="showMobileFilter = !showMobileFilter">
         {{ showMobileFilter ? 'Skjul filter' : 'Vis filter' }}
       </button>
     </div>
-
     <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Sidebar -->
       <aside :class="['w-full lg:w-1/5', showMobileFilter ? 'block' : 'hidden', 'lg:block']">
-        <Suspense>
-          <template #default>
-            <FilterSidebar v-model:filters="filters" />
-          </template>
-          <template #fallback>
-            <div>Indlæser filtre...</div>
-          </template>
-        </Suspense>
+        <FilterSidebar v-model:filters="filters" />
       </aside>
-
-      <!-- Listings -->
       <section class="flex-1">
         <ListingResults v-model:filters="filters" />
       </section>
@@ -28,8 +16,9 @@
   </BaseLayout>
 </template>
 
+
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import BaseLayout from '../components/BaseLayout.vue'
@@ -44,20 +33,13 @@ function normalizeQuery(query) {
     make: query.make || '',
     model: query.model || '',
     fuel_type: query.fuel_type || '',
-    transmission: Array.isArray(query.transmission)
-      ? query.transmission
-      : query.transmission
-      ? [query.transmission]
-      : [],
-
+    transmission: query.transmission || '',  // Single string!
     body_type: query.body_type || '',
     horsepower: query.horsepower ? Number(query.horsepower) : null,
     seats_min: query.seats_min ? Number(query.seats_min) : null,
     seats_max: query.seats_max ? Number(query.seats_max) : null,
-    maxPrice: query.maxPrice ? Number(query.maxPrice) : null,
     price_min: query.price_min ? Number(query.price_min) : null,
     price_max: query.price_max ? Number(query.price_max) : null,
-
     condition: query.condition || '',
     listingStatus: query.listingStatus || '',
     driveType: query.driveType || '',
@@ -65,13 +47,19 @@ function normalizeQuery(query) {
   }
 }
 
-function resetFilters() {
-  filters.value = normalizeQuery({})
-}
-
 const filters = ref(normalizeQuery(route.query))
 const showMobileFilter = ref(false)
 
+// 🔥 Watch for route query changes and sync filters
+watch(
+  () => route.query,
+  (newQuery) => {
+    filters.value = normalizeQuery(newQuery);
+  },
+  { immediate: true, deep: true }
+)
+
+// 🔥 Watch for filter changes and sync URL query
 watch(filters, (newFilters) => {
   const currentQuery = route.query
   const newQuery = { ...newFilters }

@@ -38,41 +38,48 @@
       </select>
     </div>
 
-    <!-- Transmission -->
-    <div class="mb-4">
-      <label class="block text-sm font-medium mb-1">Gearkasse</label>
-      <div class="grid grid-cols-2 gap-2">
-        <button
-          class="btn btn-sm w-full"
-          :class="localFilters.transmission.includes('Automatic') ? 'btn-primary' : 'btn-outline'"
-          @click="toggleTransmission('Automatic')"
-        >
-          Automatic
-        </button>
-        <button
-          class="btn btn-sm w-full"
-          :class="localFilters.transmission.includes('Manual') ? 'btn-primary' : 'btn-outline'"
-          @click="toggleTransmission('Manual')"
-        >
-          Manual
-        </button>
-      </div>
-    </div>
+
+<!-- Transmission -->
+<div class="mb-4">
+  <label class="block text-sm font-medium mb-1">Gearkasse</label>
+  <div class="flex gap-2">
+    <button
+      class="btn btn-sm flex-1"
+      :class="localFilters.transmission === 'Automatic' ? 'btn-primary' : 'btn-outline'"
+      @click="toggleTransmission('Automatic')"
+    >
+      Automatic
+    </button>
+    <button
+      class="btn btn-sm flex-1"
+      :class="localFilters.transmission === 'Manual' ? 'btn-primary' : 'btn-outline'"
+      @click="toggleTransmission('Manual')"
+    >
+      Manual
+    </button>
+  </div>
+</div>
+
 
     <!-- Seats -->
     <div class="mb-4">
-      <label class="block text-sm font-medium mb-1">Antal sæder</label>
-      <div class="grid grid-cols-2 gap-2">
-        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_min">
-          <option :value="null">Min</option>
-          <option v-for="n in 9" :key="'min-' + n" :value="n">{{ n }}</option>
-        </select>
-        <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_max">
-          <option :value="null">Max</option>
-          <option v-for="n in 9" :key="'max-' + n" :value="n">{{ n }}</option>
-        </select>
-      </div>
-    </div>
+  <label class="block text-sm font-medium mb-1">Antal sæder</label>
+  <div class="grid grid-cols-2 gap-2">
+    <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_min">
+      <option :value="null">Min</option>
+      <option v-for="n in Array.from({length: 9}, (_, i) => i + 1).filter(n => localFilters.seats_max == null || n <= localFilters.seats_max)" :key="'min-' + n" :value="n">
+        {{ n }}
+      </option>
+    </select>
+    <select class="select select-sm select-bordered w-full" v-model.number="localFilters.seats_max">
+      <option :value="null">Max</option>
+      <option v-for="n in Array.from({length: 9}, (_, i) => i + 1).filter(n => localFilters.seats_min == null || n >= localFilters.seats_min)" :key="'max-' + n" :value="n">
+        {{ n }}
+      </option>
+    </select>
+  </div>
+</div>
+
 
     <!-- Price -->
     <div class="mb-4">
@@ -114,7 +121,10 @@ const props = defineProps({ filters: Object })
 const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
-const localFilters = ref({ ...props.filters })
+const localFilters = ref({
+  ...props.filters,
+  transmission: props.filters.transmission || ''  // Single string!
+})
 
 const makes = ref([]), models = ref([]), fuelTypes = ref([]), bodyTypes = ref([])
 const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
@@ -125,20 +135,14 @@ const filteredModels = computed(() =>
 )
 
 function toggleTransmission(value) {
-  const list = localFilters.value.transmission ?? []
-  const index = list.indexOf(value)
-  if (index > -1) list.splice(index, 1)
-  else list.push(value)
-  localFilters.value.transmission = [...list]
+  localFilters.value.transmission = localFilters.value.transmission === value ? '' : value
   cleanAndEmit()
 }
 
 function cleanAndEmit() {
   const cleaned = { ...localFilters.value }
   Object.keys(cleaned).forEach(key => {
-    if (Array.isArray(cleaned[key]) && key === 'transmission') {
-      // Keep transmission array
-    } else if (cleaned[key] === undefined || (cleaned[key] === '' && !stringFields.includes(key))) {
+    if (cleaned[key] === undefined || (cleaned[key] === '' && !stringFields.includes(key))) {
       cleaned[key] = null
     }
   })
@@ -149,7 +153,6 @@ function cleanAndEmit() {
 
 watch(() => props.filters, newFilters => {
   localFilters.value = { ...newFilters }
-  localFilters.value.transmission ??= []
 }, { immediate: true, deep: true })
 
 watch(localFilters, cleanAndEmit, { deep: true })

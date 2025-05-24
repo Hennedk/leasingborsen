@@ -24,6 +24,8 @@ import { ref, watch, computed, nextTick } from 'vue'
 import { supabase } from '../lib/supabase'
 import ListingCard from './ListingCard.vue'
 
+const emit = defineEmits(['update:filters'])
+
 const props = defineProps({ filters: Object })
 
 const cars = ref([]), loading = ref(false)
@@ -40,7 +42,7 @@ async function fetchCars() {
     if (f.model) query = query.ilike('model', `%${f.model}%`)
     if (f.fuel_type) query = query.eq('fuel_type', f.fuel_type)
     if (f.body_type) query = query.eq('body_type', f.body_type)
-    if (Array.isArray(f.transmission) && f.transmission.length) query = query.in('transmission', f.transmission)
+ if (f.transmission) query = query.eq('transmission', f.transmission);
     if (f.horsepower) query = query.gte('horsepower', f.horsepower)
     if (f.seats_min != null) query = query.gte('seats', f.seats_min)
     if (f.seats_max != null) query = query.lte('seats', f.seats_max)
@@ -81,19 +83,33 @@ const activeFilters = computed(() => {
   if (f.model) list.push({ key: 'model', label: f.model, value: f.model })
   if (f.body_type) list.push({ key: 'body_type', label: f.body_type, value: f.body_type })
   if (f.fuel_type) list.push({ key: 'fuel_type', label: f.fuel_type, value: f.fuel_type })
-  if (Array.isArray(f.transmission)) f.transmission.forEach(t => list.push({ key: 'transmission', label: `Gear: ${t}`, value: t }))
-  if (f.seats_min != null || f.seats_max != null) list.push({ key: 'seats', label: `Sæder: ${f.seats_min ?? ''}${f.seats_max != null ? (f.seats_min ? ' - ' : 'op til ') + f.seats_max : '+'}`, value: null })
-  if (f.price_min != null || f.price_max != null) list.push({ key: 'price', label: `Pris: ${f.price_min?.toLocaleString() ?? ''}${f.price_max != null ? (f.price_min ? ' - ' : 'op til ') + f.price_max.toLocaleString() : '+'} kr.`, value: null })
+
+  // 🔥 Updated transmission handling:
+  if (f.transmission) {
+    list.push({ key: 'transmission', label: `Gear: ${f.transmission}`, value: f.transmission })
+  }
+
+  if (f.seats_min != null || f.seats_max != null) {
+    list.push({ key: 'seats', label: `Sæder: ${f.seats_min ?? ''}${f.seats_max != null ? (f.seats_min ? ' - ' : ' op til ') + f.seats_max : '+'}`, value: null })
+  }
+  if (f.price_min != null || f.price_max != null) {
+    list.push({ key: 'price', label: `Pris: ${f.price_min?.toLocaleString() ?? ''}${f.price_max != null ? (f.price_min ? ' - ' : ' op til ') + f.price_max.toLocaleString() : '+'} kr.`, value: null })
+  }
   return list
 })
 
 function removeFilter(key, value = null) {
   const updated = { ...props.filters }
-  if (key === 'transmission' && value) updated.transmission = updated.transmission.filter(t => t !== value)
-  else if (key === 'transmission') updated.transmission = []
-  else if (key === 'seats') updated.seats_min = updated.seats_max = null
-  else if (key === 'price') updated.price_min = updated.price_max = null
-  else updated[key] = ''
-  // Emit should be handled in parent (FilterSidebar)
+  if (key === 'transmission') {
+    updated.transmission = null
+  } else if (key === 'seats') {
+    updated.seats_min = updated.seats_max = null
+  } else if (key === 'price') {
+    updated.price_min = updated.price_max = null
+  } else {
+    updated[key] = ''
+  }
+  emit('update:filters', updated)
 }
+
 </script>
