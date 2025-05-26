@@ -1,11 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import {
-  Fuel,
-  Settings,
-  Car,
-  Gauge
-} from 'lucide-vue-next' // ✅ Lucide icons
+import { Fuel, Settings, Car, Gauge } from 'lucide-vue-next'
 
 defineProps({
   car: {
@@ -16,12 +11,14 @@ defineProps({
 </script>
 
 <template>
-  <RouterLink :to="`/listings/${car.id}`" class="block transition hover:shadow-md hover:-translate-y-1 duration-200">
+  <RouterLink
+    :to="{ name: 'Listing', params: { id: car.listing_id } }"
+    class="block transition hover:shadow-md hover:-translate-y-1 duration-200"
+  >
     <div class="card bg-base-100 border border-base-200 rounded-[var(--rounded-box)] overflow-hidden">
-
       <!-- Image -->
       <figure class="relative">
-        <img :src="car.image" :alt="`${car.make} ${car.model}`" class="w-full h-48 object-cover" />
+        <img :src="car.image || '/placeholder.jpg'" :alt="`${car.make} ${car.model}`" class="w-full h-48 object-cover" />
       </figure>
 
       <!-- Title -->
@@ -34,13 +31,15 @@ defineProps({
         </div>
       </div>
 
-      <!-- Price section -->
+      <!-- Price -->
       <div class="px-4 pb-1 pt-2">
         <div class="text-xl font-bold text-neutral leading-tight">
-          {{ car.monthly_price ? car.monthly_price.toLocaleString('da-DK') + ' kr. / måned' : 'Pris ikke tilgængelig' }}
-
+          {{ car.monthly_price ? `${car.monthly_price.toLocaleString('da-DK')} kr. / måned` : 'Pris ikke tilgængelig' }}
         </div>
-        <p class="text-sm text-base-content/60">10.000 km/år • Udbetaling: 5.000 kr</p>
+        <p class="text-sm text-base-content/60">
+          {{ car.mileage_per_year ? `${car.mileage_per_year.toLocaleString()} km/år` : 'Km ikke angivet' }} •
+          {{ car.first_payment ? `Udbetaling: ${car.first_payment.toLocaleString()} kr` : 'Udbetaling ikke angivet' }}
+        </p>
       </div>
 
       <!-- Divider -->
@@ -50,24 +49,19 @@ defineProps({
       <div class="px-4 pb-4">
         <div class="grid grid-cols-2 gap-2 text-sm text-base-content/60">
           <div class="flex items-center gap-2">
-            <Fuel class="w-4 h-4 text-base-content/50" />
-            {{ car.fuel_type }}
+            <Fuel class="w-4 h-4 text-base-content/50" /> {{ car.fuel_type || '–' }}
           </div>
           <div class="flex items-center gap-2">
-            <Settings class="w-4 h-4 text-base-content/50" />
-            {{ car.transmission }}
+            <Settings class="w-4 h-4 text-base-content/50" /> {{ car.transmission || '–' }}
           </div>
           <div class="flex items-center gap-2">
-            <Car class="w-4 h-4 text-base-content/50" />
-            {{ car.body_type }}
+            <Car class="w-4 h-4 text-base-content/50" /> {{ car.body_type || '–' }}
           </div>
           <div class="flex items-center gap-2">
-            <Gauge class="w-4 h-4 text-base-content/50" />
-            {{ car.horsepower }} hk
+            <Gauge class="w-4 h-4 text-base-content/50" /> {{ car.horsepower ? `${car.horsepower} hk` : '–' }}
           </div>
         </div>
       </div>
-
     </div>
   </RouterLink>
 </template>

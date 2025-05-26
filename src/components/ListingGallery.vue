@@ -1,13 +1,13 @@
 <template>
-  <div class="card bg-base-100 shadow">
-    <figure>
-      <img :src="image" :alt="`${make} ${model}`" class="rounded-xl" />
-    </figure>
+  <div>
+    <img :src="image || '/placeholder.jpg'" :alt="`${make} ${model}`" class="rounded-xl w-full" />
   </div>
-
 </template>
 
 <script setup>
-defineProps(['image', 'make', 'model'])
+defineProps({
+  image: String,
+  make: String,
+  model: String
+})
 </script>
-
