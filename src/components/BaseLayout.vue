@@ -1,9 +1,17 @@
 <script setup>
 import Header from './Header.vue'
+
+// Accept background prop with default value
+const props = defineProps({
+  background: {
+    type: String,
+    default: 'bg-base-200'
+  }
+})
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col bg-base-200">
+  <div class="min-h-screen flex flex-col" :class="props.background">
     <!-- Header -->
     <Header />
 

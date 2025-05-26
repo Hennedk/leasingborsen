@@ -51,7 +51,7 @@ watch(() => props.leaseOptions, (newOptions) => {
 </script>
 
 <template>
-  <div class="card bg-base-100 p-6 shadow rounded-lg space-y-6">
+  <div class="border border-gray-200 rounded-lg p-6 space-y-6">
     <!-- Monthly Price -->
     <h3 class="text-3xl font-bold text-primary">
       {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md

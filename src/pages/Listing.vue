@@ -1,5 +1,5 @@
 <template>
-  <BaseLayout>
+  <BaseLayout background="bg-white">
     <div class="w-full py-8 flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-8">
       <!-- Left Column -->
       <div class="space-y-6">
@@ -20,10 +20,10 @@
         />
 
         <!-- 🔥 Lease Options Section -->
-        <div v-if="leasePrices.length" class="bg-base-100 p-4 rounded-box shadow-md space-y-4">
+        <div v-if="leasePrices.length">
           <ListingPricing :leaseOptions="leasePrices" />
         </div>
-        <div v-else class="bg-base-100 p-4 rounded-box shadow-md text-center text-sm text-gray-500">
+        <div v-else class="border border-gray-200 rounded-lg p-6 text-center text-sm text-gray-500">
           Ingen leasingmuligheder fundet for denne bil.
         </div>
       </div>
@@ -61,7 +61,6 @@ onMounted(async () => {
   .select('*')
   .eq('listing_id', id)   // 🔥 Match your view column name
   .single()
-
 
     if (listingError) throw listingError
     listing.value = listingData || {}

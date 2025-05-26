@@ -10,7 +10,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="bg-white p-6 rounded-xl shadow-md">
+  <div>
     <!-- Key Specs Section -->
     <h2 class="text-lg font-semibold text-gray-800 mb-4">Specifikationer</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-sm">
@@ -57,56 +57,56 @@ defineProps({
     <!-- General Specs Section -->
     <h3 class="text-lg font-semibold text-gray-800 mb-4">General Specs</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="space-y-4">
-        <div v-if="listing.make">
-          <div class="font-semibold">Mærke</div>
-          <div>{{ listing.make }}</div>
+      <div class="divide-y divide-gray-200">
+        <div v-if="listing.make" class="flex justify-between py-2">
+          <span class="font-semibold">Mærke</span>
+          <span>{{ listing.make }}</span>
         </div>
-        <div v-if="listing.model">
-          <div class="font-semibold">Model</div>
-          <div>{{ listing.model }}</div>
+        <div v-if="listing.model" class="flex justify-between py-2">
+          <span class="font-semibold">Model</span>
+          <span>{{ listing.model }}</span>
         </div>
-        <div v-if="listing.variant">
-          <div class="font-semibold">Variant</div>
-          <div>{{ listing.variant }}</div>
+        <div v-if="listing.variant" class="flex justify-between py-2">
+          <span class="font-semibold">Variant</span>
+          <span>{{ listing.variant }}</span>
         </div>
-        <div v-if="listing.year">
-          <div class="font-semibold">Årgang</div>
-          <div>{{ listing.year }}</div>
+        <div v-if="listing.year" class="flex justify-between py-2">
+          <span class="font-semibold">Årgang</span>
+          <span>{{ listing.year }}</span>
         </div>
-        <div v-if="listing.drive_type">
-          <div class="font-semibold">Drivtype</div>
-          <div>{{ listing.drive_type }}</div>
+        <div v-if="listing.drive_type" class="flex justify-between py-2">
+          <span class="font-semibold">Drivtype</span>
+          <span>{{ listing.drive_type }}</span>
         </div>
-        <div v-if="listing.doors">
-          <div class="font-semibold">Døre</div>
-          <div>{{ listing.doors }}</div>
+        <div v-if="listing.doors" class="flex justify-between py-2">
+          <span class="font-semibold">Døre</span>
+          <span>{{ listing.doors }}</span>
         </div>
       </div>
-      <div class="space-y-4">
-        <div v-if="listing.wltp">
-          <div class="font-semibold">WLTP</div>
-          <div>{{ listing.wltp }} km</div>
+      <div class="divide-y divide-gray-200">
+        <div v-if="listing.wltp" class="flex justify-between py-2">
+          <span class="font-semibold">WLTP</span>
+          <span>{{ listing.wltp }} km</span>
         </div>
-        <div v-if="listing.co2_emission">
-          <div class="font-semibold">CO₂ udslip</div>
-          <div>{{ listing.co2_emission }} g/km</div>
+        <div v-if="listing.co2_emission" class="flex justify-between py-2">
+          <span class="font-semibold">CO₂ udslip</span>
+          <span>{{ listing.co2_emission }} g/km</span>
         </div>
-        <div v-if="listing.consumption_l_100km">
-          <div class="font-semibold">Forbrug (benzin)</div>
-          <div>{{ listing.consumption_l_100km }} l/100km</div>
+        <div v-if="listing.consumption_l_100km" class="flex justify-between py-2">
+          <span class="font-semibold">Forbrug (benzin)</span>
+          <span>{{ listing.consumption_l_100km }} l/100km</span>
         </div>
-        <div v-if="listing.consumption_kwh_100km">
-          <div class="font-semibold">Forbrug (el)</div>
-          <div>{{ listing.consumption_kwh_100km }} kWh/100km</div>
+        <div v-if="listing.consumption_kwh_100km" class="flex justify-between py-2">
+          <span class="font-semibold">Forbrug (el)</span>
+          <span>{{ listing.consumption_kwh_100km }} kWh/100km</span>
         </div>
-        <div v-if="listing.co2_tax_half_year">
-          <div class="font-semibold">CO₂-afgift (halvår)</div>
-          <div>{{ listing.co2_tax_half_year.toLocaleString() }} kr</div>
+        <div v-if="listing.co2_tax_half_year" class="flex justify-between py-2">
+          <span class="font-semibold">CO₂-afgift (halvår)</span>
+          <span>{{ listing.co2_tax_half_year.toLocaleString() }} kr</span>
         </div>
-        <div v-if="listing.description">
-          <div class="font-semibold">Beskrivelse</div>
-          <div>{{ listing.description }}</div>
+        <div v-if="listing.description" class="flex justify-between py-2">
+          <span class="font-semibold">Beskrivelse</span>
+          <span>{{ listing.description }}</span>
         </div>
       </div>
     </div>
