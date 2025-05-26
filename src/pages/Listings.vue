@@ -1,39 +1,51 @@
 <template>
-  <BaseLayout>
-    <div class="flex flex-col lg:flex-row gap-6">
-      <!-- Sidebar (always on left) -->
-      <aside :class="['w-full lg:w-1/5', showMobileFilter ? 'block' : 'hidden', 'lg:block']">
-        <FilterSidebar v-model:filters="filters" />
-      </aside>
+  <div>
+    <BaseLayout>
+      <div class="flex flex-col lg:flex-row gap-6">
+        <!-- Sidebar: Desktop only -->
+        <aside class="w-full lg:w-1/5 hidden lg:block">
+          <FilterSidebar v-model:filters="filters" />
+        </aside>
 
-       <!-- 🔥 Filter Toggle Button (Mobile Only) -->
-<button class="btn btn-circle btn-outline lg:hidden" @click="showMobileFilter = !showMobileFilter">
-  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-          d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-5.414 5.414A1 1 0 0015 12v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" />
-  </svg>
-</button>
+        <!-- Main Content -->
+        <section class="flex-1">
+          <!-- Mobile Header with Filter Button -->
+          <div class="flex items-center justify-between mb-4 lg:hidden">
+            <button
+              class="btn btn-circle btn-outline"
+              @click="showMobileFilter = true"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-5.414 5.414A1 1 0 0015 12v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" />
+              </svg>
+            </button>
+            <h1 class="text-xl font-bold">
+              <ListingResultsResultCount :filters="filters" />
+            </h1>
+            <div class="w-10"></div> <!-- Spacer for balance -->
+          </div>
 
-      <!-- Main Content (Listings + Headline + Sorting) -->
-      <section class="flex-1">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4 gap-2">
-          <!-- 🔥 Headline with Result Count (left/top) -->
-          <h1 class="text-2xl font-bold">
-            <ListingResultsResultCount :filters="filters" />
-          </h1>
+          <!-- Desktop Header (no filter button) -->
+          <div class="hidden lg:flex lg:items-start lg:justify-between mb-4 gap-2">
+            <h1 class="text-2xl font-bold">
+              <ListingResultsResultCount :filters="filters" />
+            </h1>
+          </div>
 
-          
-   
+          <ListingResults v-model:filters="filters" />
+        </section>
+      </div>
+    </BaseLayout>
 
-        </div>
-
-        <!-- 🔥 Listings Grid -->
-        <ListingResults v-model:filters="filters" />
-      </section>
-    </div>
-  </BaseLayout>
+    <!-- 🔥 Mobile Filter Overlay -->
+    <MobileFilterOverlay 
+      v-if="showMobileFilter" 
+      v-model:filters="filters" 
+      @close="showMobileFilter = false" 
+    />
+  </div>
 </template>
-
 
 <script setup>
 import { ref, watch } from 'vue'
@@ -42,7 +54,8 @@ import { useRoute, useRouter } from 'vue-router'
 import BaseLayout from '../components/BaseLayout.vue'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ListingResults from '../components/ListingResults.vue'
-import ListingResultsResultCount from '../components/ListingResultsResultCount.vue'  // 👈 Import it!
+import ListingResultsResultCount from '../components/ListingResultsResultCount.vue'
+import MobileFilterOverlay from '../components/MobileFilterOverlay.vue'
 
 const route = useRoute()
 const router = useRouter()
