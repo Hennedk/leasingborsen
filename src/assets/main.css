@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @import "./base.css";
 
 @tailwind base;
@@ -6,39 +6,60 @@
 @tailwind utilities;
 
 #app {
-  width: 100%;
-  font-weight: normal;
-  font-family: 'Inter', sans-serif;
+  @apply w-full font-sans text-base-content bg-base-100;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
+body {
+  @apply font-sans text-base leading-relaxed text-base-content;
+  background: var(--color-background); /* Optional: or use bg-base-100 */
+  transition: color 0.5s, background-color 0.5s;
+  line-height: 1.6;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 15px;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* 🌟 Updated Links Styling: Remove global hover color & background */
+a {
+  @apply transition-colors duration-300;
+  /* Removed font-weight: 500; from here so Tailwind can apply classes */
+  /* Removed color overrides so Tailwind/DaisyUI control it */
 }
 
-.select, .input {
-  font-weight: 500; /* or 700 for full boldness */
+a:hover {
+  @apply underline;
+  /* Removed text-secondary or bg-secondary/10 */
+  /* No background-color or color change on hover */
+}
+
+/* Form elements styling with Tailwind */
+.select, .input, .textarea, .btn {
+  @apply font-medium text-base rounded-lg px-4 py-2 transition-all shadow-none;
+}
+
+.btn {
+  @apply text-white bg-secondary hover:bg-secondary-focus font-semibold;
+}
+
+.input, .select, .textarea {
+  @apply border border-neutral focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none;
+}
+
+label {
+  @apply font-semibold text-base;
+}
+
+/* src/assets/card.css */
+.card {
+  @apply rounded-lg border border-base-300 bg-white shadow-sm font-sans p-4;
 }
 
 
 
-input.input,
-select.select,
-textarea.textarea,
-button.btn {
-  font-weight: 600 !important;
-}
-
-@layer components {
-  .btn {
-    @apply normal-case;
-  }
+/* Header styling */
+header {
+  @apply bg-transparent backdrop-blur-md shadow-md;
 }

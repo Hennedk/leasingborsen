@@ -1,106 +1,3 @@
-<template>
-  <div class="bg-base-100 shadow rounded px-3 py-4 space-y-4">
-    <!-- 🔥 Always show Reset button with spacing -->
-    <a class="text-blue-500 underline cursor-pointer text-sm mb-4 inline-block" @click="resetFilters">
-      Nulstil filtre
-    </a>
-
-    <!-- Make -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Mærke</label>
-      <select v-model="localFilters.make" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
-      </select>
-    </div>
-
-    <!-- Model -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Model</label>
-      <select v-model="localFilters.model" class="select select-bordered w-full" :disabled="!localFilters.make">
-        <option value="">Alle</option>
-        <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
-      </select>
-    </div>
-
-    <!-- Body Type -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Karosseri</label>
-      <select v-model="localFilters.body_type" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
-      </select>
-    </div>
-
-    <!-- Fuel Type -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Drivmiddel</label>
-      <select v-model="localFilters.fuel_type" class="select select-bordered w-full">
-        <option value="">Alle</option>
-        <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
-      </select>
-    </div>
-
-    <!-- Gearkasse as chips -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Gearkasse</label>
-      <div class="flex gap-2 flex-wrap">
-        <span
-          class="cursor-pointer border rounded-full px-4 py-2 text-sm font-bold"
-          :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-white' : 'border-gray-300 text-gray-700'"
-          @click="toggleTransmission('Automatic')">
-          Automatisk
-        </span>
-        <span
-          class="cursor-pointer border rounded-full px-4 py-2 text-sm font-bold"
-          :class="localFilters.transmission === 'Manual' ? 'bg-primary text-white' : 'border-gray-300 text-gray-700'"
-          @click="toggleTransmission('Manual')">
-          Manual
-        </span>
-      </div>
-    </div>
-
-    <!-- Seats -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Antal sæder</label>
-      <div class="grid grid-cols-2 gap-4">
-        <select class="select select-bordered w-full" v-model.number="localFilters.seats_min">
-          <option :value="null">Min</option>
-          <option v-for="n in 9" :key="'min-' + n" :value="n">{{ n }}</option>
-        </select>
-        <select class="select select-bordered w-full" v-model.number="localFilters.seats_max">
-          <option :value="null">Max</option>
-          <option v-for="n in 9" :key="'max-' + n" :value="n">{{ n }}</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Price -->
-    <div>
-      <label class="block text-sm font-bold mb-2">Pris</label>
-      <div class="grid grid-cols-2 gap-4">
-        <select class="select select-bordered w-full" v-model.number="localFilters.price_min">
-          <option :value="null">Min</option>
-          <option v-for="price in priceSteps.filter(p => localFilters.price_max == null || p <= localFilters.price_max)" :key="'min-' + price" :value="price">
-            {{ price.toLocaleString() }} kr.
-          </option>
-        </select>
-        <select class="select select-bordered w-full" v-model.number="localFilters.price_max">
-          <option :value="null">Max</option>
-          <option v-for="price in priceSteps.filter(p => localFilters.price_min == null || p >= localFilters.price_min)" :key="'max-' + price" :value="price">
-            {{ price.toLocaleString() }} kr.
-          </option>
-          <option v-if="localFilters.price_min == null || 9999999 >= localFilters.price_min" :value="9999999">
-            10.000+ kr.
-          </option>
-        </select>
-      </div>
-    </div>
-  </div>
-</template>
-
-
-
 <script setup>
 import { ref, watch, onMounted, computed } from 'vue'
 import { supabase } from '../lib/supabase'
@@ -109,12 +6,7 @@ const props = defineProps({ filters: Object })
 const emit = defineEmits(['update:filters'])
 
 const stringFields = ['make', 'model', 'fuel_type', 'body_type']
-const localFilters = ref({
- ...props.filters,
-  transmission: typeof props.filters.transmission === 'string'
-    ? props.filters.transmission
-    : ''  // Fallback to '' if not string
-})
+const localFilters = ref({ ...props.filters, transmission: typeof props.filters.transmission === 'string' ? props.filters.transmission : '' })
 
 const makes = ref([]), models = ref([]), fuelTypes = ref([]), bodyTypes = ref([])
 const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
@@ -155,31 +47,107 @@ onMounted(async () => {
   bodyTypes.value = await fetchData('body_types')
 })
 
-// Your existing setup...
-const activeFilterExists = computed(() => {
-  return Object.values(localFilters.value).some(value => {
-    return Array.isArray(value) ? value.length > 0 : value !== '' && value != null
-  })
-})
+function getRange(field) {
+  return field.includes('seats') ? Array.from({ length: 9 }, (_, i) => i + 1) : priceSteps
+}
+
+function format(value) {
+  return value ? (field.includes('price') ? `${value.toLocaleString()} kr.` : value) : '–'
+}
 
 function resetFilters() {
   localFilters.value = {
-    make: '',
-    model: '',
-    fuel_type: '',
-    transmission: '',
-    body_type: '',
-    horsepower: null,
-    seats_min: null,
-    seats_max: null,
-    price_min: null,
-    price_max: null,
-    condition: '',
-    listingStatus: '',
-    driveType: '',
-    availableBefore: ''
+    make: '', model: '', fuel_type: '', transmission: '',
+    body_type: '', horsepower: null, seats_min: null, seats_max: null,
+    price_min: null, price_max: null, condition: '', listingStatus: '',
+    driveType: '', availableBefore: ''
   }
   cleanAndEmit()
 }
 </script>
 
+<template>
+  <div class="card space-y-6">
+    <!-- Reset Button -->
+    <a class="text-primary underline cursor-pointer text-sm font-semibold inline-block" @click="resetFilters">
+      Nulstil filtre
+    </a>
+    
+
+    <!-- Filter Fields -->
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
+      <select v-model="localFilters.make" class="select select-bordered w-full font-medium">
+        <option value="">Alle</option>
+        <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Model</label>
+      <select v-model="localFilters.model" class="select select-bordered w-full font-medium" :disabled="!localFilters.make">
+        <option value="">Alle</option>
+        <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
+      <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium">
+        <option value="">Alle</option>
+        <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
+      <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium">
+        <option value="">Alle</option>
+        <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
+      </select>
+    </div>
+
+    <!-- Transmission Chips -->
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Gearkasse</label>
+      <div class="flex gap-2 flex-wrap">
+        <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
+              :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
+              @click="toggleTransmission('Automatic')">Automatisk</span>
+        <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
+              :class="localFilters.transmission === 'Manual' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
+              @click="toggleTransmission('Manual')">Manual</span>
+      </div>
+    </div>
+
+    <!-- Seats & Price Filters -->
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
+      <div class="grid grid-cols-2 gap-4">
+        <select v-model.number="localFilters.seats_min" class="select select-bordered w-full font-medium">
+          <option :value="null">Min</option>
+          <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+        </select>
+        <select v-model.number="localFilters.seats_max" class="select select-bordered w-full font-medium">
+          <option :value="null">Max</option>
+          <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
+      <div class="grid grid-cols-2 gap-4">
+        <select v-model.number="localFilters.price_min" class="select select-bordered w-full font-medium">
+          <option :value="null">Min</option>
+          <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
+        </select>
+        <select v-model.number="localFilters.price_max" class="select select-bordered w-full font-medium">
+          <option :value="null">Max</option>
+          <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
+          <option :value="9999999">10.000+ kr.</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</template>

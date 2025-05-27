@@ -101,7 +101,7 @@
       </div>
 
       <!-- Sticky Bottom Bar -->
-      <div class="bg-base-200 p-4 border-t shadow-inner flex justify-between items-center">
+      <div class="bg-base-200 p-4 border-t border-base-200 flex justify-between items-center rounded-b-2xl">
         <button class="btn btn-outline flex-1 mr-2 font-bold"
           :disabled="!activeFilterExists"
           @click="resetFilters">

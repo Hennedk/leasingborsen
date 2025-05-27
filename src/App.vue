@@ -1,5 +1,5 @@
 <template>
-  <div data-theme="compadre">
+  <div data-theme="carwow">
     <router-view />
   </div>
 </template>

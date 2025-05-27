@@ -1,49 +1,29 @@
 <template>
   <div class="flex flex-wrap gap-2">
     <template v-for="filter in activeFilters" :key="filter.key">
-      <div class="badge badge-outline gap-1 items-center">
-        {{ filter.label }}
-        <button @click="removeFilter(filter.key)" class="ml-1">×</button>
+      <div
+        class="inline-flex items-center gap-1 bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm hover:shadow-md transition-shadow duration-200"
+      >
+        <span>{{ filter.label }}</span>
+        <button
+          @click="$emit('remove-filter', filter.key)"
+          class="text-neutral-600 text-base leading-none hover:text-red-500 focus:outline-none transition-colors duration-200 cursor-pointer"
+          aria-label="Fjern filter"
+        >
+          ×
+        </button>
       </div>
     </template>
-    <a v-if="activeFilters.length" class="text-blue-500 underline cursor-pointer text-sm" @click="resetFilters">
-      Nulstil filtre
-    </a>
+
   </div>
 </template>
 
 <script setup>
-// ✅ Import computed (missing in previous code)
-import { computed } from 'vue'
-
-const props = defineProps({ filters: Object })
-const emit = defineEmits(['update:filters'])
-
-const activeFilters = computed(() => {
-  const f = props.filters, list = []
-  if (f.make) list.push({ key: 'make', label: f.make })
-  if (f.model) list.push({ key: 'model', label: f.model })
-  if (f.fuel_type) list.push({ key: 'fuel_type', label: f.fuel_type })
-  if (f.body_type) list.push({ key: 'body_type', label: f.body_type })
-  if (f.transmission) list.push({ key: 'transmission', label: `Gear: ${f.transmission}` })
-  if (f.seats_min != null || f.seats_max != null) list.push({ key: 'seats', label: `Sæder: ${f.seats_min ?? ''} - ${f.seats_max ?? ''}` })
-  if (f.price_min != null || f.price_max != null) list.push({ key: 'price', label: `Pris: ${f.price_min ?? ''} - ${f.price_max ?? ''} kr.` })
-  return list
+const props = defineProps({
+  activeFilters: {
+    type: Array,
+    required: true
+  }
 })
-
-function removeFilter(key) {
-  const updated = { ...props.filters }
-  if (key === 'seats') { updated.seats_min = null; updated.seats_max = null }
-  else if (key === 'price') { updated.price_min = null; updated.price_max = null }
-  else { updated[key] = '' }
-  emit('update:filters', updated)
-}
-
-function resetFilters() {
-  emit('update:filters', {
-    make: '', model: '', fuel_type: '', transmission: '', body_type: '',
-    horsepower: null, seats_min: null, seats_max: null, price_min: null, price_max: null,
-    condition: '', listingStatus: '', driveType: '', availableBefore: ''
-  })
-}
+const emit = defineEmits(['remove-filter', 'reset-filters'])
 </script>

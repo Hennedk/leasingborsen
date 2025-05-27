@@ -30,8 +30,9 @@
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
 
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
+  /* REMOVE global text color overrides */
+  /* --color-heading: var(--vt-c-text-light-1); */
+  /* --color-text: var(--vt-c-text-light-1); */
 
   --section-gap: 160px;
 }
@@ -45,8 +46,8 @@
     --color-border: var(--vt-c-divider-dark-2);
     --color-border-hover: var(--vt-c-divider-dark-1);
 
-    --color-heading: var(--vt-c-text-dark-1);
-    --color-text: var(--vt-c-text-dark-2);
+    /* --color-heading: var(--vt-c-text-dark-1); */
+    /* --color-text: var(--vt-c-text-dark-2); */
   }
 }
 
@@ -61,7 +62,8 @@
 
 body {
   min-height: 100vh;
-  color: var(--color-text);
+  /* REMOVE color override so Tailwind/DaisyUI control it */
+  /* color: var(--color-text); */
   background: var(--color-background);
   transition: color 0.5s, background-color 0.5s;
   line-height: 1.6;
