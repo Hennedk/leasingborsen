@@ -41,8 +41,10 @@ import { ref, watch, computed, nextTick } from 'vue'
 import { supabase } from '../lib/supabase'
 import ListingCard from './ListingCard.vue'
 
-const emit = defineEmits(['update:filters', 'update:count'])
+const emit = defineEmits(['update:filters', 'update:count', 'resetFilters'])
 const props = defineProps({ filters: Object })
+
+
 
 const cars = ref([]), loading = ref(false), sortOrder = ref('')
 const defaultFilters = {
