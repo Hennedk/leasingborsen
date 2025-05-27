@@ -42,24 +42,25 @@
           </select>
         </div>
 
-        <!-- Gearkasse with compact buttons -->
-        <div class="mb-6">
-          <label class="block text-base font-bold mb-2">Gearkasse</label>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              class="btn btn-outline btn-sm w-full font-bold"
-              :class="localFilters.transmission === 'Automatic' ? 'btn-primary' : 'btn-outline'"
-              @click="toggleTransmission('Automatic')">
-              Automatisk
-            </button>
-            <button
-              class="btn btn-outline btn-sm w-full font-bold"
-              :class="localFilters.transmission === 'Manual' ? 'btn-primary' : 'btn-outline'"
-              @click="toggleTransmission('Manual')">
-              Manual
-            </button>
-          </div>
-        </div>
+ <!-- Gearkasse as chips in MobileFilterOverlay -->
+<div class="mb-6">
+  <label class="block text-base font-bold mb-2">Gearkasse</label>
+  <div class="flex gap-2 flex-wrap">
+    <span
+      class="cursor-pointer border rounded-full px-4 py-2 text-sm font-bold"
+      :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-white' : 'border-gray-300 text-gray-700'"
+      @click="toggleTransmission('Automatic')">
+      Automatisk
+    </span>
+    <span
+      class="cursor-pointer border rounded-full px-4 py-2 text-sm font-bold"
+      :class="localFilters.transmission === 'Manual' ? 'bg-primary text-white' : 'border-gray-300 text-gray-700'"
+      @click="toggleTransmission('Manual')">
+      Manual
+    </span>
+  </div>
+</div>
+
 
         <!-- Seats -->
         <div class="mb-4">
@@ -101,7 +102,11 @@
 
       <!-- Sticky Bottom Bar -->
       <div class="bg-base-200 p-4 border-t shadow-inner flex justify-between items-center">
-        <button class="btn btn-outline flex-1 mr-2 font-bold" @click="resetFilters">Ryd alle</button>
+        <button class="btn btn-outline flex-1 mr-2 font-bold"
+          :disabled="!activeFilterExists"
+          @click="resetFilters">
+          Ryd alle
+        </button>
         <button class="btn btn-primary flex-1 font-bold" @click="applyFilters">
           Vis {{ resultCount }} resultater
         </button>
@@ -109,6 +114,7 @@
     </div>
   </div>
 </template>
+
 
 
 
