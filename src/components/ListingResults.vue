@@ -16,14 +16,16 @@
       </div>
 
       <!-- Sorting -->
-      <div class="flex items-center gap-2">
-        <label class="text-sm font-medium">Sortér efter:</label>
-        <select v-model="sortOrder" class="select select-sm select-bordered">
-          <option value="">Standard</option>
-          <option value="price_asc">Pris (lav til høj)</option>
-          <option value="price_desc">Pris (høj til lav)</option>
-        </select>
-      </div>
+  <!-- Sorting -->
+<div class="hidden lg:flex items-center gap-2">
+  <label class="text-sm font-medium">Sortér efter:</label>
+  <select v-model="sortOrder" class="select select-sm select-bordered">
+    <option value="">Standard</option>
+    <option value="price_asc">Pris (lav til høj)</option>
+    <option value="price_desc">Pris (høj til lav)</option>
+  </select>
+</div>
+
     </div>
 
     <!-- Listings -->

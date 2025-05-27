@@ -37,3 +37,8 @@ button.btn {
   font-weight: 600 !important;
 }
 
+@layer components {
+  .btn {
+    @apply normal-case;
+  }
+}

@@ -8,26 +8,27 @@
 
       <!-- Main Content -->
       <section class="flex-1">
-        <div class="flex items-center justify-between mb-4 lg:hidden">
+        <!-- 🔥 Mobile Layout: Filter Icon Right, Result Count Left -->
+        <div class="flex items-center justify-between mb-4 lg:hidden flex-row-reverse">
           <button class="btn btn-circle btn-outline" @click="showMobileFilter = true">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707l-5.414 5.414A1 1 0 0015 12v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z" />
             </svg>
           </button>
-          <h1 class="text-xl font-bold">
+          <h1 class="text-xl font-black">
             <ListingResultsResultCount :count="resultCount" />
           </h1>
-          <div class="w-10"></div>
         </div>
 
+        <!-- 🔥 Desktop Layout: Normal Layout -->
         <div class="hidden lg:flex items-start justify-between mb-4">
-          <h1 class="text-2xl font-bold">
+          <h1 class="text-2xl font-black">
             <ListingResultsResultCount :count="resultCount" />
           </h1>
         </div>
 
-        <!-- 🔥 Updated: Handle resetFilters from ListingResults -->
+        <!-- 🔥 Listing Results Component -->
         <ListingResults 
           :filters="filters" 
           @update:filters="filters = $event"
@@ -37,7 +38,7 @@
       </section>
     </div>
 
-    <!-- 🔥 Updated: MobileFilterOverlay -->
+    <!-- 🔥 Mobile Filter Overlay -->
     <MobileFilterOverlay 
       v-show="showMobileFilter" 
       v-model:filters="filters" 
@@ -45,6 +46,7 @@
     />
   </BaseLayout>
 </template>
+
 
 <script setup>
 import { ref } from 'vue'
