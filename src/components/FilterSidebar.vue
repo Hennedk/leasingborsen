@@ -68,10 +68,7 @@ function resetFilters() {
 
 <template>
   <div class="card space-y-6">
-    <!-- Reset Button -->
-    <a class="text-primary underline cursor-pointer text-sm font-semibold inline-block" @click="resetFilters">
-      Nulstil filtre
-    </a>
+   
     
 
     <!-- Filter Fields -->
@@ -151,3 +148,7 @@ function resetFilters() {
     </div>
   </div>
 </template>
+ <!-- Reset Button -->
+    <a class="text-primary underline cursor-pointer text-sm font-semibold inline-block" @click="resetFilters">
+      Nulstil filtre
+    </a>

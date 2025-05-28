@@ -7,9 +7,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Poppins", "sans-serif"], // 🔥 Main font for body and headings
-        display: ["Poppins", "sans-serif"], // Optional: For hero sections
-        mono: ["JetBrains Mono", "monospace"], // Optional: For code/text UI
+        sans: ["Poppins", "sans-serif"], // 🔥 Main font
+        display: ["Poppins", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
       },
       fontSize: {
         base: ['16px', '24px'],
@@ -25,6 +25,10 @@ module.exports = {
         medium: '500',
         bold: '700',
       },
+      colors: {
+        primary: "#1A1A1A", // Updated global primary (black)
+        "primary-content": "#FFFFFF", // White text on primary
+      },
     },
   },
   plugins: [require('daisyui')],
@@ -32,7 +36,8 @@ module.exports = {
     themes: [
       {
         carwow: {
-          primary: "#1A1A1A",
+          primary: "#1A1A1A",          // Black as primary
+          "primary-content": "#FFFFFF", // White text on primary
           secondary: "#00AEEF",
           accent: "#FFD100",
           neutral: "#dedcd9",
@@ -54,7 +59,7 @@ module.exports = {
           "--navbar-padding": "1rem",
         },
       },
-      "dark",
+      "dark", // Optional: keep dark mode support
     ],
   },
 }

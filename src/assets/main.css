@@ -44,6 +44,11 @@ a:hover {
   @apply text-white bg-secondary hover:bg-secondary-focus font-semibold;
 }
 
+.btn-primary {
+  @apply w-full border-none shadow-none rounded-lg font-semibold transition-all;
+}
+
+
 .input, .select, .textarea {
   @apply border border-neutral focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none;
 }

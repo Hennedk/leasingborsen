@@ -9,21 +9,19 @@
           <!-- 🔥 Filter Icon Button: Visible on mobile, hidden on desktop -->
           <button
             @click="showMobileFilter = true"
-            class="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-300 shadow-sm hover:bg-gray-100 transition flex-none block lg:hidden"
-          >
-            <!-- SVG Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-black" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M3 6h18M6 12h12M9 18h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
+  class="relative flex items-center justify-center w-12 h-12 rounded-full bg-white border border-gray-300 shadow-sm hover:bg-gray-100 transition flex-none block lg:hidden"
+>
+  <!-- Lucide Filter Icon -->
+  <Filter class="w-6 h-6 text-black" stroke-width="2" />
 
-            <!-- Red Badge -->
-            <span
-              v-if="activeFilters.length"
-              class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full"
-            >
-              {{ activeFilters.length }}
-            </span>
-          </button>
+  <!-- Red Badge -->
+  <span
+    v-if="activeFilters.length"
+    class="absolute -top-1.5 -right-1.5 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full"
+  >
+    {{ activeFilters.length }}
+  </span>
+</button>
         </div>
 
         <!-- 🔥 Filter Chips below Result Count -->
@@ -66,6 +64,7 @@ import ListingResults from '../components/ListingResults.vue'
 import ListingResultsResultCount from '../components/ListingResultsResultCount.vue'
 import FilterChips from '../components/FilterChips.vue'
 import MobileFilterOverlay from '../components/MobileFilterOverlay.vue'
+import { Filter } from 'lucide-vue-next'
 
 const defaultFilters = {
   make: '', model: '', fuel_type: '', transmission: '', body_type: '',
