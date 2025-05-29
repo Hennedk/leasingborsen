@@ -15,7 +15,7 @@ defineProps({
     :to="{ name: 'Listing', params: { id: car.listing_id } }"
     class="block transition hover:shadow-lg hover:-translate-y-1 duration-300"
   >
-    <div class="rounded-lg border border-base-300 bg-white shadow-sm font-sans">
+    <div class="card">
       <!-- Image -->
       <figure class="relative rounded-t-lg overflow-hidden">
         <img

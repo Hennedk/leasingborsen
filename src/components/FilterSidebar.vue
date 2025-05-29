@@ -60,8 +60,12 @@ function resetFilters() {
 
 <template>
   <div>
-    <div class="card space-y-6">
-      <!-- Filter Fields -->
+    <div class="card card-filter space-y-6">
+      <a class="text-primary underline cursor-pointer text-sm font-semibold inline-block mt-2" @click="resetFilters">
+        Nulstil filtre
+      </a>
+
+      <!-- Mærke -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
         <select v-model="localFilters.make" class="select select-bordered w-full font-medium">
@@ -70,6 +74,7 @@ function resetFilters() {
         </select>
       </div>
 
+      <!-- Model -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Model</label>
         <select v-model="localFilters.model" class="select select-bordered w-full font-medium" :disabled="!localFilters.make">
@@ -78,6 +83,7 @@ function resetFilters() {
         </select>
       </div>
 
+      <!-- Karosseri -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
         <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium">
@@ -86,6 +92,7 @@ function resetFilters() {
         </select>
       </div>
 
+      <!-- Drivmiddel -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
         <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium">
@@ -94,54 +101,58 @@ function resetFilters() {
         </select>
       </div>
 
+      <!-- Gearkasse -->
       <div>
-        <label class="block text-sm font-bold mb-2 text-primary">Gearkasse</label>
-        <div class="flex gap-2 flex-wrap">
-          <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
-                :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
-                @click="toggleTransmission('Automatic')">Automatisk</span>
-          <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
-                :class="localFilters.transmission === 'Manual' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
-                @click="toggleTransmission('Manual')">Manual</span>
+        <label class="block text-sm font-bold mb-2 text-primary">Geartype</label>
+        <div class="grid grid-cols-2 gap-4">
+          <button
+            class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
+            :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
+            @click="toggleTransmission('Automatic')"
+          >
+            Automatisk
+          </button>
+          <button
+            class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
+            :class="localFilters.transmission === 'Manual' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
+            @click="toggleTransmission('Manual')"
+          >
+            Manuelt
+          </button>
         </div>
       </div>
 
+      <!-- Antal sæder -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
         <div class="grid grid-cols-2 gap-4">
-          <select v-model.number="localFilters.seats_min" class="select select-bordered w-full font-medium">
+          <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium">
             <option :value="null">Min</option>
             <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
           </select>
-          <select v-model.number="localFilters.seats_max" class="select select-bordered w-full font-medium">
+          <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium">
             <option :value="null">Max</option>
             <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
           </select>
         </div>
       </div>
 
+      <!-- Pris -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
         <div class="grid grid-cols-2 gap-4">
-          <select v-model.number="localFilters.price_min" class="select select-bordered w-full font-medium">
+          <select v-model.number="localFilters.price_min" class="select select-bordered w-full h-12 font-medium">
             <option :value="null">Min</option>
             <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
           </select>
-          <select v-model.number="localFilters.price_max" class="select select-bordered w-full font-medium">
+          <select v-model.number="localFilters.price_max" class="select select-bordered w-full h-12 font-medium">
             <option :value="null">Max</option>
             <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
             <option :value="9999999">10.000+ kr.</option>
           </select>
         </div>
       </div>
-    </div>
 
-    <!-- Reset Button (moved inside template) -->
-    <a
-      class="text-primary underline cursor-pointer text-sm font-semibold inline-block mt-4"
-      @click="resetFilters"
-    >
-      Nulstil filtre
-    </a>
+    </div>
   </div>
 </template>

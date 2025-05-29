@@ -22,22 +22,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 🌟 Updated Links Styling: Remove global hover color & background */
+/* 🌟 Updated Links Styling */
 a {
   @apply transition-colors duration-300;
-  /* Removed font-weight: 500; from here so Tailwind can apply classes */
-  /* Removed color overrides so Tailwind/DaisyUI control it */
 }
 
 a:hover {
   @apply underline;
-  /* Removed text-secondary or bg-secondary/10 */
-  /* No background-color or color change on hover */
 }
 
-/* Form elements styling with Tailwind */
+/* 🌟 Form Elements Styling */
 .select, .input, .textarea, .btn {
   @apply font-medium text-base rounded-lg px-4 py-2 transition-all shadow-none;
+}
+
+.input, .select, .textarea {
+  @apply border border-neutral focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none;
 }
 
 .btn {
@@ -48,23 +48,37 @@ a:hover {
   @apply w-full border-none shadow-none rounded-lg font-semibold transition-all;
 }
 
-
-.input, .select, .textarea {
-  @apply border border-neutral focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none;
-}
-
 label {
   @apply font-semibold text-base;
 }
 
-/* src/assets/card.css */
+/* 🌟 Base Card Styling */
 .card {
-  @apply rounded-lg border border-base-300 bg-white shadow-sm font-sans p-4;
+  @apply rounded-lg border border-base-300 bg-card-bg shadow-sm font-sans;
 }
 
+/* 🌟 Card Variant for Filter */
+.card-filter {
+  @apply p-4;
+}
 
+/* 🌟 Reusable Button Style to Match Selects */
+.btn-select-like {
+  @apply select select-bordered text-left w-auto min-w-[100px] font-medium text-base leading-tight px-4 py-2 rounded-lg transition;
+}
 
-/* Header styling */
+/* Header Styling */
 header {
   @apply bg-transparent backdrop-blur-md shadow-md;
 }
+
+.btn-toggle {
+  @apply w-full rounded-lg border border-base-300 font-medium text-sm px-4 py-2 transition;
+}
+.btn-toggle-selected {
+  @apply bg-primary text-primary-content;
+}
+.btn-toggle-unselected {
+  @apply bg-base-100 text-primary;
+}
+

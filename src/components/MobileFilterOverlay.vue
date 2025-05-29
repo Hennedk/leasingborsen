@@ -50,33 +50,41 @@
           </select>
         </div>
 
-        <!-- Gearkasse Chips -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Gearkasse</label>
-          <div class="flex gap-2 flex-wrap">
-            <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
-                  :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
-                  @click="toggleTransmission('Automatic')">Automatisk</span>
-            <span class="cursor-pointer border rounded-full px-4 py-2 text-sm font-medium transition"
-                  :class="localFilters.transmission === 'Manual' ? 'bg-primary text-white' : 'border-base-300 text-base-content'"
-                  @click="toggleTransmission('Manual')">Manual</span>
-          </div>
-        </div>
+        <!-- Gearkasse Buttons -->
+<div>
+  <label class="block text-sm font-bold mb-2 text-primary">Geartype</label>
+  <div class="grid grid-cols-2 gap-4">
+    <button
+      class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
+      :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
+      @click="toggleTransmission('Automatic')"
+    >
+      Automatisk
+    </button>
+    <button
+      class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
+      :class="localFilters.transmission === 'Manual' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
+      @click="toggleTransmission('Manual')"
+    >
+      Manuelt
+    </button>
+  </div>
+</div>
 
-        <!-- Seats -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
-          <div class="grid grid-cols-2 gap-4">
-            <select v-model.number="localFilters.seats_min" class="select select-bordered w-full font-medium">
-              <option :value="null">Min</option>
-              <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
-            </select>
-            <select v-model.number="localFilters.seats_max" class="select select-bordered w-full font-medium">
-              <option :value="null">Max</option>
-              <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
-            </select>
-          </div>
-        </div>
+<!-- Seats -->
+<div>
+  <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
+  <div class="grid grid-cols-2 gap-4">
+    <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium">
+      <option :value="null">Min</option>
+      <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+    </select>
+    <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium">
+      <option :value="null">Max</option>
+      <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+    </select>
+  </div>
+</div>
 
         <!-- Price -->
         <div>

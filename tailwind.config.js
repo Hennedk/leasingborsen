@@ -28,6 +28,7 @@ module.exports = {
       colors: {
         primary: "#1A1A1A", // Updated global primary (black)
         "primary-content": "#FFFFFF", // White text on primary
+         "card-bg": "#fbfafc",  // 🎨 Background for cards
       },
     },
   },
@@ -41,7 +42,7 @@ module.exports = {
           secondary: "#00AEEF",
           accent: "#FFD100",
           neutral: "#dedcd9",
-          "base-100": "#F4F4F4",
+          "base-100": "#FFFFFF", // White background
           "base-200": "#EDEDED",
           "base-300": "#E0E0E0",
           info: "#3ABFF8",
