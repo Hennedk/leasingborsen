@@ -1,21 +1,26 @@
 <script setup>
+import { ref } from 'vue'
 import Header from './Header.vue'
+import MobileFilterOverlay from './MobileFilterOverlay.vue'
+
+const showMobileFilter = ref(false)
 
 const props = defineProps({
   background: {
     type: String,
-    default: 'bg-neutral' // Use DaisyUI 'neutral' color for backgrounds
+    default: 'bg-neutral'
   }
 })
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col text-base-content" :class="props.background" data-theme="carwow">
-    <!-- Header -->
-    <Header />
+    
+    <!-- Header with event to toggle mobile filter -->
+    <Header @toggleMobileFilter="showMobileFilter = true" />
 
     <!-- Main content -->
-    <main class="flex-1 w-full py-6">
+    <main class="flex-1 w-full pb-6">
       <div class="mx-auto w-full max-w-[1440px] px-6">
         <slot />
       </div>
@@ -32,5 +37,8 @@ const props = defineProps({
         </div>
       </div>
     </footer>
+
+    <!-- 📱 Mobile Filter Overlay (globally accessible) -->
+    <MobileFilterOverlay v-show="showMobileFilter" @close="showMobileFilter = false" />
   </div>
 </template>
