@@ -10,36 +10,39 @@
       <div class="flex gap-2 w-full max-w-[1440px] mx-auto px-6 py-3">
         <button
           @click="openMobileFilter"
-          class="flex items-center gap-1 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3"
+          class="flex items-center gap-1 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
         >
           <Filter class="w-5 h-5" /> Filter
           <span v-if="activeFilters.length" class="bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
             {{ activeFilters.length }}
           </span>
         </button>
-        <select v-model="sortOrder" class="select select-bordered select-sm font-medium flex-1">
-          <option value="">Pris (lav til høj)</option>
-          <option value="desc">Pris (høj til lav)</option>
-        </select>
+        <button
+          @click="sortOrder = sortOrder === 'desc' ? '' : 'desc'"
+          class="flex items-center justify-between gap-2 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          <span class="font-medium">{{ sortOrder === 'desc' ? 'Pris (høj til lav)' : 'Pris (lav til høj)' }}</span>
+          <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': sortOrder === 'desc' }" />
+        </button>
       </div>
     </div>
 
-    <!-- Main content with spacer for mobile -->
-    <div class="lg:hidden h-16"></div>
 
     <div class="flex flex-col gap-2 pt-6 lg:pt-6">
       <!-- 🔥 Top Section (Desktop) -->
       <div class="flex flex-col gap-2 lg:flex-row lg:gap-6 items-start mb-4">
-        <div class="w-full lg:w-1/4 flex items-center gap-2">
+        <!-- Result count with increased spacing -->
+        <div class="w-full lg:w-1/4 flex flex-col gap-3 mt-4 lg:mt-0">
           <ListingResultsResultCount :count="resultCount" class="text-2xl font-black" />
-        </div>
-        <div class="w-full lg:flex-1 max-w-4xl -mt-2 lg:mt-0">
-          <FilterChips
-            :activeFilters="activeFilters"
-            @remove-filter="removeFilter"
-            @reset-filters="resetAllFilters"
-            class="flex flex-wrap gap-2"
-          />
+          <!-- Filter chips with subtle connection to result count -->
+          <div class="flex flex-col gap-2">
+            <FilterChips
+              :activeFilters="activeFilters"
+              @remove-filter="removeFilter"
+              @reset-filters="resetAllFilters"
+              class="flex flex-wrap gap-2"
+            />
+          </div>
         </div>
         <div class="hidden lg:flex items-center gap-2">
           <label class="text-sm font-bold text-primary">Sortér efter</label>
@@ -83,7 +86,7 @@ import ListingResults from '../components/ListingResults.vue'
 import ListingResultsResultCount from '../components/ListingResultsResultCount.vue'
 import FilterChips from '../components/FilterChips.vue'
 import MobileFilterOverlay from '../components/MobileFilterOverlay.vue'
-import { Filter } from 'lucide-vue-next'
+import { Filter, ChevronDown } from 'lucide-vue-next'
 
 const defaultFilters = {
   make: '', model: '', fuel_type: '', transmission: '', body_type: '',
