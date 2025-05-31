@@ -1,33 +1,33 @@
 <!-- Enhanced Listings.vue with seamless header-to-filter transition -->
 <template>
   <BaseLayout>
-    <!-- 📱 Sticky Filter + Sort Bar - Seamless transition that replaces header -->
+    <!-- 📱 Sticky Filter + Sort Bar - Full width outside container -->
     <div
-      class="lg:hidden fixed left-0 right-0 z-50 bg-base-100 shadow-sm border-b border-gray-200"
-      :style="filterBarStyle"
+      class="lg:hidden sticky left-0 right-0 bg-base-100 shadow-sm border-b border-gray-200 z-40"
+      :class="stickyFilterClasses"
+      :style="stickyFilterStyle"
     >
-      <div class="flex gap-2 w-full max-w-[1440px] mx-auto" :style="filterInnerStyle">
+      <div class="flex gap-2 w-full max-w-[1440px] mx-auto px-6 py-3">
         <button
-          @click="showMobileFilter = true"
-          class="flex items-center gap-1 border border-gray-300 rounded-lg flex-1 transition-all duration-300"
-          :style="buttonStyle"
+          @click="openMobileFilter"
+          class="flex items-center gap-1 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3"
         >
           <Filter class="w-5 h-5" /> Filter
           <span v-if="activeFilters.length" class="bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
             {{ activeFilters.length }}
           </span>
         </button>
-        <select v-model="sortOrder" class="select select-bordered select-sm font-medium flex-1 transition-all duration-300">
+        <select v-model="sortOrder" class="select select-bordered select-sm font-medium flex-1">
           <option value="">Pris (lav til høj)</option>
           <option value="desc">Pris (høj til lav)</option>
         </select>
       </div>
     </div>
 
-    <div class="flex flex-col gap-2 pt-6 lg:pt-6">
-      <!-- Dynamic spacer - starts at header + filter height, then shrinks to just filter height -->
-      <div class="lg:hidden" :style="{ height: `${spacerHeight}px` }"></div>
+    <!-- Main content with spacer for mobile -->
+    <div class="lg:hidden h-16"></div>
 
+    <div class="flex flex-col gap-2 pt-6 lg:pt-6">
       <!-- 🔥 Top Section (Desktop) -->
       <div class="flex flex-col gap-2 lg:flex-row lg:gap-6 items-start mb-4">
         <div class="w-full lg:w-1/4 flex items-center gap-2">
@@ -65,13 +65,18 @@
         </section>
       </div>
 
-      <MobileFilterOverlay v-show="showMobileFilter" v-model:filters="filters" @close="showMobileFilter = false" />
+      <MobileFilterOverlay 
+        v-show="showMobileFilter" 
+        v-model:filters="filters" 
+        @close="closeMobileFilter"
+        @apply-filters="handleApplyFilters"
+      />
     </div>
   </BaseLayout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import BaseLayout from '../components/BaseLayout.vue'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ListingResults from '../components/ListingResults.vue'
@@ -92,13 +97,10 @@ const resultCount = ref(0)
 const sortOrder = ref('')
 const showMobileFilter = ref(false)
 const scrollY = ref(0)
+const isApplyingFilters = ref(false)
 
 // Constants for better maintainability
 const HEADER_HEIGHT = 64
-const FILTER_HEIGHT = 64 // Keep consistent height throughout
-const PADDING_INITIAL = 16
-const PADDING_STICKY = 12
-const TRANSITION_DISTANCE = 80 // Slightly longer transition for smoother effect
 
 onMounted(() => {
   const handleScroll = () => {
@@ -113,74 +115,25 @@ onMounted(() => {
   })
 })
 
-// Enhanced scroll progress - extends transition beyond header height for smoother effect
-const scrollProgress = computed(() => {
-  return Math.min(Math.max(scrollY.value / TRANSITION_DISTANCE, 0), 1)
-})
-
-// Check if filter should be fully sticky
-const isFullySticky = computed(() => scrollY.value >= TRANSITION_DISTANCE)
-
-// Smooth filter bar positioning that replaces header seamlessly
-const filterBarStyle = computed(() => {
-  const progress = scrollProgress.value
-  
-  // Start position: below header (64px from top)
-  // End position: at top (0px from top)
-  const topPosition = HEADER_HEIGHT * (1 - progress)
-  
-  // Keep consistent height - no resizing during transition
-  const height = FILTER_HEIGHT
-  
-  // Enhanced shadow based on progress
-  const shadowIntensity = progress
-  const shadowBlur = 4 + (shadowIntensity * 8)
-  const shadowOpacity = 0.1 + (shadowIntensity * 0.15)
+// Sticky positioning based on header scroll
+const stickyFilterStyle = computed(() => {
+  const topPosition = Math.max(HEADER_HEIGHT - scrollY.value, 0)
   
   return {
     top: `${topPosition}px`,
-    height: `${height}px`,
-    boxShadow: `0 ${shadowBlur}px ${shadowBlur * 2}px rgba(0, 0, 0, ${shadowOpacity})`,
-    transition: scrollY.value < 10 ? 'none' : 'box-shadow 0.3s ease-out', // Only animate shadow, not position
-    width: '100%',
-    backdropFilter: progress > 0.3 ? `blur(${progress * 8}px)` : 'none',
-    backgroundColor: progress > 0.1 ? `rgba(255, 255, 255, ${0.95 + progress * 0.05})` : 'rgb(255, 255, 255)',
+    width: '100vw',
+    marginLeft: 'calc(-50vw + 50%)'
   }
 })
 
-// Enhanced inner styling with smoother transitions
-const filterInnerStyle = computed(() => {
-  const progress = scrollProgress.value
-  const padding = PADDING_INITIAL - (progress * (PADDING_INITIAL - PADDING_STICKY))
-  
+// Enhanced sticky classes
+const stickyFilterClasses = computed(() => {
+  const isSticky = scrollY.value >= HEADER_HEIGHT
   return {
-    padding: `${padding}px 24px`,
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    transition: scrollY.value < 10 ? 'none' : 'padding 0.3s ease-out'
+    'shadow-lg': isSticky,
+    'backdrop-blur-sm': isSticky,
+    'bg-white/95': isSticky,
   }
-})
-
-// Button styling
-const buttonStyle = computed(() => ({
-  height: 'auto',
-  minHeight: '40px',
-  padding: '8px 12px'
-}))
-
-// Enhanced spacer that accounts for the smooth transition
-const spacerHeight = computed(() => {
-  const progress = scrollProgress.value
-  
-  // Keep filter height consistent - no resizing
-  const filterHeight = FILTER_HEIGHT
-  
-  // Initially: header height + filter height
-  // Finally: just filter height
-  const headerContribution = HEADER_HEIGHT * (1 - progress)
-  
-  return headerContribution + filterHeight
 })
 
 // Active filters computation
@@ -213,6 +166,33 @@ const activeFilters = computed(() => {
   
   return list
 })
+
+function openMobileFilter() {
+  showMobileFilter.value = true
+}
+
+function closeMobileFilter() {
+  showMobileFilter.value = false
+}
+
+function handleApplyFilters(newFilters) {
+  const exactScrollPosition = scrollY.value
+  
+  // Close overlay first
+  closeMobileFilter()
+  
+  // Use nextTick to wait for overlay to close, then update filters
+  nextTick(() => {
+    // Update filters after overlay is closed
+    filters.value = { ...newFilters }
+    
+    // Immediately restore scroll position
+    window.scrollTo({
+      top: exactScrollPosition,
+      behavior: 'instant'
+    })
+  })
+}
 
 function removeFilter(key) {
   const updated = { ...filters.value }

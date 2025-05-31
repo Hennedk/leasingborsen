@@ -1,11 +1,20 @@
 <template>
   <section>
-    <!-- Listings -->
-    <div v-if="!loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <ListingCard v-for="car in sortedCars" :key="car.id" :car="car" />
+    <!-- Loading overlay instead of replacing content -->
+    <div v-if="loading" class="relative">
+      <!-- Keep the old content visible but dimmed -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-50 pointer-events-none">
+        <ListingCard v-for="car in sortedCars" :key="car.id" :car="car" />
+      </div>
+      <!-- Loading spinner overlay -->
+      <div class="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75">
+        <div class="loading loading-spinner loading-lg"></div>
+      </div>
     </div>
-    <div v-else class="flex justify-center py-8">
-      <div class="loading loading-spinner loading-lg"></div>
+    
+    <!-- New content when not loading -->
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <ListingCard v-for="car in sortedCars" :key="car.id" :car="car" />
     </div>
   </section>
 </template>

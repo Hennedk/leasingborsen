@@ -126,7 +126,7 @@ const props = defineProps({
   filters: Object,
   resultCount: { type: Number, default: 0 }
 })
-const emit = defineEmits(['update:filters', 'close'])
+const emit = defineEmits(['update:filters', 'close', 'apply-filters'])
 
 const defaultFilters = {
   make: '', model: '', fuel_type: '', transmission: '', body_type: '',
@@ -163,8 +163,8 @@ function resetFilters() {
 }
 
 function applyFilters() {
-  emit('update:filters', { ...localFilters.value })
-  emit('close')
+  // Emit the apply-filters event with the current filters
+  emit('apply-filters', { ...localFilters.value })
 }
 
 async function fetchCount() {

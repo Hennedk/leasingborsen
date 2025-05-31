@@ -5,44 +5,58 @@ import { Filter } from 'lucide-vue-next'
 const mobileMenuOpen = ref(false)
 const scrollY = ref(0)
 
-// Match the transition distance from Listings.vue
-const TRANSITION_DISTANCE = 80
 const HEADER_HEIGHT = 64
 
+// Initialize scroll position on mount
 onMounted(() => {
+  // Set initial scroll position
+  scrollY.value = window.scrollY
+
   const handleScroll = () => {
     scrollY.value = window.scrollY
   }
+  
   // Use passive listener for better performance
   window.addEventListener('scroll', handleScroll, { passive: true })
   
   onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll)
   })
+
+  // Handle initial page load scroll position
+  if (window.scrollY > 0) {
+    scrollY.value = window.scrollY
+  }
 })
 
-// Smooth transition progress (0 = fully visible, 1 = fully hidden)
+// Natural scroll progress (0 = visible, 1 = hidden)
 const hideProgress = computed(() => {
-  return Math.min(Math.max(scrollY.value / TRANSITION_DISTANCE, 0), 1)
+  const progress = scrollY.value / HEADER_HEIGHT
+  return Math.min(Math.max(progress, 0), 1)
 })
 
 // Check if header should be completely hidden
-const isFullyHidden = computed(() => scrollY.value >= TRANSITION_DISTANCE)
+const isFullyHidden = computed(() => scrollY.value >= HEADER_HEIGHT)
 
-// Dynamic header styling for smooth transition
+// Dynamic header styling that follows natural scroll
 const headerStyle = computed(() => {
+  const currentPosition = -scrollY.value
   const progress = hideProgress.value
   
   return {
-    transform: `translateY(-${progress * 100}%)`,
-    opacity: 1 - (progress * 0.3), // Subtle opacity fade
-    transition: scrollY.value < 10 ? 'none' : 'opacity 0.3s ease-out', // Only animate opacity
+    transform: `translateY(${currentPosition}px)`,
+    opacity: 1 - (progress * 0.3),
+    transition: 'opacity 0.2s ease-out',
+    willChange: 'transform',
+    visibility: isFullyHidden.value ? 'hidden' : 'visible',
+    pointerEvents: isFullyHidden.value ? 'none' : 'auto'
   }
 })
 
 // Dynamic z-index to ensure proper layering
 const headerClasses = computed(() => ({
-  'pointer-events-none': isFullyHidden.value, // Disable interactions when hidden
+  'pointer-events-none': isFullyHidden.value,
+  'invisible': isFullyHidden.value
 }))
 </script>
 
