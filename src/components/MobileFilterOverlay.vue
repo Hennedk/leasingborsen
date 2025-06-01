@@ -1,121 +1,121 @@
 <template>
-  <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-end lg:hidden">
-    <div class="bg-base-100 w-full h-full rounded-none shadow-2xl flex flex-col">
+  <transition name="overlay" appear>
+    <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-end lg:hidden">
+      <transition name="slide-up" appear>
+        <div class="bg-base-100 w-full h-full rounded-none shadow-2xl flex flex-col transform">
 
-      <!-- Sticky Header with Ryd Alle and Close -->
-      <div class="flex justify-between items-center p-4 border-b border-base-200 shadow-sm sticky top-0 bg-base-100 z-10">
-        <a @click="resetFilters" class="text-primary underline cursor-pointer text-sm font-semibold inline-block">
-          Ryd alle
-        </a>
-        <button @click="emit('close')" class="text-base-content hover:text-error p-2 rounded-full transition">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
+          <!-- Sticky Header with Ryd Alle and Close -->
+          <div class="flex justify-between items-center p-4 border-b border-base-200 shadow-sm sticky top-0 bg-base-100 z-10">
+            <a @click="resetFilters" class="text-primary underline cursor-pointer text-sm font-semibold inline-block hover:text-primary/80 transition-colors duration-200">
+              Ryd alle
+            </a>
+            <button @click="emit('close')" class="text-base-content hover:text-error p-2 rounded-full transition-all duration-200 hover:scale-110 hover:bg-base-200">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
 
-      <!-- Filter Fields Section (NO card look) -->
-      <div class="flex-1 overflow-auto p-4 space-y-6">
-        <!-- Mærke -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
-          <select v-model="localFilters.make" class="select select-bordered w-full font-medium">
-            <option value="">Alle</option>
-            <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
-          </select>
-        </div>
+          <!-- Filter Fields Section (NO card look) -->
+          <div class="flex-1 overflow-auto p-4 space-y-6">
+            <!-- Mærke -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
+              <select v-model="localFilters.make" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <option value="">Alle</option>
+                <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
+              </select>
+            </div>
 
-        <!-- Model -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Model</label>
-          <select v-model="localFilters.model" class="select select-bordered w-full font-medium" :disabled="!localFilters.make">
-            <option value="">Alle</option>
-            <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
-          </select>
-        </div>
+            <!-- Model -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Model</label>
+              <select v-model="localFilters.model" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md" :disabled="!localFilters.make">
+                <option value="">Alle</option>
+                <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
+              </select>
+            </div>
 
-        <!-- Karosseri -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
-          <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium">
-            <option value="">Alle</option>
-            <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
-          </select>
-        </div>
+            <!-- Karosseri -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
+              <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <option value="">Alle</option>
+                <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
+              </select>
+            </div>
 
-        <!-- Drivmiddel -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
-          <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium">
-            <option value="">Alle</option>
-            <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
-          </select>
-        </div>
+            <!-- Drivmiddel -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
+              <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <option value="">Alle</option>
+                <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
+              </select>
+            </div>
 
-        <!-- Gearkasse Buttons -->
-<div>
-  <label class="block text-sm font-bold mb-2 text-primary">Geartype</label>
-  <div class="grid grid-cols-2 gap-4">
-    <button
-      class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
-      :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
-      @click="toggleTransmission('Automatic')"
-    >
-      Automatisk
-    </button>
-    <button
-      class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition"
-      :class="localFilters.transmission === 'Manual' ? 'bg-primary text-primary-content' : 'bg-base-100 text-primary'"
-      @click="toggleTransmission('Manual')"
-    >
-      Manuelt
-    </button>
-  </div>
-</div>
+            <!-- Gearkasse Buttons -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Geartype</label>
+              <div class="grid grid-cols-2 gap-4">
+                <button
+                  class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition-all duration-200 hover:scale-105"
+                  :class="localFilters.transmission === 'Automatic' ? 'bg-primary text-primary-content shadow-md' : 'bg-base-100 text-primary hover:bg-base-200'"
+                  @click="toggleTransmission('Automatic')"
+                >
+                  Automatisk
+                </button>
+                <button
+                  class="w-full h-12 rounded-lg border border-base-300 font-medium text-sm transition-all duration-200 hover:scale-105"
+                  :class="localFilters.transmission === 'Manual' ? 'bg-primary text-primary-content shadow-md' : 'bg-base-100 text-primary hover:bg-base-200'"
+                  @click="toggleTransmission('Manual')"
+                >
+                  Manuelt
+                </button>
+              </div>
+            </div>
 
-<!-- Seats -->
-<div>
-  <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
-  <div class="grid grid-cols-2 gap-4">
-    <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium">
-      <option :value="null">Min</option>
-      <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
-    </select>
-    <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium">
-      <option :value="null">Max</option>
-      <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
-    </select>
-  </div>
-</div>
+            <!-- Seats -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
+              <div class="grid grid-cols-2 gap-4">
+                <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                  <option :value="null">Min</option>
+                  <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+                </select>
+                <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                  <option :value="null">Max</option>
+                  <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
+                </select>
+              </div>
+            </div>
 
-        <!-- Price -->
-        <div>
-          <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
-          <div class="grid grid-cols-2 gap-4">
-            <select v-model.number="localFilters.price_min" class="select select-bordered w-full font-medium">
-              <option :value="null">Min</option>
-              <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
-            </select>
-            <select v-model.number="localFilters.price_max" class="select select-bordered w-full font-medium">
-              <option :value="null">Max</option>
-              <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
-              <option :value="9999999">10.000+ kr.</option>
-            </select>
+            <!-- Price -->
+            <div class="transform transition-all duration-300 hover:scale-[1.01]">
+              <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
+              <div class="grid grid-cols-2 gap-4">
+                <select v-model.number="localFilters.price_min" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                  <option :value="null">Min</option>
+                  <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
+                </select>
+                <select v-model.number="localFilters.price_max" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                  <option :value="null">Max</option>
+                  <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
+                  <option :value="9999999">10.000+ kr.</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky Bottom Bar -->
+          <div class="bg-base-200 p-4 border-t">
+            <button class="btn btn-primary w-full font-bold transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]" @click="applyFilters">
+              Vis {{ resultCount }} resultater
+            </button>
           </div>
         </div>
-      </div>
-
-      <!-- Sticky Bottom Bar -->
-      <div class="bg-base-200 p-4 border-t">
-        <button class="btn btn-primary w-full font-bold" @click="applyFilters">
-          Vis {{ resultCount }} resultater
-        </button>
-      </div>
+      </transition>
     </div>
-  </div>
+  </transition>
 </template>
-
-
-
-
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
@@ -142,7 +142,6 @@ const resultCount = ref(0)
 watch(() => props.filters, (newFilters) => {
   localFilters.value = { ...defaultFilters, ...newFilters }
 }, { immediate: true, deep: true })
-
 
 const filteredModels = computed(() =>
   !localFilters.value.make ? [] :
@@ -205,3 +204,35 @@ onMounted(async () => {
   fetchCount()
 })
 </script>
+
+<style scoped>
+/* Overlay backdrop animation */
+.overlay-enter-active,
+.overlay-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.overlay-enter-from,
+.overlay-leave-to {
+  opacity: 0;
+}
+
+/* Slide-up animation for the panel */
+.slide-up-enter-active {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.slide-up-leave-active {
+  transition: all 0.3s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+.slide-up-enter-from {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+</style>

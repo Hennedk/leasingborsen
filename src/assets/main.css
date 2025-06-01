@@ -5,6 +5,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent scrollbar layout shifts */
+html {
+  scroll-behavior: smooth;
+  overflow-y: scroll; /* Force scrollbar to always be visible */
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 #app {
   @apply w-full font-sans text-base-content bg-base-100;
 }

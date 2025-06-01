@@ -51,22 +51,24 @@
               </button>
               
               <!-- Sort dropdown -->
-              <div v-if="showMobileSortDropdown" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
-                <button
-                  @click="selectSortOption('')"
-                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-                  :class="{ 'text-primary font-medium': sortOrder === '' }"
-                >
-                  Lowest price
-                </button>
-                <button
-                  @click="selectSortOption('desc')"
-                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-                  :class="{ 'text-primary font-medium': sortOrder === 'desc' }"
-                >
-                  Highest price
-                </button>
-              </div>
+              <transition name="dropdown">
+                <div v-if="showMobileSortDropdown" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                  <button
+                    @click="selectSortOption('')"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
+                    :class="{ 'text-primary font-medium bg-primary/5': sortOrder === '' }"
+                  >
+                    Lowest price
+                  </button>
+                  <button
+                    @click="selectSortOption('desc')"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
+                    :class="{ 'text-primary font-medium bg-primary/5': sortOrder === 'desc' }"
+                  >
+                    Highest price
+                  </button>
+                </div>
+              </transition>
             </div>
           </div>
         </div>
@@ -97,22 +99,24 @@
                 </button>
                 
                 <!-- Desktop Sort dropdown -->
-                <div v-if="showDesktopSortDropdown" class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
-                  <button
-                    @click="selectDesktopSortOption('')"
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-                    :class="{ 'text-primary font-medium': sortOrder === '' }"
-                  >
-                    Lowest price
-                  </button>
-                  <button
-                    @click="selectDesktopSortOption('desc')"
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
-                    :class="{ 'text-primary font-medium': sortOrder === 'desc' }"
-                  >
-                    Highest price
-                  </button>
-                </div>
+                <transition name="dropdown">
+                  <div v-if="showDesktopSortDropdown" class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                    <button
+                      @click="selectDesktopSortOption('')"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
+                      :class="{ 'text-primary font-medium bg-primary/5': sortOrder === '' }"
+                    >
+                      Lowest price
+                    </button>
+                    <button
+                      @click="selectDesktopSortOption('desc')"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
+                      :class="{ 'text-primary font-medium bg-primary/5': sortOrder === 'desc' }"
+                    >
+                      Highest price
+                    </button>
+                  </div>
+                </transition>
               </div>
             </div>
             
@@ -133,6 +137,7 @@
             :sortOrder="sortOrder"
             @update:filters="filters = $event"
             @update:count="resultCount = $event"
+            @reset-filters="resetAllFilters"
           />
         </section>
       </div>
@@ -144,6 +149,7 @@
           :sortOrder="sortOrder"
           @update:filters="filters = $event"
           @update:count="resultCount = $event"
+          @reset-filters="resetAllFilters"
         />
       </section>
 
@@ -159,7 +165,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import BaseLayout from '../components/BaseLayout.vue'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import ListingResults from '../components/ListingResults.vue'
@@ -175,14 +182,43 @@ const defaultFilters = {
   listingStatus: '', driveType: '', availableBefore: ''
 }
 
-const filters = ref({ ...defaultFilters })
+const route = useRoute()
+const router = useRouter()
+
+// Initialize filters from URL parameters or defaults
+const initializeFiltersFromURL = () => {
+  const urlFilters = { ...defaultFilters }
+  
+  // Read each filter from URL query parameters
+  if (route.query.make) urlFilters.make = route.query.make
+  if (route.query.model) urlFilters.model = route.query.model
+  if (route.query.fuel_type) urlFilters.fuel_type = route.query.fuel_type
+  if (route.query.transmission) urlFilters.transmission = route.query.transmission
+  if (route.query.body_type) urlFilters.body_type = route.query.body_type
+  if (route.query.condition) urlFilters.condition = route.query.condition
+  if (route.query.listingStatus) urlFilters.listingStatus = route.query.listingStatus
+  if (route.query.driveType) urlFilters.driveType = route.query.driveType
+  if (route.query.availableBefore) urlFilters.availableBefore = route.query.availableBefore
+  
+  // Handle numeric filters
+  if (route.query.horsepower) urlFilters.horsepower = parseInt(route.query.horsepower)
+  if (route.query.seats_min) urlFilters.seats_min = parseInt(route.query.seats_min)
+  if (route.query.seats_max) urlFilters.seats_max = parseInt(route.query.seats_max)
+  if (route.query.price_min) urlFilters.price_min = parseInt(route.query.price_min)
+  if (route.query.price_max) urlFilters.price_max = parseInt(route.query.price_max)
+  
+  return urlFilters
+}
+
+const filters = ref(initializeFiltersFromURL())
 const resultCount = ref(0)
-const sortOrder = ref('')
+const sortOrder = ref(route.query.sort || '')
 const showMobileFilter = ref(false)
 const scrollY = ref(0)
 const isApplyingFilters = ref(false)
 const showMobileSortDropdown = ref(false)
 const showDesktopSortDropdown = ref(false)
+const filterOrder = ref([]) // Track the order filters were added
 
 // Constants for better maintainability
 const HEADER_HEIGHT = 64
@@ -225,32 +261,38 @@ const stickyFilterClasses = computed(() => {
 // Active filters computation
 const activeFilters = computed(() => {
   const f = filters.value
-  const list = []
+  const filterMap = new Map()
   const transmissionLabels = {
     'Automatic': 'Automatisk gear',
     'Manual': 'Manuelt gear'
   }
   
-  if (f.make) list.push({ key: 'make', label: f.make })
-  if (f.model) list.push({ key: 'model', label: f.model })
-  if (f.fuel_type) list.push({ key: 'fuel_type', label: f.fuel_type })
-  if (f.body_type) list.push({ key: 'body_type', label: f.body_type })
-  if (f.transmission) list.push({ 
+  // Build a map of all possible active filters
+  if (f.make) filterMap.set('make', { key: 'make', label: f.make })
+  if (f.model) filterMap.set('model', { key: 'model', label: f.model })
+  if (f.fuel_type) filterMap.set('fuel_type', { key: 'fuel_type', label: f.fuel_type })
+  if (f.body_type) filterMap.set('body_type', { key: 'body_type', label: f.body_type })
+  if (f.transmission) filterMap.set('transmission', { 
     key: 'transmission', 
     label: transmissionLabels[f.transmission] || f.transmission 
   })
   if (f.seats_min != null || f.seats_max != null) {
     const min = f.seats_min ?? ''
     const max = f.seats_max ?? ''
-    list.push({ key: 'seats', label: `Sæder: ${min} - ${max}` })
+    filterMap.set('seats', { key: 'seats', label: `Sæder: ${min} - ${max}` })
   }
   if (f.price_min != null || f.price_max != null) {
     const min = f.price_min ?? ''
     const max = f.price_max ?? ''
-    list.push({ key: 'price', label: `Pris: ${min} - ${max} kr.` })
+    filterMap.set('price', { key: 'price', label: `Pris: ${min} - ${max} kr.` })
   }
   
-  return list
+  // Return filters ordered by most recently added (reverse order)
+  return filterOrder.value
+    .slice()
+    .reverse() // Most recent first (leftmost)
+    .map(key => filterMap.get(key))
+    .filter(Boolean) // Remove any undefined filters
 })
 
 // Computed property for current sort label
@@ -317,4 +359,96 @@ function selectDesktopSortOption(option) {
   sortOrder.value = option
   showDesktopSortDropdown.value = false
 }
+
+// Update URL when filters change
+const updateURL = () => {
+  const query = {}
+  
+  // Add non-empty string filters
+  Object.keys(filters.value).forEach(key => {
+    const value = filters.value[key]
+    if (value !== '' && value !== null && value !== undefined) {
+      query[key] = value
+    }
+  })
+  
+  // Add sort order if not default
+  if (sortOrder.value) {
+    query.sort = sortOrder.value
+  }
+  
+  // Update URL without triggering navigation
+  router.replace({ 
+    path: route.path, 
+    query: Object.keys(query).length > 0 ? query : undefined 
+  })
+}
+
+// Watch for filter changes and update URL
+watch(filters, updateURL, { deep: true })
+watch(sortOrder, updateURL)
+
+// Track filter order changes
+watch(filters, (newFilters, oldFilters) => {
+  if (!oldFilters) {
+    // Initialize filter order from URL on first load
+    const activeKeys = []
+    if (newFilters.make) activeKeys.push('make')
+    if (newFilters.model) activeKeys.push('model')
+    if (newFilters.fuel_type) activeKeys.push('fuel_type')
+    if (newFilters.body_type) activeKeys.push('body_type')
+    if (newFilters.transmission) activeKeys.push('transmission')
+    if (newFilters.seats_min != null || newFilters.seats_max != null) activeKeys.push('seats')
+    if (newFilters.price_min != null || newFilters.price_max != null) activeKeys.push('price')
+    filterOrder.value = activeKeys
+    return
+  }
+
+  // Check which filters were added or removed
+  const keys = ['make', 'model', 'fuel_type', 'body_type', 'transmission', 'seats', 'price']
+  
+  keys.forEach(key => {
+    const hasOldValue = key === 'seats' 
+      ? (oldFilters.seats_min != null || oldFilters.seats_max != null)
+      : key === 'price'
+      ? (oldFilters.price_min != null || oldFilters.price_max != null)
+      : oldFilters[key] && oldFilters[key] !== ''
+    
+    const hasNewValue = key === 'seats'
+      ? (newFilters.seats_min != null || newFilters.seats_max != null)
+      : key === 'price'
+      ? (newFilters.price_min != null || newFilters.price_max != null)
+      : newFilters[key] && newFilters[key] !== ''
+    
+    if (!hasOldValue && hasNewValue) {
+      // Filter was added - remove if exists and add to end
+      filterOrder.value = filterOrder.value.filter(k => k !== key)
+      filterOrder.value.push(key)
+    } else if (hasOldValue && !hasNewValue) {
+      // Filter was removed
+      filterOrder.value = filterOrder.value.filter(k => k !== key)
+    }
+  })
+}, { deep: true })
 </script>
+
+<style scoped>
+/* Dropdown animations */
+.dropdown-enter-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.dropdown-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+.dropdown-enter-from {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
+}
+</style>
