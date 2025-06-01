@@ -223,6 +223,23 @@ const filterOrder = ref([]) // Track the order filters were added
 // Constants for better maintainability
 const HEADER_HEIGHT = 64
 
+// Initialize filter order from URL filters
+const initializeFilterOrder = () => {
+  const activeKeys = []
+  const f = filters.value
+  if (f.make) activeKeys.push('make')
+  if (f.model) activeKeys.push('model')
+  if (f.fuel_type) activeKeys.push('fuel_type')
+  if (f.body_type) activeKeys.push('body_type')
+  if (f.transmission) activeKeys.push('transmission')
+  if (f.seats_min != null || f.seats_max != null) activeKeys.push('seats')
+  if (f.price_min != null || f.price_max != null) activeKeys.push('price')
+  filterOrder.value = activeKeys
+}
+
+// Initialize filter order on mount
+initializeFilterOrder()
+
 onMounted(() => {
   const handleScroll = () => {
     scrollY.value = window.scrollY

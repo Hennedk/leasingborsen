@@ -41,7 +41,7 @@
     <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 min-h-0">
       <ListingCard 
         v-for="car in sortedCars" 
-        :key="car.id" 
+        :key="car.id || car.listing_id || Math.random()" 
         :car="car"
         :loading="false"
       />
@@ -140,9 +140,18 @@ watch(() => props.filters, fetchCars, { immediate: true, deep: true })
 
 // Sorting logic (controlled externally)
 const sortedCars = computed(() => {
-  if (props.sortOrder === 'price_asc') return [...cars.value].sort((a, b) => a.monthly_price - b.monthly_price)
-  if (props.sortOrder === 'price_desc') return [...cars.value].sort((a, b) => b.monthly_price - a.monthly_price)
-  if (props.sortOrder === 'best_deal') return [...cars.value].sort((a, b) => (b.deal_score ?? 0) - (a.deal_score ?? 0))
+  if (props.sortOrder === '' || props.sortOrder === 'asc') {
+    // Default or ascending: lowest price first
+    return [...cars.value].sort((a, b) => (a.monthly_price || 0) - (b.monthly_price || 0))
+  }
+  if (props.sortOrder === 'desc') {
+    // Descending: highest price first
+    return [...cars.value].sort((a, b) => (b.monthly_price || 0) - (a.monthly_price || 0))
+  }
+  if (props.sortOrder === 'best_deal') {
+    return [...cars.value].sort((a, b) => (b.deal_score ?? 0) - (a.deal_score ?? 0))
+  }
+  // Default fallback
   return cars.value
 })
 

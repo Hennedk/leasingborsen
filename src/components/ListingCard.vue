@@ -95,8 +95,8 @@ onMounted(() => {
 
   <!-- Real Content State -->
   <RouterLink
-    v-else-if="car"
-    :to="{ name: 'Listing', params: { id: car.listing_id } }"
+    v-else-if="car && (car.id || car.listing_id)"
+    :to="{ name: 'Listing', params: { id: car.id || car.listing_id } }"
     class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline"
   >
     <div class="card rounded-lg overflow-hidden">

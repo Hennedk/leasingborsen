@@ -8,13 +8,20 @@ import { supabase } from '../lib/supabase'
 const latestListings = ref([])
 
 onMounted(async () => {
-  const { data, error } = await supabase
-    .from('listings')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(4)
+  try {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(4)
 
-  if (!error) latestListings.value = data
+    if (!error && data) {
+      // Filter out any listings without proper id
+      latestListings.value = data.filter(listing => listing && listing.id)
+    }
+  } catch (err) {
+    console.error('Error fetching latest listings:', err)
+  }
 })
 </script>
 
