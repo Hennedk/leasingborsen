@@ -1,8 +1,8 @@
 <template>
-  <div class="flex flex-wrap gap-2">
+  <div class="flex gap-2" :class="{ 'flex-wrap': !$attrs.class?.includes('flex-nowrap') }">
     <template v-for="filter in activeFilters" :key="filter.key">
       <div
-        class="inline-flex items-center gap-1 bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm hover:shadow-md transition-shadow duration-200"
+        class="inline-flex items-center gap-1 bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm hover:shadow-md transition-shadow duration-200 whitespace-nowrap flex-shrink-0"
       >
         <span>{{ filter.label }}</span>
         <button

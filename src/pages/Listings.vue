@@ -1,64 +1,133 @@
 <!-- Enhanced Listings.vue with seamless header-to-filter transition -->
 <template>
   <BaseLayout>
-    <!-- 📱 Sticky Filter + Sort Bar - Full width outside container -->
+    <!-- 📱 Sticky Filter + Sort Bar - Full width outside container (MOBILE ONLY) -->
     <div
-      class="lg:hidden sticky left-0 right-0 bg-base-100 shadow-sm border-b border-gray-200 z-40"
+      class="lg:hidden sticky left-0 right-0 bg-card-bg shadow-sm border-b border-gray-200 z-40"
       :class="stickyFilterClasses"
       :style="stickyFilterStyle"
     >
-      <div class="flex gap-2 w-full max-w-[1440px] mx-auto px-6 py-3">
+      <div class="flex items-center gap-2 w-full max-w-[1440px] mx-auto px-6 py-3">
         <button
           @click="openMobileFilter"
-          class="flex items-center gap-1 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          class="flex items-center gap-1 border border-gray-300 rounded-lg transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 flex-shrink-0"
         >
           <Filter class="w-5 h-5" /> Filter
           <span v-if="activeFilters.length" class="bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
             {{ activeFilters.length }}
           </span>
         </button>
-        <button
-          @click="sortOrder = sortOrder === 'desc' ? '' : 'desc'"
-          class="flex items-center justify-between gap-2 border border-gray-300 rounded-lg flex-1 transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-        >
-          <span class="font-medium">{{ sortOrder === 'desc' ? 'Pris (høj til lav)' : 'Pris (lav til høj)' }}</span>
-          <ChevronDown class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': sortOrder === 'desc' }" />
-        </button>
+        <!-- Filter chips in the same bar -->
+        <div class="flex-1 overflow-x-auto">
+          <FilterChips
+            :activeFilters="activeFilters"
+            @remove-filter="removeFilter"
+            @reset-filters="resetAllFilters"
+            class="flex gap-2 flex-nowrap"
+          />
+        </div>
       </div>
     </div>
 
-
-    <div class="flex flex-col gap-2 pt-6 lg:pt-6">
-      <!-- 🔥 Top Section (Desktop) -->
-      <div class="flex flex-col gap-2 lg:flex-row lg:gap-6 items-start mb-4">
-        <!-- Result count with increased spacing -->
-        <div class="w-full lg:w-1/4 flex flex-col gap-3 mt-4 lg:mt-0">
-          <ListingResultsResultCount :count="resultCount" class="text-2xl font-black" />
-          <!-- Filter chips with subtle connection to result count -->
-          <div class="flex flex-col gap-2">
-            <FilterChips
-              :activeFilters="activeFilters"
-              @remove-filter="removeFilter"
-              @reset-filters="resetAllFilters"
-              class="flex flex-wrap gap-2"
-            />
+    <div class="flex flex-col gap-2 lg:pt-6">
+      <!-- 📱 MOBILE: Result count and sorting section -->
+      <div class="lg:hidden">
+        <div class="mt-6 mb-4 space-y-4">
+          <!-- Result count - full width -->
+          <div>
+            <ListingResultsResultCount :count="resultCount" class="text-xl font-bold text-gray-900" />
           </div>
-        </div>
-        <div class="hidden lg:flex items-center gap-2">
-          <label class="text-sm font-bold text-primary">Sortér efter</label>
-          <select v-model="sortOrder" class="select select-bordered select-sm font-medium !text-xs leading-tight px-2 py-0.5 w-48 h-8">
-            <option value="">Pris (lav til høj)</option>
-            <option value="desc">Pris (høj til lav)</option>
-          </select>
+          
+          <!-- Sorting row -->
+          <div class="flex items-center">
+            <div class="relative">
+              <button
+                @click="showMobileSortDropdown = !showMobileSortDropdown"
+                class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 py-1"
+              >
+                <ArrowUpDown class="w-4 h-4 text-gray-500" />
+                <span>{{ currentSortLabel }}</span>
+                <ChevronDown class="w-3 h-3 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': showMobileSortDropdown }" />
+              </button>
+              
+              <!-- Sort dropdown -->
+              <div v-if="showMobileSortDropdown" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                <button
+                  @click="selectSortOption('')"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  :class="{ 'text-primary font-medium': sortOrder === '' }"
+                >
+                  Lowest price
+                </button>
+                <button
+                  @click="selectSortOption('desc')"
+                  class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                  :class="{ 'text-primary font-medium': sortOrder === 'desc' }"
+                >
+                  Highest price
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 🔥 Main Content -->
-      <div class="flex flex-col lg:flex-row gap-6">
-        <aside class="w-full lg:w-1/4 hidden lg:block">
+      <!-- 🖥️ DESKTOP: Two Column Layout -->
+      <div class="hidden lg:flex lg:gap-6">
+        <!-- LEFT COLUMN: Filters -->
+        <aside class="w-1/4">
           <FilterSidebar v-model:filters="filters" @update:sortOrder="sortOrder = $event" />
         </aside>
+        
+        <!-- RIGHT COLUMN: All Content -->
         <section class="flex-1">
+          <!-- Top section with result count, chips, and sorting -->
+          <div class="flex flex-col gap-4 mb-6">
+            <!-- Result count and sorting row -->
+            <div class="flex items-center justify-between">
+              <ListingResultsResultCount :count="resultCount" class="text-2xl font-black" />
+              <div class="relative">
+                <button
+                  @click="showDesktopSortDropdown = !showDesktopSortDropdown"
+                  class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 py-1"
+                >
+                  <ArrowUpDown class="w-4 h-4 text-gray-500" />
+                  <span>{{ currentSortLabel }}</span>
+                  <ChevronDown class="w-3 h-3 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': showDesktopSortDropdown }" />
+                </button>
+                
+                <!-- Desktop Sort dropdown -->
+                <div v-if="showDesktopSortDropdown" class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                  <button
+                    @click="selectDesktopSortOption('')"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    :class="{ 'text-primary font-medium': sortOrder === '' }"
+                  >
+                    Lowest price
+                  </button>
+                  <button
+                    @click="selectDesktopSortOption('desc')"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors"
+                    :class="{ 'text-primary font-medium': sortOrder === 'desc' }"
+                  >
+                    Highest price
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Filter chips -->
+            <div>
+              <FilterChips
+                :activeFilters="activeFilters"
+                @remove-filter="removeFilter"
+                @reset-filters="resetAllFilters"
+                class="flex flex-wrap gap-2"
+              />
+            </div>
+          </div>
+
+          <!-- Listing Results -->
           <ListingResults
             :filters="filters"
             :sortOrder="sortOrder"
@@ -68,6 +137,17 @@
         </section>
       </div>
 
+      <!-- 📱 MOBILE: Results Section -->
+      <section class="lg:hidden">
+        <ListingResults
+          :filters="filters"
+          :sortOrder="sortOrder"
+          @update:filters="filters = $event"
+          @update:count="resultCount = $event"
+        />
+      </section>
+
+      <!-- Mobile Filter Overlay -->
       <MobileFilterOverlay 
         v-show="showMobileFilter" 
         v-model:filters="filters" 
@@ -86,7 +166,7 @@ import ListingResults from '../components/ListingResults.vue'
 import ListingResultsResultCount from '../components/ListingResultsResultCount.vue'
 import FilterChips from '../components/FilterChips.vue'
 import MobileFilterOverlay from '../components/MobileFilterOverlay.vue'
-import { Filter, ChevronDown } from 'lucide-vue-next'
+import { Filter, ChevronDown, ArrowUpDown } from 'lucide-vue-next'
 
 const defaultFilters = {
   make: '', model: '', fuel_type: '', transmission: '', body_type: '',
@@ -101,6 +181,8 @@ const sortOrder = ref('')
 const showMobileFilter = ref(false)
 const scrollY = ref(0)
 const isApplyingFilters = ref(false)
+const showMobileSortDropdown = ref(false)
+const showDesktopSortDropdown = ref(false)
 
 // Constants for better maintainability
 const HEADER_HEIGHT = 64
@@ -136,6 +218,7 @@ const stickyFilterClasses = computed(() => {
     'shadow-lg': isSticky,
     'backdrop-blur-sm': isSticky,
     'bg-white/95': isSticky,
+    'border-t': !isSticky, // Only show top border when not sticky
   }
 })
 
@@ -168,6 +251,14 @@ const activeFilters = computed(() => {
   }
   
   return list
+})
+
+// Computed property for current sort label
+const currentSortLabel = computed(() => {
+  switch (sortOrder.value) {
+    case 'desc': return 'Highest price'
+    default: return 'Lowest price'
+  }
 })
 
 function openMobileFilter() {
@@ -215,5 +306,15 @@ function removeFilter(key) {
 
 function resetAllFilters() {
   filters.value = { ...defaultFilters }
+}
+
+function selectSortOption(option) {
+  sortOrder.value = option
+  showMobileSortDropdown.value = false
+}
+
+function selectDesktopSortOption(option) {
+  sortOrder.value = option
+  showDesktopSortDropdown.value = false
 }
 </script>

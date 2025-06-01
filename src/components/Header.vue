@@ -62,7 +62,7 @@ const headerClasses = computed(() => ({
 
 <template>
   <header 
-    class="bg-neutral shadow-sm sticky top-0 z-40"
+    class="bg-card-bg shadow-sm sticky top-0 z-40"
     :class="headerClasses"
     :style="headerStyle"
   >
@@ -82,13 +82,13 @@ const headerClasses = computed(() => ({
 
       <!-- Mobile actions: menu + filter stacked for spacing -->
       <div class="flex flex-col items-center gap-2 lg:hidden">
-        <!-- Menu Button: less prominent -->
+        <!-- Menu Button: simple icon without background -->
         <button 
-          class="btn btn-outline btn-sm rounded-full" 
+          class="p-2 text-primary hover:text-primary/70 transition-colors" 
           @click="mobileMenuOpen = !mobileMenuOpen"
           :disabled="isFullyHidden"
         >
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 6h16M4 12h16M4 18h16" />
           </svg>
@@ -99,7 +99,7 @@ const headerClasses = computed(() => ({
     <!-- Mobile Menu - only show when header is visible and menu is open -->
     <div v-if="mobileMenuOpen && !isFullyHidden" class="lg:hidden">
       <div class="mx-auto w-full max-w-[1440px] px-6">
-        <ul class="bg-neutral w-full py-3 rounded-lg shadow-lg space-y-2 text-base">
+        <ul class="bg-card-bg w-full py-3 rounded-lg shadow-lg space-y-2 text-base">
           <li><router-link to="/" @click="mobileMenuOpen = false" class="block px-4 py-2">Home</router-link></li>
           <li><router-link to="/listings" @click="mobileMenuOpen = false" class="block px-4 py-2">Listings</router-link></li>
           <li><router-link to="/create" @click="mobileMenuOpen = false" class="block px-4 py-2">Opret</router-link></li>
