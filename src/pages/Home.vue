@@ -1,6 +1,7 @@
 <script setup>
 import BaseLayout from '../components/BaseLayout.vue'
 import HeroBanner from '../components/HeroBanner.vue'
+import PopularCategories from '../components/PopularCategories.vue'
 import CarListingGrid from '../components/CarListingGrid.vue'
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
@@ -33,6 +34,9 @@ onMounted(async () => {
     
     <!-- Hero section with search - FULL WIDTH -->
     <HeroBanner />
+
+    <!-- Popular Categories section -->
+    <PopularCategories />
 
     <!-- Main content wrapped in BaseLayout structure -->
     <main class="flex-1 w-full pb-6">
