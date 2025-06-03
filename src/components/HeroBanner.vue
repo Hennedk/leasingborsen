@@ -8,27 +8,19 @@ const router = useRouter()
 const filters = ref({
   make: '',
   model: '',
-  fuel_type: '',
-  body_type: '',
-  transmission: '',
-  horsepower: null,
-  seats_min: null,
-  seats_max: null,
-  price_min: null,
-  price_max: null,
-  condition: '',
-  listingStatus: '',
-  driveType: '',
-  availableBefore: ''
+  body_type: '', // Vehicle type
+  price_max: null, // Max price
 })
 
-// Data from Supabase (aligned with filter components)
+// Data from Supabase
 const makes = ref([])
 const models = ref([])
-const fuelTypes = ref([])
 const bodyTypes = ref([])
 const resultCount = ref(0)
 const isMounted = ref(false)
+
+// Price steps for max price dropdown (reusing existing logic)
+const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
 
 const filteredModels = computed(() => {
   if (!filters.value.make) return []
@@ -41,7 +33,7 @@ const filteredModels = computed(() => {
 const queryParams = computed(() => {
   const cleanFilters = {}
   Object.entries(filters.value).forEach(([key, value]) => {
-    if (value && value !== '') {
+    if (value && value !== '' && value !== null) {
       cleanFilters[key] = value
     }
   })
@@ -53,7 +45,7 @@ watch(() => filters.value.make, () => {
   filters.value.model = ''
 })
 
-// Fetch result count based on current filters (aligned with ListingResults)
+// Fetch result count based on current filters
 async function fetchCount() {
   if (!isMounted.value) return
   
@@ -61,21 +53,10 @@ async function fetchCount() {
     let query = supabase.from('full_listing_view').select('*', { count: 'exact', head: true })
     const f = filters.value
     
-    // Use exact same logic as ListingResults fetchCars function
     if (f.make) query = query.ilike('make', `%${f.make}%`)
     if (f.model) query = query.ilike('model', `%${f.model}%`)
-    if (f.fuel_type) query = query.eq('fuel_type', f.fuel_type)
     if (f.body_type) query = query.eq('body_type', f.body_type)
-    if (f.transmission) query = query.eq('transmission', f.transmission)
-    if (f.horsepower) query = query.gte('horsepower', f.horsepower)
-    if (f.seats_min != null) query = query.gte('seats', f.seats_min)
-    if (f.seats_max != null) query = query.lte('seats', f.seats_max)
-    if (f.price_min != null) query = query.gte('monthly_price', f.price_min)
     if (f.price_max != null) query = query.lte('monthly_price', f.price_max)
-    if (f.condition) query = query.eq('condition', f.condition)
-    if (f.listingStatus) query = query.eq('listing_status', f.listingStatus)
-    if (f.driveType) query = query.eq('drive_type', f.driveType)
-    if (f.availableBefore) query = query.lte('availability_date', f.availableBefore)
 
     const { count, error } = await query
     if (isMounted.value) {
@@ -89,10 +70,10 @@ async function fetchCount() {
   }
 }
 
-// Watch filters and fetch count (removed immediate to prevent unmount issues)
+// Watch filters and fetch count
 const watchStopHandle = watch(filters, fetchCount, { deep: true })
 
-// Fetch data on mount (aligned with filter components)
+// Fetch data on mount
 onMounted(async () => {
   isMounted.value = true
   
@@ -100,7 +81,6 @@ onMounted(async () => {
   
   makes.value = (await fetchData('makes')).sort((a, b) => a.name.localeCompare(b.name))
   models.value = await fetchData('models')
-  fuelTypes.value = await fetchData('fuel_types')
   bodyTypes.value = await fetchData('body_types')
   
   await fetchCount()
@@ -112,62 +92,225 @@ onUnmounted(() => {
 })
 
 // Navigation function
-function navigateToListings() {
+function findCars() {
   router.push({ path: '/listings', query: queryParams.value })
 }
 </script>
 
 <template>
-  <section class="hero min-h-[60vh] bg-primary text-neutral-content mb-10">
-    <div class="hero-overlay bg-opacity-60"></div>
-    <div class="hero-content w-full px-6">
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 w-full">
-        <!-- Filters -->
-        <div class="lg:col-span-2 bg-base-100 p-6 rounded-lg shadow space-y-4 text-neutral">
-          <h2 class="text-xl font-semibold">Find din bil</h2>
+  <section class="hero min-h-[400px] lg:min-h-[600px] bg-gradient-to-br from-primary via-primary to-primary-focus relative overflow-hidden w-full">
+    <!-- Enhanced Background decorative elements -->
+    <div class="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/40"></div>
+    <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 via-white/2 to-transparent"></div>
+    <div class="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-tr from-white/3 to-transparent"></div>
+    <!-- Subtle radial gradient behind content -->
+    <div class="absolute inset-0 bg-radial-gradient from-white/5 via-transparent to-transparent"></div>
+    
+    <div class="w-full">
+      <div class="max-w-[1440px] mx-auto px-4 lg:px-6 py-6 lg:py-8 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-12 w-full items-center">
+          
+          <!-- LEFT SIDE: Search Box with improved grouping -->
+          <div class="order-2 lg:order-1 lg:col-span-2 animate-slide-in-left px-2 py-4 lg:p-0">
+            <div class="bg-card-bg/98 backdrop-blur-md rounded-3xl shadow-2xl p-4 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300/50 space-y-4 lg:space-y-6 transition-all duration-500 ease-in">
+              <!-- Grouped heading and form with tighter mobile spacing -->
+              <div class="space-y-2 lg:space-y-4">
+                <h2 class="text-xl lg:text-2xl font-bold text-gray-900 text-center lg:text-left leading-tight">
+                  Søg blandt hundredvis af leasingbiler – find din drømmebil nu
+                </h2>
+                
+                <div class="space-y-3 lg:space-y-5">
+                  <!-- First Row: Make and Model -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                    <!-- Make Dropdown -->
+                    <div>
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Mærke</label>
+                      <select 
+                        v-model="filters.make" 
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        aria-label="Vælg bilmærke"
+                      >
+                        <option value="">Vælg mærke</option>
+                        <option v-for="make in makes" :key="make.id" :value="make.name">
+                          {{ make.name }}
+                        </option>
+                      </select>
+                    </div>
 
-          <select v-model="filters.make" class="select select-bordered w-full">
-            <option value="">Alle mærker</option>
-            <option v-for="make in makes" :key="make.id" :value="make.name">
-              {{ make.name }}
-            </option>
-          </select>
+                    <!-- Model Dropdown -->
+                    <div>
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
+                      <select 
+                        v-model="filters.model" 
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                        :disabled="!filters.make"
+                        aria-label="Vælg bilmodel"
+                      >
+                        <option value="">
+                          {{ filters.make ? 'Vælg model' : 'Vælg mærke først' }}
+                        </option>
+                        <option v-for="model in filteredModels" :key="model.id" :value="model.name">
+                          {{ model.name }}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
 
-          <select v-model="filters.model" class="select select-bordered w-full" :disabled="!filters.make">
-            <option value="">
-              {{ filters.make ? 'Alle modeller' : 'Vælg mærke først' }}
-            </option>
-            <option v-for="model in filteredModels" :key="model.id" :value="model.name">
-              {{ model.name }}
-            </option>
-          </select>
+                  <!-- Second Row: Vehicle Type and Max Price -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                    <!-- Vehicle Type Dropdown -->
+                    <div>
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Biltype</label>
+                      <select 
+                        v-model="filters.body_type" 
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        aria-label="Vælg biltype"
+                      >
+                        <option value="">Alle biltyper</option>
+                        <option v-for="bodyType in bodyTypes" :key="bodyType.name" :value="bodyType.name">
+                          {{ bodyType.name }}
+                        </option>
+                      </select>
+                    </div>
 
-          <select v-model="filters.body_type" class="select select-bordered w-full">
-            <option value="">Alle biltyper</option>
-            <option v-for="bodyType in bodyTypes" :key="bodyType.name" :value="bodyType.name">
-              {{ bodyType.name }}
-            </option>
-          </select>
+                    <!-- Max Price Dropdown -->
+                    <div>
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">Maks pris</label>
+                      <select 
+                        v-model.number="filters.price_max" 
+                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        aria-label="Vælg maksimal pris"
+                      >
+                        <option :value="null">Ingen grænse</option>
+                        <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr./måned</option>
+                        <option :value="9999999">10.000+ kr./måned</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          <select v-model="filters.fuel_type" class="select select-bordered w-full">
-            <option value="">Alle drivmidler</option>
-            <option v-for="fuelType in fuelTypes" :key="fuelType.name" :value="fuelType.name">
-              {{ fuelType.name }}
-            </option>
-          </select>
+              <!-- Enhanced Primary CTA -->
+              <button 
+                class="btn btn-primary w-full h-14 lg:h-16 text-lg lg:text-xl font-bold shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300" 
+                @click="findCars"
+                aria-label="Søg efter biler med de valgte kriterier"
+              >
+                Vis {{ resultCount }} biler
+              </button>
+            </div>
+          </div>
 
-          <button class="btn btn-primary w-full mt-4" @click="navigateToListings">
-            Vis {{ resultCount }} biler
-          </button>
-        </div>
-
-        <!-- Headline -->
-        <div class="lg:col-span-3 flex flex-col justify-center items-center text-center space-y-6">
-          <h1 class="text-4xl font-bold leading-tight max-w-xl">
-            Leasing uden bøvl – find din næste bil her
-          </h1>
+          <!-- RIGHT SIDE: Promotional Text with enhanced contrast -->
+          <div class="order-1 lg:order-2 lg:col-span-3 text-center px-4 py-4 lg:px-8 lg:py-6 animate-slide-in-right">
+            <div class="max-w-none space-y-4 lg:space-y-6">
+              <div class="space-y-3 lg:space-y-4">
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight tracking-tight">
+                  Find de bedste leasingtilbud
+                </h1>
+                <p class="text-base sm:text-lg lg:text-xl text-white/85 leading-relaxed tracking-wide max-w-2xl mx-auto">
+                  Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt.
+                </p>
+              </div>
+              
+              <!-- Promotional Banner Image with reduced gap -->
+              <div class="mt-6 lg:mt-8 animate-slide-in-up" style="animation-delay: 0.4s;">
+                <img 
+                  src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
+                  alt="Spring Price Reduction 2025 - Special leasing offers" 
+                  class="w-full max-w-lg mx-auto rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-300"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>
   </section>
 </template>
+
+<style scoped>
+/* Enhanced entrance animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.8s ease-out forwards;
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.animate-slide-in-up {
+  animation: slideInUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+/* Radial gradient background */
+.bg-radial-gradient {
+  background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+}
+
+/* Enhanced form card styling */
+.bg-card-bg\/98 {
+  background-color: rgba(251, 250, 252, 0.98);
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 1023px) {
+  .animate-slide-in-right {
+    animation-delay: 0s;
+  }
+  
+  /* Ensure proper mobile stacking */
+  .order-1 {
+    margin-bottom: 1rem;
+  }
+  
+  .order-2 {
+    margin-top: 1rem;
+  }
+}
+
+/* Improved backdrop blur for better form visibility */
+@supports (backdrop-filter: blur(12px)) {
+  .backdrop-blur-md {
+    backdrop-filter: blur(12px);
+  }
+}
+</style>

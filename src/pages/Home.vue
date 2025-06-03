@@ -4,6 +4,7 @@ import HeroBanner from '../components/HeroBanner.vue'
 import CarListingGrid from '../components/CarListingGrid.vue'
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
+import Header from '../components/Header.vue'
 
 const latestListings = ref([])
 
@@ -26,14 +27,34 @@ onMounted(async () => {
 </script>
 
 <template>
-  <BaseLayout>
-    <!-- Hero section with search -->
+  <div class="min-h-screen flex flex-col text-base-content bg-neutral" data-theme="carwow">
+    <!-- Header (manually included since HeroBanner is outside BaseLayout) -->
+    <Header />
+    
+    <!-- Hero section with search - FULL WIDTH -->
     <HeroBanner />
 
-    <!-- Dynamic car grid -->
-    <CarListingGrid
-      title="Nyeste leasingbiler"
-      :cars="latestListings"
-    />
-  </BaseLayout>
+    <!-- Main content wrapped in BaseLayout structure -->
+    <main class="flex-1 w-full pb-6">
+      <div class="mx-auto w-full max-w-[1440px] px-6">
+        <!-- Dynamic car grid -->
+        <CarListingGrid
+          title="Nyeste leasingbiler"
+          :cars="latestListings"
+        />
+      </div>
+    </main>
+
+    <!-- Footer (manually included) -->
+    <footer class="footer p-6 bg-neutral text-neutral-content">
+      <div class="mx-auto w-full max-w-[1440px] px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <p class="text-sm">© 2025 Leasingbørsen | Inspired by Carwow</p>
+        <div class="flex gap-6 text-sm">
+          <a href="#" class="hover:text-accent transition">About Us</a>
+          <a href="#" class="hover:text-accent transition">Privacy</a>
+          <a href="#" class="hover:text-accent transition">Terms</a>
+        </div>
+      </div>
+    </footer>
+  </div>
 </template>
