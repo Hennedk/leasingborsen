@@ -8,21 +8,49 @@ import { supabase } from '../lib/supabase'
 import Header from '../components/Header.vue'
 
 const latestListings = ref([])
+const loading = ref(true)
 
 onMounted(async () => {
   try {
+    console.log('🔍 Fetching latest listings...')
+    
+    // Fetch from the same table other components use, without created_at ordering
     const { data, error } = await supabase
-      .from('listings')
+      .from('full_listing_view')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(4)
+      .limit(4)  // Just get 4 records without ordering
+
+    console.log('📊 Supabase response:', { data, error })
+    console.log('📊 Raw data array:', data)
+    console.log('📊 Data length:', data?.length)
 
     if (!error && data) {
-      // Filter out any listings without proper id
-      latestListings.value = data.filter(listing => listing && listing.id)
+      console.log('🔍 Before filtering - raw data:', data)
+      console.log('🔍 First item structure:', data[0])
+      console.log('🔍 First item keys:', Object.keys(data[0] || {}))
+      console.log('🔍 Looking for ID fields:', {
+        id: data[0]?.id,
+        listing_id: data[0]?.listing_id, 
+        car_id: data[0]?.car_id,
+        vehicle_id: data[0]?.vehicle_id
+      })
+      
+      // Use listing_id which is the correct field name
+      latestListings.value = data.filter(listing => {
+        console.log('🔍 Checking listing:', listing, 'Has listing_id?', !!listing?.listing_id)
+        return listing && listing.listing_id
+      })
+      
+      console.log('✅ After filtering - count:', latestListings.value.length)
+      console.log('✅ Filtered listings:', latestListings.value)
+    } else {
+      console.error('❌ Error fetching data:', error)
     }
   } catch (err) {
-    console.error('Error fetching latest listings:', err)
+    console.error('💥 Exception during fetch:', err)
+  } finally {
+    console.log('🏁 Setting loading to false. Final latestListings:', latestListings.value)
+    loading.value = false
   }
 })
 </script>
@@ -38,16 +66,16 @@ onMounted(async () => {
     <!-- Popular Categories section -->
     <PopularCategories />
 
-    <!-- Main content wrapped in BaseLayout structure -->
-    <main class="flex-1 w-full pb-6">
-      <div class="mx-auto w-full max-w-[1440px] px-6">
-        <!-- Dynamic car grid -->
-        <CarListingGrid
-          title="Nyeste leasingbiler"
-          :cars="latestListings"
-        />
-      </div>
-    </main>
+    <!-- Latest Cars section - now self-contained -->
+    <CarListingGrid
+      title="Nyeste leasingbiler"
+      subtitle="Se de nyeste biler tilføjet til platformen"
+      :cars="latestListings"
+      :loading="loading"
+      :show-cta="true"
+      cta-text="Se alle biler"
+      cta-link="/listings"
+    />
 
     <!-- Footer (manually included) -->
     <footer class="footer p-6 bg-neutral text-neutral-content">
