@@ -13,8 +13,8 @@ defineProps({
     <div v-if="details && details.trim()" class="text-gray-700 leading-relaxed">
       {{ details }}
     </div>
-    <div v-else class="text-gray-500 italic">
-      Ingen detaljer tilgængelige.
-    </div>
+    <p v-else class="text-sm italic text-gray-500">
+      Denne bil har ikke yderligere beskrivelser endnu.
+    </p>
   </div>
 </template>

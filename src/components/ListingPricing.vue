@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { ExternalLink, Phone, Mail } from 'lucide-vue-next'
+import Modal from './Modal.vue'
 
 // Props
 const props = defineProps({
@@ -13,6 +15,17 @@ const props = defineProps({
 const selectedMileage = ref(null)
 const selectedPeriod = ref(null)
 const selectedUpfront = ref(null)
+const showSellerModal = ref(false)
+
+// Seller data (this could be passed as prop in real implementation)
+const seller = ref({
+  name: 'Leasingselskab A/S',
+  website: 'https://example.com',
+  phone: '+45 12 34 56 78',
+  email: 'kontakt@leasingselskab.dk',
+  description: 'Professionel leasingudbyder med over 10 års erfaring',
+  id: 'seller-123'
+})
 
 // Derived options
 const availableMileages = computed(() =>
@@ -44,6 +57,21 @@ const resetToCheapest = () => {
   }
 }
 
+// Open seller modal
+const openSellerModal = () => {
+  showSellerModal.value = true
+}
+
+// Close seller modal
+const closeSellerModal = () => {
+  showSellerModal.value = false
+}
+
+// Track seller visit (placeholder for analytics)
+const trackSellerVisit = (sellerId) => {
+  console.log('Tracking seller visit:', sellerId)
+}
+
 // Watch for changes
 watch(() => props.leaseOptions, (newOptions) => {
   if (newOptions.length) resetToCheapest()
@@ -51,39 +79,103 @@ watch(() => props.leaseOptions, (newOptions) => {
 </script>
 
 <template>
-  <div class="border border-gray-200 rounded-lg p-6 space-y-6">
+  <div class="card bg-base-100 shadow-md rounded-lg p-4 space-y-4">
     <!-- Monthly Price -->
-    <h3 class="text-3xl font-bold text-primary">
-      {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md
-    </h3>
-
-    <!-- Mileage Selection -->
     <div>
-      <label class="label text-sm font-medium">Årligt km-forbrug</label>
-      <select v-model="selectedMileage" class="select select-bordered w-full">
-        <option v-for="m in availableMileages" :key="m" :value="m">{{ m.toLocaleString() }} km/år</option>
-      </select>
+      <h3 class="text-3xl font-bold text-primary mb-2">
+        {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md
+      </h3>
     </div>
 
-    <!-- Period Selection -->
-    <div>
-      <label class="label text-sm font-medium">Leasingperiode (mdr)</label>
-      <select v-model="selectedPeriod" class="select select-bordered w-full">
-        <option v-for="p in availablePeriods" :key="p" :value="p">{{ p }} mdr</option>
-      </select>
+           <!-- Reset Link with better separation -->
+    <div class="mt-2">
+      <a class="link text-sm text-gray-500 cursor-pointer" @click="resetToCheapest">
+        Nulstil til laveste pris
+      </a>
     </div>
 
-    <!-- Upfront Payment Selection -->
-    <div>
-      <label class="label text-sm font-medium">Udbetaling</label>
-      <select v-model="selectedUpfront" class="select select-bordered w-full">
-        <option v-for="f in availableUpfronts" :key="f" :value="f">{{ f?.toLocaleString() }} kr</option>
-      </select>
+    <!-- Form Fields -->
+    <div class="space-y-4">
+      <!-- Mileage Selection -->
+      <div class="space-y-1">
+        <label class="label-text font-semibold text-sm text-primary">Årligt km-forbrug</label>
+        <select v-model="selectedMileage" class="select select-bordered w-full">
+          <option v-for="m in availableMileages" :key="m" :value="m">
+            {{ m.toLocaleString() }} km/år
+          </option>
+        </select>
+      </div>
+
+      <!-- Period Selection -->
+      <div class="space-y-1">
+        <label class="label-text font-semibold text-sm text-primary">Leasingperiode</label>
+        <select v-model="selectedPeriod" class="select select-bordered w-full">
+          <option v-for="p in availablePeriods" :key="p" :value="p">
+            {{ p }} måneder
+          </option>
+        </select>
+      </div>
+
+      <!-- Upfront Payment Selection -->
+      <div class="space-y-1">
+        <label class="label-text font-semibold text-sm text-primary">Udbetaling</label>
+        <select v-model="selectedUpfront" class="select select-bordered w-full">
+          <option v-for="f in availableUpfronts" :key="f" :value="f">
+            {{ f?.toLocaleString() }} kr
+          </option>
+        </select>
+      </div>
     </div>
 
-    <!-- Reset Button -->
-    <button @click="resetToCheapest" class="btn btn-outline w-full">
-      Nulstil til laveste pris 🔄
-    </button>
+
+    <!-- Primary CTA Button -->
+    <div class="pt-4">
+      <button @click="openSellerModal" class="btn btn-primary w-full gap-2">
+        <ExternalLink class="w-4 h-4" />
+        Se tilbud hos leasingselskab
+      </button>
+    </div>
+
+
   </div>
+
+  <!-- Seller Modal -->
+  <Modal 
+    :isOpen="showSellerModal" 
+    @close="closeSellerModal"
+    modalId="seller_modal"
+  >
+    <template #title>
+      <h3 class="text-lg font-bold">{{ seller.name }}</h3>
+    </template>
+
+    <!-- Seller details -->
+    <div class="space-y-2 text-sm text-gray-700">
+      <p>{{ seller.description }}</p>
+      <p class="flex items-center gap-2">
+        <Phone class="w-4 h-4 text-gray-400" />
+        {{ seller.phone }}
+      </p>
+      <p class="flex items-center gap-2">
+        <Mail class="w-4 h-4 text-gray-400" />
+        {{ seller.email }}
+      </p>
+    </div>
+
+    <template #footer>
+      <!-- CTA -->
+      <div class="pt-4">
+        <a
+          :href="seller.website"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-primary btn-block"
+          @click="trackSellerVisit(seller.id)"
+        >
+          <ExternalLink class="w-4 h-4 mr-2" />
+          Gå til leasingselskabets hjemmeside
+        </a>
+      </div>
+    </template>
+  </Modal>
 </template>
