@@ -1,40 +1,39 @@
 <template>
   <div class="space-y-4">
-    <!-- Make + Model -->
+    <!-- Make + Model (Most Prominent) -->
     <div>
-      <h2 class="text-2xl font-bold text-gray-900">
+      <h1 class="text-2xl font-semibold text-gray-900">
         {{ make }} {{ model }}
-      </h2>
+      </h1>
+      <!-- Variant (Subtle, below title) -->
+      <p v-if="variant" class="text-base text-gray-500 mt-1">
+        {{ variant }}
+      </p>
     </div>
 
-    <!-- Variant -->
-    <div v-if="variant">
-      <p class="text-base text-gray-600">{{ variant }}</p>
-    </div>
-
-    <!-- Tags/Badges -->
-    <div class="flex flex-wrap gap-2">
+    <!-- Tags/Badges (Separated with spacing) -->
+    <div class="flex flex-wrap gap-2 mt-3">
       <span 
         v-if="transmission" 
-        class="inline-flex items-center bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm whitespace-nowrap"
+        class="badge badge-outline text-sm"
       >
         {{ transmission }}
       </span>
       <span 
         v-if="horsepower" 
-        class="inline-flex items-center bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm whitespace-nowrap"
+        class="badge badge-outline text-sm"
       >
         {{ horsepower }} hk
       </span>
       <span 
         v-if="fuelType" 
-        class="inline-flex items-center bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm whitespace-nowrap"
+        class="badge badge-outline text-sm"
       >
         {{ fuelType }}
       </span>
       <span 
         v-if="bodyType" 
-        class="inline-flex items-center bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm whitespace-nowrap"
+        class="badge badge-outline text-sm"
       >
         {{ bodyType }}
       </span>

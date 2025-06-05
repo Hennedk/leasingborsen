@@ -1,7 +1,77 @@
 <template>
   <BaseLayout>
-    <div class="w-full py-6 sm:py-8 relative flex flex-col-reverse lg:grid lg:grid-cols-[3fr_2fr] gap-8">
+    <!-- Loading State for Main Content -->
+    <div v-if="loadingListing" class="w-full py-6 sm:py-8 relative flex flex-col-reverse lg:grid lg:grid-cols-[2fr_1fr] gap-8">
+      <!-- Left Column Skeleton -->
+      <div class="space-y-6 mt-6 lg:mt-0">
+        <!-- Gallery Skeleton -->
+        <div class="animate-pulse">
+          <div class="bg-gray-200 rounded-xl w-full h-64 sm:h-80 lg:h-96"></div>
+          <div class="h-3 bg-gray-200 rounded w-32 mt-2"></div>
+        </div>
+        
+        <!-- Details Skeleton -->
+        <div class="animate-pulse space-y-4">
+          <div class="h-6 bg-gray-200 rounded w-24"></div>
+          <div class="space-y-2">
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+            <div class="h-4 bg-gray-200 rounded w-full"></div>
+            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        </div>
+        
+        <!-- Specs Skeleton -->
+        <div class="animate-pulse space-y-4">
+          <div class="h-6 bg-gray-200 rounded w-32"></div>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="h-4 bg-gray-200 rounded"></div>
+            <div class="h-4 bg-gray-200 rounded"></div>
+            <div class="h-4 bg-gray-200 rounded"></div>
+            <div class="h-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
 
+      <!-- Right Column Skeleton -->
+      <div class="space-y-6 lg:sticky lg:top-4 lg:self-start">
+        <!-- Header Skeleton -->
+        <div class="animate-pulse space-y-4">
+          <div class="h-8 bg-gray-200 rounded w-3/4"></div>
+          <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div class="flex gap-2">
+            <div class="h-6 bg-gray-200 rounded-full w-16"></div>
+            <div class="h-6 bg-gray-200 rounded-full w-12"></div>
+            <div class="h-6 bg-gray-200 rounded-full w-20"></div>
+          </div>
+        </div>
+        
+        <!-- Pricing Skeleton -->
+        <div class="animate-pulse space-y-4 p-6 bg-gray-50 rounded-lg">
+          <div class="h-8 bg-gray-200 rounded w-32"></div>
+          <div class="h-6 bg-gray-200 rounded w-24"></div>
+          <div class="h-10 bg-gray-200 rounded w-full"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="w-full py-6 sm:py-8 text-center">
+      <div class="max-w-md mx-auto">
+        <div class="text-red-500 mb-4">
+          <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+          </svg>
+        </div>
+        <h2 class="text-xl font-semibold text-gray-900 mb-2">Kunne ikke indlæse annonce</h2>
+        <p class="text-gray-600 mb-4">{{ error }}</p>
+        <button @click="retryLoad" class="btn btn-primary">
+          Prøv igen
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content (Loaded) -->
+    <div v-else class="w-full py-6 sm:py-8 relative flex flex-col-reverse lg:grid lg:grid-cols-[2fr_1fr] gap-8">
       <!-- Left Column -->
       <div class="space-y-6 mt-6 lg:mt-0">
         <ListingGallery :image="listing.image" :make="listing.make" :model="listing.model" />
@@ -27,7 +97,7 @@
     </div>
 
     <!-- Similar Cars Section - Show during loading and when cars exist -->
-    <div v-if="loadingSimilarCars || similarCars.length > 0" class="mt-16 transition-all duration-500 ease-in-out">
+    <div v-if="!loadingListing && (loadingSimilarCars || similarCars.length > 0)" class="mt-16 transition-all duration-500 ease-in-out">
       <!-- Optional divider for visual separation -->
       <hr class="my-8 border-gray-200" />
       
@@ -49,31 +119,11 @@
     </div>
 
     <!-- Subtle ID Reference at bottom -->
-    <div class="text-center py-4 mt-8">
+    <div v-if="!loadingListing && !error" class="text-center py-4 mt-8">
       <p class="text-xs text-gray-400 text-center mt-6">
         Listing ID: {{ listing.listing_id || '12345' }}
       </p>
     </div>
-
-    <!-- Sticky Bottom Bar (Mobile Only) - Polished -->
-    <div class="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 p-4 shadow-md rounded-t-xl sm:hidden z-50">
-      <div class="flex justify-between items-center gap-4">
-        <div class="flex-1">
-          <span class="font-bold text-lg text-primary">
-            {{ listing.monthly_price ? `${listing.monthly_price.toLocaleString('da-DK')} kr/md` : '–' }}
-          </span>
-          <p class="text-xs text-base-content opacity-70">
-            {{ listing.mileage_per_year ? `${listing.mileage_per_year.toLocaleString()} km/år` : '' }}
-          </p>
-        </div>
-        <button class="btn btn-primary btn-sm">
-          Se tilbud
-        </button>
-      </div>
-    </div>
-
-    <!-- Mobile padding bottom to account for sticky bar -->
-    <div class="h-20 sm:hidden"></div>
   </BaseLayout>
 </template>
 
@@ -94,6 +144,8 @@ const route = useRoute()
 const listing = ref({})
 const similarCars = ref([])
 const loadingSimilarCars = ref(false)
+const loadingListing = ref(true)
+const error = ref(null)
 
 // Mock data for testing similar cars component
 const mockSimilarCars = [
@@ -404,34 +456,59 @@ watch(listing, (newListing) => {
   }
 }, { deep: true })
 
-onMounted(async () => {
+// Retry function for error handling
+const retryLoad = () => {
+  error.value = null
+  loadingListing.value = true
+  loadListing()
+}
+
+// Main listing loading function
+const loadListing = async () => {
   const id = route.params.id
   if (!id) {
-    console.error('Missing ID in route params')
+    error.value = 'Manglende listing ID'
+    loadingListing.value = false
     return
   }
 
-  // Start loading similar cars early to show skeleton
-  loadingSimilarCars.value = true
+  try {
+    const { data, error: fetchError } = await supabase
+      .from('full_listing_view')
+      .select('*')
+      .eq('listing_id', id)
+      .single()
 
-  const { data, error } = await supabase
-    .from('full_listing_view')
-    .select('*')
-    .eq('listing_id', id)
-    .single()
-
-  if (error) {
-    console.error('Fejl ved hentning af annonce:', error.message)
-    loadingSimilarCars.value = false // Stop loading if listing fails
-  } else {
-    listing.value = data
-    // Fetch similar cars after main listing is loaded
-    if (data && data.listing_id) {
-      await fetchSimilarCars(data)
-    } else {
-      loadingSimilarCars.value = false // Stop loading if no listing data
+    if (fetchError) {
+      throw new Error(`Fejl ved hentning af annonce: ${fetchError.message}`)
     }
+
+    if (!data) {
+      throw new Error('Annonce ikke fundet')
+    }
+
+    listing.value = data
+    
+    // Start loading similar cars after main listing is loaded
+    if (data.listing_id) {
+      // Don't await here - let similar cars load in background
+      fetchSimilarCars(data)
+    }
+    
+  } catch (err) {
+    console.error('Error loading listing:', err)
+    error.value = err.message || 'Der opstod en fejl ved indlæsning af annoncen'
+  } finally {
+    loadingListing.value = false
   }
+}
+
+onMounted(async () => {
+  // Start loading similar cars early to show skeleton if needed
+  loadingSimilarCars.value = true
+  
+  // Load main listing
+  await loadListing()
 })
 
 </script>
