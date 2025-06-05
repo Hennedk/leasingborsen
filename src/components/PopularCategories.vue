@@ -1,11 +1,11 @@
 <template>
   <section :class="sectionClasses">
     <!-- Subtle top shadow/divider to separate from dark hero -->
-    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
+    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-base-300 to-transparent"></div>
     
     <!-- Section Header -->
     <div class="mb-6 lg:mb-8">
-      <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+      <h2 class="text-2xl lg:text-3xl font-bold text-base-content mb-3">
         Populære kategorier
       </h2>
     </div>
@@ -18,7 +18,7 @@
         @click="navigateToCategory(category.filters)"
         class="group cursor-pointer w-full"
       >
-        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:bg-base-50 focus-within:ring-2 focus-within:ring-primary/20">
+        <div class="card bg-base-100 border border-base-300 rounded-xl p-4 lg:p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:bg-base-200 focus-within:ring-2 focus-within:ring-primary/20">
           <!-- Icon -->
           <div class="flex justify-center mb-3">
             <div class="text-primary group-hover:scale-110 transition-transform duration-300">
@@ -27,12 +27,12 @@
           </div>
           
           <!-- Label -->
-          <h3 class="font-semibold text-sm sm:text-base text-gray-900 group-hover:text-primary transition-colors duration-200 leading-tight">
+          <h3 class="font-semibold text-sm sm:text-base text-base-content group-hover:text-primary transition-colors duration-200 leading-tight">
             {{ category.label }}
           </h3>
           
           <!-- Subtitle -->
-          <p class="text-xs text-base-content/60 mt-1 leading-relaxed">
+          <p class="text-xs text-base-content opacity-60 mt-1 leading-relaxed">
             {{ category.subtitle }}
           </p>
         </div>
@@ -180,7 +180,7 @@ function navigateToCategory(filters) {
 
 .cursor-pointer:focus-visible .card {
   ring: 2px;
-  ring-color: rgb(24 24 27 / 0.2);
+  ring-color: hsl(var(--p) / 0.2);
   ring-offset: 2px;
 }
 </style> 

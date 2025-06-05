@@ -89,8 +89,8 @@ watch(() => props.leaseOptions, (newOptions) => {
 
            <!-- Reset Link with better separation -->
     <div class="mt-2">
-      <a class="link text-sm text-gray-500 cursor-pointer" @click="resetToCheapest">
-        Nulstil til laveste pris
+      <a class="link text-sm text-base-content opacity-70 cursor-pointer" @click="resetToCheapest">
+        Find billigere tilbud
       </a>
     </div>
 
@@ -150,16 +150,16 @@ watch(() => props.leaseOptions, (newOptions) => {
     </template>
 
     <!-- Seller details -->
-    <div class="space-y-2 text-sm text-gray-700">
+    <div class="space-y-2 text-sm text-base-content opacity-80">
       <p>{{ seller.description }}</p>
-      <p class="flex items-center gap-2">
-        <Phone class="w-4 h-4 text-gray-400" />
-        {{ seller.phone }}
-      </p>
-      <p class="flex items-center gap-2">
-        <Mail class="w-4 h-4 text-gray-400" />
-        {{ seller.email }}
-      </p>
+      <div class="flex items-center gap-2">
+        <Phone class="w-4 h-4 text-base-content opacity-60" />
+        <span>+45 12 34 56 78</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <Mail class="w-4 h-4 text-base-content opacity-60" />
+        <span>info@leasingbuddy.dk</span>
+      </div>
     </div>
 
     <template #footer>

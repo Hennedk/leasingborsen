@@ -12,14 +12,14 @@
     <!-- Empty State: No cars found -->
     <div v-else-if="sortedCars.length === 0" class="flex flex-col items-center justify-center py-20 px-6 text-center">
       <div class="mb-8">
-        <!-- Subtle friendly icon -->
-        <div class="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-          <SearchX class="w-8 h-8 text-gray-400" />
+        <!-- Enhanced Empty State -->
+        <div class="w-16 h-16 mx-auto mb-6 bg-base-200 rounded-full flex items-center justify-center">
+          <SearchX class="w-8 h-8 text-base-content opacity-40" />
         </div>
         
-        <!-- Clear and friendly message -->
-        <h3 class="text-xl font-bold text-gray-900 mb-3">Ingen biler fundet</h3>
-        <p class="text-gray-600 max-w-sm mx-auto leading-relaxed">
+        <!-- Dynamic messages -->
+        <h3 class="text-xl font-bold text-base-content mb-3">Ingen biler fundet</h3>
+        <p class="text-base-content opacity-70 max-w-sm mx-auto leading-relaxed">
           Vi kunne ikke finde nogen biler, der matcher dine søgekriterier. 
           Prøv at nulstille filtrene for at se alle tilgængelige biler.
         </p>
@@ -29,7 +29,7 @@
       <div>
         <button
           @click="resetAllFilters"
-          class="inline-flex items-center gap-2 bg-primary text-primary-content px-8 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
+          class="inline-flex items-center gap-2 bg-primary text-primary-content px-8 py-3 rounded-lg font-semibold hover:bg-primary hover:opacity-90 transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 shadow-sm"
         >
           <RotateCcw class="w-4 h-4" />
           Nulstil alle filtre

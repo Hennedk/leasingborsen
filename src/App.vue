@@ -1,5 +1,5 @@
 <template>
-  <div data-theme="carwow">
+  <div data-theme="synthwave">
     <router-view />
   </div>
 </template>

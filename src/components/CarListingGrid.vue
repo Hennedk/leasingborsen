@@ -4,7 +4,7 @@
     <div v-if="useContainer" class="max-w-screen-xl mx-auto px-4">
       <!-- Dynamic Section Header -->
       <div class="mb-6 lg:mb-8" v-if="displayTitle">
-        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+        <h2 class="text-2xl lg:text-3xl font-bold text-base-content mb-3">
           {{ displayTitle }}
         </h2>
       </div>
@@ -29,11 +29,11 @@
 
       <!-- Enhanced Empty State -->
       <div v-else class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-          <Car class="w-8 h-8 text-gray-400" />
+        <div class="w-16 h-16 mx-auto mb-6 bg-base-200 rounded-full flex items-center justify-center">
+          <Car class="w-8 h-8 text-base-content opacity-40" />
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ emptyStateTitle }}</h3>
-        <p class="text-gray-600">{{ emptyStateMessage }}</p>
+        <h3 class="text-lg font-semibold text-base-content mb-2">{{ emptyStateTitle }}</h3>
+        <p class="text-base-content opacity-70">{{ emptyStateMessage }}</p>
       </div>
 
       <!-- Dynamic CTA Section -->
@@ -52,7 +52,7 @@
     <template v-else>
       <!-- Dynamic Section Header -->
       <div class="mb-6 lg:mb-8" v-if="displayTitle">
-        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+        <h2 class="text-2xl lg:text-3xl font-bold text-base-content mb-3">
           {{ displayTitle }}
         </h2>
       </div>
@@ -77,11 +77,11 @@
 
       <!-- Enhanced Empty State -->
       <div v-else class="text-center py-12">
-        <div class="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-          <Car class="w-8 h-8 text-gray-400" />
+        <div class="w-16 h-16 mx-auto mb-6 bg-base-200 rounded-full flex items-center justify-center">
+          <Car class="w-8 h-8 text-base-content opacity-40" />
         </div>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ emptyStateTitle }}</h3>
-        <p class="text-gray-600">{{ emptyStateMessage }}</p>
+        <h3 class="text-lg font-semibold text-base-content mb-2">{{ emptyStateTitle }}</h3>
+        <p class="text-base-content opacity-70">{{ emptyStateMessage }}</p>
       </div>
 
       <!-- Dynamic CTA Section -->

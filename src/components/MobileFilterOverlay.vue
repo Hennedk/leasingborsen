@@ -1,6 +1,6 @@
 <template>
   <transition name="overlay" appear>
-    <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-end lg:hidden">
+    <div class="fixed inset-0 z-50 bg-base-300 bg-opacity-50 flex justify-center items-end lg:hidden">
       <transition name="slide-up" appear>
         <div class="bg-base-100 w-full h-full rounded-none shadow-2xl flex flex-col transform">
 

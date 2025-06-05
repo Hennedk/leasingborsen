@@ -3,17 +3,19 @@
   <BaseLayout>
     <!-- 📱 Sticky Filter + Sort Bar - Full width outside container (MOBILE ONLY) -->
     <div
-      class="lg:hidden sticky left-0 right-0 bg-card-bg shadow-sm border-b border-gray-200 z-40"
-      :class="stickyFilterClasses"
-      :style="stickyFilterStyle"
+      class="lg:hidden sticky left-0 right-0 bg-base-100 shadow-sm border-b border-base-300 z-40"
+      :class="{
+        'bg-base-100/95': isSticky,
+        'shadow-lg': isSticky
+      }"
     >
-      <div class="flex items-center gap-2 w-full max-w-[1440px] mx-auto px-6 py-3">
+      <div class="px-4 py-3 flex items-center justify-between gap-2">
         <button
-          @click="openMobileFilter"
-          class="flex items-center gap-1 border border-gray-300 rounded-lg transition-all duration-300 h-10 px-3 hover:bg-gray-50 focus:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 flex-shrink-0"
+          @click="showMobileFilter = true"
+          class="flex items-center gap-1 border border-base-300 rounded-lg transition-all duration-300 h-10 px-3 hover:bg-base-200 focus:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/20 flex-shrink-0"
         >
           <Filter class="w-5 h-5" /> Filter
-          <span v-if="activeFilters.length" class="bg-red-600 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">
+          <span v-if="activeFilters.length" class="bg-error text-error-content rounded-full w-5 h-5 text-xs flex items-center justify-center">
             {{ activeFilters.length }}
           </span>
         </button>
@@ -35,7 +37,7 @@
         <div class="mt-6 mb-4 space-y-4">
           <!-- Result count - full width -->
           <div>
-            <ListingResultsResultCount :count="resultCount" class="text-xl font-bold text-gray-900" />
+            <ListingResultsResultCount :count="resultCount" class="text-xl font-bold text-base-content" />
           </div>
           
           <!-- Sorting row -->
@@ -43,27 +45,27 @@
             <div class="relative">
               <button
                 @click="showMobileSortDropdown = !showMobileSortDropdown"
-                class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 py-1"
+                class="flex items-center gap-2 text-sm font-medium text-base-content opacity-80 hover:text-base-content transition-colors duration-200 py-1"
               >
-                <ArrowUpDown class="w-4 h-4 text-gray-500" />
+                <ArrowUpDown class="w-4 h-4 text-base-content opacity-60" />
                 <span>{{ currentSortLabel }}</span>
-                <ChevronDown class="w-3 h-3 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': showMobileSortDropdown }" />
+                <ChevronDown class="w-3 h-3 text-base-content opacity-60 transition-transform duration-200" :class="{ 'rotate-180': showMobileSortDropdown }" />
               </button>
               
               <!-- Sort dropdown -->
               <transition name="dropdown">
-                <div v-if="showMobileSortDropdown" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                <div v-if="showMobileSortDropdown" class="absolute top-full left-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
                   <button
                     @click="selectSortOption('')"
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
-                    :class="{ 'text-primary font-medium bg-primary/5': sortOrder === '' }"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 transition-all duration-200 hover:scale-[1.02]"
+                    :class="{ 'text-primary font-medium bg-primary opacity-5': sortOrder === '' }"
                   >
                     Lowest price
                   </button>
                   <button
                     @click="selectSortOption('desc')"
-                    class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
-                    :class="{ 'text-primary font-medium bg-primary/5': sortOrder === 'desc' }"
+                    class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 transition-all duration-200 hover:scale-[1.02]"
+                    :class="{ 'text-primary font-medium bg-primary opacity-5': sortOrder === 'desc' }"
                   >
                     Highest price
                   </button>
@@ -91,27 +93,27 @@
               <div class="relative">
                 <button
                   @click="showDesktopSortDropdown = !showDesktopSortDropdown"
-                  class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors duration-200 py-1"
+                  class="flex items-center gap-2 text-sm font-medium text-base-content opacity-80 hover:text-base-content transition-colors duration-200 py-1"
                 >
-                  <ArrowUpDown class="w-4 h-4 text-gray-500" />
+                  <ArrowUpDown class="w-4 h-4 text-base-content opacity-60" />
                   <span>{{ currentSortLabel }}</span>
-                  <ChevronDown class="w-3 h-3 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': showDesktopSortDropdown }" />
+                  <ChevronDown class="w-3 h-3 text-base-content opacity-60 transition-transform duration-200" :class="{ 'rotate-180': showDesktopSortDropdown }" />
                 </button>
                 
                 <!-- Desktop Sort dropdown -->
                 <transition name="dropdown">
-                  <div v-if="showDesktopSortDropdown" class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
+                  <div v-if="showDesktopSortDropdown" class="absolute top-full right-0 mt-2 bg-base-100 border border-base-300 rounded-lg shadow-lg py-2 z-50 min-w-[160px]">
                     <button
                       @click="selectDesktopSortOption('')"
-                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
-                      :class="{ 'text-primary font-medium bg-primary/5': sortOrder === '' }"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 transition-all duration-200 hover:scale-[1.02]"
+                      :class="{ 'text-primary font-medium bg-primary opacity-5': sortOrder === '' }"
                     >
                       Lowest price
                     </button>
                     <button
                       @click="selectDesktopSortOption('desc')"
-                      class="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-all duration-200 hover:scale-[1.02]"
-                      :class="{ 'text-primary font-medium bg-primary/5': sortOrder === 'desc' }"
+                      class="w-full text-left px-4 py-2 text-sm hover:bg-base-200 transition-all duration-200 hover:scale-[1.02]"
+                      :class="{ 'text-primary font-medium bg-primary opacity-5': sortOrder === 'desc' }"
                     >
                       Highest price
                     </button>
@@ -270,7 +272,7 @@ const stickyFilterClasses = computed(() => {
   return {
     'shadow-lg': isSticky,
     'backdrop-blur-sm': isSticky,
-    'bg-white/95': isSticky,
+    'bg-base-100/95': isSticky,
     'border-t': !isSticky, // Only show top border when not sticky
   }
 })

@@ -62,7 +62,7 @@ const headerClasses = computed(() => ({
 
 <template>
   <header 
-    class="bg-card-bg shadow-sm sticky top-0 z-40"
+    class="bg-base-100 shadow-sm sticky top-0 z-40"
     :class="headerClasses"
     :style="headerStyle"
   >
@@ -97,7 +97,7 @@ const headerClasses = computed(() => ({
     <!-- Mobile Menu - only show when header is visible and menu is open -->
     <div v-if="mobileMenuOpen && !isFullyHidden" class="lg:hidden">
       <div class="mx-auto w-full max-w-[1440px] px-6">
-        <ul class="bg-card-bg w-full py-3 rounded-lg shadow-lg space-y-2 text-base">
+        <ul class="bg-base-100 w-full py-3 rounded-lg shadow-lg space-y-2 text-base">
           <li><router-link to="/listings" @click="mobileMenuOpen = false" class="block px-4 py-2">Alle biler</router-link></li>
           <li><router-link to="/about" @click="mobileMenuOpen = false" class="block px-4 py-2">Om Leasingbuddy</router-link></li>
         </ul>

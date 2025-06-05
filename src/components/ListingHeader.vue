@@ -2,11 +2,11 @@
   <div class="space-y-4">
     <!-- Make + Model (Most Prominent) -->
     <div>
-      <h1 class="text-2xl font-semibold text-gray-900">
+      <h1 class="text-2xl font-semibold text-base-content">
         {{ make }} {{ model }}
       </h1>
       <!-- Variant (Subtle, below title) -->
-      <p v-if="variant" class="text-base text-gray-500 mt-1">
+      <p v-if="variant" class="text-base text-base-content opacity-70 mt-1">
         {{ variant }}
       </p>
     </div>

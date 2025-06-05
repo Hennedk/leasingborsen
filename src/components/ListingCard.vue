@@ -43,27 +43,27 @@ onMounted(() => {
   <!-- Skeleton State -->
   <div 
     v-if="loading" 
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
+    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
   >
     <div class="card rounded-lg overflow-hidden">
       <!-- Image skeleton with shimmer -->
-      <figure class="relative rounded-t-lg overflow-hidden bg-gray-100">
-        <div class="w-full h-52 bg-gray-200 relative overflow-hidden">
+      <figure class="relative rounded-t-lg overflow-hidden bg-base-200">
+        <div class="w-full h-52 bg-base-300 relative overflow-hidden">
           <!-- Shimmer effect -->
-          <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+          <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-base-100/20 to-transparent animate-shimmer"></div>
         </div>
       </figure>
       
       <!-- Title & Variant skeleton -->
       <div class="px-5 pt-4" style="height: 64.75px;">
-        <div class="h-6 bg-gray-200 rounded w-3/4 leading-snug mb-1 animate-pulse"></div>
-        <div class="h-4 bg-gray-200 rounded w-1/2 animate-pulse" style="animation-delay: 0.1s;"></div>
+        <div class="h-6 bg-base-300 rounded w-3/4 leading-snug mb-1 animate-pulse"></div>
+        <div class="h-4 bg-base-300 rounded w-1/2 animate-pulse" style="animation-delay: 0.1s;"></div>
       </div>
 
       <!-- Price skeleton -->
       <div class="px-5 pt-3" style="height: 58px;">
-        <div class="h-6 bg-gray-200 rounded w-2/3 mb-1 animate-pulse" style="animation-delay: 0.2s;"></div>
-        <div class="h-3 bg-gray-200 rounded w-full animate-pulse" style="animation-delay: 0.3s;"></div>
+        <div class="h-6 bg-base-300 rounded w-2/3 mb-1 animate-pulse" style="animation-delay: 0.2s;"></div>
+        <div class="h-3 bg-base-300 rounded w-full animate-pulse" style="animation-delay: 0.3s;"></div>
       </div>
 
       <!-- Divider -->
@@ -73,20 +73,20 @@ onMounted(() => {
       <div class="px-5 pb-5" style="height: 68px;">
         <div class="grid grid-cols-2 gap-y-2 text-sm">
           <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gray-200 rounded animate-pulse" style="animation-delay: 0.4s;"></div>
-            <div class="h-3 bg-gray-200 rounded w-12 animate-pulse" style="animation-delay: 0.5s;"></div>
+            <div class="w-4 h-4 bg-base-300 rounded animate-pulse" style="animation-delay: 0.4s;"></div>
+            <div class="h-3 bg-base-300 rounded w-12 animate-pulse" style="animation-delay: 0.5s;"></div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gray-200 rounded animate-pulse" style="animation-delay: 0.6s;"></div>
-            <div class="h-3 bg-gray-200 rounded w-16 animate-pulse" style="animation-delay: 0.7s;"></div>
+            <div class="w-4 h-4 bg-base-300 rounded animate-pulse" style="animation-delay: 0.6s;"></div>
+            <div class="h-3 bg-base-300 rounded w-16 animate-pulse" style="animation-delay: 0.7s;"></div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gray-200 rounded animate-pulse" style="animation-delay: 0.8s;"></div>
-            <div class="h-3 bg-gray-200 rounded w-10 animate-pulse" style="animation-delay: 0.9s;"></div>
+            <div class="w-4 h-4 bg-base-300 rounded animate-pulse" style="animation-delay: 0.8s;"></div>
+            <div class="h-3 bg-base-300 rounded w-10 animate-pulse" style="animation-delay: 0.9s;"></div>
           </div>
           <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gray-200 rounded animate-pulse" style="animation-delay: 1.0s;"></div>
-            <div class="h-3 bg-gray-200 rounded w-14 animate-pulse" style="animation-delay: 1.1s;"></div>
+            <div class="w-4 h-4 bg-base-300 rounded animate-pulse" style="animation-delay: 1.0s;"></div>
+            <div class="h-3 bg-base-300 rounded w-14 animate-pulse" style="animation-delay: 1.1s;"></div>
           </div>
         </div>
       </div>
@@ -97,15 +97,15 @@ onMounted(() => {
   <RouterLink
     v-else-if="car && (car.id || car.listing_id)"
     :to="{ name: 'Listing', params: { id: car.id || car.listing_id } }"
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
+    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
   >
     <div class="card rounded-lg overflow-hidden">
       <!-- Image with lazy loading and placeholder for missing images -->
-      <figure class="relative rounded-t-lg overflow-hidden bg-gray-100">
+      <figure class="relative rounded-t-lg overflow-hidden bg-base-200">
         <!-- Image placeholder for missing images -->
         <div 
           v-if="!car.image"
-          class="bg-base-200 aspect-video flex items-center justify-center text-gray-400 w-full h-52"
+          class="bg-base-200 aspect-video flex items-center justify-center text-base-content w-full h-52"
         >
           <div class="text-center">
             <Car class="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -118,7 +118,7 @@ onMounted(() => {
           <!-- Blur placeholder -->
           <div 
             v-if="!imageLoaded"
-            class="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse"
+            class="absolute inset-0 bg-gradient-to-br from-base-200 to-base-300 animate-pulse"
           />
           
           <img
@@ -135,7 +135,7 @@ onMounted(() => {
         </template>
         
         <!-- Overlay gradient on hover -->
-        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300"></div>
+        <div class="absolute inset-0 bg-neutral/0 group-hover:bg-neutral/5 transition-all duration-300"></div>
       </figure>
 
       <!-- Title & Variant -->
@@ -143,7 +143,7 @@ onMounted(() => {
         <h3 class="text-lg font-bold text-primary leading-snug group-hover:text-primary/90 transition-colors duration-200">
           {{ car.make }} {{ car.model }}
         </h3>
-        <p class="text-sm text-base-content/60 mt-1">{{ car.variant }}</p>
+        <p class="text-sm text-base-content mt-1">{{ car.variant }}</p>
       </div>
 
       <!-- Price -->
@@ -151,7 +151,7 @@ onMounted(() => {
         <p class="text-lg font-semibold text-primary group-hover:text-primary/90 transition-colors duration-200">
           {{ car.monthly_price ? `${car.monthly_price.toLocaleString('da-DK')} kr. / måned` : 'Pris ikke tilgængelig' }}
         </p>
-        <p class="text-xs text-base-content/50 mt-0.5">
+        <p class="text-xs text-base-content mt-0.5">
           {{ car.mileage_per_year ? `${car.mileage_per_year.toLocaleString()} km/år` : 'Km ikke angivet' }}
           •
           {{ car.first_payment ? `Udbetaling: ${car.first_payment.toLocaleString()} kr` : 'Udbetaling ikke angivet' }}
@@ -163,21 +163,21 @@ onMounted(() => {
 
       <!-- Specs -->
       <div class="px-5 pb-5 pt-2">
-        <div class="grid grid-cols-2 gap-y-2 text-sm text-base-content/60">
-          <div class="flex items-center gap-2 group-hover:text-base-content/80 transition-colors duration-200">
-            <Fuel class="w-4 h-4 text-base-content/50 group-hover:text-base-content/70 transition-colors duration-200" /> 
+        <div class="grid grid-cols-2 gap-y-2 text-sm text-base-content">
+          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+            <Fuel class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
             {{ car.fuel_type || '–' }}
           </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content/80 transition-colors duration-200">
-            <Settings class="w-4 h-4 text-base-content/50 group-hover:text-base-content/70 transition-colors duration-200" /> 
+          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+            <Settings class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
             {{ car.transmission || '–' }}
           </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content/80 transition-colors duration-200">
-            <Car class="w-4 h-4 text-base-content/50 group-hover:text-base-content/70 transition-colors duration-200" /> 
+          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+            <Car class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
             {{ car.body_type || '–' }}
           </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content/80 transition-colors duration-200">
-            <Gauge class="w-4 h-4 text-base-content/50 group-hover:text-base-content/70 transition-colors duration-200" /> 
+          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+            <Gauge class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
             {{ car.horsepower ? `${car.horsepower} hk` : '–' }}
           </div>
         </div>

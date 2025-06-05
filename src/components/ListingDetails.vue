@@ -9,11 +9,11 @@ defineProps({
 
 <template>
   <div>
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Detaljer</h2>
-    <div v-if="details && details.trim()" class="text-gray-700 leading-relaxed">
+    <h2 class="text-lg font-semibold text-base-content mb-4">Detaljer</h2>
+    <div v-if="details && details.trim()" class="text-base-content opacity-80 leading-relaxed">
       {{ details }}
     </div>
-    <p v-else class="text-sm italic text-gray-500">
+    <p v-else class="text-sm italic text-base-content opacity-60">
       Denne bil har ikke yderligere beskrivelser endnu.
     </p>
   </div>

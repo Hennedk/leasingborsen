@@ -14,7 +14,7 @@ const props = defineProps({
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col text-base-content" :class="props.background" data-theme="carwow">
+  <div class="min-h-screen flex flex-col text-base-content" :class="props.background">
     
     <!-- Header with event to toggle mobile filter -->
     <Header @toggleMobileFilter="showMobileFilter = true" />

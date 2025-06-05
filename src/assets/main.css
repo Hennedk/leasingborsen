@@ -56,24 +56,18 @@ a:not(.no-underline):hover {
 }
 
 .input, .select, .textarea {
-  @apply border border-neutral focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none;
+  @apply border border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none;
 }
 
-.btn {
-  @apply text-white bg-secondary hover:bg-secondary-focus font-semibold;
-}
-
-.btn-primary {
-  @apply w-full border-none shadow-none rounded-lg font-semibold transition-all;
-}
+/* Let DaisyUI handle all button colors and styling */
 
 label {
-  @apply font-semibold text-base;
+  @apply font-semibold text-base text-base-content;
 }
 
 /* 🌟 Base Card Styling */
 .card {
-  @apply rounded-lg border border-base-300 bg-card-bg shadow-sm font-sans;
+  @apply rounded-lg border border-base-300 bg-base-100 shadow-sm font-sans;
 }
 
 /* 🌟 Card Variant for Filter */

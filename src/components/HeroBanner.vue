@@ -136,10 +136,10 @@ function findCars() {
 
           <!-- RIGHT SIDE: Search Box with improved grouping -->
           <div class="order-2 lg:order-2 lg:col-span-2 animate-slide-in-right px-2 py-4 lg:p-0">
-            <div class="bg-card-bg/98 backdrop-blur-md rounded-3xl shadow-2xl p-4 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300/50 space-y-4 lg:space-y-6 transition-all duration-500 ease-in">
+            <div class="bg-base-100 backdrop-blur-md rounded-3xl shadow-2xl p-4 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300 space-y-4 lg:space-y-6 transition-all duration-500 ease-in">
               <!-- Grouped heading and form with tighter mobile spacing -->
               <div class="space-y-2 lg:space-y-4">
-                <h2 class="text-xl lg:text-2xl font-bold text-gray-900 text-center lg:text-left leading-tight">
+                <h2 class="text-xl lg:text-2xl font-bold text-base-content text-center lg:text-left leading-tight">
                   Søg blandt hundredvis af leasingbiler – find din drømmebil nu
                 </h2>
                 
@@ -148,11 +148,10 @@ function findCars() {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                     <!-- Make Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-gray-700 mb-2">Mærke</label>
-                      <select 
-                        v-model="filters.make" 
-                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                        aria-label="Vælg bilmærke"
+                      <label class="block text-sm font-semibold text-base-content mb-2">Mærke</label>
+                      <select
+                        v-model="filters.make"
+                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option value="">Vælg mærke</option>
                         <option v-for="make in makes" :key="make.id" :value="make.name">
@@ -163,12 +162,11 @@ function findCars() {
 
                     <!-- Model Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-gray-700 mb-2">Model</label>
-                      <select 
-                        v-model="filters.model" 
-                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200" 
+                      <label class="block text-sm font-semibold text-base-content mb-2">Model</label>
+                      <select
+                        v-model="filters.model"
+                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         :disabled="!filters.make"
-                        aria-label="Vælg bilmodel"
                       >
                         <option value="">
                           {{ filters.make ? 'Vælg model' : 'Vælg mærke først' }}
@@ -184,11 +182,10 @@ function findCars() {
                   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
                     <!-- Vehicle Type Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-gray-700 mb-2">Biltype</label>
-                      <select 
-                        v-model="filters.body_type" 
-                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                        aria-label="Vælg biltype"
+                      <label class="block text-sm font-semibold text-base-content mb-2">Biltype</label>
+                      <select
+                        v-model="filters.body_type"
+                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option value="">Alle biltyper</option>
                         <option v-for="bodyType in bodyTypes" :key="bodyType.name" :value="bodyType.name">
@@ -199,11 +196,10 @@ function findCars() {
 
                     <!-- Max Price Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-gray-700 mb-2">Maks pris</label>
-                      <select 
-                        v-model.number="filters.price_max" 
-                        class="select select-bordered w-full bg-white border-gray-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                        aria-label="Vælg maksimal pris"
+                      <label class="block text-sm font-semibold text-base-content mb-2">Maks pris</label>
+                      <select
+                        v-model.number="filters.price_max"
+                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option :value="null">Ingen grænse</option>
                         <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr./måned</option>
@@ -284,11 +280,6 @@ function findCars() {
 /* Radial gradient background */
 .bg-radial-gradient {
   background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
-}
-
-/* Enhanced form card styling */
-.bg-card-bg\/98 {
-  background-color: rgba(251, 250, 252, 0.98);
 }
 
 /* Mobile-specific improvements */

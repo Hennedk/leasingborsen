@@ -79,7 +79,7 @@ const handleCloseClick = (e) => {
 .modal-close-btn {
   @apply absolute right-2 top-2 z-10;
   @apply w-8 h-8 rounded-full flex items-center justify-center;
-  @apply bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-700;
+  @apply bg-transparent hover:bg-base-200 text-base-content opacity-60 hover:text-base-content;
   @apply transition-colors duration-200 cursor-pointer;
 
   font-size: 20px;

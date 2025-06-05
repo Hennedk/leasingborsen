@@ -56,7 +56,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col text-base-content bg-neutral" data-theme="carwow">
+  <div class="min-h-screen flex flex-col text-base-content bg-base-200">
     <!-- Header (needs to be outside BaseLayout to not create nested headers) -->
     <Header />
     

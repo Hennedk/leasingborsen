@@ -6,28 +6,28 @@
       <div class="space-y-6 mt-6 lg:mt-0">
         <!-- Gallery Skeleton -->
         <div class="animate-pulse">
-          <div class="bg-gray-200 rounded-xl w-full h-64 sm:h-80 lg:h-96"></div>
-          <div class="h-3 bg-gray-200 rounded w-32 mt-2"></div>
+          <div class="bg-base-300 rounded-xl w-full h-64 sm:h-80 lg:h-96"></div>
+          <div class="h-3 bg-base-300 rounded w-32 mt-2"></div>
         </div>
         
         <!-- Details Skeleton -->
         <div class="animate-pulse space-y-4">
-          <div class="h-6 bg-gray-200 rounded w-24"></div>
+          <div class="h-6 bg-base-300 rounded w-24"></div>
           <div class="space-y-2">
-            <div class="h-4 bg-gray-200 rounded w-full"></div>
-            <div class="h-4 bg-gray-200 rounded w-full"></div>
-            <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-4 bg-base-300 rounded w-full"></div>
+            <div class="h-4 bg-base-300 rounded w-full"></div>
+            <div class="h-4 bg-base-300 rounded w-3/4"></div>
           </div>
         </div>
         
         <!-- Specs Skeleton -->
         <div class="animate-pulse space-y-4">
-          <div class="h-6 bg-gray-200 rounded w-32"></div>
+          <div class="h-6 bg-base-300 rounded w-32"></div>
           <div class="grid grid-cols-2 gap-4">
-            <div class="h-4 bg-gray-200 rounded"></div>
-            <div class="h-4 bg-gray-200 rounded"></div>
-            <div class="h-4 bg-gray-200 rounded"></div>
-            <div class="h-4 bg-gray-200 rounded"></div>
+            <div class="h-4 bg-base-300 rounded"></div>
+            <div class="h-4 bg-base-300 rounded"></div>
+            <div class="h-4 bg-base-300 rounded"></div>
+            <div class="h-4 bg-base-300 rounded"></div>
           </div>
         </div>
       </div>
@@ -36,20 +36,20 @@
       <div class="space-y-6 lg:sticky lg:top-4 lg:self-start">
         <!-- Header Skeleton -->
         <div class="animate-pulse space-y-4">
-          <div class="h-8 bg-gray-200 rounded w-3/4"></div>
-          <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div class="h-8 bg-base-300 rounded w-3/4"></div>
+          <div class="h-4 bg-base-300 rounded w-1/2"></div>
           <div class="flex gap-2">
-            <div class="h-6 bg-gray-200 rounded-full w-16"></div>
-            <div class="h-6 bg-gray-200 rounded-full w-12"></div>
-            <div class="h-6 bg-gray-200 rounded-full w-20"></div>
+            <div class="h-6 bg-base-300 rounded-full w-16"></div>
+            <div class="h-6 bg-base-300 rounded-full w-12"></div>
+            <div class="h-6 bg-base-300 rounded-full w-20"></div>
           </div>
         </div>
         
         <!-- Pricing Skeleton -->
-        <div class="animate-pulse space-y-4 p-6 bg-gray-50 rounded-lg">
-          <div class="h-8 bg-gray-200 rounded w-32"></div>
-          <div class="h-6 bg-gray-200 rounded w-24"></div>
-          <div class="h-10 bg-gray-200 rounded w-full"></div>
+        <div class="animate-pulse space-y-4 p-6 bg-base-200 rounded-lg">
+          <div class="h-8 bg-base-300 rounded w-32"></div>
+          <div class="h-6 bg-base-300 rounded w-24"></div>
+          <div class="h-10 bg-base-300 rounded w-full"></div>
         </div>
       </div>
     </div>
@@ -57,13 +57,13 @@
     <!-- Error State -->
     <div v-else-if="error" class="w-full py-6 sm:py-8 text-center">
       <div class="max-w-md mx-auto">
-        <div class="text-red-500 mb-4">
+        <div class="text-error mb-4">
           <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-gray-900 mb-2">Kunne ikke indlæse annonce</h2>
-        <p class="text-gray-600 mb-4">{{ error }}</p>
+        <h2 class="text-xl font-semibold text-base-content mb-2">Kunne ikke indlæse annonce</h2>
+        <p class="text-base-content opacity-70 mb-4">{{ error }}</p>
         <button @click="retryLoad" class="btn btn-primary">
           Prøv igen
         </button>
@@ -99,7 +99,7 @@
     <!-- Similar Cars Section - Show during loading and when cars exist -->
     <div v-if="!loadingListing && (loadingSimilarCars || similarCars.length > 0)" class="mt-16 transition-all duration-500 ease-in-out">
       <!-- Optional divider for visual separation -->
-      <hr class="my-8 border-gray-200" />
+      <hr class="my-8 border-base-300" />
       
       <!-- CarListingGrid with dynamic context handles its own header -->
       <CarListingGrid 
@@ -114,13 +114,13 @@
       
       <!-- Loading message (optional) -->
       <div v-if="loadingSimilarCars && similarCars.length === 0" class="text-center py-4">
-        <p class="text-sm text-base-content/60 animate-pulse">Finder lignende biler...</p>
+        <p class="text-sm text-base-content opacity-60 animate-pulse">Finder lignende biler...</p>
       </div>
     </div>
 
     <!-- Subtle ID Reference at bottom -->
     <div v-if="!loadingListing && !error" class="text-center py-4 mt-8">
-      <p class="text-xs text-gray-400 text-center mt-6">
+      <p class="text-xs text-base-content opacity-40 text-center mt-6">
         Listing ID: {{ listing.listing_id || '12345' }}
       </p>
     </div>

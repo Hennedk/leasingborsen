@@ -9,7 +9,7 @@
       <div
         v-if="shouldShowPlaceholder"
         key="placeholder"
-        class="chip-placeholder inline-flex items-center gap-1 bg-gray-100 rounded-full border border-gray-200 px-3 py-1 text-sm font-medium text-gray-500 whitespace-nowrap flex-shrink-0"
+        class="chip-placeholder inline-flex items-center gap-1 bg-base-200 rounded-full border border-base-300 px-3 py-1 text-sm font-medium text-base-content opacity-60 whitespace-nowrap flex-shrink-0"
       >
         <span>Ingen filtre anvendt</span>
       </div>
@@ -26,7 +26,7 @@
       <div
         v-for="filter in displayFilters" 
         :key="filter.key"
-        class="inline-flex items-center gap-1 bg-white rounded-full border border-neutral-300 px-3 py-1 text-sm font-medium text-black shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 whitespace-nowrap flex-shrink-0"
+        class="inline-flex items-center gap-1 bg-base-100 rounded-full border border-base-300 px-3 py-1 text-sm font-medium text-base-content shadow-sm hover:shadow-md hover:scale-105 transition-all duration-200 whitespace-nowrap flex-shrink-0"
       >
         <span>{{ filter.label }}</span>
         <button
