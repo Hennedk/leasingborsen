@@ -110,8 +110,32 @@ function findCars() {
       <div class="max-w-[1440px] mx-auto px-4 lg:px-6 py-6 lg:py-8 relative z-10">
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-12 w-full items-center">
           
-          <!-- LEFT SIDE: Search Box with improved grouping -->
-          <div class="order-2 lg:order-1 lg:col-span-2 animate-slide-in-left px-2 py-4 lg:p-0">
+          <!-- LEFT SIDE: Promotional Text with enhanced contrast -->
+          <div class="order-1 lg:order-1 lg:col-span-3 text-center px-4 py-4 lg:px-8 lg:py-6 animate-slide-in-left">
+            <div class="max-w-none space-y-4 lg:space-y-6">
+              <div class="space-y-3 lg:space-y-4">
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight tracking-tight">
+                  Find de bedste leasingtilbud
+                </h1>
+                <p class="text-base sm:text-lg lg:text-xl text-white/85 leading-relaxed tracking-wide max-w-2xl mx-auto">
+                  Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt.
+                </p>
+              </div>
+              
+              <!-- Promotional Banner Image with reduced gap -->
+              <div class="mt-6 lg:mt-8 animate-slide-in-up" style="animation-delay: 0.4s;">
+                <img 
+                  src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
+                  alt="Spring Price Reduction 2025 - Special leasing offers" 
+                  class="w-full max-w-lg mx-auto rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-300"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT SIDE: Search Box with improved grouping -->
+          <div class="order-2 lg:order-2 lg:col-span-2 animate-slide-in-right px-2 py-4 lg:p-0">
             <div class="bg-card-bg/98 backdrop-blur-md rounded-3xl shadow-2xl p-4 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300/50 space-y-4 lg:space-y-6 transition-all duration-500 ease-in">
               <!-- Grouped heading and form with tighter mobile spacing -->
               <div class="space-y-2 lg:space-y-4">
@@ -198,30 +222,6 @@ function findCars() {
               >
                 Vis {{ resultCount }} biler
               </button>
-            </div>
-          </div>
-
-          <!-- RIGHT SIDE: Promotional Text with enhanced contrast -->
-          <div class="order-1 lg:order-2 lg:col-span-3 text-center px-4 py-4 lg:px-8 lg:py-6 animate-slide-in-right">
-            <div class="max-w-none space-y-4 lg:space-y-6">
-              <div class="space-y-3 lg:space-y-4">
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white leading-tight tracking-tight">
-                  Find de bedste leasingtilbud
-                </h1>
-                <p class="text-base sm:text-lg lg:text-xl text-white/85 leading-relaxed tracking-wide max-w-2xl mx-auto">
-                  Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt.
-                </p>
-              </div>
-              
-              <!-- Promotional Banner Image with reduced gap -->
-              <div class="mt-6 lg:mt-8 animate-slide-in-up" style="animation-delay: 0.4s;">
-                <img 
-                  src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
-                  alt="Spring Price Reduction 2025 - Special leasing offers" 
-                  class="w-full max-w-lg mx-auto rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-300"
-                  loading="lazy"
-                />
-              </div>
             </div>
           </div>
           

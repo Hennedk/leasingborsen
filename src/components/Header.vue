@@ -74,10 +74,8 @@ const headerClasses = computed(() => ({
 
       <!-- Desktop menu -->
       <ul class="hidden lg:flex space-x-8 text-base">
-        <li><router-link to="/" class="text-primary font-semibold hover:underline">Home</router-link></li>
-        <li><router-link to="/listings" class="text-primary font-semibold hover:underline">Listings</router-link></li>
-        <li><router-link to="/create" class="text-primary font-semibold hover:underline">Opret</router-link></li>
-        <li><router-link to="/about" class="text-primary font-semibold hover:underline">Om</router-link></li>
+        <li><router-link to="/listings" class="text-primary font-semibold hover:underline">Alle biler</router-link></li>
+        <li><router-link to="/about" class="text-primary font-semibold hover:underline">Om Leasingbuddy</router-link></li>
       </ul>
 
       <!-- Mobile actions: menu + filter stacked for spacing -->
@@ -100,10 +98,8 @@ const headerClasses = computed(() => ({
     <div v-if="mobileMenuOpen && !isFullyHidden" class="lg:hidden">
       <div class="mx-auto w-full max-w-[1440px] px-6">
         <ul class="bg-card-bg w-full py-3 rounded-lg shadow-lg space-y-2 text-base">
-          <li><router-link to="/" @click="mobileMenuOpen = false" class="block px-4 py-2">Home</router-link></li>
-          <li><router-link to="/listings" @click="mobileMenuOpen = false" class="block px-4 py-2">Listings</router-link></li>
-          <li><router-link to="/create" @click="mobileMenuOpen = false" class="block px-4 py-2">Opret</router-link></li>
-          <li><router-link to="/about" @click="mobileMenuOpen = false" class="block px-4 py-2">Om</router-link></li>
+          <li><router-link to="/listings" @click="mobileMenuOpen = false" class="block px-4 py-2">Alle biler</router-link></li>
+          <li><router-link to="/about" @click="mobileMenuOpen = false" class="block px-4 py-2">Om Leasingbuddy</router-link></li>
         </ul>
       </div>
     </div>

@@ -43,7 +43,7 @@ onMounted(() => {
   <!-- Skeleton State -->
   <div 
     v-if="loading" 
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline"
+    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
   >
     <div class="card rounded-lg overflow-hidden">
       <!-- Image skeleton with shimmer -->
@@ -97,35 +97,49 @@ onMounted(() => {
   <RouterLink
     v-else-if="car && (car.id || car.listing_id)"
     :to="{ name: 'Listing', params: { id: car.id || car.listing_id } }"
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline"
+    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
   >
     <div class="card rounded-lg overflow-hidden">
-      <!-- Image with lazy loading and blur-up effect -->
+      <!-- Image with lazy loading and placeholder for missing images -->
       <figure class="relative rounded-t-lg overflow-hidden bg-gray-100">
-        <!-- Blur placeholder -->
+        <!-- Image placeholder for missing images -->
         <div 
-          v-if="!imageLoaded"
-          class="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse"
-        />
+          v-if="!car.image"
+          class="bg-base-200 aspect-video flex items-center justify-center text-gray-400 w-full h-52"
+        >
+          <div class="text-center">
+            <Car class="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <span class="text-sm">Billede mangler</span>
+          </div>
+        </div>
         
-        <img
-          ref="imageRef"
-          :data-src="car.image || '/placeholder.jpg'"
-          :alt="`${car.make} ${car.model}`"
-          class="w-full h-52 object-cover transition-opacity duration-500 ease-out"
-          :class="{ 
-            'opacity-0': !imageLoaded,
-            'opacity-100': imageLoaded 
-          }"
-          loading="lazy"
-        />
+        <!-- Actual image with lazy loading -->
+        <template v-else>
+          <!-- Blur placeholder -->
+          <div 
+            v-if="!imageLoaded"
+            class="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse"
+          />
+          
+          <img
+            ref="imageRef"
+            :data-src="car.image"
+            :alt="`${car.make} ${car.model}`"
+            class="w-full h-52 object-cover transition-opacity duration-500 ease-out"
+            :class="{ 
+              'opacity-0': !imageLoaded,
+              'opacity-100': imageLoaded 
+            }"
+            loading="lazy"
+          />
+        </template>
         
         <!-- Overlay gradient on hover -->
         <div class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300"></div>
       </figure>
 
       <!-- Title & Variant -->
-      <div class="px-5 pt-4">
+      <div class="px-5 pt-4 pb-2">
         <h3 class="text-lg font-bold text-primary leading-snug group-hover:text-primary/90 transition-colors duration-200">
           {{ car.make }} {{ car.model }}
         </h3>
@@ -133,7 +147,7 @@ onMounted(() => {
       </div>
 
       <!-- Price -->
-      <div class="px-5 pt-3">
+      <div class="px-5 py-2">
         <p class="text-lg font-semibold text-primary group-hover:text-primary/90 transition-colors duration-200">
           {{ car.monthly_price ? `${car.monthly_price.toLocaleString('da-DK')} kr. / måned` : 'Pris ikke tilgængelig' }}
         </p>
@@ -148,7 +162,7 @@ onMounted(() => {
       <div class="border-t border-dashed border-base-300 mx-5 my-3 group-hover:border-base-400 transition-colors duration-200"></div>
 
       <!-- Specs -->
-      <div class="px-5 pb-5">
+      <div class="px-5 pb-5 pt-2">
         <div class="grid grid-cols-2 gap-y-2 text-sm text-base-content/60">
           <div class="flex items-center gap-2 group-hover:text-base-content/80 transition-colors duration-200">
             <Fuel class="w-4 h-4 text-base-content/50 group-hover:text-base-content/70 transition-colors duration-200" /> 

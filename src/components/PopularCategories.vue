@@ -1,68 +1,80 @@
 <template>
-  <section class="bg-white py-12 lg:py-16 relative">
+  <section :class="sectionClasses">
     <!-- Subtle top shadow/divider to separate from dark hero -->
     <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent"></div>
     
-    <div class="max-w-[1440px] mx-auto px-4 lg:px-6">
-      <!-- Section Header -->
-      <div class="text-center mb-10 lg:mb-14">
-        <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-          Populære kategorier
-        </h2>
-        <p class="text-base text-base-content/70 max-w-md mx-auto text-center leading-relaxed">
-          Udforsk vores mest populære bilkategorier og find hurtigt det, du leder efter
-        </p>
-      </div>
+    <!-- Section Header -->
+    <div class="mb-6 lg:mb-8">
+      <h2 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
+        Populære kategorier
+      </h2>
+    </div>
 
-      <!-- Category Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
-        <div
-          v-for="category in categories"
-          :key="category.id"
-          @click="navigateToCategory(category.filters)"
-          class="group cursor-pointer w-full"
-        >
-          <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:bg-base-50 focus-within:ring-2 focus-within:ring-primary/20">
-            <!-- Icon -->
-            <div class="flex justify-center mb-3">
-              <div class="text-primary group-hover:scale-110 transition-transform duration-300">
-                <component :is="category.icon" class="w-6 h-6 lg:w-7 lg:h-7" />
-              </div>
+    <!-- Category Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 lg:gap-6">
+      <div
+        v-for="category in categories"
+        :key="category.id"
+        @click="navigateToCategory(category.filters)"
+        class="group cursor-pointer w-full"
+      >
+        <div class="card bg-white border border-gray-200 rounded-xl p-4 lg:p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:bg-base-50 focus-within:ring-2 focus-within:ring-primary/20">
+          <!-- Icon -->
+          <div class="flex justify-center mb-3">
+            <div class="text-primary group-hover:scale-110 transition-transform duration-300">
+              <component :is="category.icon" class="w-6 h-6 lg:w-7 lg:h-7" />
             </div>
-            
-            <!-- Label -->
-            <h3 class="font-semibold text-sm sm:text-base text-gray-900 group-hover:text-primary transition-colors duration-200 leading-tight">
-              {{ category.label }}
-            </h3>
-            
-            <!-- Subtitle -->
-            <p class="text-xs text-base-content/60 mt-1 leading-relaxed">
-              {{ category.subtitle }}
-            </p>
           </div>
+          
+          <!-- Label -->
+          <h3 class="font-semibold text-sm sm:text-base text-gray-900 group-hover:text-primary transition-colors duration-200 leading-tight">
+            {{ category.label }}
+          </h3>
+          
+          <!-- Subtitle -->
+          <p class="text-xs text-base-content/60 mt-1 leading-relaxed">
+            {{ category.subtitle }}
+          </p>
         </div>
       </div>
+    </div>
 
-      <!-- CTA Section -->
-      <div class="text-center mt-8 lg:mt-12">
-        <router-link 
-          to="/listings" 
-          class="inline-flex items-center text-primary hover:text-primary-focus font-medium transition-all duration-200 hover:gap-3 group"
-        >
-          Se alle biler
-          <ChevronRight class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
-        </router-link>
-      </div>
+    <!-- CTA Section -->
+    <div class="text-center mt-8 lg:mt-12">
+      <router-link 
+        to="/listings" 
+        class="inline-flex items-center text-primary hover:text-primary-focus font-medium transition-all duration-200 hover:gap-3 group"
+      >
+        Se alle biler
+        <ChevronRight class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />
+      </router-link>
     </div>
   </section>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Zap, DollarSign, Users, Building, Settings, ChevronRight } from 'lucide-vue-next'
 
+const props = defineProps({
+  noTopPadding: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const router = useRouter()
+
+// Computed property for section classes
+const sectionClasses = computed(() => {
+  const baseClasses = 'relative'
+  const paddingClasses = props.noTopPadding 
+    ? 'pb-6 sm:pb-8' 
+    : 'py-6 sm:py-8'
+  
+  return `${baseClasses} ${paddingClasses}`
+})
 
 // Category definitions with filters and styling
 const categories = ref([

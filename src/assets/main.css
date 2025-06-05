@@ -101,3 +101,8 @@ header {
   @apply bg-base-100 text-primary;
 }
 
+/* 🌟 Reusable Section Spacing Utility */
+.section-wrapper {
+  @apply py-6 sm:py-8 relative;
+}
+

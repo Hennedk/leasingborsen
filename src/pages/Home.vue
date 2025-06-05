@@ -3,9 +3,9 @@ import BaseLayout from '../components/BaseLayout.vue'
 import HeroBanner from '../components/HeroBanner.vue'
 import PopularCategories from '../components/PopularCategories.vue'
 import CarListingGrid from '../components/CarListingGrid.vue'
+import Header from '../components/Header.vue'
 import { ref, onMounted } from 'vue'
 import { supabase } from '../lib/supabase'
-import Header from '../components/Header.vue'
 
 const latestListings = ref([])
 const loading = ref(true)
@@ -57,27 +57,30 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen flex flex-col text-base-content bg-neutral" data-theme="carwow">
-    <!-- Header (manually included since HeroBanner is outside BaseLayout) -->
+    <!-- Header (needs to be outside BaseLayout to not create nested headers) -->
     <Header />
     
     <!-- Hero section with search - FULL WIDTH -->
     <HeroBanner />
 
-    <!-- Popular Categories section -->
-    <PopularCategories />
+    <!-- Main content area - constrained by container with generous spacing after hero -->
+    <main class="flex-1 w-full pb-6 pt-12 sm:pt-16">
+      <div class="mx-auto w-full max-w-[1440px] px-6">
+        <!-- Popular Categories section -->
+        <PopularCategories :no-top-padding="true" />
 
-    <!-- Latest Cars section - now self-contained -->
-    <CarListingGrid
-      title="Nyeste leasingbiler"
-      subtitle="Se de nyeste biler tilføjet til platformen"
-      :cars="latestListings"
-      :loading="loading"
-      :show-cta="true"
-      cta-text="Se alle biler"
-      cta-link="/listings"
-    />
+        <!-- Latest Cars section - uses dynamic context -->
+        <CarListingGrid
+          :cars="latestListings"
+          :loading="loading"
+          context="newest"
+          :show-cta="true"
+          :use-container="false"
+        />
+      </div>
+    </main>
 
-    <!-- Footer (manually included) -->
+    <!-- Footer -->
     <footer class="footer p-6 bg-neutral text-neutral-content">
       <div class="mx-auto w-full max-w-[1440px] px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <p class="text-sm">© 2025 Leasingbørsen | Inspired by Carwow</p>
