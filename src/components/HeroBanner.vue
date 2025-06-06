@@ -98,7 +98,7 @@ function findCars() {
 </script>
 
 <template>
-  <section class="hero min-h-[400px] lg:min-h-[600px] bg-gradient-to-br from-primary via-primary to-primary-focus relative overflow-hidden w-full">
+  <section class="hero min-h-[400px] lg:min-h-[600px] bg-gradient-to-br from-primary via-primary to-primary relative overflow-hidden w-full">
     <!-- Enhanced Background decorative elements -->
     <div class="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/40"></div>
     <div class="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 via-white/2 to-transparent"></div>
@@ -151,7 +151,7 @@ function findCars() {
                       <label class="block text-sm font-semibold text-base-content mb-2">Mærke</label>
                       <select
                         v-model="filters.make"
-                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option value="">Vælg mærke</option>
                         <option v-for="make in makes" :key="make.id" :value="make.name">
@@ -165,7 +165,7 @@ function findCars() {
                       <label class="block text-sm font-semibold text-base-content mb-2">Model</label>
                       <select
                         v-model="filters.model"
-                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                         :disabled="!filters.make"
                       >
                         <option value="">
@@ -185,7 +185,7 @@ function findCars() {
                       <label class="block text-sm font-semibold text-base-content mb-2">Biltype</label>
                       <select
                         v-model="filters.body_type"
-                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option value="">Alle biltyper</option>
                         <option v-for="bodyType in bodyTypes" :key="bodyType.name" :value="bodyType.name">
@@ -199,7 +199,7 @@ function findCars() {
                       <label class="block text-sm font-semibold text-base-content mb-2">Maks pris</label>
                       <select
                         v-model.number="filters.price_max"
-                        class="select select-bordered w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
                       >
                         <option :value="null">Ingen grænse</option>
                         <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr./måned</option>

@@ -43,7 +43,7 @@
     <div class="text-center mt-8 lg:mt-12">
       <router-link 
         to="/listings" 
-        class="inline-flex items-center text-primary hover:text-primary-focus font-medium transition-all duration-200 hover:gap-3 group"
+        class="inline-flex items-center text-primary hover:text-primary font-medium transition-all duration-200 hover:gap-3 group hover:opacity-90"
       >
         Se alle biler
         <ChevronRight class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform duration-200" />

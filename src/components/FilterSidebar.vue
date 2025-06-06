@@ -68,7 +68,7 @@ function resetFilters() {
       <!-- Mærke -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
-        <select v-model="localFilters.make" class="select select-bordered w-full font-medium">
+        <select v-model="localFilters.make" class="select w-full font-medium">
           <option value="">Alle</option>
           <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
         </select>
@@ -77,7 +77,7 @@ function resetFilters() {
       <!-- Model -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Model</label>
-        <select v-model="localFilters.model" class="select select-bordered w-full font-medium" :disabled="!localFilters.make">
+        <select v-model="localFilters.model" class="select w-full font-medium" :disabled="!localFilters.make">
           <option value="">Alle</option>
           <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
         </select>
@@ -86,7 +86,7 @@ function resetFilters() {
       <!-- Karosseri -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
-        <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium">
+        <select v-model="localFilters.body_type" class="select w-full font-medium">
           <option value="">Alle</option>
           <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
         </select>
@@ -95,7 +95,7 @@ function resetFilters() {
       <!-- Drivmiddel -->
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
-        <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium">
+        <select v-model="localFilters.fuel_type" class="select w-full font-medium">
           <option value="">Alle</option>
           <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
         </select>
@@ -126,11 +126,11 @@ function resetFilters() {
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
         <div class="grid grid-cols-2 gap-4">
-          <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium">
+          <select v-model.number="localFilters.seats_min" class="select w-full h-12 font-medium">
             <option :value="null">Min</option>
             <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
           </select>
-          <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium">
+          <select v-model.number="localFilters.seats_max" class="select w-full h-12 font-medium">
             <option :value="null">Max</option>
             <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
           </select>
@@ -141,11 +141,11 @@ function resetFilters() {
       <div>
         <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
         <div class="grid grid-cols-2 gap-4">
-          <select v-model.number="localFilters.price_min" class="select select-bordered w-full h-12 font-medium">
+          <select v-model.number="localFilters.price_min" class="select w-full h-12 font-medium">
             <option :value="null">Min</option>
             <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
           </select>
-          <select v-model.number="localFilters.price_max" class="select select-bordered w-full h-12 font-medium">
+          <select v-model.number="localFilters.price_max" class="select w-full h-12 font-medium">
             <option :value="null">Max</option>
             <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
             <option :value="9999999">10.000+ kr.</option>

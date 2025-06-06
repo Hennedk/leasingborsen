@@ -8,7 +8,7 @@ const showMobileFilter = ref(false)
 const props = defineProps({
   background: {
     type: String,
-    default: 'bg-neutral'
+    default: 'bg-base-200'
   }
 })
 </script>
@@ -27,7 +27,7 @@ const props = defineProps({
     </main>
 
     <!-- Footer -->
-    <footer class="footer p-6 bg-neutral text-neutral-content">
+    <footer class="footer md:footer-horizontal p-6 bg-neutral text-neutral-content">
       <div class="mx-auto w-full max-w-[1440px] px-6 flex flex-col md:flex-row justify-between items-center gap-4">
         <p class="text-sm">© 2025 Leasingbørsen | Inspired by Carwow</p>
         <div class="flex gap-6 text-sm">

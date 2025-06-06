@@ -18,8 +18,8 @@
           <div class="flex-1 overflow-auto p-4 space-y-6">
             <!-- Mærke -->
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
-              <label class="block text-sm font-bold mb-2 text-primary">Mærke</label>
-              <select v-model="localFilters.make" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+              <label class="block text-sm font-semibold text-base-content mb-2">Mærke</label>
+              <select v-model="localFilters.make" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                 <option value="">Alle</option>
                 <option v-for="make in makes" :key="make.id" :value="make.name">{{ make.name }}</option>
               </select>
@@ -27,8 +27,8 @@
 
             <!-- Model -->
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
-              <label class="block text-sm font-bold mb-2 text-primary">Model</label>
-              <select v-model="localFilters.model" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md" :disabled="!localFilters.make">
+              <label class="block text-sm font-semibold text-base-content mb-2">Model</label>
+              <select v-model="localFilters.model" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md" :disabled="!localFilters.make">
                 <option value="">Alle</option>
                 <option v-for="model in filteredModels" :key="model.id" :value="model.name">{{ model.name }}</option>
               </select>
@@ -36,8 +36,8 @@
 
             <!-- Karosseri -->
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
-              <label class="block text-sm font-bold mb-2 text-primary">Karosseri</label>
-              <select v-model="localFilters.body_type" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+              <label class="block text-sm font-semibold text-base-content mb-2">Biltype</label>
+              <select v-model="localFilters.body_type" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                 <option value="">Alle</option>
                 <option v-for="b in bodyTypes" :key="b.name" :value="b.name">{{ b.name }}</option>
               </select>
@@ -45,8 +45,8 @@
 
             <!-- Drivmiddel -->
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
-              <label class="block text-sm font-bold mb-2 text-primary">Drivmiddel</label>
-              <select v-model="localFilters.fuel_type" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+              <label class="block text-sm font-semibold text-base-content mb-2">Brændstof</label>
+              <select v-model="localFilters.fuel_type" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                 <option value="">Alle</option>
                 <option v-for="fuel in fuelTypes" :key="fuel.name" :value="fuel.name">{{ fuel.name }}</option>
               </select>
@@ -77,11 +77,11 @@
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
               <label class="block text-sm font-bold mb-2 text-primary">Antal sæder</label>
               <div class="grid grid-cols-2 gap-4">
-                <select v-model.number="localFilters.seats_min" class="select select-bordered w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <select v-model.number="localFilters.seats_min" class="select w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                   <option :value="null">Min</option>
                   <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
                 </select>
-                <select v-model.number="localFilters.seats_max" class="select select-bordered w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <select v-model.number="localFilters.seats_max" class="select w-full h-12 font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                   <option :value="null">Max</option>
                   <option v-for="n in 9" :key="n" :value="n">{{ n }}</option>
                 </select>
@@ -92,11 +92,11 @@
             <div class="transform transition-all duration-300 hover:scale-[1.01]">
               <label class="block text-sm font-bold mb-2 text-primary">Pris</label>
               <div class="grid grid-cols-2 gap-4">
-                <select v-model.number="localFilters.price_min" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <select v-model.number="localFilters.price_min" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                   <option :value="null">Min</option>
                   <option v-for="p in priceSteps" :key="'min-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
                 </select>
-                <select v-model.number="localFilters.price_max" class="select select-bordered w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
+                <select v-model.number="localFilters.price_max" class="select w-full font-medium transition-all duration-200 focus:scale-[1.02] focus:shadow-md">
                   <option :value="null">Max</option>
                   <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr.</option>
                   <option :value="9999999">10.000+ kr.</option>

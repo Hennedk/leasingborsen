@@ -99,7 +99,7 @@ watch(() => props.leaseOptions, (newOptions) => {
       <!-- Mileage Selection -->
       <div class="space-y-1">
         <label class="label-text font-semibold text-sm text-primary">Årligt km-forbrug</label>
-        <select v-model="selectedMileage" class="select select-bordered w-full">
+        <select v-model="selectedMileage" class="select w-full">
           <option v-for="m in availableMileages" :key="m" :value="m">
             {{ m.toLocaleString() }} km/år
           </option>
@@ -109,7 +109,7 @@ watch(() => props.leaseOptions, (newOptions) => {
       <!-- Period Selection -->
       <div class="space-y-1">
         <label class="label-text font-semibold text-sm text-primary">Leasingperiode</label>
-        <select v-model="selectedPeriod" class="select select-bordered w-full">
+        <select v-model="selectedPeriod" class="select w-full">
           <option v-for="p in availablePeriods" :key="p" :value="p">
             {{ p }} måneder
           </option>
@@ -119,7 +119,7 @@ watch(() => props.leaseOptions, (newOptions) => {
       <!-- Upfront Payment Selection -->
       <div class="space-y-1">
         <label class="label-text font-semibold text-sm text-primary">Udbetaling</label>
-        <select v-model="selectedUpfront" class="select select-bordered w-full">
+        <select v-model="selectedUpfront" class="select w-full">
           <option v-for="f in availableUpfronts" :key="f" :value="f">
             {{ f?.toLocaleString() }} kr
           </option>
@@ -169,7 +169,7 @@ watch(() => props.leaseOptions, (newOptions) => {
           :href="seller.website"
           target="_blank"
           rel="noopener noreferrer"
-          class="btn btn-primary btn-block"
+          class="btn btn-primary w-full"
           @click="trackSellerVisit(seller.id)"
         >
           <ExternalLink class="w-4 h-4 mr-2" />
