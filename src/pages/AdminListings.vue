@@ -475,9 +475,9 @@ const submitListing = async () => {
       throw new Error('Mærke, model, karrosseri, brændstof og gearkasse er påkrævet')
     }
     
-    // Validate that colour is selected (required for view)
-    if (!newListing.value.offers[0].colour_id) {
-      throw new Error('Farve er påkrævet')
+    // Validate that horsepower is provided (mandatory field)
+    if (!newListing.value.horsepower || newListing.value.horsepower <= 0) {
+      throw new Error('Hestekræfter er påkrævet og skal være større end 0')
     }
     
     // Validate at least one lease price
@@ -1112,12 +1112,11 @@ onMounted(async () => {
                     <div class="space-y-4">
                       <div class="form-control">
                         <label class="label">
-                          <span class="label-text font-medium">Farve <span class="text-error">*</span></span>
+                          <span class="label-text font-medium">Farve</span>
                         </label>
                         <select 
                           v-model="newListing.offers[0].colour_id"
                           class="select select-bordered select-sm"
-                          required
                         >
                           <option value="">Vælg farve</option>
                           <option v-for="colour in colours" :key="colour.id" :value="colour.id">
@@ -1177,14 +1176,15 @@ onMounted(async () => {
                       <div class="grid grid-cols-2 gap-3">
                         <div class="form-control">
                           <label class="label">
-                            <span class="label-text-alt">HK</span>
+                            <span class="label-text-alt">HK <span class="text-error">*</span></span>
                           </label>
                           <input 
                             v-model.number="newListing.horsepower"
                             type="number"
                             class="input input-bordered input-sm"
                             placeholder="150"
-                            min="0"
+                            min="1"
+                            required
                           >
                         </div>
 

@@ -10,6 +10,7 @@
 - [Vue Router Fix](#admin-006) - Admin navigation warnings
 - [Database Schema Fix](#admin-007) - Column validation and CRUD completion
 - [Sellers Table Database Schema Corrections](#admin-008) - Sellers table field name corrections
+- [Listing Validation Update](#admin-009) - Remove colour, add horsepower as mandatory
 
 ---
 
@@ -1442,6 +1443,58 @@ const sellerData = {
 **Related Issues**: ADMIN-007 (Database schema pattern)
 **Testing**: Build successful, all CRUD operations functional
 **Performance Impact**: No performance impact, corrects database errors
+
+---
+
+### ADMIN-009: Listing Validation Field Requirements Update
+**Problem**: User requested to remove colour as mandatory field and add horsepower as mandatory for listing creation
+**Solution**: Updated validation logic and form UI to make horsepower required instead of colour
+**Files**: `src/pages/AdminListings.vue`
+**Date**: 2025-01-15
+**Tags**: #validation #listings #admin #forms #requirements
+
+**Context for Future Agents**:
+The listing creation form had colour as a mandatory field, but business requirements changed to make horsepower mandatory instead while keeping colour optional.
+
+**Changes Made**:
+
+1. **JavaScript Validation Logic**:
+```javascript
+// OLD validation:
+if (!newListing.value.offers[0].colour_id) {
+  throw new Error('Farve er påkrævet')
+}
+
+// NEW validation:
+if (!newListing.value.horsepower || newListing.value.horsepower <= 0) {
+  throw new Error('Hestekræfter er påkrævet og skal være større end 0')
+}
+```
+
+2. **Template Updates**:
+- **Colour field**: Removed `required` attribute and `*` asterisk
+- **Horsepower field**: Added `required` attribute, `*` asterisk, and `min="1"`
+
+**Current Mandatory Fields for Listing Creation**:
+- Mærke (Make) - `make_id`
+- Model - `model_id` 
+- Karrosseri (Body Type) - `body_type_id`
+- Brændstof (Fuel Type) - `fuel_type_id`
+- Gearkasse (Transmission) - `transmission_id`
+- **Hestekræfter (Horsepower)** - `horsepower` (NEW)
+
+**Optional Fields**:
+- **Farve (Colour)** - `colour_id` (CHANGED from mandatory)
+- All other fields remain optional
+
+**Validation Rules**:
+- Horsepower must be > 0 (positive integer)
+- At least one lease price must be specified
+- All reference fields must exist in their respective tables
+
+**Related Issues**: Part of admin system completion
+**Testing**: Build successful, form validation working correctly
+**Performance Impact**: No performance impact, only validation logic change
 
 ---
 
