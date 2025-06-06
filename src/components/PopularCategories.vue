@@ -18,23 +18,24 @@
         @click="navigateToCategory(category.filters)"
         class="group cursor-pointer w-full"
       >
-        <div class="card bg-base-100 border border-base-300 rounded-xl p-4 lg:p-5 text-center transition-all duration-300 hover:shadow-md hover:-translate-y-1 hover:bg-base-200 focus-within:ring-2 focus-within:ring-primary/20">
-          <!-- Icon -->
-          <div class="flex justify-center mb-3">
-            <div class="text-primary group-hover:scale-110 transition-transform duration-300">
-              <component :is="category.icon" class="w-6 h-6 lg:w-7 lg:h-7" />
+        <div class="card card-compact bg-base-100 border border-base-300/50 hover:border-primary/20 hover:shadow-xl hover:-translate-y-1 hover:bg-base-50 transition-all duration-300 cursor-pointer group">
+          <div class="card-body items-center text-center">
+            <!-- Icon with enhanced animation -->
+            <div class="text-primary group-hover:text-primary group-hover:scale-110 transition-all duration-300 mb-3">
+              <component :is="category.icon" class="w-8 h-8 lg:w-10 lg:h-10" />
+            </div>
+            
+            <!-- Enhanced content with DaisyUI 5 typography -->
+            <div class="space-y-2">
+              <h3 class="card-title text-sm sm:text-base group-hover:text-primary transition-colors duration-200 justify-center">
+                {{ category.label }}
+              </h3>
+              
+              <p class="text-xs text-base-content/60 leading-relaxed">
+                {{ category.subtitle }}
+              </p>
             </div>
           </div>
-          
-          <!-- Label -->
-          <h3 class="font-semibold text-sm sm:text-base text-base-content group-hover:text-primary transition-colors duration-200 leading-tight">
-            {{ category.label }}
-          </h3>
-          
-          <!-- Subtitle -->
-          <p class="text-xs text-base-content opacity-60 mt-1 leading-relaxed">
-            {{ category.subtitle }}
-          </p>
         </div>
       </div>
     </div>

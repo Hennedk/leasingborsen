@@ -56,27 +56,31 @@ onMounted(async () => {
 </script>
 
 <template>
+  <!-- Custom layout for home page with full-width hero -->
   <div class="min-h-screen flex flex-col text-base-content bg-base-200">
-    <!-- Header (needs to be outside BaseLayout to not create nested headers) -->
+    <!-- Header -->
     <Header />
     
-    <!-- Hero section with search - FULL WIDTH -->
+    <!-- Hero section - Full width outside of container -->
     <HeroBanner />
 
-    <!-- Main content area - constrained by container with generous spacing after hero -->
-    <main class="flex-1 w-full pb-6 pt-12 sm:pt-16">
+    <!-- Main content with container -->
+    <main class="flex-1 w-full pb-6">
       <div class="mx-auto w-full max-w-[1440px] px-6">
-        <!-- Popular Categories section -->
-        <PopularCategories :no-top-padding="true" />
+        <!-- Main content sections with proper spacing -->
+        <div class="space-y-12 pt-12 sm:pt-16">
+    <!-- Popular Categories section -->
+          <PopularCategories :no-top-padding="true" />
 
-        <!-- Latest Cars section - uses dynamic context -->
-        <CarListingGrid
-          :cars="latestListings"
-          :loading="loading"
-          context="newest"
-          :show-cta="true"
-          :use-container="false"
-        />
+          <!-- Latest Cars section - uses dynamic context -->
+    <CarListingGrid
+      :cars="latestListings"
+      :loading="loading"
+            context="newest"
+      :show-cta="true"
+            :use-container="false"
+    />
+        </div>
       </div>
     </main>
 

@@ -1,11 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { X } from 'lucide-vue-next'
 
-const props = defineProps({
-  title: {
-    type: String,
-    default: ''
-  },
+defineProps({
   isOpen: {
     type: Boolean,
     default: false
@@ -16,74 +12,39 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
-
-const dialogRef = ref(null)
-
-// Watch for isOpen changes to control dialog
-watch(() => props.isOpen, (newValue) => {
-  if (newValue) {
-    dialogRef.value?.showModal()
-  } else {
-    dialogRef.value?.close()
-  }
-})
-
-// Handle dialog close event
-const handleClose = () => {
-  emit('close')
-}
-
-// Handle close button click
-const handleCloseClick = (e) => {
-  e.preventDefault()
-  e.stopPropagation()
-  handleClose()
-}
+defineEmits(['close'])
 </script>
 
 <template>
-  <dialog :id="modalId" ref="dialogRef" class="modal" @close="handleClose">
-    <div class="modal-box space-y-4 max-w-md relative">
-      <!-- Close button with specific overrides -->
+  <!-- Enhanced DaisyUI 5 Modal -->
+  <div v-if="isOpen" class="modal modal-open backdrop-blur-sm">
+    <div class="modal-box relative shadow-2xl border border-base-300/20">
+      <!-- Enhanced Close Button -->
       <button
-        @click="handleCloseClick"
-        class="modal-close-btn"
-        aria-label="Luk"
-        type="button"
+        @click="$emit('close')"
+        class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3 hover:btn-error hover:scale-110 transition-all duration-200"
+        aria-label="Close modal"
       >
-        ✕
+        <X class="w-4 h-4" />
       </button>
 
-      <!-- Modal title -->
-      <div v-if="title || $slots.title">
-        <slot name="title">
-          <h3 class="text-lg font-bold">{{ title }}</h3>
-        </slot>
+      <!-- Modal Header -->
+      <div v-if="$slots.title" class="mb-6">
+        <slot name="title" />
       </div>
 
-      <!-- Modal content -->
-      <div>
+      <!-- Modal Content -->
+      <div class="space-y-4">
         <slot />
       </div>
 
-      <!-- Modal footer -->
-      <div v-if="$slots.footer">
+      <!-- Modal Footer -->
+      <div v-if="$slots.footer" class="modal-action pt-6">
         <slot name="footer" />
       </div>
     </div>
-  </dialog>
+    
+    <!-- Enhanced backdrop click to close -->
+    <div class="modal-backdrop" @click="$emit('close')"></div>
+  </div>
 </template>
-
-<style scoped>
-.modal-close-btn {
-  @apply absolute right-2 top-2 z-10;
-  @apply w-8 h-8 rounded-full flex items-center justify-center;
-  @apply bg-transparent hover:bg-base-200 text-base-content opacity-60 hover:text-base-content;
-  @apply transition-colors duration-200 cursor-pointer;
-
-  font-size: 20px;
-  line-height: 1;
-  font-weight: normal;
-}
-</style>

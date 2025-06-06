@@ -79,64 +79,69 @@ watch(() => props.leaseOptions, (newOptions) => {
 </script>
 
 <template>
-  <div class="card bg-base-100 shadow-md rounded-lg p-4 space-y-4">
-    <!-- Monthly Price -->
-    <div>
-      <h3 class="text-3xl font-bold text-primary mb-2">
-        {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md
-      </h3>
-    </div>
-
-           <!-- Reset Link with better separation -->
-    <div class="mt-2">
-      <a class="link text-sm text-base-content opacity-70 cursor-pointer" @click="resetToCheapest">
-        Find billigere tilbud
-      </a>
-    </div>
-
-    <!-- Form Fields -->
-    <div class="space-y-4">
-      <!-- Mileage Selection -->
-      <div class="space-y-1">
-        <label class="label-text font-semibold text-sm text-primary">Årligt km-forbrug</label>
-        <select v-model="selectedMileage" class="select w-full">
-          <option v-for="m in availableMileages" :key="m" :value="m">
-            {{ m.toLocaleString() }} km/år
-          </option>
-        </select>
+  <div class="card bg-base-100 shadow-md border border-base-300 rounded-lg">
+    <div class="card-body space-y-4">
+      <!-- Monthly Price -->
+      <div>
+        <h3 class="text-3xl font-bold text-primary mb-2">
+          {{ selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–' }} kr/md
+        </h3>
       </div>
 
-      <!-- Period Selection -->
-      <div class="space-y-1">
-        <label class="label-text font-semibold text-sm text-primary">Leasingperiode</label>
-        <select v-model="selectedPeriod" class="select w-full">
-          <option v-for="p in availablePeriods" :key="p" :value="p">
-            {{ p }} måneder
-          </option>
-        </select>
+      <!-- Reset Link with better separation -->
+      <div class="mt-2">
+        <a class="link text-sm text-base-content opacity-70 cursor-pointer" @click="resetToCheapest">
+          Find billigere tilbud
+        </a>
       </div>
 
-      <!-- Upfront Payment Selection -->
-      <div class="space-y-1">
-        <label class="label-text font-semibold text-sm text-primary">Udbetaling</label>
-        <select v-model="selectedUpfront" class="select w-full">
-          <option v-for="f in availableUpfronts" :key="f" :value="f">
-            {{ f?.toLocaleString() }} kr
-          </option>
-        </select>
+      <!-- Form Fields -->
+      <div class="space-y-4">
+        <!-- Mileage Selection -->
+        <div>
+          <label class="label">
+            <span class="label-text font-semibold text-primary">Årligt km-forbrug</span>
+          </label>
+          <select v-model="selectedMileage" class="select select-primary w-full">
+            <option v-for="m in availableMileages" :key="m" :value="m">
+              {{ m.toLocaleString() }} km/år
+            </option>
+          </select>
+        </div>
+
+        <!-- Period Selection -->
+        <div>
+          <label class="label">
+            <span class="label-text font-semibold text-primary">Leasingperiode</span>
+          </label>
+          <select v-model="selectedPeriod" class="select select-primary w-full">
+            <option v-for="p in availablePeriods" :key="p" :value="p">
+              {{ p }} måneder
+            </option>
+          </select>
+        </div>
+
+        <!-- Upfront Payment Selection -->
+        <div>
+          <label class="label">
+            <span class="label-text font-semibold text-primary">Udbetaling</span>
+          </label>
+          <select v-model="selectedUpfront" class="select select-primary w-full">
+            <option v-for="f in availableUpfronts" :key="f" :value="f">
+              {{ f?.toLocaleString() }} kr
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Primary CTA Button -->
+      <div class="pt-4">
+        <button @click="openSellerModal" class="btn btn-primary w-full gap-2">
+          <ExternalLink class="w-4 h-4" />
+          Se tilbud hos leasingselskab
+        </button>
       </div>
     </div>
-
-
-    <!-- Primary CTA Button -->
-    <div class="pt-4">
-      <button @click="openSellerModal" class="btn btn-primary w-full gap-2">
-        <ExternalLink class="w-4 h-4" />
-        Se tilbud hos leasingselskab
-      </button>
-    </div>
-
-
   </div>
 
   <!-- Seller Modal -->

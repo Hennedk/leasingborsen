@@ -1,11 +1,40 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { Filter } from 'lucide-vue-next'
+import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
+import { Filter, Palette } from 'lucide-vue-next'
 
 const mobileMenuOpen = ref(false)
 const scrollY = ref(0)
 
+// Inject theme state from App.vue
+const themeState = inject('theme')
+
+if (!themeState) {
+  console.error('Theme state not available! Make sure App.vue provides the theme.')
+}
+
+const currentTheme = themeState?.currentTheme || ref('light')
+const setTheme = (theme) => {
+  console.log('Header setTheme called with:', theme)
+  if (themeState?.setTheme) {
+    themeState.setTheme(theme)
+  } else {
+    console.error('setTheme function not available!')
+  }
+}
+
 const HEADER_HEIGHT = 64
+
+// Available themes
+const themes = [
+  { value: 'light', label: '☀️ Light', description: 'Clean and bright' },
+  { value: 'dark', label: '🌙 Dark', description: 'Dark and modern' },
+  { value: 'corporate', label: '💼 Corporate', description: 'Professional blue' },
+  { value: 'business', label: '🏢 Business', description: 'Clean business' },
+  { value: 'synthwave', label: '🌈 Synthwave', description: 'Retro and colorful' },
+  { value: 'cyberpunk', label: '🤖 Cyberpunk', description: 'Futuristic' },
+  { value: 'fantasy', label: '🧚 Fantasy', description: 'Magical and pink' },
+  { value: 'luxury', label: '✨ Luxury', description: 'Elegant and gold' },
+]
 
 // Initialize scroll position on mount
 onMounted(() => {
@@ -58,6 +87,11 @@ const headerClasses = computed(() => ({
   'pointer-events-none': isFullyHidden.value,
   'invisible': isFullyHidden.value
 }))
+
+// Get current theme display info
+const currentThemeInfo = computed(() => 
+  themes.find(t => t.value === currentTheme.value) || themes[0]
+)
 </script>
 
 <template>
@@ -72,15 +106,59 @@ const headerClasses = computed(() => ({
         Leasingbørsen
       </router-link>
 
-      <!-- Desktop menu -->
-      <ul class="hidden lg:flex space-x-8 text-base">
-        <li><router-link to="/listings" class="text-primary font-semibold hover:underline">Alle biler</router-link></li>
-        <li><router-link to="/about" class="text-primary font-semibold hover:underline">Om Leasingbuddy</router-link></li>
-      </ul>
+      <!-- Desktop menu with theme switcher -->
+      <div class="hidden lg:flex items-center space-x-8">
+        <!-- Navigation -->
+        <ul class="flex space-x-8 text-base">
+          <li><router-link to="/listings" class="text-primary font-semibold hover:underline">Alle biler</router-link></li>
+          <li><router-link to="/about" class="text-primary font-semibold hover:underline">Om Leasingbuddy</router-link></li>
+        </ul>
+        
+        <!-- Theme Switcher Dropdown -->
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-sm gap-2">
+            <Palette class="w-4 h-4" />
+            <span class="hidden sm:inline">{{ currentThemeInfo.label }}</span>
+          </div>
+          <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-64 p-2 shadow-xl border border-base-300">
+            <li class="menu-title">
+              <span class="text-base-content opacity-60">Choose Theme</span>
+            </li>
+            <li v-for="theme in themes" :key="theme.value">
+              <a 
+                @click="setTheme(theme.value)"
+                :class="{ 'active': currentTheme === theme.value }"
+                class="flex flex-col items-start gap-1 py-3"
+              >
+                <span class="font-semibold">{{ theme.label }}</span>
+                <span class="text-xs opacity-60">{{ theme.description }}</span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-      <!-- Mobile actions: menu + filter stacked for spacing -->
-      <div class="flex flex-col items-center gap-2 lg:hidden">
-        <!-- Menu Button: simple icon without background -->
+      <!-- Mobile actions: menu + theme -->
+      <div class="flex items-center gap-2 lg:hidden">
+        <!-- Mobile Theme Switcher -->
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-sm">
+            <Palette class="w-4 h-4" />
+          </div>
+          <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow-xl border border-base-300">
+            <li v-for="theme in themes" :key="theme.value">
+              <a 
+                @click="setTheme(theme.value)"
+                :class="{ 'active': currentTheme === theme.value }"
+                class="text-sm"
+              >
+                {{ theme.label }}
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Menu Button -->
         <button 
           class="p-2 text-primary hover:text-primary/70 transition-colors" 
           @click="mobileMenuOpen = !mobileMenuOpen"

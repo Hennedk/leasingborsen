@@ -136,22 +136,24 @@ function findCars() {
 
           <!-- RIGHT SIDE: Search Box with improved grouping -->
           <div class="order-2 lg:order-2 lg:col-span-2 animate-slide-in-right px-2 py-4 lg:p-0">
-            <div class="bg-base-100 backdrop-blur-md rounded-3xl shadow-2xl p-4 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300 space-y-4 lg:space-y-6 transition-all duration-500 ease-in">
-              <!-- Grouped heading and form with tighter mobile spacing -->
-              <div class="space-y-2 lg:space-y-4">
+            <div class="bg-base-100 backdrop-blur-md rounded-3xl shadow-2xl p-6 lg:p-8 w-full max-w-[95%] sm:max-w-lg lg:max-w-none mx-auto border border-base-300/50 space-y-6 lg:space-y-8 transition-all duration-500 ease-in hover:shadow-xl">
+              <!-- Grouped heading and form with enhanced spacing -->
+              <div class="space-y-3 lg:space-y-4">
                 <h2 class="text-xl lg:text-2xl font-bold text-base-content text-center lg:text-left leading-tight">
                   Søg blandt hundredvis af leasingbiler – find din drømmebil nu
                 </h2>
                 
-                <div class="space-y-3 lg:space-y-5">
+                <div class="space-y-4 lg:space-y-6">
                   <!-- First Row: Make and Model -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     <!-- Make Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-base-content mb-2">Mærke</label>
+                      <label class="label">
+                        <span class="label-text font-semibold text-primary">Mærke</span>
+                      </label>
                       <select
                         v-model="filters.make"
-                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select select-primary w-full"
                       >
                         <option value="">Vælg mærke</option>
                         <option v-for="make in makes" :key="make.id" :value="make.name">
@@ -162,10 +164,12 @@ function findCars() {
 
                     <!-- Model Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-base-content mb-2">Model</label>
+                      <label class="label">
+                        <span class="label-text font-semibold text-primary">Model</span>
+                      </label>
                       <select
                         v-model="filters.model"
-                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select select-primary w-full"
                         :disabled="!filters.make"
                       >
                         <option value="">
@@ -179,13 +183,15 @@ function findCars() {
                   </div>
 
                   <!-- Second Row: Vehicle Type and Max Price -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     <!-- Vehicle Type Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-base-content mb-2">Biltype</label>
+                      <label class="label">
+                        <span class="label-text font-semibold text-primary">Biltype</span>
+                      </label>
                       <select
                         v-model="filters.body_type"
-                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select select-primary w-full"
                       >
                         <option value="">Alle biltyper</option>
                         <option v-for="bodyType in bodyTypes" :key="bodyType.name" :value="bodyType.name">
@@ -196,10 +202,12 @@ function findCars() {
 
                     <!-- Max Price Dropdown -->
                     <div>
-                      <label class="block text-sm font-semibold text-base-content mb-2">Maks pris</label>
+                      <label class="label">
+                        <span class="label-text font-semibold text-primary">Maks pris</span>
+                      </label>
                       <select
                         v-model.number="filters.price_max"
-                        class="select w-full bg-base-100 border-base-300 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                        class="select select-primary w-full"
                       >
                         <option :value="null">Ingen grænse</option>
                         <option v-for="p in priceSteps" :key="'max-' + p" :value="p">{{ p.toLocaleString() }} kr./måned</option>
@@ -212,7 +220,7 @@ function findCars() {
 
               <!-- Enhanced Primary CTA -->
               <button 
-                class="btn btn-primary w-full h-14 lg:h-16 text-lg lg:text-xl font-bold shadow-xl hover:shadow-2xl transform hover:scale-[1.02] active:scale-[0.98] transition-all duration-300" 
+                class="btn btn-primary btn-lg w-full shadow-xl hover:shadow-2xl font-bold tracking-wide" 
                 @click="findCars"
                 aria-label="Søg efter biler med de valgte kriterier"
               >

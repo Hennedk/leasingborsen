@@ -474,10 +474,10 @@ const loadListing = async () => {
 
   try {
     const { data, error: fetchError } = await supabase
-      .from('full_listing_view')
-      .select('*')
+    .from('full_listing_view')
+    .select('*')
       .eq('listing_id', id)
-      .single()
+    .single()
 
     if (fetchError) {
       throw new Error(`Fejl ved hentning af annonce: ${fetchError.message}`)

@@ -43,9 +43,9 @@ onMounted(() => {
   <!-- Skeleton State -->
   <div 
     v-if="loading" 
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
+    class="block"
   >
-    <div class="card rounded-lg overflow-hidden">
+    <div class="card bg-base-100 shadow-md border border-base-300 rounded-lg overflow-hidden">
       <!-- Image skeleton with shimmer -->
       <figure class="relative rounded-t-lg overflow-hidden bg-base-200">
         <div class="w-full h-52 bg-base-300 relative overflow-hidden">
@@ -97,9 +97,9 @@ onMounted(() => {
   <RouterLink
     v-else-if="car && (car.id || car.listing_id)"
     :to="{ name: 'Listing', params: { id: car.id || car.listing_id } }"
-    class="block rounded-lg hover:shadow-xl transition-all duration-300 hover:bg-base-200 focus:outline-none focus:ring-2 focus:ring-primary/20 group no-underline mb-6"
+    class="block group no-underline"
   >
-    <div class="card rounded-lg overflow-hidden">
+    <div class="card bg-base-100 shadow-md border border-base-300 hover:shadow-xl hover:border-primary/20 transition-all duration-300 rounded-lg overflow-hidden">
       <!-- Image with lazy loading and placeholder for missing images -->
       <figure class="relative rounded-t-lg overflow-hidden bg-base-200">
         <!-- Image placeholder for missing images -->
@@ -138,47 +138,50 @@ onMounted(() => {
         <div class="absolute inset-0 bg-neutral/0 group-hover:bg-neutral/5 transition-all duration-300"></div>
       </figure>
 
-      <!-- Title & Variant -->
-      <div class="px-5 pt-4 pb-2">
-        <h3 class="text-lg font-bold text-primary leading-snug group-hover:text-primary/90 transition-colors duration-200">
-          {{ car.make }} {{ car.model }}
-        </h3>
-        <p class="text-sm text-base-content mt-1">{{ car.variant }}</p>
-      </div>
+      <!-- Card Body Content -->
+      <div class="card-body px-5 py-4">
+        <!-- Title & Variant -->
+        <div class="pb-2">
+          <h3 class="card-title text-lg font-bold text-primary leading-snug group-hover:text-primary/90 transition-colors duration-200">
+            {{ car.make }} {{ car.model }}
+          </h3>
+          <p class="text-sm text-base-content mt-1">{{ car.variant }}</p>
+        </div>
 
-      <!-- Price -->
-      <div class="px-5 py-2">
-        <p class="text-lg font-semibold text-primary group-hover:text-primary/90 transition-colors duration-200">
-          {{ car.monthly_price ? `${car.monthly_price.toLocaleString('da-DK')} kr. / måned` : 'Pris ikke tilgængelig' }}
-        </p>
-        <p class="text-xs text-base-content mt-0.5">
-          {{ car.mileage_per_year ? `${car.mileage_per_year.toLocaleString()} km/år` : 'Km ikke angivet' }}
-          •
-          {{ car.first_payment ? `Udbetaling: ${car.first_payment.toLocaleString()} kr` : 'Udbetaling ikke angivet' }}
-        </p>
-      </div>
+        <!-- Price -->
+        <div class="py-2">
+          <p class="text-lg font-semibold text-primary group-hover:text-primary/90 transition-colors duration-200">
+            {{ car.monthly_price ? `${car.monthly_price.toLocaleString('da-DK')} kr. / måned` : 'Pris ikke tilgængelig' }}
+          </p>
+          <p class="text-xs text-base-content mt-0.5">
+            {{ car.mileage_per_year ? `${car.mileage_per_year.toLocaleString()} km/år` : 'Km ikke angivet' }}
+            •
+            {{ car.first_payment ? `Udbetaling: ${car.first_payment.toLocaleString()} kr` : 'Udbetaling ikke angivet' }}
+          </p>
+        </div>
 
-      <!-- Divider -->
-      <div class="border-t border-dashed border-base-300 mx-5 my-3 group-hover:border-base-400 transition-colors duration-200"></div>
+        <!-- Divider -->
+        <div class="divider my-3"></div>
 
-      <!-- Specs -->
-      <div class="px-5 pb-5 pt-2">
-        <div class="grid grid-cols-2 gap-y-2 text-sm text-base-content">
-          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
-            <Fuel class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
-            {{ car.fuel_type || '–' }}
-          </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
-            <Settings class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
-            {{ car.transmission || '–' }}
-          </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
-            <Car class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
-            {{ car.body_type || '–' }}
-          </div>
-          <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
-            <Gauge class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
-            {{ car.horsepower ? `${car.horsepower} hk` : '–' }}
+        <!-- Specs -->
+        <div class="pt-2">
+          <div class="grid grid-cols-2 gap-y-2 text-sm text-base-content">
+            <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+              <Fuel class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
+              {{ car.fuel_type || '–' }}
+            </div>
+            <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+              <Settings class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
+              {{ car.transmission || '–' }}
+            </div>
+            <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+              <Car class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
+              {{ car.body_type || '–' }}
+            </div>
+            <div class="flex items-center gap-2 group-hover:text-base-content transition-colors duration-200">
+              <Gauge class="w-4 h-4 text-base-content group-hover:text-base-content transition-colors duration-200" /> 
+              {{ car.horsepower ? `${car.horsepower} hk` : '–' }}
+            </div>
           </div>
         </div>
       </div>

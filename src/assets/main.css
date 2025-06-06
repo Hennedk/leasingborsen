@@ -1,23 +1,20 @@
-@import "./base.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark --prefersdark, synthwave, cyberpunk, corporate, business, fantasy, luxury;
+}
 
-/* Prevent scrollbar layout shifts */
+/* @import "./base.css"; */ /* Temporarily disabled to test DaisyUI */
+
+/* Essential global styles */
 html {
   scroll-behavior: smooth;
-  overflow-y: scroll; /* Force scrollbar to always be visible */
+  overflow-y: scroll;
 }
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-  
-  *,
-  *::before,
-  *::after {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -25,76 +22,139 @@ html {
   }
 }
 
-#app {
-  @apply w-full font-sans text-base-content bg-base-100;
-}
-
+/* Base typography */
 body {
-  @apply font-sans text-base leading-relaxed text-base-content bg-base-100;
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
     Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: color 0.5s, background-color 0.5s;
 }
 
-/* 🌟 Updated Links Styling - Only for text links, not card links */
-a:not(.no-underline) {
-  @apply transition-colors duration-300;
-}
+/* Temporarily removed all custom @apply rules to test DaisyUI */
 
-a:not(.no-underline):hover {
+/* 🌟 Enhanced Links Styling - Use DaisyUI classes directly in templates */
+a:not(.no-underline):not(.btn):not(.card) {
   @apply underline;
+  /* For better links, add 'link link-hover' classes directly in templates */
 }
 
-/* 🌟 Form Elements Styling */
+/* 🌟 Enhanced Form Elements - Keep only Tailwind-native classes */
 .select, .input, .textarea, .btn {
-  @apply font-medium text-base rounded-lg px-4 py-2 transition-all shadow-none;
+  @apply transition-all duration-200;
 }
 
 .input, .select, .textarea {
-  @apply border border-base-300 focus:border-primary focus:ring-2 focus:ring-primary outline-none;
+  @apply focus:scale-[1.01] focus:shadow-lg;
 }
 
-/* Let DaisyUI handle all button colors and styling */
-
-label {
-  @apply font-semibold text-base text-base-content;
+/* Enhanced animations - Keep only Tailwind-native classes */
+.btn {
+  @apply hover:scale-[1.02] active:scale-[0.98];
 }
 
-/* 🌟 Base Card Styling */
+/* 🌟 Enhanced Card Styling - Add utility class for templates */
 .card {
-  @apply rounded-lg border border-base-300 bg-base-100 shadow-sm font-sans;
+  @apply shadow-md border transition-all duration-300 hover:shadow-lg;
+  /* For proper cards, add 'bg-base-100 border-base-300' classes directly in templates */
 }
 
-/* 🌟 Card Variant for Filter */
-.card-filter {
-  @apply p-4;
+/* 🌟 Utility classes to use in templates (replacing removed @apply) */
+.card-theme {
+  /* Use this class: card card-theme bg-base-100 border-base-300 */
 }
 
-/* 🌟 Reusable Button Style to Match Selects */
-.btn-select-like {
-  @apply select text-left w-auto min-w-[100px] font-medium text-base leading-tight px-4 py-2 rounded-lg transition;
+.badge-theme {
+  /* Use this class: badge badge-lg badge-theme */
 }
 
-/* Header Styling */
-header {
-  @apply bg-transparent backdrop-blur-md shadow-md;
+.loading-theme {
+  /* Use this class: loading loading-spinner loading-lg text-primary loading-theme */
 }
 
-.btn-toggle {
-  @apply w-full rounded-lg border border-base-300 font-medium text-sm px-4 py-2 transition;
-}
-.btn-toggle-selected {
-  @apply bg-primary text-primary-content;
-}
-.btn-toggle-unselected {
-  @apply bg-base-100 text-primary;
+.text-theme-primary {
+  /* Use this class: text-primary text-theme-primary */
 }
 
-/* 🌟 Reusable Section Spacing Utility */
+.text-theme-success {
+  /* Use this class: text-success text-theme-success */
+}
+
+.text-theme-content {
+  /* Use this class: text-base-content text-theme-content */
+}
+
+/* 🌟 Enhanced Badge System - For use in templates */
+.badge-enhanced {
+  @apply font-semibold tracking-wide;
+  @apply hover:scale-105 transition-transform duration-200;
+  /* Add these classes in templates: badge badge-lg badge-enhanced */
+}
+
+/* Status indicators - Use these combinations in templates:
+   status-available: badge badge-success
+   status-pending: badge badge-warning  
+   status-sold: badge badge-error
+   status-reserved: badge badge-info */
+
+/* Enhanced Loading States - Use in templates */
+.loading-enhanced {
+  /* Add these classes in templates: loading loading-spinner loading-lg text-primary loading-enhanced */
+}
+
+/* Enhanced Glass Effect - Keep Tailwind-native classes */
+.glass-enhanced {
+  @apply backdrop-blur-lg;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.7) 0%, 
+    rgba(255, 255, 255, 0.3) 100%);
+}
+
+/* 🌟 Custom Component Extensions */
+
+/* Price Display Component - Use in templates */
+.price-display {
+  @apply text-2xl font-bold;
+  /* Add 'text-primary' class in templates alongside 'price-display' */
+}
+
+.price-display-large {
+  @apply text-4xl font-bold;
+  /* Add 'text-primary' class in templates alongside 'price-display-large' */
+}
+
+.price-currency {
+  @apply text-base opacity-60 font-normal;
+  /* Add 'text-base-content' class in templates alongside 'price-currency' */
+}
+
+/* Feature List Component - Use in templates */
+.feature-list {
+  @apply space-y-2;
+}
+
+.feature-item {
+  @apply flex items-center gap-3;
+  /* Add 'text-base-content' class in templates alongside 'feature-item' */
+}
+
+.feature-icon {
+  @apply w-5 h-5 flex-shrink-0;
+  /* Add 'text-success' class in templates alongside 'feature-icon' */
+}
+
+/* Enhanced Section Wrapper - Keep Tailwind-native classes */
 .section-wrapper {
-  @apply py-6 sm:py-8 relative;
+  @apply py-8 sm:py-12;
+} 
+
+/* 🌟 Print Styles */
+@media print {
+  .no-print { display: none !important; }
+  .btn, .loading { display: none !important; }
+  .card {
+    border: 1px solid #ccc !important;
+    break-inside: avoid;
+  }
 } 
