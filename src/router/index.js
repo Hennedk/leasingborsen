@@ -5,6 +5,7 @@ import Listings from '../pages/Listings.vue'
 import Listing from '../pages/Listing.vue'
 import ListingCreation from '../pages/ListingCreation.vue'
 import About from '../pages/About.vue'
+import AdminListings from '../pages/AdminListings.vue'
 
 const routes = [
   { path: '/', component: Home },
@@ -16,7 +17,8 @@ const routes = [
     props: true             // 🔥 Enable route params as props
   },
   { path: '/create', component: ListingCreation },
-  { path: '/about', component: About }
+  { path: '/about', component: About },
+  { path: '/admin/listings', component: AdminListings, name: 'AdminListings' }
 ]
 
 export const router = createRouter({
