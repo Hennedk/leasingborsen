@@ -101,7 +101,7 @@
 <script setup>
 import ListingCard from './ListingCard.vue'
 import { Car } from 'lucide-vue-next'
-import { watch, computed } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   cars: {
@@ -256,21 +256,6 @@ const emptyStateTitle = computed(() => {
 const emptyStateMessage = computed(() => {
   return currentConfig.value.emptyStateMessage
 })
-
-// Enhanced debug logging
-watch(() => props.cars, (newCars) => {
-  console.log(`🚗 CarListingGrid [${props.context}]:`, {
-    cars: newCars,
-    count: newCars?.length,
-    loading: props.loading,
-    context: props.context,
-    contextData: props.contextData
-  })
-}, { immediate: true })
-
-watch(() => props.loading, (newLoading) => {
-  console.log(`⏳ CarListingGrid [${props.context}] loading:`, newLoading)
-}, { immediate: true })
 </script>
 
 <style scoped>

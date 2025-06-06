@@ -8,22 +8,19 @@ const currentTheme = ref('light')
 provide('theme', {
   currentTheme,
   setTheme: (theme) => {
-    console.log('Setting theme to:', theme)
     currentTheme.value = theme
     localStorage.setItem('theme', theme)
-    console.log('Theme updated, currentTheme.value is now:', currentTheme.value)
   }
 })
 
-// Watch theme changes for debugging
+// Watch theme changes
 watch(currentTheme, (newTheme) => {
-  console.log('Theme changed to:', newTheme)
+  // Theme watcher without debug logging
 }, { immediate: true })
 
 // Initialize theme on mount
 onMounted(() => {
   const savedTheme = localStorage.getItem('theme') || 'light'
-  console.log('Initializing theme:', savedTheme)
   currentTheme.value = savedTheme
 })
 </script>

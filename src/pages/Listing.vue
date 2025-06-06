@@ -253,21 +253,10 @@ const fetchSimilarCars = async (currentListing) => {
   try {
     // Use mock data for testing
     if (useMockData.value) {
-      console.log('Using mock data for similar cars testing')
-      
       // Simulate loading delay with minimum 800ms for smooth skeleton transition
       await new Promise(resolve => setTimeout(resolve, 800))
       
       similarCars.value = mockSimilarCars
-      
-      console.log('Mock similar cars loaded:', {
-        totalFound: similarCars.value.length,
-        breakdown: similarCars.value.reduce((acc, car) => {
-          acc[car.matchLevel] = (acc[car.matchLevel] || 0) + 1
-          return acc
-        }, {}),
-        matchReasons: similarCars.value.map(car => car.matchReason)
-      })
       
       return
     }
@@ -280,14 +269,6 @@ const fetchSimilarCars = async (currentListing) => {
     // Start timing for minimum loading time
     const startTime = Date.now()
     const minLoadingTime = 600 // Minimum 600ms loading time
-
-    console.log('Fetching similar cars with tiered logic for:', {
-      make: currentListing.make,
-      model: currentListing.model,
-      bodyType: currentListing.body_type,
-      price: currentPrice,
-      excludeId: currentListingId
-    })
 
     // Tier 1 – Same Make & Model (85%-115%, Weight: 100)
     const tier1PriceMin = Math.floor(currentPrice * 0.85)
@@ -312,7 +293,6 @@ const fetchSimilarCars = async (currentListing) => {
       }))
       allSimilarCars.push(...tier1Cars)
       tier1Cars.forEach(car => excludedIds.add(car.listing_id))
-      console.log(`Tier 1 (Same Make & Model): ${tier1Cars.length} cars`)
     }
 
     // Tier 2 – Same Body Type + Price (80%-120%, Weight: 80)
@@ -338,7 +318,6 @@ const fetchSimilarCars = async (currentListing) => {
         }))
         allSimilarCars.push(...tier2Cars)
         tier2Cars.forEach(car => excludedIds.add(car.listing_id))
-        console.log(`Tier 2 (Same Body Type): ${tier2Cars.length} cars`)
       }
     }
 
@@ -366,7 +345,6 @@ const fetchSimilarCars = async (currentListing) => {
         }))
         allSimilarCars.push(...tier3Cars)
         tier3Cars.forEach(car => excludedIds.add(car.listing_id))
-        console.log(`Tier 3 (Make + Body Type): ${tier3Cars.length} cars`)
       }
     }
 
@@ -393,7 +371,6 @@ const fetchSimilarCars = async (currentListing) => {
         }))
         allSimilarCars.push(...tier4Cars)
         tier4Cars.forEach(car => excludedIds.add(car.listing_id))
-        console.log(`Tier 4 (Same Make): ${tier4Cars.length} cars`)
       }
     }
 
@@ -419,7 +396,6 @@ const fetchSimilarCars = async (currentListing) => {
           matchReason: 'Popular cars'
         }))
         allSimilarCars.push(...tier5Cars)
-        console.log(`Tier 5 (Popular Cars): ${tier5Cars.length} cars`)
       }
     }
 
@@ -432,15 +408,6 @@ const fetchSimilarCars = async (currentListing) => {
     if (remainingTime > 0) {
       await new Promise(resolve => setTimeout(resolve, remainingTime))
     }
-
-    console.log('Similar cars summary:', {
-      totalFound: similarCars.value.length,
-      breakdown: similarCars.value.reduce((acc, car) => {
-        acc[car.matchLevel] = (acc[car.matchLevel] || 0) + 1
-        return acc
-      }, {}),
-      matchReasons: similarCars.value.map(car => car.matchReason)
-    })
 
   } catch (err) {
     console.error('Error in fetchSimilarCars:', err)

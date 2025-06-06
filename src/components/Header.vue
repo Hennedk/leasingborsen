@@ -14,7 +14,6 @@ if (!themeState) {
 
 const currentTheme = themeState?.currentTheme || ref('light')
 const setTheme = (theme) => {
-  console.log('Header setTheme called with:', theme)
   if (themeState?.setTheme) {
     themeState.setTheme(theme)
   } else {

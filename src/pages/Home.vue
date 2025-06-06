@@ -12,44 +12,23 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    console.log('🔍 Fetching latest listings...')
-    
     // Fetch from the same table other components use, without created_at ordering
     const { data, error } = await supabase
       .from('full_listing_view')
       .select('*')
       .limit(4)  // Just get 4 records without ordering
 
-    console.log('📊 Supabase response:', { data, error })
-    console.log('📊 Raw data array:', data)
-    console.log('📊 Data length:', data?.length)
-
     if (!error && data) {
-      console.log('🔍 Before filtering - raw data:', data)
-      console.log('🔍 First item structure:', data[0])
-      console.log('🔍 First item keys:', Object.keys(data[0] || {}))
-      console.log('🔍 Looking for ID fields:', {
-        id: data[0]?.id,
-        listing_id: data[0]?.listing_id, 
-        car_id: data[0]?.car_id,
-        vehicle_id: data[0]?.vehicle_id
-      })
-      
       // Use listing_id which is the correct field name
       latestListings.value = data.filter(listing => {
-        console.log('🔍 Checking listing:', listing, 'Has listing_id?', !!listing?.listing_id)
         return listing && listing.listing_id
       })
-      
-      console.log('✅ After filtering - count:', latestListings.value.length)
-      console.log('✅ Filtered listings:', latestListings.value)
     } else {
       console.error('❌ Error fetching data:', error)
     }
   } catch (err) {
     console.error('💥 Exception during fetch:', err)
   } finally {
-    console.log('🏁 Setting loading to false. Final latestListings:', latestListings.value)
     loading.value = false
   }
 })

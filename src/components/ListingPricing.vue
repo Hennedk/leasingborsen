@@ -69,7 +69,7 @@ const closeSellerModal = () => {
 
 // Track seller visit (placeholder for analytics)
 const trackSellerVisit = (sellerId) => {
-  console.log('Tracking seller visit:', sellerId)
+  // Analytics tracking would go here
 }
 
 // Watch for changes
