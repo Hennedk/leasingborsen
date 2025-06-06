@@ -3,8 +3,6 @@
   themes: light --default, dark --prefersdark, synthwave, cyberpunk, corporate, business, fantasy, luxury;
 }
 
-/* @import "./base.css"; */ /* Temporarily disabled to test DaisyUI */
-
 /* Essential global styles */
 html {
   scroll-behavior: smooth;
@@ -32,129 +30,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Temporarily removed all custom @apply rules to test DaisyUI */
-
-/* 🌟 Enhanced Links Styling - Use DaisyUI classes directly in templates */
-a:not(.no-underline):not(.btn):not(.card) {
-  @apply underline;
-  /* For better links, add 'link link-hover' classes directly in templates */
-}
-
-/* 🌟 Enhanced Form Elements - Keep only Tailwind-native classes */
-.select, .input, .textarea, .btn {
-  @apply transition-all duration-200;
-}
-
-.input, .select, .textarea {
-  @apply focus:scale-[1.01] focus:shadow-lg;
-}
-
-/* Enhanced animations - Keep only Tailwind-native classes */
-.btn {
-  @apply hover:scale-[1.02] active:scale-[0.98];
-}
-
-/* 🌟 Enhanced Card Styling - Add utility class for templates */
-.card {
-  @apply shadow-md border transition-all duration-300 hover:shadow-lg;
-  /* For proper cards, add 'bg-base-100 border-base-300' classes directly in templates */
-}
-
-/* 🌟 Utility classes to use in templates (replacing removed @apply) */
-.card-theme {
-  /* Use this class: card card-theme bg-base-100 border-base-300 */
-}
-
-.badge-theme {
-  /* Use this class: badge badge-lg badge-theme */
-}
-
-.loading-theme {
-  /* Use this class: loading loading-spinner loading-lg text-primary loading-theme */
-}
-
-.text-theme-primary {
-  /* Use this class: text-primary text-theme-primary */
-}
-
-.text-theme-success {
-  /* Use this class: text-success text-theme-success */
-}
-
-.text-theme-content {
-  /* Use this class: text-base-content text-theme-content */
-}
-
-/* 🌟 Enhanced Badge System - For use in templates */
-.badge-enhanced {
-  @apply font-semibold tracking-wide;
-  @apply hover:scale-105 transition-transform duration-200;
-  /* Add these classes in templates: badge badge-lg badge-enhanced */
-}
-
-/* Status indicators - Use these combinations in templates:
-   status-available: badge badge-success
-   status-pending: badge badge-warning  
-   status-sold: badge badge-error
-   status-reserved: badge badge-info */
-
-/* Enhanced Loading States - Use in templates */
-.loading-enhanced {
-  /* Add these classes in templates: loading loading-spinner loading-lg text-primary loading-enhanced */
-}
-
-/* Enhanced Glass Effect - Keep Tailwind-native classes */
-.glass-enhanced {
-  @apply backdrop-blur-lg;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.7) 0%, 
-    rgba(255, 255, 255, 0.3) 100%);
-}
-
-/* 🌟 Custom Component Extensions */
-
-/* Price Display Component - Use in templates */
-.price-display {
-  @apply text-2xl font-bold;
-  /* Add 'text-primary' class in templates alongside 'price-display' */
-}
-
-.price-display-large {
-  @apply text-4xl font-bold;
-  /* Add 'text-primary' class in templates alongside 'price-display-large' */
-}
-
-.price-currency {
-  @apply text-base opacity-60 font-normal;
-  /* Add 'text-base-content' class in templates alongside 'price-currency' */
-}
-
-/* Feature List Component - Use in templates */
-.feature-list {
-  @apply space-y-2;
-}
-
-.feature-item {
-  @apply flex items-center gap-3;
-  /* Add 'text-base-content' class in templates alongside 'feature-item' */
-}
-
-.feature-icon {
-  @apply w-5 h-5 flex-shrink-0;
-  /* Add 'text-success' class in templates alongside 'feature-icon' */
-}
-
-/* Enhanced Section Wrapper - Keep Tailwind-native classes */
-.section-wrapper {
-  @apply py-8 sm:py-12;
-} 
-
-/* 🌟 Print Styles */
+/* Print styles */
 @media print {
   .no-print { display: none !important; }
   .btn, .loading { display: none !important; }
-  .card {
-    border: 1px solid #ccc !important;
-    break-inside: avoid;
-  }
 } 
