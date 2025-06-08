@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useThemeStore } from '@/stores/themeStore'
 import { lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import BaseLayout from '@/components/BaseLayout'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('@/pages/Home'))
@@ -42,26 +43,28 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <div className="App min-h-screen bg-background text-foreground" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
+          <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
             <Suspense fallback={<PageLoader />}>
               <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/listings" element={<Listings />} />
-              <Route path="/listing/:id" element={<Listing />} />
-              <Route path="/about" element={<About />} />
-              {/* Catch all route */}
-              <Route path="*" element={
-                <div className="min-h-screen flex items-center justify-center bg-background">
-                  <div className="text-center">
-                    <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
-                    <p className="text-muted-foreground mb-4">Siden blev ikke fundet</p>
-                    <a href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
-                      Gå til forsiden
-                    </a>
-                  </div>
-                </div>
-              } />
-            </Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/listings" element={<Listings />} />
+                <Route path="/listing/:id" element={<Listing />} />
+                <Route path="/about" element={<About />} />
+                {/* Catch all route */}
+                <Route path="*" element={
+                  <BaseLayout>
+                    <div className="min-h-[50vh] flex items-center justify-center">
+                      <div className="text-center">
+                        <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
+                        <p className="text-muted-foreground mb-4">Siden blev ikke fundet</p>
+                        <a href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
+                          Gå til forsiden
+                        </a>
+                      </div>
+                    </div>
+                  </BaseLayout>
+                } />
+              </Routes>
             </Suspense>
           </div>
         </Router>

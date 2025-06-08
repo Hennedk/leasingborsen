@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Filter, Grid, List, SlidersHorizontal } from 'lucide-react'
 import { useListings } from '@/hooks/useListings'
 import { useFilterStore } from '@/stores/filterStore'
-import Header from '@/components/Header'
+import BaseLayout from '@/components/BaseLayout'
 import FilterSidebar from '@/components/FilterSidebar'
 import ListingCard from '@/components/ListingCard'
 
@@ -44,10 +44,8 @@ const Listings: React.FC = () => {
   const resultCount = listings.length
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-      
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <BaseLayout maxWidth="none">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-4">
@@ -198,8 +196,8 @@ const Listings: React.FC = () => {
             )}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </BaseLayout>
   )
 }
 

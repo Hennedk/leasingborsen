@@ -2,7 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useListings } from '@/hooks/useListings'
-import Header from '@/components/Header'
+import BaseLayout from '@/components/BaseLayout'
 import HeroBanner from '@/components/HeroBanner'
 import ListingCard from '@/components/ListingCard'
 
@@ -10,14 +10,11 @@ const Home: React.FC = () => {
   const { data: listingsResponse, isLoading, error } = useListings({}, 4)
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Header */}
-      <Header />
-      
+    <BaseLayout containerPadding={false}>
       {/* Hero Banner with Search */}
       <HeroBanner />
       
-      <main className="flex-1 w-full pb-6">
+      <div className="pb-6">
         <div className="mx-auto w-full max-w-[1440px] px-6">
           <div className="space-y-12 pt-12 sm:pt-16">
             
@@ -133,28 +130,8 @@ const Home: React.FC = () => {
             </section>
           </div>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-card border-t border-border p-6 mt-12">
-        <div className="mx-auto w-full max-w-[1440px] px-6 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © 2025 Leasingbørsen | Inspired by Carwow
-          </p>
-          <div className="flex gap-6 text-sm">
-            <Link to="/about" className="text-muted-foreground hover:text-primary transition-colors">
-              Om os
-            </Link>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              Privatlivspolitik
-            </a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-              Vilkår
-            </a>
-          </div>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </BaseLayout>
   )
 }
 

@@ -20,7 +20,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
-import Header from '@/components/Header'
+import BaseLayout from '@/components/BaseLayout'
 
 const Listing: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -30,22 +30,20 @@ const Listing: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
+      <BaseLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
             <p className="text-muted-foreground">Indlæser bildetaljer...</p>
           </div>
         </div>
-      </div>
+      </BaseLayout>
     )
   }
 
   if (error || !car) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <Header />
+      <BaseLayout>
         <div className="max-w-4xl mx-auto px-6 py-12">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-destructive mb-4">Bil ikke fundet</h1>
@@ -60,7 +58,7 @@ const Listing: React.FC = () => {
             </Link>
           </div>
         </div>
-      </div>
+      </BaseLayout>
     )
   }
 
@@ -69,10 +67,8 @@ const Listing: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-      
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <BaseLayout maxWidth="none">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Back Navigation */}
         <div className="mb-6">
           <Link to="/listings">
@@ -280,8 +276,8 @@ const Listing: React.FC = () => {
             </Card>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </BaseLayout>
   )
 }
 
