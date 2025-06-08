@@ -1,6 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/* Force immediate theme application */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Ensure all base elements inherit theme colors */
+body, #root, .App {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  transition: all 0.3s ease;
+}
+
 /* ===== CRITICAL: CSS Custom Properties (Variables) ===== */
 /* These MUST be outside @layer for Tailwind v4 compatibility */
 
