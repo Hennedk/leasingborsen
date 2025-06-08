@@ -37,10 +37,9 @@ function App() {
   }))
 
   useEffect(() => {
-    // Ensure theme is applied immediately
-    document.documentElement.setAttribute('data-theme', currentTheme)
+    // Initialize theme only once
     initTheme()
-  }, [initTheme, currentTheme])
+  }, [initTheme])
 
   return (
     <ErrorBoundary>

@@ -35,7 +35,10 @@ export const useThemeStore = create<ThemeState>()(
       initTheme: () => {
         const { currentTheme } = get()
         if (typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', currentTheme)
+          const currentAttr = document.documentElement.getAttribute('data-theme')
+          if (currentAttr !== currentTheme) {
+            document.documentElement.setAttribute('data-theme', currentTheme)
+          }
         }
       }
     }),
@@ -45,7 +48,10 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         // Immediately apply theme when store rehydrates
         if (state && typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', state.currentTheme)
+          const currentAttr = document.documentElement.getAttribute('data-theme')
+          if (currentAttr !== state.currentTheme) {
+            document.documentElement.setAttribute('data-theme', state.currentTheme)
+          }
         }
       }
     }
