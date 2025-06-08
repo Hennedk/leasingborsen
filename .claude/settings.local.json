@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm create:*)",
+      "Bash(ls:*)",
+      "Bash(npx shadcn@latest add:*)",
+      "Bash(npx:*)",
+      "Bash(find:*)",
+      "Bash(touch:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "WebFetch(domain:leasingborsen-8atlocfoi-henrik-thomsens-projects.vercel.app)"
+    ],
+    "deny": []
+  }
+}

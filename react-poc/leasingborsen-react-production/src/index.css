@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force immediate theme application */
+html {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 
 /* Force immediate theme application */
 html {
