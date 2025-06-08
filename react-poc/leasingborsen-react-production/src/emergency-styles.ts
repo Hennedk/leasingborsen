@@ -1,4 +1,21 @@
 export const injectEmergencyStyles = () => {
+  // STEP 1: Force immediate HTML/body styling
+  document.documentElement.style.cssText = `
+    background-color: rgb(255, 255, 255) !important;
+    color: rgb(14, 16, 22) !important;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  `;
+  
+  document.body.style.cssText = `
+    background-color: rgb(255, 255, 255) !important;
+    color: rgb(14, 16, 22) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 100vh !important;
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  `;
+  
+  // STEP 2: Create emergency style tag
   const style = document.createElement('style');
   style.id = 'emergency-theme-styles';
   
@@ -9,10 +26,36 @@ export const injectEmergencyStyles = () => {
   }
 
   style.textContent = `
-    /* EMERGENCY CSS VARIABLES - INJECTED VIA JAVASCRIPT */
-    /* This bypasses all build tools and forces variables directly into DOM */
+    /* ULTRA-AGGRESSIVE EMERGENCY STYLING */
+    /* FORCES STYLING ON EVERY ELEMENT */
     
-    :root {
+    /* STEP 1: Force reset everything */
+    *, *::before, *::after {
+      box-sizing: border-box !important;
+    }
+    
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+      background-color: rgb(255, 255, 255) !important;
+      color: rgb(14, 16, 22) !important;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+      line-height: 1.6 !important;
+      min-height: 100vh !important;
+    }
+    
+    /* STEP 2: Force root and App container styling */
+    #root, .App, [data-reactroot] {
+      background-color: rgb(255, 255, 255) !important;
+      color: rgb(14, 16, 22) !important;
+      min-height: 100vh !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    
+    /* STEP 3: CSS Variables with extreme specificity */
+    :root, html, body, #root, .App {
       --background: 0 0% 100% !important;
       --foreground: 222.2 84% 4.9% !important;
       --card: 0 0% 100% !important;
@@ -187,36 +230,243 @@ export const injectEmergencyStyles = () => {
       transition: all 0.3s ease !important;
     }
 
-    /* Ensure Tailwind classes work with our variables */
-    .bg-background { background-color: hsl(var(--background)) !important; }
-    .bg-card { background-color: hsl(var(--card)) !important; }
-    .bg-primary { background-color: hsl(var(--primary)) !important; }
-    .bg-secondary { background-color: hsl(var(--secondary)) !important; }
-    .bg-muted { background-color: hsl(var(--muted)) !important; }
+    /* STEP 4: FORCE EVERY TAILWIND CLASS WITH AGGRESSIVE SPECIFICITY */
     
-    .text-foreground { color: hsl(var(--foreground)) !important; }
-    .text-primary { color: hsl(var(--primary)) !important; }
-    .text-secondary { color: hsl(var(--secondary)) !important; }
-    .text-muted-foreground { color: hsl(var(--muted-foreground)) !important; }
-    .text-card-foreground { color: hsl(var(--card-foreground)) !important; }
-    .text-primary-foreground { color: hsl(var(--primary-foreground)) !important; }
+    /* Background classes */
+    .bg-background, [class*="bg-background"] { background-color: rgb(255, 255, 255) !important; }
+    .bg-card, [class*="bg-card"] { background-color: rgb(255, 255, 255) !important; }
+    .bg-primary, [class*="bg-primary"] { background-color: rgb(139, 92, 246) !important; }
+    .bg-secondary, [class*="bg-secondary"] { background-color: rgb(241, 245, 249) !important; }
+    .bg-muted, [class*="bg-muted"] { background-color: rgb(241, 245, 249) !important; }
     
-    .border-border { border-color: hsl(var(--border)) !important; }
-    .border-primary { border-color: hsl(var(--primary)) !important; }
-    .border-input { border-color: hsl(var(--input)) !important; }
+    /* Text classes */
+    .text-foreground, [class*="text-foreground"] { color: rgb(14, 16, 22) !important; }
+    .text-primary, [class*="text-primary"] { color: rgb(139, 92, 246) !important; }
+    .text-secondary, [class*="text-secondary"] { color: rgb(100, 116, 139) !important; }
+    .text-muted-foreground, [class*="text-muted-foreground"] { color: rgb(100, 116, 139) !important; }
+    .text-card-foreground, [class*="text-card-foreground"] { color: rgb(14, 16, 22) !important; }
+    .text-primary-foreground, [class*="text-primary-foreground"] { color: rgb(248, 250, 252) !important; }
+    .text-white, [class*="text-white"] { color: rgb(255, 255, 255) !important; }
     
-    /* Additional utility classes */
-    .shadow-sm { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important; }
-    .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important; }
-    .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important; }
+    /* Border classes */
+    .border, [class*="border"]:not([class*="border-0"]) { border: 1px solid rgb(226, 232, 240) !important; }
+    .border-border, [class*="border-border"] { border-color: rgb(226, 232, 240) !important; }
+    .border-primary, [class*="border-primary"] { border-color: rgb(139, 92, 246) !important; }
+    .border-input, [class*="border-input"] { border-color: rgb(226, 232, 240) !important; }
+    
+    /* Shadow classes */
+    .shadow-sm, [class*="shadow-sm"] { box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important; }
+    .shadow-md, [class*="shadow-md"] { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important; }
+    .shadow-lg, [class*="shadow-lg"] { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important; }
+    .shadow-xl, [class*="shadow-xl"] { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important; }
+    
+    /* STEP 5: FORCE COMMON COMPONENT STYLES */
+    
+    /* Header styling */
+    header, [role="banner"], nav {
+      background-color: rgb(255, 255, 255) !important;
+      border-bottom: 1px solid rgb(226, 232, 240) !important;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Card styling */
+    .card, [data-slot="card"], .grid > div, .flex.flex-col.space-y-4 > div {
+      background-color: rgb(255, 255, 255) !important;
+      border: 1px solid rgb(226, 232, 240) !important;
+      border-radius: 8px !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+      padding: 24px !important;
+    }
+    
+    /* Button styling */
+    button, .btn, [role="button"], input[type="submit"] {
+      background-color: rgb(139, 92, 246) !important;
+      color: rgb(255, 255, 255) !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 8px 16px !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      transition: all 0.2s ease !important;
+    }
+    
+    button:hover, .btn:hover, [role="button"]:hover {
+      background-color: rgb(124, 58, 237) !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Input styling */
+    input, select, textarea {
+      background-color: rgb(255, 255, 255) !important;
+      border: 1px solid rgb(226, 232, 240) !important;
+      border-radius: 6px !important;
+      padding: 8px 12px !important;
+      color: rgb(14, 16, 22) !important;
+      font-size: 14px !important;
+    }
+    
+    input:focus, select:focus, textarea:focus {
+      outline: none !important;
+      border-color: rgb(139, 92, 246) !important;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+    }
+    
+    /* Typography */
+    h1, h2, h3, h4, h5, h6 {
+      color: rgb(14, 16, 22) !important;
+      font-weight: 600 !important;
+      margin-bottom: 16px !important;
+    }
+    
+    h1 { font-size: 36px !important; font-weight: 800 !important; }
+    h2 { font-size: 30px !important; font-weight: 700 !important; }
+    h3 { font-size: 24px !important; font-weight: 600 !important; }
+    
+    p, span, div {
+      color: rgb(14, 16, 22) !important;
+    }
+    
+    a {
+      color: rgb(139, 92, 246) !important;
+      text-decoration: none !important;
+    }
+    
+    a:hover {
+      color: rgb(124, 58, 237) !important;
+      text-decoration: underline !important;
+    }
+    
+    /* Layout utilities */
+    .container, .max-w-7xl, .max-w-4xl, .max-w-2xl {
+      margin: 0 auto !important;
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+    
+    .space-y-4 > * + * { margin-top: 16px !important; }
+    .space-y-6 > * + * { margin-top: 24px !important; }
+    .space-y-8 > * + * { margin-top: 32px !important; }
+    
+    .gap-4 { gap: 16px !important; }
+    .gap-6 { gap: 24px !important; }
+    .gap-8 { gap: 32px !important; }
   `;
   
   document.head.appendChild(style);
   
+  // STEP 3: Force immediate element manipulation
+  const forceElementStyling = () => {
+    // Force root elements
+    const root = document.getElementById('root');
+    if (root) {
+      root.style.cssText = `
+        background-color: rgb(255, 255, 255) !important;
+        color: rgb(14, 16, 22) !important;
+        min-height: 100vh !important;
+        font-family: Inter, system-ui, sans-serif !important;
+      `;
+    }
+    
+    // Force all elements with common classes
+    document.querySelectorAll('.bg-background, .bg-card').forEach(el => {
+      (el as HTMLElement).style.backgroundColor = 'rgb(255, 255, 255)';
+    });
+    
+    document.querySelectorAll('.text-foreground, .text-card-foreground').forEach(el => {
+      (el as HTMLElement).style.color = 'rgb(14, 16, 22)';
+    });
+    
+    document.querySelectorAll('.bg-primary').forEach(el => {
+      (el as HTMLElement).style.backgroundColor = 'rgb(139, 92, 246)';
+    });
+    
+    document.querySelectorAll('.text-primary').forEach(el => {
+      (el as HTMLElement).style.color = 'rgb(139, 92, 246)';
+    });
+    
+    // Force all cards to have proper styling
+    document.querySelectorAll('.grid > div, .space-y-4 > div, .space-y-6 > div').forEach(el => {
+      const element = el as HTMLElement;
+      element.style.cssText += `
+        background-color: rgb(255, 255, 255) !important;
+        border: 1px solid rgb(226, 232, 240) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        padding: 24px !important;
+      `;
+    });
+    
+    // Force all buttons
+    document.querySelectorAll('button, .btn, [role="button"]').forEach(el => {
+      const element = el as HTMLElement;
+      if (!element.style.backgroundColor || element.style.backgroundColor === 'transparent') {
+        element.style.cssText += `
+          background-color: rgb(139, 92, 246) !important;
+          color: rgb(255, 255, 255) !important;
+          border: none !important;
+          border-radius: 6px !important;
+          padding: 8px 16px !important;
+        `;
+      }
+    });
+  };
+  
+  // Apply immediately
+  forceElementStyling();
+  
+  // Apply again after a short delay to catch dynamically rendered elements
+  setTimeout(forceElementStyling, 100);
+  setTimeout(forceElementStyling, 500);
+  setTimeout(forceElementStyling, 1000);
+  
   // Force immediate re-render by toggling a class
   document.documentElement.classList.add('emergency-styles-loaded');
   
-  console.log('🚨 EMERGENCY STYLES INJECTED - CSS Variables forced into DOM');
+  console.log('🚨 ULTRA-AGGRESSIVE EMERGENCY STYLES APPLIED - Multiple failsafes engaged');
+  
+  // STEP 4: Set up MutationObserver to catch any new elements
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const element = node as HTMLElement;
+          
+          // Apply styling to new elements immediately
+          if (element.classList.contains('bg-background') || element.classList.contains('bg-card')) {
+            element.style.backgroundColor = 'rgb(255, 255, 255)';
+          }
+          if (element.classList.contains('text-foreground')) {
+            element.style.color = 'rgb(14, 16, 22)';
+          }
+          if (element.classList.contains('bg-primary')) {
+            element.style.backgroundColor = 'rgb(139, 92, 246)';
+          }
+          if (element.tagName === 'BUTTON') {
+            element.style.cssText += `
+              background-color: rgb(139, 92, 246) !important;
+              color: rgb(255, 255, 255) !important;
+              border: none !important;
+              border-radius: 6px !important;
+              padding: 8px 16px !important;
+            `;
+          }
+          
+          // Force styling on all child elements too
+          element.querySelectorAll('.bg-background, .bg-card').forEach(el => {
+            (el as HTMLElement).style.backgroundColor = 'rgb(255, 255, 255)';
+          });
+          element.querySelectorAll('.text-foreground').forEach(el => {
+            (el as HTMLElement).style.color = 'rgb(14, 16, 22)';
+          });
+        }
+      });
+    });
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
 };
 
 // Also export a function to apply theme
