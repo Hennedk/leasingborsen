@@ -31,14 +31,12 @@ const PageLoader: React.FC = () => (
 )
 
 function App() {
-  const { initTheme } = useThemeStore((state) => ({ 
-    initTheme: state.initTheme
-  }))
+  const initTheme = useThemeStore((state) => state.initTheme)
 
   useEffect(() => {
-    // Initialize theme only once
+    // Initialize theme only once on mount
     initTheme()
-  }, [initTheme])
+  }, [])
 
   return (
     <ErrorBoundary>

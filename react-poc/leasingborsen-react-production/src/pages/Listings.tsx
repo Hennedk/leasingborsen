@@ -35,7 +35,7 @@ const Listings: React.FC = () => {
     if (urlPriceMax && parseInt(urlPriceMax) !== price_max) {
       setFilter('price_max', parseInt(urlPriceMax))
     }
-  }, [searchParams, make, model, body_type, price_max, setFilter])
+  }, [searchParams])
 
   const currentFilters = { make, model, body_type, price_max }
   const { data: listingsResponse, isLoading, error } = useListings(currentFilters, 20)
