@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { applyEmergencyTheme } from '../emergency-styles'
 
 export const THEMES = [
   'light',
@@ -29,6 +30,8 @@ export const useThemeStore = create<ThemeState>()(
         set({ currentTheme: theme })
         if (typeof document !== 'undefined') {
           document.documentElement.setAttribute('data-theme', theme)
+          // Also apply emergency theme for bulletproof styling
+          applyEmergencyTheme(theme)
         }
       },
       
@@ -38,6 +41,8 @@ export const useThemeStore = create<ThemeState>()(
           const currentAttr = document.documentElement.getAttribute('data-theme')
           if (currentAttr !== currentTheme) {
             document.documentElement.setAttribute('data-theme', currentTheme)
+            // Also apply emergency theme for bulletproof styling
+            applyEmergencyTheme(currentTheme)
           }
         }
       }
@@ -51,6 +56,8 @@ export const useThemeStore = create<ThemeState>()(
           const currentAttr = document.documentElement.getAttribute('data-theme')
           if (currentAttr !== state.currentTheme) {
             document.documentElement.setAttribute('data-theme', state.currentTheme)
+            // Also apply emergency theme for bulletproof styling
+            applyEmergencyTheme(state.currentTheme)
           }
         }
       }
