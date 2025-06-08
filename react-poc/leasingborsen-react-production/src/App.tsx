@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useThemeStore } from '@/stores/themeStore'
 import { lazy, Suspense } from 'react'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('@/pages/Home'))
@@ -42,11 +43,12 @@ function App() {
   }, [initTheme, currentTheme])
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="App min-h-screen bg-background text-foreground" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <div className="App min-h-screen bg-background text-foreground" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/listings" element={<Listings />} />
               <Route path="/listing/:id" element={<Listing />} />
@@ -64,10 +66,11 @@ function App() {
                 </div>
               } />
             </Routes>
-          </Suspense>
-        </div>
-      </Router>
-    </QueryClientProvider>
+            </Suspense>
+          </div>
+        </Router>
+      </QueryClientProvider>
+    </ErrorBoundary>
   )
 }
 
