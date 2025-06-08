@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, Car, Settings, Phone, Info } from 'lucide-react'
-import { useThemeStore, THEMES } from '@/stores/themeStore'
+import Container from '@/components/Container'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -26,7 +26,6 @@ import {
 import { Button } from '@/components/ui/button'
 
 const ModernHeader: React.FC = () => {
-  const { currentTheme, setTheme } = useThemeStore()
   const location = useLocation()
 
   const isActiveLink = (path: string) => location.pathname === path
@@ -218,7 +217,7 @@ const ModernHeader: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <Container className="flex h-16 items-center justify-between">
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 flex-1">
           {/* Logo */}
@@ -235,20 +234,6 @@ const ModernHeader: React.FC = () => {
           </NavigationMenu>
         </div>
 
-        {/* Theme Selector - Desktop */}
-        <div className="hidden md:flex items-center">
-          <select
-            value={currentTheme}
-            onChange={(e) => setTheme(e.target.value as typeof THEMES[number])}
-            className="bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-          >
-            {THEMES.map((theme) => (
-              <option key={theme} value={theme}>
-                {theme.charAt(0).toUpperCase() + theme.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
 
         {/* Mobile Navigation */}
         <div className="flex md:hidden items-center justify-between w-full">
@@ -283,29 +268,11 @@ const ModernHeader: React.FC = () => {
                 >
                   {menuItems.map((item) => renderMobileMenuItem(item))}
                 </Accordion>
-
-                {/* Mobile Theme Selector */}
-                <div className="pt-4 border-t border-border">
-                  <div className="mb-2">
-                    <label className="text-sm font-medium">Tema</label>
-                  </div>
-                  <select
-                    value={currentTheme}
-                    onChange={(e) => setTheme(e.target.value as typeof THEMES[number])}
-                    className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
-                  >
-                    {THEMES.map((theme) => (
-                      <option key={theme} value={theme}>
-                        {theme.charAt(0).toUpperCase() + theme.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </SheetContent>
           </Sheet>
         </div>
-      </div>
+      </Container>
     </header>
   )
 }

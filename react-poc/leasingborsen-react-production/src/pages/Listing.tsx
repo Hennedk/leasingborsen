@@ -67,7 +67,7 @@ const Listing: React.FC = () => {
   }
 
   return (
-    <BaseLayout maxWidth="none">
+    <BaseLayout>
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Back Navigation */}
         <div className="mb-6">

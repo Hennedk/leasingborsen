@@ -44,7 +44,7 @@ const Listings: React.FC = () => {
   const resultCount = listings.length
 
   return (
-    <BaseLayout maxWidth="none">
+    <BaseLayout>
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}
         <div className="mb-8">

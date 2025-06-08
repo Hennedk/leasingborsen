@@ -1,7 +1,6 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useThemeStore } from '@/stores/themeStore'
 import { lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BaseLayout from '@/components/BaseLayout'
@@ -32,13 +31,6 @@ const PageLoader: React.FC = () => (
 )
 
 function App() {
-  const initTheme = useThemeStore((state) => state.initTheme)
-
-  useEffect(() => {
-    // Initialize theme only once on mount
-    initTheme()
-  }, [])
-
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

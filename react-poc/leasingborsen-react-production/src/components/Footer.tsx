@@ -1,12 +1,13 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import Container from '@/components/Container'
 
 const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
 
   return (
     <footer className="bg-card border-t border-border mt-auto">
-      <div className="mx-auto max-w-[1440px] px-6 py-12">
+      <Container className="py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand Section */}
           <div className="md:col-span-1">
@@ -172,7 +173,7 @@ const Footer: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </Container>
     </footer>
   )
 }

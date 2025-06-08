@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FormField } from '@/components/ui/form-field'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useListingCount } from '@/hooks/useListings'
+import Container from '@/components/Container'
+import './HeroBanner.css'
 
 const HeroBanner: React.FC = () => {
   const navigate = useNavigate()
@@ -69,174 +69,176 @@ const HeroBanner: React.FC = () => {
   }
 
   return (
-    <section className="relative overflow-hidden bg-background py-20 sm:py-32 lg:py-40">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-background"></div>
-      <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-primary/10 blur-3xl"></div>
-      <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-accent/10 blur-3xl"></div>
+    /* =================================================
+       HERO BANNER SECTION - Main container with gradient background
+       Min height: 400px mobile, 500px desktop
+    ================================================= */
+    <section className="min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-primary via-primary to-primary relative overflow-hidden w-full">
       
-      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center mb-16">
-          <div className="mb-8 flex justify-center">
-            <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-muted-foreground ring-1 ring-primary/10 hover:ring-primary/20 transition-all">
-              Nyt: Sammenlign over 1000+ leasingtilbud{' '}
-              <a href="#" className="font-semibold text-primary">
-                <span className="absolute inset-0" aria-hidden="true" />
-                Se mere <span aria-hidden="true">&rarr;</span>
-              </a>
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
-            Find de bedste{' '}
-            <span className="text-primary">leasingtilbud</span>
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt. 
-            Få det bedste tilbud på din nye bil.
-          </p>
-        </div>
-
-        {/* Modern Search Form */}
-        <div className="mx-auto max-w-4xl">
-          <Card className="bg-card/95 backdrop-blur-sm border-0 shadow-2xl p-8">
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-semibold text-card-foreground mb-2">
-                  Start din søgning
-                </h2>
-                <p className="text-muted-foreground">
-                  Udfyld kriterierne nedenfor for at finde din perfekte leasingbil
-                </p>
+      {/* =================
+          BACKGROUND OVERLAYS - Multiple gradient layers for visual depth
+      ================= */}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-black/20 to-black/40"></div>
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-white/5 via-white/2 to-transparent"></div>
+      <div className="absolute bottom-0 left-0 w-1/3 h-1/2 bg-gradient-to-tr from-white/3 to-transparent"></div>
+      <div className="absolute inset-0 bg-radial-gradient from-white/5 via-transparent to-transparent"></div>
+      
+      {/* =================
+          CONTENT CONTAINER - Main content wrapper with responsive padding
+      ================= */}
+      <div className="w-full">
+        <Container className="py-6 lg:py-8 relative z-10">
+          
+          {/* =================
+              RESPONSIVE GRID LAYOUT
+              Mobile: 1 column | Desktop: 55/45 split (1.1fr/0.9fr)
+              Gap: 24px mobile, 32px desktop
+          ================= */}
+          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-6 md:gap-8 w-full items-center">
+            
+            {/* =========================================
+                LEFT COLUMN: Promotional Content
+                - Main headline
+                - Descriptive text
+                - Promotional banner image
+            ========================================= */}
+            <div className="order-1 md:order-1 text-center animate-slide-in-left px-4 md:pl-0 md:pr-6 py-4">
+              {/* Text Content Wrapper - 24px vertical spacing */}
+              <div className="max-w-none space-y-6">
+                
+                {/* Main Headline & Subtitle Group - 16px internal spacing */}
+                <div className="space-y-4">
+                  {/* Primary Headline - Fluid typography: 28px-48px */}
+                  <h1 className="font-bold text-white leading-tight tracking-tight" style={{fontSize: 'clamp(1.75rem, 5vw, 3rem)'}}>
+                    Find de bedste leasingtilbud
+                  </h1>
+                  
+                  {/* Descriptive Subtitle - Fluid typography: 16px-20px */}
+                  <p className="text-white/85 leading-relaxed tracking-wide max-w-2xl mx-auto" style={{fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'}}>
+                    Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt.
+                  </p>
+                </div>
+                
+                {/* Marketing Banner Image - Delayed animation (0.4s) */}
+                <div className="mt-6 animate-slide-in-up" style={{animationDelay: '0.4s'}}>
+                  {/* Promotional Image - Responsive scaling: 80% mobile, 100% desktop */}
+                  <img 
+                    src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
+                    alt="Spring Price Reduction 2025 - Special leasing offers" 
+                    className="w-full max-w-lg mx-auto rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-300 scale-[0.8] md:scale-100"
+                    loading="lazy"
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* =========================================
+                RIGHT COLUMN: Search Form
+                - Form title
+                - 4 filter dropdowns (2x2 grid)
+                - Search CTA button
+            ========================================= */}
+            <div className="order-2 md:order-2 animate-slide-in-right px-2 md:pl-6 md:pr-0">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Make Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Mærke</Label>
-                  <Select value={localFilters.make || 'all'} onValueChange={(value) => handleFilterChange('make', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vælg mærke" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle mærker</SelectItem>
-                      {referenceData?.makes?.map((make: any) => (
-                        <SelectItem key={make.id} value={make.name}>
-                          {make.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Model Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Model</Label>
-                  <Select 
-                    value={localFilters.model || 'all'} 
-                    onValueChange={(value) => handleFilterChange('model', value)}
-                    disabled={!localFilters.make}
-                  >
-                    <SelectTrigger>
-                      <SelectValue 
-                        placeholder={localFilters.make ? 'Vælg model' : 'Vælg mærke først'} 
+              {/* Search Form Card - Backdrop blur with hover effects */}
+              {/* Width: 300px-450px responsive, 95% max on mobile */}
+              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-4 md:p-6" style={{width: 'clamp(300px, 40vw, 450px)', maxWidth: '95%'}}>
+                {/* Form Content Wrapper - 24px vertical spacing */}
+                <div className="space-y-6">
+                  
+                  {/* Form Title - Fluid typography: 20px-24px */}
+                  <h2 className="font-bold text-card-foreground text-center md:text-left leading-tight" style={{fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'}}>
+                    Søg blandt hundredvis af leasingbiler – find din drømmebil nu
+                  </h2>
+                  
+                  {/* Form Fields Container - 16px vertical spacing between rows */}
+                  <div className="space-y-4">
+                    
+                    {/* ===== FILTER ROW 1: Vehicle Make & Model ===== */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        label="Mærke"
+                        value={localFilters.make || 'all'}
+                        onValueChange={(value) => handleFilterChange('make', value)}
+                        placeholder="Vælg mærke"
+                        options={[
+                          { value: 'all', label: 'Vælg mærke' },
+                          ...(referenceData?.makes?.map((make: any) => ({
+                            value: make.name,
+                            label: make.name
+                          })) || [])
+                        ]}
                       />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle modeller</SelectItem>
-                      {filteredModels.map((model: any) => (
-                        <SelectItem key={model.id} value={model.name}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                      <FormField
+                        label="Model"
+                        value={localFilters.model || 'all'}
+                        onValueChange={(value) => handleFilterChange('model', value)}
+                        placeholder={localFilters.make ? 'Vælg model' : 'Vælg mærke først'}
+                        disabled={!localFilters.make}
+                        options={[
+                          { value: 'all', label: localFilters.make ? 'Vælg model' : 'Vælg mærke først' },
+                          ...filteredModels.map((model: any) => ({
+                            value: model.name,
+                            label: model.name
+                          }))
+                        ]}
+                      />
+                    </div>
+
+                    {/* ===== FILTER ROW 2: Vehicle Type & Price Range ===== */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <FormField
+                        label="Biltype"
+                        value={localFilters.body_type || 'all'}
+                        onValueChange={(value) => handleFilterChange('body_type', value)}
+                        placeholder="Alle biltyper"
+                        options={[
+                          { value: 'all', label: 'Alle biltyper' },
+                          ...(referenceData?.bodyTypes?.map((bodyType: any) => ({
+                            value: bodyType.name,
+                            label: bodyType.name
+                          })) || [])
+                        ]}
+                      />
+
+                      <FormField
+                        label="Maks pris"
+                        value={localFilters.price_max?.toString() || 'all'}
+                        onValueChange={(value) => handleFilterChange('price_max', value)}
+                        placeholder="Ingen grænse"
+                        options={[
+                          { value: 'all', label: 'Ingen grænse' },
+                          ...priceSteps.map((price) => ({
+                            value: price.toString(),
+                            label: `${price.toLocaleString('da-DK')} kr./måned`
+                          })),
+                          { value: '9999999', label: '10.000+ kr./måned' }
+                        ]}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* Vehicle Type Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Biltype</Label>
-                  <Select value={localFilters.body_type || 'all'} onValueChange={(value) => handleFilterChange('body_type', value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Alle typer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Alle biltyper</SelectItem>
-                      {referenceData?.bodyTypes?.map((bodyType: any) => (
-                        <SelectItem key={bodyType.name} value={bodyType.name}>
-                          {bodyType.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Max Price Dropdown */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-foreground">Maks pris</Label>
-                  <Select 
-                    value={localFilters.price_max?.toString() || 'all'} 
-                    onValueChange={(value) => handleFilterChange('price_max', value)}
+                {/* ===== CALL-TO-ACTION BUTTON ===== */}
+                {/* 16px top padding for separation from form fields */}
+                <div className="pt-4">
+                  {/* Primary Search Button - 48px height, full width */}
+                  <Button 
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-wide rounded-lg shadow-xl hover:shadow-2xl transition-all duration-200" 
+                    onClick={handleSearch}
+                    aria-label="Søg efter biler med de valgte kriterier"
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Ingen grænse" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Ingen grænse</SelectItem>
-                      {priceSteps.map((price) => (
-                        <SelectItem key={price} value={price.toString()}>
-                          {price.toLocaleString('da-DK')} kr./mdr
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="9999999">10.000+ kr./mdr</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    Vis {resultCount} biler
+                  </Button>
                 </div>
-              </div>
-
-              {/* Search Button */}
-              <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-                <Button 
-                  onClick={handleSearch}
-                  size="lg"
-                  className="w-full sm:w-auto min-w-[200px]"
-                >
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  Søg blandt {resultCount} biler
-                </Button>
-                <p className="text-sm text-muted-foreground">
-                  Gratis og uforpligtende
-                </p>
               </div>
             </div>
-          </Card>
-        </div>
-
-        {/* Trust indicators */}
-        <div className="mt-16 text-center">
-          <p className="text-sm font-semibold text-muted-foreground mb-8">
-            Tillid fra tusindvis af kunder
-          </p>
-          <div className="flex justify-center items-center space-x-8 opacity-50">
-            {/* You can add actual logo images here */}
-            <div className="text-2xl font-bold text-muted-foreground">Mercedes</div>
-            <div className="text-2xl font-bold text-muted-foreground">BMW</div>
-            <div className="text-2xl font-bold text-muted-foreground">Audi</div>
-            <div className="text-2xl font-bold text-muted-foreground">Volkswagen</div>
+            
           </div>
-        </div>
-
-        {/* Promotional Banner */}
-        <div className="mt-20 text-center">
-          <img 
-            src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
-            alt="Spring Price Reduction 2025 - Special leasing offers" 
-            className="mx-auto max-w-2xl w-full rounded-2xl shadow-xl hover:shadow-2xl transition-shadow duration-300"
-            loading="lazy"
-          />
-        </div>
+        </Container>
       </div>
+
     </section>
   )
 }
