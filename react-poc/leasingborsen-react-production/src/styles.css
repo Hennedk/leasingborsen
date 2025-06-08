@@ -1,0 +1,95 @@
+/* Tailwind CSS v4 - Proper Configuration */
+@import "tailwindcss";
+
+/* CSS Custom Properties for Theming */
+@theme {
+  /* Define theme variables at build time */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-primary: #8b5cf6;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #8b5cf6;
+  
+  /* Spacing and sizing */
+  --radius: 0.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Theme variants using CSS custom selectors */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background: #0f172a;
+    --color-foreground: #f8fafc;
+    --color-card: #0f172a;
+    --color-card-foreground: #f8fafc;
+    --color-primary: #a855f7;
+    --color-primary-foreground: #0f172a;
+    --color-secondary: #1e293b;
+    --color-secondary-foreground: #f8fafc;
+    --color-muted: #1e293b;
+    --color-muted-foreground: #94a3b8;
+    --color-accent: #1e293b;
+    --color-accent-foreground: #f8fafc;
+    --color-border: #1e293b;
+    --color-input: #1e293b;
+  }
+}
+
+[data-theme="dark"] {
+  --color-background: #0f172a;
+  --color-foreground: #f8fafc;
+  --color-card: #0f172a;
+  --color-card-foreground: #f8fafc;
+  --color-primary: #a855f7;
+  --color-primary-foreground: #0f172a;
+  --color-secondary: #1e293b;
+  --color-secondary-foreground: #f8fafc;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #f8fafc;
+  --color-border: #1e293b;
+  --color-input: #1e293b;
+}
+
+[data-theme="synthwave"] {
+  --color-background: #1a0c2e;
+  --color-foreground: #ff00ff;
+  --color-card: #2d1b4e;
+  --color-card-foreground: #ff00ff;
+  --color-primary: #00ffff;
+  --color-primary-foreground: #1a0c2e;
+  --color-secondary: #4c1d95;
+  --color-secondary-foreground: #ff00ff;
+  --color-muted: #4c1d95;
+  --color-muted-foreground: #c084fc;
+  --color-accent: #00ffff;
+  --color-accent-foreground: #1a0c2e;
+  --color-border: #7c3aed;
+  --color-input: #4c1d95;
+}
+
+/* Additional themes can be added here following the same pattern */
+
+/* Base styling that works with all themes */
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

@@ -1,19 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { applyEmergencyTheme } from '../emergency-styles'
+import { applyTheme, type Theme } from '../lib/themes'
 
-export const THEMES = [
-  'light',
-  'dark', 
-  'synthwave',
-  'cyberpunk',
-  'corporate',
-  'business',
-  'fantasy',
-  'luxury'
-] as const
-
-export type Theme = typeof THEMES[number]
+// Re-export for components
+export { THEMES, type Theme } from '../lib/themes'
 
 interface ThemeState {
   currentTheme: Theme
@@ -29,21 +19,14 @@ export const useThemeStore = create<ThemeState>()(
       setTheme: (theme: Theme) => {
         set({ currentTheme: theme })
         if (typeof document !== 'undefined') {
-          document.documentElement.setAttribute('data-theme', theme)
-          // Also apply emergency theme for bulletproof styling
-          applyEmergencyTheme(theme)
+          applyTheme(theme)
         }
       },
       
       initTheme: () => {
         const { currentTheme } = get()
         if (typeof document !== 'undefined') {
-          const currentAttr = document.documentElement.getAttribute('data-theme')
-          if (currentAttr !== currentTheme) {
-            document.documentElement.setAttribute('data-theme', currentTheme)
-            // Also apply emergency theme for bulletproof styling
-            applyEmergencyTheme(currentTheme)
-          }
+          applyTheme(currentTheme)
         }
       }
     }),
@@ -53,12 +36,7 @@ export const useThemeStore = create<ThemeState>()(
       onRehydrateStorage: () => (state) => {
         // Immediately apply theme when store rehydrates
         if (state && typeof document !== 'undefined') {
-          const currentAttr = document.documentElement.getAttribute('data-theme')
-          if (currentAttr !== state.currentTheme) {
-            document.documentElement.setAttribute('data-theme', state.currentTheme)
-            // Also apply emergency theme for bulletproof styling
-            applyEmergencyTheme(state.currentTheme)
-          }
+          applyTheme(state.currentTheme)
         }
       }
     }
