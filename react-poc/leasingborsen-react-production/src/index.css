@@ -4,14 +4,14 @@
 
 @layer base {
   :root {
-    /* Light theme (default) */
+    /* Light theme (default) - Enhanced with vibrant DaisyUI-style colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
+    --primary: 262.1 83.3% 57.8%;
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222.2 84% 4.9%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 262.1 83.3% 57.8%;
     --radius: 0.5rem;
   }
 
@@ -94,14 +94,14 @@
   }
 
   [data-theme="corporate"] {
-    --background: 210 11% 96%;
+    --background: 0 0% 100%;
     --foreground: 210 11% 15%;
-    --card: 210 11% 98%;
+    --card: 0 0% 100%;
     --card-foreground: 210 11% 15%;
-    --popover: 210 11% 98%;
+    --popover: 0 0% 100%;
     --popover-foreground: 210 11% 15%;
-    --primary: 210 100% 50%;
-    --primary-foreground: 210 11% 98%;
+    --primary: 210 100% 56%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 210 11% 90%;
     --secondary-foreground: 210 11% 15%;
     --muted: 210 11% 90%;
@@ -109,10 +109,10 @@
     --accent: 210 11% 85%;
     --accent-foreground: 210 11% 15%;
     --destructive: 0 100% 50%;
-    --destructive-foreground: 210 11% 98%;
-    --border: 210 11% 85%;
-    --input: 210 11% 85%;
-    --ring: 210 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 210 100% 56%;
   }
 
   [data-theme="business"] {
