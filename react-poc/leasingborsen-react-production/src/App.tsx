@@ -31,9 +31,8 @@ const PageLoader: React.FC = () => (
 )
 
 function App() {
-  const { initTheme, currentTheme } = useThemeStore((state) => ({ 
-    initTheme: state.initTheme, 
-    currentTheme: state.currentTheme 
+  const { initTheme } = useThemeStore((state) => ({ 
+    initTheme: state.initTheme
   }))
 
   useEffect(() => {
