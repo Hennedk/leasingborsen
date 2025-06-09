@@ -1,7 +1,8 @@
 // shadcn/ui compatible theme system
 export const THEMES = [
-  'light',
-  'dark', 
+  'light-cyberpunk',
+  'dark',
+  'light', 
   'synthwave',
   'cyberpunk',
   'corporate',
@@ -14,6 +15,27 @@ export type Theme = typeof THEMES[number]
 
 // Theme definitions using shadcn/ui HSL format
 export const themeDefinitions: Record<Theme, Record<string, string>> = {
+  'light-cyberpunk': {
+    'background': '0 0% 98%',                    // Very light gray background
+    'foreground': '280 15% 15%',                 // Dark purple-gray text
+    'card': '0 0% 100%',                         // Pure white cards
+    'card-foreground': '280 15% 15%',            // Dark purple-gray card text
+    'popover': '0 0% 100%',                      // White popover
+    'popover-foreground': '280 15% 15%',         // Dark purple-gray popover text
+    'primary': '346 77% 49.8%',                  // Cyberpunk pink/red
+    'primary-foreground': '0 0% 98%',            // Light text on primary
+    'secondary': '280 8% 92%',                   // Light purple-gray
+    'secondary-foreground': '280 15% 15%',       // Dark purple-gray
+    'muted': '280 8% 94%',                       // Very light purple-gray
+    'muted-foreground': '280 8% 45%',            // Mid purple-gray
+    'accent': '197 71% 73%',                     // Cyberpunk cyan accent
+    'accent-foreground': '280 15% 15%',          // Dark text on accent
+    'destructive': '0 84.2% 60.2%',             // Standard red
+    'destructive-foreground': '0 0% 98%',        // Light text on destructive
+    'border': '280 8% 88%',                      // Light purple-gray border
+    'input': '280 8% 94%',                       // Light purple-gray input
+    'ring': '346 77% 49.8%',                     // Cyberpunk pink ring
+  },
   light: {
     'background': '0 0% 100%',
     'foreground': '222.2 84% 4.9%',

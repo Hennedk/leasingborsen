@@ -20,35 +20,44 @@ npm run preview      # Preview production build on port 4173
 ## Architecture Overview
 
 ### Technology Stack
-- **Frontend**: Vue.js 3 with Composition API (`<script setup>` syntax)
-- **Build Tool**: Vite 6.3.5 with Vue plugin
-- **Styling**: Tailwind CSS 4 + DaisyUI 5 (8 dynamic themes)
+- **Frontend**: React 18+ with TypeScript and modern hooks
+- **Build Tool**: Vite 6.3.5 with React plugin and HMR
+- **Styling**: Tailwind CSS 4 + shadcn/ui components
+- **UI Framework**: shadcn/ui with Radix UI primitives
+- **State Management**: Zustand for global state, React hooks for local state
 - **Backend**: Supabase (PostgreSQL with Row Level Security)
-- **Routing**: Vue Router 4 with lazy loading
-- **Icons**: Lucide Vue Next
+- **Routing**: React Router 6 with lazy loading
+- **Icons**: Lucide React (consistent with shadcn/ui)
 - **Language**: Danish-first interface (da-DK localization)
+- **Fonts**: Outfit (sans-serif), Fira Code (monospace)
 
 ### Project Structure
 ```
 src/
-├── components/           # Reusable Vue components (17 components)
-│   ├── BaseLayout.vue   # Main app layout with Header
-│   ├── Header.vue       # Navigation with theme switcher
-│   ├── Listing*.vue     # Car listing related components
-│   ├── Filter*.vue      # Search and filter components
-│   └── Modal.vue        # Reusable modal component
-├── pages/               # Route-level components (5 pages + 8 admin pages)
-│   ├── Home.vue         # Landing page with hero banner
-│   ├── Listings.vue     # Car listings with filters
-│   ├── Listing.vue      # Individual car detail page
-│   ├── ListingCreation.vue # Create new listing
-│   ├── About.vue        # About page
-│   └── Admin*.vue       # Administrative CRUD interfaces
-├── router/              # Vue Router configuration
+├── components/           # Reusable React components
+│   ├── ui/              # shadcn/ui components (button, card, input, etc.)
+│   ├── BaseLayout.tsx   # Main app layout with Header
+│   ├── Header.tsx       # Navigation with theme switcher
+│   ├── HeroBanner.tsx   # Landing page hero section
+│   ├── Listing*.tsx     # Car listing related components
+│   ├── Filter*.tsx      # Search and filter components
+│   └── Container.tsx    # Centralized responsive container
+├── pages/               # Route-level components
+│   ├── Home.tsx         # Landing page with hero banner
+│   ├── Listings.tsx     # Car listings with filters
+│   ├── Listing.tsx      # Individual car detail page
+│   └── About.tsx        # About page
+├── hooks/               # Custom React hooks
+│   ├── useListings.ts   # Listings data fetching
+│   └── useReferenceData.ts # Reference data fetching
+├── stores/              # Zustand state management
+│   ├── filterStore.ts   # Filter state management
+│   └── themeStore.ts    # Theme switching state
 ├── lib/                 # Utilities and configurations
-│   └── supabase.js      # Supabase client setup
-└── assets/              # Global CSS and static assets
-    └── main.css         # Tailwind + DaisyUI configuration
+│   ├── supabase.ts      # Supabase client setup
+│   ├── utils.ts         # shadcn/ui utilities (cn function)
+│   └── themes.ts        # Theme configuration
+└── index.css            # Global styles + shadcn/ui theme variables
 ```
 
 ### Database Architecture
@@ -59,29 +68,41 @@ src/
 
 ## Key Technical Constraints
 
-### DaisyUI 5 + Tailwind CSS 4 Limitation
-**CRITICAL**: DaisyUI classes MUST be used directly in templates, NEVER in `@apply` rules
+### shadcn/ui + Tailwind CSS 4 Best Practices
+**CRITICAL**: Follow shadcn/ui patterns for consistent component styling
 
-```vue
-<!-- ✅ Correct approach -->
-<div class="card bg-base-100 shadow-md border border-base-300">
-  <div class="card-body">
-    <h2 class="card-title text-primary">{{ car.make }} {{ car.model }}</h2>
-  </div>
-</div>
+```tsx
+// ✅ Correct approach - Use shadcn/ui components
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 
-<!-- ❌ Will cause build errors -->
-<div class="custom-card">  <!-- Don't use @apply with DaisyUI classes -->
+<Card className="shadow-md border border-border">
+  <CardHeader>
+    <CardTitle className="text-primary">{car.make} {car.model}</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Button variant="default" size="lg">View Details</Button>
+  </CardContent>
+</Card>
+
+// ❌ Avoid custom CSS classes - use shadcn/ui components instead
+<div className="custom-card">  <!-- Use shadcn/ui Card component -->
 ```
 
 ### State Management Pattern
-Currently uses Vue's provide/inject for theme state. Future migration to Pinia planned.
+Uses Zustand for global state management with React hooks for local component state.
 
-```javascript
-// Theme access pattern
-const themeState = inject('theme')
-const currentTheme = themeState?.currentTheme
-const setTheme = themeState?.setTheme
+```typescript
+// Global state with Zustand
+import { useFilterStore } from '@/stores/filterStore'
+import { useThemeStore } from '@/stores/themeStore'
+
+const { filters, setFilter, clearFilters } = useFilterStore()
+const { theme, setTheme } = useThemeStore()
+
+// Local component state with React hooks
+const [loading, setLoading] = useState(false)
+const [error, setError] = useState<string | null>(null)
 ```
 
 ### Danish Localization Requirements
@@ -91,80 +112,110 @@ const setTheme = themeState?.setTheme
 
 ## Component Development Patterns
 
-### Standard Vue 3 Component Structure
-```vue
-<script setup>
-import { ref, computed, onMounted } from 'vue'
-import { supabase } from '../lib/supabase'
+### Standard React Component Structure
+```tsx
+import React, { useState, useEffect, useMemo } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 
-// Props with validation
-const props = defineProps({
-  carId: { type: String, required: true },
-  showActions: { type: Boolean, default: true }
-})
-
-// Events
-const emit = defineEmits(['carUpdated', 'error'])
-
-// Reactive state
-const car = ref(null)
-const loading = ref(true)
-const error = ref(null)
-
-// Computed properties
-const displayPrice = computed(() => 
-  car.value?.monthly_price?.toLocaleString('da-DK') || '–'
-)
-
-// Lifecycle
-onMounted(async () => {
-  await fetchCar()
-})
-
-// Methods with error handling
-const fetchCar = async () => {
-  try {
-    loading.value = true
-    error.value = null
-    
-    const { data, error: fetchError } = await supabase
-      .from('full_listing_view')
-      .select('*')
-      .eq('listing_id', props.carId)
-      .single()
-    
-    if (fetchError) throw fetchError
-    car.value = data
-    emit('carUpdated', data)
-  } catch (err) {
-    console.error('Error fetching car:', err)
-    error.value = 'Der opstod en fejl ved indlæsning'
-    emit('error', err.message)
-  } finally {
-    loading.value = false
-  }
+// Props interface with TypeScript
+interface CarDetailsProps {
+  carId: string
+  showActions?: boolean
+  className?: string
+  onCarUpdated?: (car: any) => void
+  onError?: (error: string) => void
 }
-</script>
 
-<template>
-  <!-- Always include loading state -->
-  <div v-if="loading" class="animate-pulse">
-    <div class="bg-base-300 rounded-lg h-48"></div>
-  </div>
-  
-  <!-- Error state with Danish message -->
-  <div v-else-if="error" class="alert alert-error">
-    <span>{{ error }}</span>
-  </div>
-  
-  <!-- Content -->
-  <div v-else-if="car" class="card bg-base-100 shadow-md">
-    <div class="card-body">
-      <h2 class="card-title text-primary">{{ car.make }} {{ car.model }}</h2>
-      <p class="text-2xl font-bold">{{ displayPrice }} kr/md</p>
-    </div>
-  </div>
-</template>
+const CarDetails: React.FC<CarDetailsProps> = ({ 
+  carId, 
+  showActions = true, 
+  className,
+  onCarUpdated,
+  onError 
+}) => {
+  // React state hooks
+  const [car, setCar] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Computed values with useMemo
+  const displayPrice = useMemo(() => 
+    car?.monthly_price?.toLocaleString('da-DK') || '–',
+    [car?.monthly_price]
+  )
+
+  // Data fetching with error handling
+  const fetchCar = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const { data, error: fetchError } = await supabase
+        .from('full_listing_view')
+        .select('*')
+        .eq('listing_id', carId)
+        .single()
+      
+      if (fetchError) throw fetchError
+      setCar(data)
+      onCarUpdated?.(data)
+    } catch (err) {
+      console.error('Error fetching car:', err)
+      const errorMessage = 'Der opstod en fejl ved indlæsning'
+      setError(errorMessage)
+      onError?.(errorMessage)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Lifecycle with useEffect
+  useEffect(() => {
+    fetchCar()
+  }, [carId])
+
+  // Loading state
+  if (loading) {
+    return (
+      <Card className={cn("animate-pulse", className)}>
+        <CardContent className="h-48 bg-muted rounded-lg" />
+      </Card>
+    )
+  }
+
+  // Error state with Danish message
+  if (error) {
+    return (
+      <div className={cn("bg-destructive text-destructive-foreground p-4 rounded-lg", className)}>
+        <span>{error}</span>
+      </div>
+    )
+  }
+
+  // Content
+  return (
+    <Card className={cn("shadow-md", className)}>
+      <CardHeader>
+        <CardTitle className="text-primary">
+          {car?.make} {car?.model}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold">{displayPrice} kr/md</p>
+        {showActions && (
+          <Button className="mt-4" onClick={() => console.log('Action clicked')}>
+            Se detaljer
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+export default CarDetails
 ```
 
 ### Supabase Query Patterns
@@ -200,13 +251,11 @@ const fetchCars = async (filters = {}) => {
 ## Performance Guidelines
 
 ### Bundle Size Targets
-- **CSS**: ~109KB (includes 8 themes + all DaisyUI components)
+- **CSS**: ~109KB (includes shadcn/ui components + global styles)
 - **JavaScript**: ~292KB (optimized with code splitting)
 - **Loading**: Always implement skeleton loading states
 - **Images**: Use lazy loading for car gallery images
 
-### Theme System (8 Themes)
-Test all functionality across: light, dark, corporate, business, synthwave, cyberpunk, fantasy, luxury
 
 ## File Naming Conventions
 - **Components**: PascalCase (`ListingCard.vue`, `FilterSidebar.vue`)

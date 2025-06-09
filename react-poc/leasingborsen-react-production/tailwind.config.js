@@ -8,6 +8,9 @@ export default {
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
   ],
+  plugins: [
+    require('tailwind-scrollbar-hide')
+  ],
   theme: {
     container: {
       center: true,

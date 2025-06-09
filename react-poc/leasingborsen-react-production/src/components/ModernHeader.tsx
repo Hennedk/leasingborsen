@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu, Car, Settings, Phone, Info } from 'lucide-react'
+import { Menu, Car } from 'lucide-react'
 import Container from '@/components/Container'
 import {
   NavigationMenu,
@@ -37,69 +37,19 @@ const ModernHeader: React.FC = () => {
       description: 'Gå til forsiden'
     },
     {
-      title: 'Biler',
-      url: '/listings',
-      items: [
-        {
-          title: 'Alle biler',
-          description: 'Se vores komplette udvalg af leasingbiler',
-          icon: <Car className="size-5 shrink-0" />,
-          url: '/listings',
-        },
-        {
-          title: 'SUV',
-          description: 'Populære SUV modeller til familie og eventyr',
-          icon: <Car className="size-5 shrink-0" />,
-          url: '/listings?body_type=SUV',
-        },
-        {
-          title: 'Elbiler',
-          description: 'Miljøvenlige elektriske køretøjer',
-          icon: <Car className="size-5 shrink-0" />,
-          url: '/listings?fuel_type=Elektrisk',
-        },
-        {
-          title: 'Stationcar',
-          description: 'Praktiske stationcars med plads til hele familien',
-          icon: <Car className="size-5 shrink-0" />,
-          url: '/listings?body_type=Stationcar',
-        },
-      ],
-    },
-    {
-      title: 'Service',
-      url: '#',
-      items: [
-        {
-          title: 'Hjælp & Support',
-          description: 'Få hjælp til dit leasingspørgsmål',
-          icon: <Info className="size-5 shrink-0" />,
-          url: '/help',
-        },
-        {
-          title: 'Kontakt os',
-          description: 'Kom i kontakt med vores eksperter',
-          icon: <Phone className="size-5 shrink-0" />,
-          url: '/contact',
-        },
-        {
-          title: 'FAQ',
-          description: 'Ofte stillede spørgsmål om leasing',
-          icon: <Info className="size-5 shrink-0" />,
-          url: '/faq',
-        },
-        {
-          title: 'Leasingguide',
-          description: 'Lær alt om billeasing',
-          icon: <Settings className="size-5 shrink-0" />,
-          url: '/guide',
-        },
-      ],
+      title: 'Hvorfor privatleasing',
+      url: '/why-private-leasing',
+      description: 'Fordele ved privatleasing'
     },
     {
       title: 'Om os',
       url: '/about',
       description: 'Læs om Leasingbørsen'
+    },
+    {
+      title: 'Annoncering',
+      url: '/advertising',
+      description: 'Annoncér på Leasingbørsen'
     }
   ]
 
@@ -216,7 +166,7 @@ const ModernHeader: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
       <Container className="flex h-16 items-center justify-between">
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 flex-1">

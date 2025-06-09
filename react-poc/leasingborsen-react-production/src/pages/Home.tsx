@@ -23,7 +23,7 @@ const Home: React.FC = () => {
        HOME PAGE LAYOUT - Main landing page structure
        Uses BaseLayout with proper container management
     ================================================= */
-    <BaseLayout containerPadding={false}>
+    <BaseLayout>
       
       {/* =================
           HERO SECTION - Full width with integrated container
@@ -33,7 +33,7 @@ const Home: React.FC = () => {
       {/* =================
           MAIN CONTENT SECTIONS - Proper spacing and container usage
       ================= */}
-      <div className="space-y-16 lg:space-y-20 py-16 lg:py-20">
+      <div className="space-y-10 lg:space-y-12 py-10 lg:py-10">
         
         {/* =================
             POPULAR CATEGORIES - Consistent spacing
@@ -46,7 +46,7 @@ const Home: React.FC = () => {
             LATEST CARS SECTION - Consistent container usage
         ================= */}
         <section className="bg-background">
-          <div className="mx-auto w-full max-w-[1440px] px-4 md:px-12">
+          <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
             <CarListingGrid
               title="Seneste biler"
               cars={listingsResponse?.data || []}

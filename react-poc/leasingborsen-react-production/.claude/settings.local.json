@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx shadcn@canary add:*)",
+      "WebFetch(domain:shadcnblocks.com)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": []
+  }
+}
