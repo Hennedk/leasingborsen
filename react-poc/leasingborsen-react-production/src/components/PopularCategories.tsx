@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Zap, DollarSign, Users, Building, Settings } from 'lucide-react'
@@ -148,6 +148,21 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
 }) => {
   const navigate = useNavigate()
   const [isNavigating, setIsNavigating] = useState(false)
+  
+  // Limit categories to 4 on mobile to avoid third row (2x2 grid)
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768) // md breakpoint
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+  
+  const displayCategories = isMobile ? categories.slice(0, 4) : categories
 
   // Enhanced navigation function with error handling
   const navigateToCategory = async (filters: CategoryFilters) => {
@@ -190,9 +205,9 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
       className={`bg-background ${className}`}
       aria-labelledby="popular-categories-heading"
     >
-      <div className="mx-auto w-full max-w-[1440px] px-4 md:px-12">
+      <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
         {/* Left-aligned header with proper accessibility */}
-        <div className="mb-12">
+        <div className="mb-4 lg:mb-4">
           <h2 
             id="popular-categories-heading"
             className="text-3xl font-bold text-foreground"
@@ -207,7 +222,7 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
           role="group"
           aria-labelledby="popular-categories-heading"
         >
-          {categories.map((category) => (
+          {displayCategories.map((category) => (
             <CategoryCard
               key={category.id}
               category={category}

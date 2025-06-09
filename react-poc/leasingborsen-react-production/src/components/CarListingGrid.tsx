@@ -38,12 +38,22 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
     <section className={`space-y-6 ${className}`}>
       
       {/* =========================================
-          SECTION HEADER - Left aligned title only
+          SECTION HEADER - Left aligned title with desktop CTA button
       ========================================= */}
-      <div className="text-left">
-        <h2 className="text-3xl font-bold text-foreground mb-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h2 className="text-3xl font-bold text-foreground">
           {title}
         </h2>
+        {/* Desktop CTA Button - Only show on desktop */}
+        {showCta && displayedCars.length > 0 && (
+          <div className="hidden md:block">
+            <Link to={ctaLink}>
+              <Button variant="ghost" size="lg" className="font-medium text-muted-foreground hover:text-foreground py-2">
+                {ctaText} →
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* =========================================
@@ -56,45 +66,68 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
       )}
 
       {/* =========================================
-          CAR GRID - Responsive: 1/2/4 columns
+          CAR CAROUSEL - Horizontal scroll with partial visibility
           Loading states, success states, empty states
       ========================================= */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Loading State - Skeleton cards */}
-        {isLoading ? (
-          Array.from({ length: maxCards }).map((_, i) => (
-            <ListingCard key={`loading-${i}`} loading={true} />
-          ))
-          
-        /* Success State - Display car listings */
-        ) : displayedCars.length > 0 ? (
-          displayedCars.map((car) => (
-            <ListingCard 
-              key={car.listing_id || car.id} 
-              car={{
-                ...car,
-                id: car.listing_id || car.id
-              }} 
-            />
-          ))
-          
-        /* Empty State - No cars available */
-        ) : (
-          <div className="col-span-full text-center text-muted-foreground py-12">
-            <p className="text-lg">Ingen biler tilgængelige</p>
-            <p className="text-sm mt-2">Prøv at justere dine søgekriterier</p>
-          </div>
-        )}
+      <div className="relative">
+        {/* Horizontal Scrollable Container */}
+        <div 
+          className="carousel-container flex gap-4 lg:gap-6 overflow-x-auto pb-4"
+          style={{
+            scrollSnapType: 'x mandatory',
+            scrollPadding: '0 24px'
+          }}
+        >
+          {/* Loading State - Skeleton cards */}
+          {isLoading ? (
+            Array.from({ length: maxCards }).map((_, i) => (
+              <div 
+                key={`loading-${i}`}
+                className="flex-none w-72 sm:w-80"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <ListingCard loading={true} />
+              </div>
+            ))
+            
+          /* Success State - Display car listings */
+          ) : displayedCars.length > 0 ? (
+            displayedCars.map((car) => (
+              <div 
+                key={car.listing_id || car.id}
+                className="flex-none w-72 sm:w-80"
+                style={{ scrollSnapAlign: 'start' }}
+              >
+                <ListingCard 
+                  car={{
+                    ...car,
+                    id: car.listing_id || car.id
+                  }} 
+                />
+              </div>
+            ))
+            
+          /* Empty State - No cars available */
+          ) : (
+            <div className="flex-none w-full text-center text-muted-foreground py-12">
+              <p className="text-lg">Ingen biler tilgængelige</p>
+              <p className="text-sm mt-2">Prøv at justere dine søgekriterier</p>
+            </div>
+          )}
+        </div>
+        
+        {/* Fade Out Effect for Peekaboo */}
+        <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-background to-transparent pointer-events-none" />
       </div>
 
       {/* =========================================
-          CALL-TO-ACTION BUTTON - Right aligned
-          Only show if cars are available and CTA is enabled
+          MOBILE CALL-TO-ACTION BUTTON - Full width on mobile only
+          Desktop CTA is shown in header section above
       ========================================= */}
       {showCta && displayedCars.length > 0 && (
-        <div className="text-right mt-8">
+        <div className="text-center mt-3 md:hidden">
           <Link to={ctaLink}>
-            <Button size="lg" className="font-semibold">
+            <Button size="lg" className="font-semibold w-full">
               {ctaText}
             </Button>
           </Link>
