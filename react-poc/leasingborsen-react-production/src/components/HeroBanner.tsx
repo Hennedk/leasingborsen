@@ -5,7 +5,6 @@ import { FormField } from '@/components/ui/form-field'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useListingCount } from '@/hooks/useListings'
-import Container from '@/components/Container'
 import './HeroBanner.css'
 
 const HeroBanner: React.FC = () => {
@@ -71,9 +70,9 @@ const HeroBanner: React.FC = () => {
   return (
     /* =================================================
        HERO BANNER SECTION - Main container with gradient background
-       Min height: 400px mobile, 500px desktop
+       Height controlled by container padding
     ================================================= */
-    <section className="min-h-[400px] lg:min-h-[500px] bg-gradient-to-br from-primary via-primary to-primary relative overflow-hidden w-full">
+    <section className="bg-gradient-to-br from-primary via-primary to-primary relative overflow-hidden w-full">
       
       {/* =================
           BACKGROUND OVERLAYS - Multiple gradient layers for visual depth
@@ -84,17 +83,17 @@ const HeroBanner: React.FC = () => {
       <div className="absolute inset-0 bg-radial-gradient from-white/5 via-transparent to-transparent"></div>
       
       {/* =================
-          CONTENT CONTAINER - Main content wrapper with responsive padding
+          CONTENT CONTAINER - Main content wrapper with 48px top/bottom padding
       ================= */}
       <div className="w-full">
-        <Container className="py-6 lg:py-8 relative z-10">
+        <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12 py-12 relative z-10">
           
           {/* =================
               RESPONSIVE GRID LAYOUT
-              Mobile: 1 column | Desktop: 55/45 split (1.1fr/0.9fr)
-              Gap: 24px mobile, 32px desktop
+              Mobile: 1 column | Desktop: 50/50 split (equal columns)
+              Gap: 4px mobile, 32px desktop
           ================= */}
-          <div className="grid grid-cols-1 md:grid-cols-[1.1fr_0.9fr] gap-6 md:gap-8 w-full items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1 md:gap-8 w-full items-center">
             
             {/* =========================================
                 LEFT COLUMN: Promotional Content
@@ -102,33 +101,23 @@ const HeroBanner: React.FC = () => {
                 - Descriptive text
                 - Promotional banner image
             ========================================= */}
-            <div className="order-1 md:order-1 text-center animate-slide-in-left px-4 md:pl-0 md:pr-6 py-4">
-              {/* Text Content Wrapper - 24px vertical spacing */}
-              <div className="max-w-none space-y-6">
+            <div className="order-1 md:order-2 text-left animate-slide-in-left">
+              {/* Text Content Wrapper - 24px vertical spacing, full width */}
+              <div className="w-full space-y-6">
                 
                 {/* Main Headline & Subtitle Group - 16px internal spacing */}
                 <div className="space-y-4">
-                  {/* Primary Headline - Fluid typography: 28px-48px */}
-                  <h1 className="font-bold text-white leading-tight tracking-tight" style={{fontSize: 'clamp(1.75rem, 5vw, 3rem)'}}>
+                  {/* Primary Headline - Fluid typography: 32px-56px */}
+                  <h1 className="font-bold text-white leading-tight tracking-tight" style={{fontSize: 'clamp(2rem, 6vw, 3.5rem)'}}>
                     Find de bedste leasingtilbud
                   </h1>
                   
-                  {/* Descriptive Subtitle - Fluid typography: 16px-20px */}
-                  <p className="text-white/85 leading-relaxed tracking-wide max-w-2xl mx-auto" style={{fontSize: 'clamp(1rem, 2.5vw, 1.25rem)'}}>
+                  {/* Descriptive Subtitle - Fluid typography: 18px-24px */}
+                  <p className="text-white/85 leading-relaxed tracking-wide" style={{fontSize: 'clamp(1.125rem, 3vw, 1.5rem)'}}>
                     Sammenlign leasingaftaler fra forhandlere over hele Danmark – hurtigt og nemt.
                   </p>
                 </div>
                 
-                {/* Marketing Banner Image - Delayed animation (0.4s) */}
-                <div className="mt-6 animate-slide-in-up" style={{animationDelay: '0.4s'}}>
-                  {/* Promotional Image - Responsive scaling: 80% mobile, 100% desktop */}
-                  <img 
-                    src="https://a.storyblok.com/f/143588/840x287/6cc6a872d2/cin00416_q4-spring-price-reduction-2025-840x287.png/m/750x0/filters:quality(75)" 
-                    alt="Spring Price Reduction 2025 - Special leasing offers" 
-                    className="w-full max-w-lg mx-auto rounded-xl shadow-2xl transform hover:scale-[1.02] transition-transform duration-300 scale-[0.8] md:scale-100"
-                    loading="lazy"
-                  />
-                </div>
               </div>
             </div>
 
@@ -138,17 +127,17 @@ const HeroBanner: React.FC = () => {
                 - 4 filter dropdowns (2x2 grid)
                 - Search CTA button
             ========================================= */}
-            <div className="order-2 md:order-2 animate-slide-in-right px-2 md:pl-6 md:pr-0">
+            <div className="order-2 md:order-1 animate-slide-in-right px-0 md:pl-0 md:pr-0">
               
               {/* Search Form Card - Backdrop blur with hover effects */}
-              {/* Width: 300px-450px responsive, 95% max on mobile */}
-              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-4 md:p-6" style={{width: 'clamp(300px, 40vw, 450px)', maxWidth: '95%'}}>
+              {/* Width: 350px-550px responsive, 95% max on mobile */}
+              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-4 md:p-6 max-w-xl">
                 {/* Form Content Wrapper - 24px vertical spacing */}
                 <div className="space-y-6">
                   
                   {/* Form Title - Fluid typography: 20px-24px */}
-                  <h2 className="font-bold text-card-foreground text-center md:text-left leading-tight" style={{fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'}}>
-                    Søg blandt hundredvis af leasingbiler – find din drømmebil nu
+                  <h2 className="font-bold text-card-foreground text-left leading-tight" style={{fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'}}>
+                    Find din drømmebil blandt hundredvis af leasingbiler
                   </h2>
                   
                   {/* Form Fields Container - 16px vertical spacing between rows */}
@@ -161,6 +150,7 @@ const HeroBanner: React.FC = () => {
                         value={localFilters.make || 'all'}
                         onValueChange={(value) => handleFilterChange('make', value)}
                         placeholder="Vælg mærke"
+                        size="lg"
                         options={[
                           { value: 'all', label: 'Vælg mærke' },
                           ...(referenceData?.makes?.map((make: any) => ({
@@ -176,6 +166,7 @@ const HeroBanner: React.FC = () => {
                         onValueChange={(value) => handleFilterChange('model', value)}
                         placeholder={localFilters.make ? 'Vælg model' : 'Vælg mærke først'}
                         disabled={!localFilters.make}
+                        size="lg"
                         options={[
                           { value: 'all', label: localFilters.make ? 'Vælg model' : 'Vælg mærke først' },
                           ...filteredModels.map((model: any) => ({
@@ -193,6 +184,7 @@ const HeroBanner: React.FC = () => {
                         value={localFilters.body_type || 'all'}
                         onValueChange={(value) => handleFilterChange('body_type', value)}
                         placeholder="Alle biltyper"
+                        size="lg"
                         options={[
                           { value: 'all', label: 'Alle biltyper' },
                           ...(referenceData?.bodyTypes?.map((bodyType: any) => ({
@@ -207,6 +199,7 @@ const HeroBanner: React.FC = () => {
                         value={localFilters.price_max?.toString() || 'all'}
                         onValueChange={(value) => handleFilterChange('price_max', value)}
                         placeholder="Ingen grænse"
+                        size="lg"
                         options={[
                           { value: 'all', label: 'Ingen grænse' },
                           ...priceSteps.map((price) => ({
@@ -223,9 +216,10 @@ const HeroBanner: React.FC = () => {
                 {/* ===== CALL-TO-ACTION BUTTON ===== */}
                 {/* 16px top padding for separation from form fields */}
                 <div className="pt-4">
-                  {/* Primary Search Button - 48px height, full width */}
+                  {/* Primary Search Button - Large size (48px height), full width */}
                   <Button 
-                    className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold tracking-wide rounded-lg shadow-xl hover:shadow-2xl transition-all duration-200" 
+                    size="lg"
+                    className="w-full font-bold tracking-wide shadow-xl hover:shadow-2xl" 
                     onClick={handleSearch}
                     aria-label="Søg efter biler med de valgte kriterier"
                   >
@@ -236,7 +230,7 @@ const HeroBanner: React.FC = () => {
             </div>
             
           </div>
-        </Container>
+        </div>
       </div>
 
     </section>

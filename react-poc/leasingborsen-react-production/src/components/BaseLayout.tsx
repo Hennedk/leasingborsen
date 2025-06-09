@@ -1,7 +1,6 @@
 import React from 'react'
 import ModernHeader from '@/components/ModernHeader'
 import Footer from '@/components/Footer'
-import Container from '@/components/Container'
 
 interface BaseLayoutProps {
   children: React.ReactNode
@@ -11,16 +10,13 @@ interface BaseLayoutProps {
   showHeader?: boolean
   /** Additional CSS classes for the main content area */
   className?: string
-  /** Whether to apply container padding to main content (default: true) */
-  containerPadding?: boolean
 }
 
 const BaseLayout: React.FC<BaseLayoutProps> = ({
   children,
   showFooter = true,
   showHeader = true,
-  className = '',
-  containerPadding = true
+  className = ''
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -29,9 +25,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
       
       {/* Main Content */}
       <main className={`flex-1 w-full ${className}`}>
-        <Container padding={containerPadding}>
-          {children}
-        </Container>
+        {children}
       </main>
       
       {/* Footer */}

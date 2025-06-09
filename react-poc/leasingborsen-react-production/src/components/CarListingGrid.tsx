@@ -71,20 +71,13 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
       ========================================= */}
       <div className="relative">
         {/* Horizontal Scrollable Container */}
-        <div 
-          className="carousel-container flex gap-4 lg:gap-6 overflow-x-auto pb-4"
-          style={{
-            scrollSnapType: 'x mandatory',
-            scrollPadding: '0 24px'
-          }}
-        >
+        <div className="flex gap-4 lg:gap-6 overflow-x-auto pb-4 scroll-smooth scrollbar-hide [scroll-snap-type:x_mandatory] [scroll-padding:0_1.5rem]">
           {/* Loading State - Skeleton cards */}
           {isLoading ? (
             Array.from({ length: maxCards }).map((_, i) => (
               <div 
                 key={`loading-${i}`}
-                className="flex-none w-72 sm:w-80"
-                style={{ scrollSnapAlign: 'start' }}
+                className="flex-none min-w-72 sm:min-w-80 snap-start"
               >
                 <ListingCard loading={true} />
               </div>
@@ -95,8 +88,7 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
             displayedCars.map((car) => (
               <div 
                 key={car.listing_id || car.id}
-                className="flex-none w-72 sm:w-80"
-                style={{ scrollSnapAlign: 'start' }}
+                className="flex-none min-w-72 sm:min-w-80 snap-start"
               >
                 <ListingCard 
                   car={{

@@ -1,7 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react' // 👈 Added useEffect
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BaseLayout from '@/components/BaseLayout'
 
@@ -10,6 +10,8 @@ const Home = lazy(() => import('@/pages/Home'))
 const Listings = lazy(() => import('@/pages/Listings'))
 const Listing = lazy(() => import('@/pages/Listing'))
 const About = lazy(() => import('@/pages/About'))
+const WhyPrivateLeasing = lazy(() => import('@/pages/WhyPrivateLeasing'))
+const Advertising = lazy(() => import('@/pages/Advertising'))
 
 // Create a client
 const queryClient = new QueryClient({
@@ -31,6 +33,11 @@ const PageLoader: React.FC = () => (
 )
 
 function App() {
+  // 🎯 SET CYBERPUNK THEME
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'cyberpunk')
+  }, [])
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -42,6 +49,8 @@ function App() {
                 <Route path="/listings" element={<Listings />} />
                 <Route path="/listing/:id" element={<Listing />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/why-private-leasing" element={<WhyPrivateLeasing />} />
+                <Route path="/advertising" element={<Advertising />} />
                 {/* Catch all route */}
                 <Route path="*" element={
                   <BaseLayout>

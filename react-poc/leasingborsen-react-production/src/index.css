@@ -1,83 +1,112 @@
+@import "tailwindcss";
+
+/* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
-@import "tailwindcss";
-@import "./styles/design-tokens.css";
 
-/* ===== CYBERPUNK THEME OVERRIDE ===== */
-/* These must come AFTER Tailwind to override default styles */
-
-/* Force cyberpunk theme application to html and body */
-html {
-  background-color: hsl(240 10% 3.9%) !important;
-  color: hsl(0 0% 98%) !important;
-  font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-/* Ensure all base elements inherit cyberpunk theme colors */
-body, #root, .App {
-  background-color: hsl(240 10% 3.9%) !important;
-  color: hsl(0 0% 98%) !important;
-  font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-  transition: all 0.3s ease;
-}
-
-/* ===== CRITICAL: CSS Custom Properties (Variables) ===== */
-/* These MUST be outside @layer for Tailwind v4 compatibility */
-
-/* Cyberpunk Theme - HSL Values for shadcn/ui compatibility */
+/* Tailwind v4 Theme Variables */
 :root {
-  /* Core semantic colors - Cyberpunk theme */
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 346 77% 49.8%;
-  --primary-foreground: 355.7 100% 97.3%;
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --accent: 240 3.7% 15.9%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 346 77% 49.8%;
-  
-  /* Chart colors for data visualization - Cyberpunk palette */
-  --chart-1: 346 77% 49.8%;
-  --chart-2: 197 71% 73%;
-  --chart-3: 280 100% 70%;
-  --chart-4: 339 82% 52%;
-  --chart-5: 186 100% 94%;
-  
-  /* Typography */
-  --font-sans: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: "Fira Code", "JetBrains Mono", "Fira Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
-  
-  /* Layout */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 346 77% 49.8%;  /* 🎯 Your cyberpunk pink! */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 346 77% 49.8%;  /* 🎯 Same cyberpunk pink for focus ring */
   --radius: 0.5rem;
-  
-  /* Enhanced shadows for cyberpunk theme */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.4);
-  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
-  
-  /* Cyberpunk-specific effects */
-  --glow-primary: 0 0 20px hsl(var(--primary) / 0.3);
-  --glow-accent: 0 0 15px hsl(197 71% 73% / 0.3);
 }
 
-/* All theme colors now managed by JavaScript theme system */
-/* Static themes removed to prevent conflicts */
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 346 77% 49.8%;  /* 🎯 Same cyberpunk pink in dark mode */
+  --primary-foreground: 222.2 84% 4.9%;
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 346 77% 49.8%;  /* 🎯 Same cyberpunk pink ring */
+}
 
+/* 🎯 CYBERPUNK THEME - This was missing! */
+[data-theme="cyberpunk"] {
+  --background: 0 0% 5%;        /* Almost black */
+  --foreground: 346 77% 85%;    /* Light pink */
+  --card: 0 0% 8%;
+  --card-foreground: 346 77% 85%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 346 77% 85%;
+  --primary: 346 77% 49.8%;     /* 🎯 CYBERPUNK PINK */
+  --primary-foreground: 355 7% 97%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 346 77% 85%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 346 30% 60%;
+  --accent: 346 77% 49.8%;
+  --accent-foreground: 355 7% 97%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 346 30% 25%;
+  --input: 0 0% 15%;
+  --ring: 346 77% 49.8%;
+}
+
+/* 🎯 CRITICAL: This maps your theme variables to Tailwind's expected --color- variables */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius: var(--radius);
+}
+
+/* Base styles */
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
 /* ===== GLOBAL BASE STYLES ===== */
 
@@ -625,39 +654,5 @@ a:hover {
   }
 }
 
-/* ===== FINAL CYBERPUNK THEME ENFORCEMENT ===== */
-/* These styles MUST come last to override everything */
-
-:root {
-  /* FORCE Cyberpunk theme variables */
-  --background: 240 10% 3.9% !important;
-  --foreground: 0 0% 98% !important;
-  --card: 240 10% 3.9% !important;
-  --card-foreground: 0 0% 98% !important;
-  --popover: 240 10% 3.9% !important;
-  --popover-foreground: 0 0% 98% !important;
-  --primary: 346 77% 49.8% !important;
-  --primary-foreground: 355.7 100% 97.3% !important;
-  --secondary: 240 3.7% 15.9% !important;
-  --secondary-foreground: 0 0% 98% !important;
-  --muted: 240 3.7% 15.9% !important;
-  --muted-foreground: 240 5% 64.9% !important;
-  --accent: 240 3.7% 15.9% !important;
-  --accent-foreground: 0 0% 98% !important;
-  --destructive: 0 62.8% 30.6% !important;
-  --destructive-foreground: 0 0% 98% !important;
-  --border: 240 3.7% 15.9% !important;
-  --input: 240 3.7% 15.9% !important;
-  --ring: 346 77% 49.8% !important;
-}
-
-/* FORCE cyberpunk theme on all elements */
-* {
-  font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-html, body, #root, .App {
-  background-color: hsl(240 10% 3.9%) !important;
-  color: hsl(0 0% 98%) !important;
-  font-family: "Outfit", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
+/* ===== THEME SYSTEM INTEGRATION ===== */
+/* Themes are now managed by JavaScript - no forced overrides */
