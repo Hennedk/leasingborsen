@@ -5,13 +5,13 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 const selectTriggerVariants = cva(
-  "border-2 border-border rounded-lg focus:border-primary transition-colors disabled:opacity-50",
+  "",
   {
     variants: {
       size: {
-        sm: "h-9 px-3 text-sm",
-        default: "h-10 px-4",
-        lg: "h-11 px-4"
+        sm: "h-9",
+        default: "h-10", 
+        lg: "h-11"
       }
     },
     defaultVariants: {
