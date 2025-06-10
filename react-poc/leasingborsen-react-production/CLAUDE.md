@@ -35,7 +35,7 @@ src/
 ├── components/           # Reusable React components
 │   ├── layout/          # Layout components
 │   │   ├── BaseLayout.tsx   # Main app layout
-│   │   └── Header.tsx       # Navigation with theme switcher
+│   │   └── Header.tsx       # Navigation header
 │   ├── listings/        # Car listing related components
 │   │   ├── ListingCard.tsx
 │   │   ├── ListingDetails.tsx
@@ -60,15 +60,12 @@ src/
 │       └── AdminModelsPage.tsx
 ├── hooks/               # Custom React hooks
 │   ├── useCarData.ts    # Car data fetching logic
-│   ├── useSupabase.ts   # Supabase operations
-│   └── useTheme.ts      # Theme management
+│   └── useSupabase.ts   # Supabase operations
 ├── lib/                 # Utilities and configurations
 │   ├── supabase.ts      # Supabase client setup
 │   └── utils.ts         # Utility functions (cn, etc.)
-├── contexts/            # React contexts
-│   └── ThemeContext.tsx # Theme state management
 └── styles/              # Global styles
-    └── globals.css      # Tailwind + shadcn/ui configuration
+    └── index.css        # Tailwind + shadcn/ui configuration
 ```
 
 ### Database Architecture
@@ -310,53 +307,18 @@ export const useCarData = (filters: CarFilters = {}) => {
 }
 ```
 
-### Theme Management with Context
+### Theming with shadcn/ui
 ```tsx
-// contexts/ThemeContext.tsx
-import React, { createContext, useContext, useState, useEffect } from 'react'
+// Standard shadcn/ui theming approach using CSS variables
+// Light theme variables are defined in :root
+// Dark theme variables are defined in .dark class
+// No theme provider needed - uses standard CSS approach
 
-type Theme = 'light' | 'dark' | 'corporate' | 'business' | 'synthwave' | 'cyberpunk' | 'fantasy' | 'luxury'
+// To switch to dark mode, add 'dark' class to html element:
+// document.documentElement.classList.add('dark')
 
-interface ThemeContextType {
-  currentTheme: Theme
-  setTheme: (theme: Theme) => void
-  themes: Theme[]
-}
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
-
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentTheme, setCurrentTheme] = useState<Theme>('light')
-  
-  const themes: Theme[] = ['light', 'dark', 'corporate', 'business', 'synthwave', 'cyberpunk', 'fantasy', 'luxury']
-
-  const setTheme = (theme: Theme) => {
-    setCurrentTheme(theme)
-    document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
-  }
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme && themes.includes(savedTheme)) {
-      setTheme(savedTheme)
-    }
-  }, [])
-
-  return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme, themes }}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext)
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider')
-  }
-  return context
-}
+// CSS variables are automatically mapped through Tailwind config
+// in tailwind.config.js theme.extend.colors
 ```
 
 ## Performance Guidelines
@@ -418,7 +380,7 @@ export const errorMessages = {
 - **Utilities**: camelCase (`utils.ts`)
 
 ## Testing Approach
-- **Current**: Manual testing across all themes
+- **Current**: Manual testing in light and dark modes
 - **Future**: Vitest + React Testing Library + MSW
 - **Performance**: React DevTools Profiler + Lighthouse
 
