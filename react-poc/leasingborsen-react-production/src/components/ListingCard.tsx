@@ -141,7 +141,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
   // Enhanced Skeleton State with Realistic Content Structure
   if (loading) {
     return (
-      <Card className="bg-card shadow-md border border-border rounded-lg overflow-hidden">
+      <Card className="bg-card shadow-md border rounded-lg overflow-hidden">
         {/* Image skeleton with enhanced shimmer */}
         <div className="relative rounded-t-lg overflow-hidden bg-muted">
           <div className="w-full h-52 bg-muted relative overflow-hidden">
@@ -225,7 +225,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
 
       {/* Enhanced card with original hover effects */}
       <Card 
-        className={`bg-card shadow-md border border-border hover:shadow-xl hover:border-primary/20 transition-all duration-300 rounded-lg overflow-hidden ${
+        className={`bg-card shadow-md border hover:shadow-xl hover:border-primary/20 transition-all duration-300 rounded-lg overflow-hidden ${
           isPressed ? 'scale-95 shadow-sm' : ''
         }`}
       >
