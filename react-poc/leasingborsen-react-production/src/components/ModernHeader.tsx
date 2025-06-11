@@ -166,7 +166,7 @@ const ModernHeader: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background">
+    <header className="lg:sticky top-0 z-50 w-full border-b border-border/50 bg-card">
       <Container className="flex h-16 items-center justify-between">
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 flex-1">

@@ -1,10 +1,11 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 import { CarListingQueries, type FilterOptions } from '@/lib/supabase'
+import type { SortOrder } from '@/types'
 
-export function useListings(filters: Partial<FilterOptions> = {}, limit = 20) {
+export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder: SortOrder = '') {
   return useQuery({
-    queryKey: ['listings', filters, limit],
-    queryFn: () => CarListingQueries.getListings(filters, limit),
+    queryKey: ['listings', filters, limit, sortOrder],
+    queryFn: () => CarListingQueries.getListings(filters, limit, sortOrder),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
