@@ -53,7 +53,13 @@ export interface FilterOptions {
   make: string
   model: string
   body_type: string
+  fuel_type: string
+  transmission: string
+  price_min: number | null
   price_max: number | null
+  seats_min: number | null
+  seats_max: number | null
+  horsepower: number | null
 }
 
 export interface Make {
@@ -96,11 +102,12 @@ export type SupabaseSingleResponse<T> = {
 
 // Query Builders with Types
 export class CarListingQueries {
-  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20) {
+  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '') {
     let query = supabase
       .from('full_listing_view')
       .select('*')
 
+    // Apply filters
     if (filters.make) {
       query = query.ilike('make', `%${filters.make}%`)
     }
@@ -110,13 +117,33 @@ export class CarListingQueries {
     if (filters.body_type) {
       query = query.eq('body_type', filters.body_type)
     }
-    if (filters.price_max) {
+    if (filters.fuel_type) {
+      query = query.eq('fuel_type', filters.fuel_type)
+    }
+    if (filters.transmission) {
+      query = query.eq('transmission', filters.transmission)
+    }
+    if (filters.price_min !== null && filters.price_min !== undefined) {
+      query = query.gte('monthly_price', filters.price_min)
+    }
+    if (filters.price_max !== null && filters.price_max !== undefined) {
       query = query.lte('monthly_price', filters.price_max)
     }
+    if (filters.seats_min !== null && filters.seats_min !== undefined) {
+      query = query.gte('seats', filters.seats_min)
+    }
+    if (filters.seats_max !== null && filters.seats_max !== undefined) {
+      query = query.lte('seats', filters.seats_max)
+    }
+    if (filters.horsepower !== null && filters.horsepower !== undefined) {
+      query = query.gte('horsepower', filters.horsepower)
+    }
 
-    const { data, error } = await query
-      .order('monthly_price', { ascending: true })
-      .limit(limit)
+    // Apply sorting
+    const isDescending = sortOrder === 'desc'
+    query = query.order('monthly_price', { ascending: !isDescending })
+
+    const { data, error } = await query.limit(limit)
 
     return { data: data as CarListing[] | null, error }
   }
@@ -136,6 +163,7 @@ export class CarListingQueries {
       .from('full_listing_view')
       .select('*', { count: 'exact', head: true })
 
+    // Apply same filters as getListings
     if (filters.make) {
       query = query.ilike('make', `%${filters.make}%`)
     }
@@ -145,8 +173,26 @@ export class CarListingQueries {
     if (filters.body_type) {
       query = query.eq('body_type', filters.body_type)
     }
-    if (filters.price_max) {
+    if (filters.fuel_type) {
+      query = query.eq('fuel_type', filters.fuel_type)
+    }
+    if (filters.transmission) {
+      query = query.eq('transmission', filters.transmission)
+    }
+    if (filters.price_min !== null && filters.price_min !== undefined) {
+      query = query.gte('monthly_price', filters.price_min)
+    }
+    if (filters.price_max !== null && filters.price_max !== undefined) {
       query = query.lte('monthly_price', filters.price_max)
+    }
+    if (filters.seats_min !== null && filters.seats_min !== undefined) {
+      query = query.gte('seats', filters.seats_min)
+    }
+    if (filters.seats_max !== null && filters.seats_max !== undefined) {
+      query = query.lte('seats', filters.seats_max)
+    }
+    if (filters.horsepower !== null && filters.horsepower !== undefined) {
+      query = query.gte('horsepower', filters.horsepower)
     }
 
     const { count, error } = await query

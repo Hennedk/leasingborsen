@@ -141,53 +141,52 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
   // Enhanced Skeleton State with Realistic Content Structure
   if (loading) {
     return (
-      <Card className="bg-card shadow-md border rounded-lg overflow-hidden">
+      <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
         {/* Image skeleton with enhanced shimmer */}
-        <div className="relative rounded-t-lg overflow-hidden bg-muted">
-          <div className="w-full h-52 bg-muted relative overflow-hidden">
+        <div className="relative rounded-t-xl overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+          <div className="w-full h-56 relative overflow-hidden">
             {/* Enhanced shimmer effect */}
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-background/30 to-transparent animate-shimmer"></div>
+            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-background/40 to-transparent animate-shimmer"></div>
           </div>
         </div>
         
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           {/* Smart title & variant skeleton */}
-          <div className="pb-2">
+          <div className="space-y-3 mb-4">
             {/* Car make and model (realistic lengths) */}
-            <div className="flex items-center space-x-2 mb-2">
-              <div className="h-6 bg-muted rounded w-20 animate-pulse"></div> {/* Make */}
-              <div className="h-6 bg-muted rounded w-28 animate-pulse" style={{animationDelay: '0.1s'}}></div> {/* Model */}
+            <div className="flex items-center space-x-2">
+              <div className="h-7 bg-muted rounded-lg w-20 animate-pulse"></div> {/* Make */}
+              <div className="h-7 bg-muted rounded-lg w-28 animate-pulse" style={{animationDelay: '0.1s'}}></div> {/* Model */}
             </div>
             {/* Variant */}
-            <div className="h-4 bg-muted rounded w-36 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+            <div className="h-4 bg-muted rounded-lg w-36 animate-pulse" style={{animationDelay: '0.2s'}}></div>
           </div>
 
           {/* Smart price skeleton */}
-          <div className="py-2">
+          <div className="space-y-2 mb-4">
             {/* Price components */}
-            <div className="flex items-baseline space-x-1 mb-2">
-              <div className="h-5 bg-muted rounded w-16 animate-pulse" style={{animationDelay: '0.3s'}}></div> {/* Amount */}
-              <div className="h-4 bg-muted rounded w-8 animate-pulse" style={{animationDelay: '0.35s'}}></div> {/* kr */}
-              <div className="h-4 bg-muted rounded w-12 animate-pulse" style={{animationDelay: '0.4s'}}></div> {/* /måned */}
+            <div className="flex items-baseline space-x-1">
+              <div className="h-6 bg-muted rounded-lg w-20 animate-pulse" style={{animationDelay: '0.3s'}}></div> {/* Amount */}
+              <div className="h-5 bg-muted rounded-lg w-12 animate-pulse" style={{animationDelay: '0.35s'}}></div> {/* /måned */}
             </div>
             {/* Secondary info */}
-            <div className="h-3 bg-muted rounded w-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+            <div className="h-3 bg-muted rounded-lg w-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
           </div>
 
           {/* Divider */}
-          <Separator className="my-3" />
+          <Separator className="my-4" />
 
           {/* Smart specs skeleton */}
-          <div className="pt-2">
-            <div className="grid grid-cols-2 gap-y-2 text-sm">
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
                 <div 
                   key={index}
                   className="flex items-center gap-2 animate-pulse"
-                  style={{animationDelay: `${0.6 + index * 0.1}s`}}
+                  style={{animationDelay: `${0.5 + index * 0.1}s`}}
                 >
-                  <div className="w-4 h-4 bg-muted rounded"></div>
-                  <div className={`h-3 bg-muted rounded ${getRandomWidth()}`}></div>
+                  <div className="w-4 h-4 bg-muted rounded-full"></div>
+                  <div className={`h-3 bg-muted rounded-lg ${getRandomWidth()}`}></div>
                 </div>
               ))}
             </div>
@@ -223,20 +222,22 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
         </div>
       )}
 
-      {/* Enhanced card with original hover effects */}
+      {/* Enhanced card with improved shadcn/ui styling */}
       <Card 
-        className={`bg-card shadow-md border hover:shadow-xl hover:border-primary/20 transition-all duration-300 rounded-lg overflow-hidden ${
-          isPressed ? 'scale-95 shadow-sm' : ''
+        className={`bg-card shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden ${
+          isPressed ? 'scale-95 shadow-md translate-y-0' : ''
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}
-        <div className="relative rounded-t-lg overflow-hidden bg-muted">
+        <div className="relative rounded-t-xl overflow-hidden bg-gradient-to-br from-muted to-muted/70">
           {/* Enhanced placeholder for missing images */}
           {!car.image ? (
-            <div className="bg-muted aspect-video flex items-center justify-center text-muted-foreground w-full h-52">
-              <div className="text-center">
-                <Car className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <span className="text-sm">Billede mangler</span>
+            <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] flex items-center justify-center text-muted-foreground w-full h-56">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center">
+                  <Car className="w-6 h-6 opacity-50" />
+                </div>
+                <span className="text-sm font-medium">Billede mangler</span>
               </div>
             </div>
           ) : !imageError ? (
@@ -246,7 +247,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
                 <div className="absolute inset-0 z-10">
                   <img 
                     src={car.thumbnail_base64} 
-                    className={`w-full h-52 object-cover blur-sm scale-105 transition-opacity duration-300 ${
+                    className={`w-full h-56 object-cover blur-sm scale-105 transition-opacity duration-300 ${
                       imageLoaded ? 'opacity-0' : ''
                     }`}
                     alt={`${car.make} ${car.model} thumbnail`}
@@ -264,7 +265,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
                 ref={imageRef}
                 src={car.image}
                 alt={`${car.make} ${car.model} ${car.variant} - ${car.fuel_type} - ${formatPrice(car.monthly_price)}`}
-                className={`w-full h-52 object-cover transition-opacity duration-500 ease-out ${
+                className={`w-full h-56 object-cover transition-opacity duration-500 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 loading="lazy"
@@ -272,9 +273,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
             </>
           ) : (
             /* Enhanced error state with recovery actions */
-            <div className="bg-muted h-52 flex flex-col items-center justify-center p-4">
-              <AlertCircle className="w-8 h-8 text-destructive mb-2" />
-              <p className="text-sm text-center mb-3 text-muted-foreground">
+            <div className="bg-gradient-to-br from-muted to-muted/70 h-56 flex flex-col items-center justify-center p-6">
+              <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
+                <AlertCircle className="w-6 h-6 text-destructive" />
+              </div>
+              <p className="text-sm text-center mb-4 text-muted-foreground font-medium">
                 Billedet kunne ikke indlæses
               </p>
               <div className="flex gap-2">
@@ -283,75 +286,85 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
                   size="sm"
                   variant="outline"
                   disabled={imageRetryCount >= maxRetries}
+                  className="text-xs"
                 >
-                  <RotateCcw className="w-4 h-4 mr-1" />
+                  <RotateCcw className="w-3 h-3 mr-1" />
                   {imageRetryCount >= maxRetries ? 'Max forsøg' : 'Prøv igen'}
                 </Button>
                 <Button 
                   onClick={reportIssue} 
                   size="sm"
                   variant="ghost"
+                  className="text-xs"
                 >
-                  <Flag className="w-4 h-4 mr-1" />
+                  <Flag className="w-3 h-3 mr-1" />
                   Rapportér
                 </Button>
               </div>
             </div>
           )}
           
-          {/* Original overlay gradient on hover */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300"></div>
+          {/* Enhanced overlay gradient on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-transparent to-transparent group-hover:from-black/10 transition-all duration-300"></div>
         </div>
 
         {/* Enhanced Card Body Content */}
-        <CardContent className="p-5">
+        <CardContent className="p-6">
           {/* Enhanced Title & Variant */}
-          <div className="pb-2">
-            <h3 className="text-lg font-bold text-primary leading-snug group-hover:text-primary/90 transition-colors duration-200">
+          <div className="space-y-2 mb-4">
+            <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-sm text-muted-foreground mt-1">{car.variant}</p>
+              <p className="text-sm text-muted-foreground font-medium">{car.variant}</p>
             )}
           </div>
 
-          {/* Enhanced Price with original hover */}
-          <div className="py-2">
-            <p className="text-lg font-semibold text-foreground group-hover:text-primary/90 transition-colors duration-200">
+          {/* Enhanced Price Display */}
+          <div className="space-y-1 mb-5">
+            <p className="text-2xl font-bold text-primary group-hover:text-primary/90 transition-colors duration-200">
               {formatPrice(car.monthly_price)}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {formatMileage(car.mileage_per_year)}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span>{formatMileage(car.mileage_per_year)}</span>
               {car.first_payment && (
                 <>
-                  {' • '}
-                  Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr
+                  <span>•</span>
+                  <span>Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr</span>
                 </>
               )}
-            </p>
+            </div>
           </div>
 
           {/* Divider */}
-          <Separator className="my-3" />
+          <Separator className="my-4" />
 
-          {/* Enhanced Specs with original hover effects */}
-          <div className="pt-2">
-            <div className="grid grid-cols-2 gap-y-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2 group-hover:text-foreground transition-colors duration-200">
-                <Fuel className="w-4 h-4" /> 
-                {car.fuel_type || '–'}
+          {/* Enhanced Specs Grid */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <Fuel className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{car.fuel_type || '–'}</span>
               </div>
-              <div className="flex items-center gap-2 group-hover:text-foreground transition-colors duration-200">
-                <Settings className="w-4 h-4" /> 
-                {car.transmission || '–'}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{car.transmission || '–'}</span>
               </div>
-              <div className="flex items-center gap-2 group-hover:text-foreground transition-colors duration-200">
-                <Car className="w-4 h-4" /> 
-                {car.body_type || '–'}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <Car className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{car.body_type || '–'}</span>
               </div>
-              <div className="flex items-center gap-2 group-hover:text-foreground transition-colors duration-200">
-                <Gauge className="w-4 h-4" /> 
-                {car.horsepower ? `${car.horsepower} hk` : '–'}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  <Gauge className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
               </div>
             </div>
           </div>
