@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { 
   Filter, 
   SlidersHorizontal, 
@@ -27,8 +33,8 @@ const sortOptions: SortOption[] = [
 
 const Listings: React.FC = () => {
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
-  const [showSortDropdown, setShowSortDropdown] = useState(false)
   
   const { 
     makes = [],
@@ -157,7 +163,6 @@ const Listings: React.FC = () => {
   // Handle sort selection
   const handleSortChange = (newSortOrder: SortOrder) => {
     setSortOrder(newSortOrder)
-    setShowSortDropdown(false)
   }
 
   // Handle filter removal
@@ -301,34 +306,32 @@ const Listings: React.FC = () => {
                   </span>
                   
                   {/* Sort Dropdown */}
-                  <div className="relative">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowSortDropdown(!showSortDropdown)}
-                      className="flex items-center gap-2"
-                    >
-                      <ArrowUpDown className="w-4 h-4" />
-                      <span>{currentSortLabel}</span>
-                      <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${showSortDropdown ? 'rotate-180' : ''}`} />
-                    </Button>
-                    
-                    {showSortDropdown && (
-                      <div className="absolute top-full right-0 mt-2 bg-card border border-border rounded-lg shadow-lg py-2 z-50 min-w-[180px]">
-                        {sortOptions.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => handleSortChange(option.value)}
-                            className={`w-full text-left px-4 py-2 text-sm hover:bg-muted transition-colors duration-200 ${
-                              sortOrder === option.value ? 'text-primary font-medium bg-muted' : ''
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <ArrowUpDown className="w-4 h-4" />
+                        <span>{currentSortLabel}</span>
+                        <ChevronDown className="w-3 h-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[180px]">
+                      {sortOptions.map((option) => (
+                        <DropdownMenuItem
+                          key={option.value}
+                          onClick={() => handleSortChange(option.value)}
+                          className={`cursor-pointer ${
+                            sortOrder === option.value ? 'text-primary font-medium bg-muted' : ''
+                          }`}
+                        >
+                          {option.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 {/* Filter chips */}
@@ -441,7 +444,8 @@ const Listings: React.FC = () => {
                           variant="outline"
                           size="lg"
                           onClick={() => {
-                            window.location.href = '/listings'
+                            resetFilters()
+                            navigate('/listings')
                           }}
                           className="mt-6"
                         >
