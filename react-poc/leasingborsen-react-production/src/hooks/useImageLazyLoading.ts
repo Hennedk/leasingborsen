@@ -7,7 +7,7 @@ interface UseImageLazyLoadingOptions {
 }
 
 interface UseImageLazyLoadingReturn {
-  imageRef: React.RefObject<HTMLImageElement>
+  imageRef: React.RefObject<HTMLImageElement | null>
   imageLoaded: boolean
   imageError: boolean
   retryCount: number
