@@ -1,29 +1,22 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { 
-  Filter, 
-  SlidersHorizontal, 
-  ArrowUpDown, 
-  ChevronDown 
-} from 'lucide-react'
+import { SlidersHorizontal } from 'lucide-react'
 import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
 import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { useUrlSync } from '@/hooks/useUrlSync'
-import { useFilterStore } from '@/stores/filterStore'
+import { usePersistentFilterStore } from '@/stores/persistentFilterStore'
+import { useFilterManagement } from '@/hooks/useFilterManagement'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import FilterSidebar from '@/components/FilterSidebar'
 import FilterChips from '@/components/FilterChips'
 import MobileFilterOverlay from '@/components/MobileFilterOverlay'
-import ListingCard from '@/components/ListingCard'
+import ListingsHeader from '@/components/listings/ListingsHeader'
+import ListingsErrorState from '@/components/listings/ListingsErrorState'
+import ListingsGrid from '@/components/listings/ListingsGrid'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { listingStyles } from '@/lib/listingStyles'
 import type { SortOrder, SortOption } from '@/types'
 
 // Sort options configuration
@@ -40,13 +33,14 @@ const Listings: React.FC = () => {
   const { currentFilters, sortOrder } = useUrlSync()
   
   const { 
-    setFilter,
     setSortOrder,
     getActiveFilters,
     resetFilters
-  } = useFilterStore()
+  } = usePersistentFilterStore()
 
-  // URL sync is now handled by the useUrlSync hook
+  // Use extracted filter management hook
+  const { handleRemoveFilter } = useFilterManagement()
+
   // Use infinite query for listings
   const {
     data: infiniteData,
@@ -56,15 +50,24 @@ const Listings: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch
   } = useInfiniteListings(currentFilters, sortOrder)
 
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters)
   
-  // Flatten all pages into single array
-  const listings = infiniteData?.pages.flatMap(page => page.data || []) || []
-  const resultCount = countResponse?.data || listings.length
-  const activeFilters = getActiveFilters()
+  // Memoize expensive calculations for performance
+  const listings = useMemo(
+    () => infiniteData?.pages.flatMap(page => page.data || []) || [],
+    [infiniteData]
+  )
+  
+  const resultCount = useMemo(
+    () => countResponse?.data || listings.length,
+    [countResponse?.data, listings.length]
+  )
+  
+  const activeFilters = useMemo(() => getActiveFilters(), [getActiveFilters])
   
   // Infinite scroll setup
   const { loadMoreRef } = useInfiniteScroll({
@@ -83,65 +86,31 @@ const Listings: React.FC = () => {
     enabled: !isLoading && !isError
   })
 
-  // Get current sort label
-  const currentSortLabel = sortOptions.find(option => option.value === sortOrder)?.label || 'Laveste pris'
+  // Memoize sort label for performance
+  const currentSortLabel = useMemo(
+    () => sortOptions.find(option => option.value === sortOrder)?.label || 'Laveste pris',
+    [sortOrder]
+  )
 
   // Handle sort selection
   const handleSortChange = useCallback((newSortOrder: SortOrder) => {
     setSortOrder(newSortOrder)
   }, [setSortOrder])
 
-  // Optimized filter removal with useCallback
-  const handleRemoveFilter = useCallback((key: string) => {
-    const { makes, models, fuel_type, body_type, transmission } = currentFilters
-    
-    if (key === 'seats') {
-      setFilter('seats_min', null)
-      setFilter('seats_max', null)
-    } else if (key === 'price') {
-      setFilter('price_min', null)
-      setFilter('price_max', null)
-    } else if (key.startsWith('make:')) {
-      const makeToRemove = key.replace('make:', '')
-      const updatedMakes = makes.filter(make => make !== makeToRemove)
-      setFilter('makes', updatedMakes)
-    } else if (key.startsWith('model:')) {
-      const modelToRemove = key.replace('model:', '')
-      const updatedModels = models.filter(model => model !== modelToRemove)
-      setFilter('models', updatedModels)
-    } else if (key.startsWith('fuel_type:')) {
-      const fuelTypeToRemove = key.replace('fuel_type:', '')
-      const updatedFuelTypes = (fuel_type || []).filter(ft => ft !== fuelTypeToRemove)
-      setFilter('fuel_type', updatedFuelTypes)
-    } else if (key.startsWith('body_type:')) {
-      const bodyTypeToRemove = key.replace('body_type:', '')
-      const updatedBodyTypes = (body_type || []).filter(bt => bt !== bodyTypeToRemove)
-      setFilter('body_type', updatedBodyTypes)
-    } else if (key.startsWith('transmission:')) {
-      const transmissionToRemove = key.replace('transmission:', '')
-      const updatedTransmissions = (transmission || []).filter(t => t !== transmissionToRemove)
-      setFilter('transmission', updatedTransmissions)
-    } else if (key === 'makes') {
-      setFilter('makes', [])
-    } else if (key === 'models') {
-      setFilter('models', [])
-    } else if (key === 'body_type') {
-      setFilter('body_type', [])
-    } else if (key === 'fuel_type') {
-      setFilter('fuel_type', [])
-    } else if (key === 'transmission') {
-      setFilter('transmission', [])
-    }
-  }, [currentFilters, setFilter])
+  // Handle retry for error state
+  const handleRetry = useCallback(() => {
+    refetch()
+  }, [refetch])
+
+  // Handle navigation to clean listings page
+  const handleNavigateToListings = useCallback(() => {
+    navigate('/listings')
+  }, [navigate])
 
   return (
-    /* =================================================
-       LISTINGS PAGE LAYOUT - Following homepage container pattern
-       Uses BaseLayout with consistent Container component
-    ================================================= */
     <BaseLayout>
-      {/* Mobile: Sticky Filter Bar - positioned outside Container for proper sticky behavior */}
-      <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50">
+      {/* Mobile: Sticky Filter Bar */}
+      <div className={listingStyles.stickyFilterBar}>
         <div className="px-4 py-3">
           <div className="flex items-center gap-3 h-8">
             <Button
@@ -149,6 +118,7 @@ const Listings: React.FC = () => {
               size="sm"
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
               className="flex items-center gap-2 flex-shrink-0 h-8"
+              aria-label={`Åben filtre${activeFilters.length > 0 ? ` (${activeFilters.length} aktive)` : ''}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filtre
@@ -159,15 +129,15 @@ const Listings: React.FC = () => {
               )}
             </Button>
             
-            {/* Mobile Filter Chips - horizontal scroll only applies to chips container */}
+            {/* Mobile Filter Chips */}
             {activeFilters.length > 0 && (
-              <div className="flex-1 overflow-x-auto scrollbar-hide">
+              <div className={listingStyles.scrollContainer}>
                 <ErrorBoundary minimal>
                   <FilterChips
                     activeFilters={activeFilters}
                     onRemoveFilter={handleRemoveFilter}
                     onResetFilters={resetFilters}
-                    className="flex-shrink-0"
+                    className={listingStyles.filterChip}
                     showPlaceholder={false}
                   />
                 </ErrorBoundary>
@@ -177,214 +147,85 @@ const Listings: React.FC = () => {
         </div>
       </div>
 
-      {/* =================
-          MAIN CONTENT WRAPPER - Using consistent Container component
-      ================= */}
-      <Container className="py-6 lg:py-12">
-          {/* =================
-              MAIN CONTENT LAYOUT - Improved spacing and layout
-          ================= */}
-          <div className="flex gap-8 lg:gap-10">
-            
-            {/* Desktop Sidebar - Enhanced width and styling */}
-            <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
-              <ErrorBoundary minimal>
-                <FilterSidebar />
-              </ErrorBoundary>
-            </aside>
-
-            {/* Mobile Filter Overlay */}
-            <ErrorBoundary>
-              <MobileFilterOverlay
-                isOpen={mobileFilterOpen}
-                onClose={() => setMobileFilterOpen(false)}
-                resultCount={resultCount}
-                sortOrder={sortOrder}
-                onSortChange={handleSortChange}
-              />
+      {/* Main Content */}
+      <Container className={listingStyles.contentPadding}>
+        <div className="flex gap-8 lg:gap-10">
+          
+          {/* Desktop Sidebar */}
+          <aside className={listingStyles.sidebar}>
+            <ErrorBoundary minimal>
+              <FilterSidebar />
             </ErrorBoundary>
+          </aside>
 
-            {/* Main Content Area - Enhanced spacing */}
-            <div className="flex-1 min-w-0">
+          {/* Mobile Filter Overlay */}
+          <ErrorBoundary>
+            <MobileFilterOverlay
+              isOpen={mobileFilterOpen}
+              onClose={() => setMobileFilterOpen(false)}
+              resultCount={resultCount}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+            />
+          </ErrorBoundary>
 
-              {/* Mobile: Result count */}
-              <div className="lg:hidden flex items-center mb-6">
-                <span className="text-lg font-bold text-foreground">
-                  {resultCount} {resultCount === 1 ? 'bil' : 'biler'}
-                </span>
-              </div>
-
-              {/* Desktop: Result count + sorting + filter chips */}
-              <div className="hidden lg:block mb-8">
-                {/* Live region for screen readers */}
-                <div 
-                  aria-live="polite" 
-                  aria-atomic="true" 
-                  className="sr-only"
-                  id="results-announcement"
-                >
-                  Søgeresultater opdateret: {resultCount} {resultCount === 1 ? 'bil fundet' : 'biler fundet'}
-                </div>
-                
-                {/* Result count and sorting row */}
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-xl font-bold text-foreground">
-                    {resultCount} {resultCount === 1 ? 'bil fundet' : 'biler fundet'}
-                  </span>
-                  
-                  {/* Sort Dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
-                        <ArrowUpDown className="w-4 h-4" />
-                        <span>{currentSortLabel}</span>
-                        <ChevronDown className="w-3 h-3" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-[180px]">
-                      {sortOptions.map((option) => (
-                        <DropdownMenuItem
-                          key={option.value}
-                          onClick={() => handleSortChange(option.value)}
-                          className={`cursor-pointer ${
-                            sortOrder === option.value ? 'text-primary font-medium bg-muted' : ''
-                          }`}
-                        >
-                          {option.label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                {/* Filter chips */}
-                <FilterChips
-                  activeFilters={activeFilters}
-                  onRemoveFilter={handleRemoveFilter}
-                  onResetFilters={resetFilters}
-                  className="flex flex-wrap gap-2"
-                />
-              </div>
-
-              
-              {/* Error State - Enhanced styling */}
-              {(error || isError) && (
-                <div className="bg-destructive/10 text-destructive border border-destructive/20 p-6 rounded-lg mb-8">
-                  <h3 className="font-semibold mb-2">Der opstod en fejl</h3>
-                  <p>Der opstod en fejl ved indlæsning af biler. Prøv igen senere.</p>
-                </div>
-              )}
-
-              {/* Loading State - Grid layout */}
-              {isLoading && (
-                <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <ListingCard key={i} loading={true} />
-                  ))}
-                </div>
-              )}
-
-              {/* Results Display - Grid layout with infinite scroll */}
-              {!isLoading && !isError && (
-                <>
-                  {listings.length > 0 ? (
-                    <>
-                      <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                        {listings.map((car, index) => (
-                          <ListingCard 
-                            key={`${car.listing_id || car.id}-${index}`} 
-                            car={{
-                              ...car,
-                              id: car.listing_id || car.id
-                            }} 
-                          />
-                        ))}
-                      </div>
-                      
-                      {/* Loading more items skeleton */}
-                      {isFetchingNextPage && (
-                        <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 mt-6 lg:mt-8">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <ListingCard key={`loading-${i}`} loading={true} />
-                          ))}
-                        </div>
-                      )}
-                      
-                      {/* Intersection observer trigger */}
-                      <div ref={loadMoreRef} className="h-1" />
-                      
-                      {/* Manual load more button as fallback */}
-                      {canLoadMore && (
-                        <div className="text-center mt-16 lg:mt-20">
-                          <Button 
-                            variant="outline" 
-                            size="lg"
-                            onClick={handleLoadMore}
-                            disabled={isLoadingMore}
-                            className="px-8 py-3 font-semibold"
-                          >
-                            {isLoadingMore ? 'Indlæser...' : 'Indlæs flere biler'}
-                          </Button>
-                        </div>
-                      )}
-                      
-                      {/* End of results indicator */}
-                      {!hasNextPage && listings.length > 20 && (
-                        <div className="text-center mt-16 lg:mt-20 py-8">
-                          <div className="max-w-md mx-auto space-y-4">
-                            <div className="w-12 h-12 mx-auto bg-muted rounded-full flex items-center justify-center">
-                              <Filter className="w-6 h-6 text-muted-foreground" />
-                            </div>
-                            <div className="space-y-2">
-                              <h3 className="text-lg font-semibold text-foreground">
-                                Du har set alle resultater
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                {listings.length} biler fundet med dine søgekriterier
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    /* Enhanced Empty State */
-                    <div className="text-center py-16 lg:py-20">
-                      <div className="max-w-md mx-auto space-y-6">
-                        <div className="w-20 h-20 mx-auto bg-muted rounded-full flex items-center justify-center">
-                          <Filter className="w-10 h-10 text-muted-foreground" />
-                        </div>
-                        <div className="space-y-2">
-                          <h3 className="text-2xl font-bold text-foreground">
-                            Ingen biler fundet
-                          </h3>
-                          <p className="text-muted-foreground leading-relaxed">
-                            Der er ingen biler, der matcher dine søgekriterier. 
-                            Prøv at justere filtrene for at se flere resultater.
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          onClick={() => {
-                            resetFilters()
-                            navigate('/listings')
-                          }}
-                          className="mt-6"
-                        >
-                          Nulstil alle filtre
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
+          {/* Main Content Area */}
+          <main className={listingStyles.mainContent} role="main" aria-label="Billeasing søgning">
+            
+            {/* Mobile: Result count */}
+            <div className="lg:hidden flex items-center mb-6">
+              <h1 className="text-lg font-bold text-foreground">
+                {resultCount} {resultCount === 1 ? 'bil' : 'biler'}
+              </h1>
             </div>
-          </div>
+
+            {/* Desktop: Header with sorting */}
+            <ListingsHeader
+              resultCount={resultCount}
+              sortOptions={sortOptions}
+              currentSortLabel={currentSortLabel}
+              sortOrder={sortOrder}
+              onSortChange={handleSortChange}
+            />
+
+            {/* Desktop: Filter chips */}
+            <div className="hidden lg:block mb-8">
+              <FilterChips
+                activeFilters={activeFilters}
+                onRemoveFilter={handleRemoveFilter}
+                onResetFilters={resetFilters}
+                className="flex flex-wrap gap-2"
+              />
+            </div>
+
+            {/* Error State */}
+            {(error || isError) && (
+              <ListingsErrorState
+                error={error}
+                onRetry={handleRetry}
+              />
+            )}
+
+            {/* Results Grid */}
+            {!isError && (
+              <section aria-label="Søgeresultater">
+                <ListingsGrid
+                  listings={listings}
+                  isLoading={isLoading}
+                  isFetchingNextPage={isFetchingNextPage}
+                  hasNextPage={hasNextPage || false}
+                  canLoadMore={canLoadMore}
+                  isLoadingMore={isLoadingMore}
+                  loadMoreRef={loadMoreRef}
+                  onLoadMore={handleLoadMore}
+                  onResetFilters={resetFilters}
+                  onNavigateToListings={handleNavigateToListings}
+                />
+              </section>
+            )}
+
+          </main>
+        </div>
       </Container>
     </BaseLayout>
   )
