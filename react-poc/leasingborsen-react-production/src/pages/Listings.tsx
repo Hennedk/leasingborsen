@@ -7,7 +7,8 @@ import {
   ArrowUpDown, 
   ChevronDown 
 } from 'lucide-react'
-import { useListings } from '@/hooks/useListings'
+import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
+import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { useFilterStore } from '@/stores/filterStore'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
@@ -108,11 +109,41 @@ const Listings: React.FC = () => {
     horsepower_min,
     horsepower_max
   }
-  const { data: listingsResponse, isLoading, error } = useListings(currentFilters, 20, sortOrder)
+  // Use infinite query for listings
+  const {
+    data: infiniteData,
+    isLoading,
+    isError,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteListings(currentFilters, sortOrder)
 
-  const listings = listingsResponse?.data || []
-  const resultCount = listings.length
+  // Get total count for display
+  const { data: countResponse } = useListingCount(currentFilters)
+  
+  // Flatten all pages into single array
+  const listings = infiniteData?.pages.flatMap(page => page.data || []) || []
+  const resultCount = countResponse?.data || listings.length
   const activeFilters = getActiveFilters()
+  
+  // Infinite scroll setup
+  const { loadMoreRef } = useInfiniteScroll({
+    hasNextPage: hasNextPage || false,
+    isFetchingNextPage,
+    fetchNextPage,
+    rootMargin: '200px', // Load more when 200px from bottom
+    enabled: !isLoading && !isError
+  })
+  
+  // Manual load more setup as fallback
+  const { handleLoadMore, canLoadMore, isLoading: isLoadingMore } = useLoadMore({
+    hasNextPage: hasNextPage || false,
+    isFetchingNextPage,
+    fetchNextPage,
+    enabled: !isLoading && !isError
+  })
 
   // Get current sort label
   const currentSortLabel = sortOptions.find(option => option.value === sortOrder)?.label || 'Laveste pris'
@@ -293,7 +324,7 @@ const Listings: React.FC = () => {
 
               
               {/* Error State - Enhanced styling */}
-              {error && (
+              {(error || isError) && (
                 <div className="bg-destructive/10 text-destructive border border-destructive/20 p-6 rounded-lg mb-8">
                   <h3 className="font-semibold mb-2">Der opstod en fejl</h3>
                   <p>Der opstod en fejl ved indlæsning af biler. Prøv igen senere.</p>
@@ -309,21 +340,69 @@ const Listings: React.FC = () => {
                 </div>
               )}
 
-              {/* Results Display - Grid layout */}
-              {!isLoading && !error && (
+              {/* Results Display - Grid layout with infinite scroll */}
+              {!isLoading && !isError && (
                 <>
                   {listings.length > 0 ? (
-                    <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-                      {listings.map((car) => (
-                        <ListingCard 
-                          key={car.listing_id || car.id} 
-                          car={{
-                            ...car,
-                            id: car.listing_id || car.id
-                          }} 
-                        />
-                      ))}
-                    </div>
+                    <>
+                      <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+                        {listings.map((car, index) => (
+                          <ListingCard 
+                            key={`${car.listing_id || car.id}-${index}`} 
+                            car={{
+                              ...car,
+                              id: car.listing_id || car.id
+                            }} 
+                          />
+                        ))}
+                      </div>
+                      
+                      {/* Loading more items skeleton */}
+                      {isFetchingNextPage && (
+                        <div className="grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 mt-6 lg:mt-8">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <ListingCard key={`loading-${i}`} loading={true} />
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Intersection observer trigger */}
+                      <div ref={loadMoreRef} className="h-1" />
+                      
+                      {/* Manual load more button as fallback */}
+                      {canLoadMore && (
+                        <div className="text-center mt-16 lg:mt-20">
+                          <Button 
+                            variant="outline" 
+                            size="lg"
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore}
+                            className="px-8 py-3 font-semibold"
+                          >
+                            {isLoadingMore ? 'Indlæser...' : 'Indlæs flere biler'}
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* End of results indicator */}
+                      {!hasNextPage && listings.length > 20 && (
+                        <div className="text-center mt-16 lg:mt-20 py-8">
+                          <div className="max-w-md mx-auto space-y-4">
+                            <div className="w-12 h-12 mx-auto bg-muted rounded-full flex items-center justify-center">
+                              <Filter className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                            <div className="space-y-2">
+                              <h3 className="text-lg font-semibold text-foreground">
+                                Du har set alle resultater
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {listings.length} biler fundet med dine søgekriterier
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     /* Enhanced Empty State */
                     <div className="text-center py-16 lg:py-20">
@@ -354,19 +433,6 @@ const Listings: React.FC = () => {
                     </div>
                   )}
                 </>
-              )}
-
-              {/* Load More Section - Enhanced styling */}
-              {!isLoading && listings.length > 0 && listings.length >= 20 && (
-                <div className="text-center mt-16 lg:mt-20">
-                  <Button 
-                    variant="outline" 
-                    size="lg"
-                    className="px-8 py-3 font-semibold"
-                  >
-                    Indlæs flere biler
-                  </Button>
-                </div>
               )}
             </div>
           </div>

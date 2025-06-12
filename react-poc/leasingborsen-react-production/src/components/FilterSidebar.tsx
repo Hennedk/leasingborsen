@@ -131,8 +131,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   const handleFilterChange = (key: string, value: string | number) => {
     const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
-    // Handle both 'all' and empty string as clearing the filter
-    // const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
     
     if (isNumericField && value !== 'all' && value !== '') {
       const numericValue = parseInt(value as string)
@@ -140,16 +138,16 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
       else if (key === 'price_max') setFilter('price_max', numericValue)
       else if (key === 'seats_min') setFilter('seats_min', numericValue)
       else if (key === 'seats_max') setFilter('seats_max', numericValue)
-      // else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
-      // else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
+      else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
+      else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
       if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
         else if (key === 'seats_max') setFilter('seats_max', null)
-        // else if (key === 'horsepower_min') setFilter('horsepower_min', null)
-        // else if (key === 'horsepower_max') setFilter('horsepower_max', null)
+        else if (key === 'horsepower_min') setFilter('horsepower_min', null)
+        else if (key === 'horsepower_max') setFilter('horsepower_max', null)
       }
     }
   }
