@@ -6,19 +6,37 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { X, ChevronLeft, Plus, Search } from 'lucide-react'
+import { X, ChevronLeft, Plus, Search, ArrowUpDown } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
-import type { Make, Model } from '@/types'
+import type { Make, Model, SortOrder } from '@/types'
+
+// Sort options configuration - adapted for Radix UI Select (no empty string values)
+const mobileSelectOptions = [
+  { value: 'asc', label: 'Laveste pris' },
+  { value: 'desc', label: 'Højeste pris' }
+]
+
+// Map mobile select values to backend sort values
+const mapToBackendSort = (selectValue: string): SortOrder => {
+  return selectValue === 'asc' ? '' : 'desc'
+}
+
+// Map backend sort values to mobile select values
+const mapToSelectValue = (sortOrder: SortOrder): string => {
+  return sortOrder === '' ? 'asc' : 'desc'
+}
 
 interface MobileFilterOverlayProps {
   isOpen: boolean
   onClose: () => void
   resultCount: number
+  sortOrder: SortOrder
+  onSortChange: (sortOrder: SortOrder) => void
 }
 
 type MobileView = 'filters' | 'makes' | 'makeSelection' | 'models'
@@ -26,7 +44,9 @@ type MobileView = 'filters' | 'makes' | 'makeSelection' | 'models'
 const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   isOpen,
   onClose,
-  resultCount
+  resultCount,
+  sortOrder,
+  onSortChange
 }) => {
   const { 
     makes = [],
@@ -85,6 +105,16 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   const handleClearAll = () => {
     resetFilters()
   }
+
+  // Sort change handler - map select values to backend values
+  const handleSortChange = (selectValue: string) => {
+    const backendValue = mapToBackendSort(selectValue)
+    onSortChange(backendValue)
+  }
+  
+  // Get current select value and label
+  const currentSelectValue = mapToSelectValue(sortOrder)
+  const currentSortLabel = mobileSelectOptions.find(option => option.value === currentSelectValue)?.label || 'Laveste pris'
   
   // Reset view when opening
   React.useEffect(() => {
@@ -458,6 +488,30 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4 space-y-6">
+          {/* Sorting Section - at the top */}
+          <div className="space-y-3">
+            <Label className="font-medium text-foreground">Sortering</Label>
+            <Select value={currentSelectValue} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full h-11">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                  <SelectValue placeholder={currentSortLabel} />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {mobileSelectOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className={currentSelectValue === option.value ? 'bg-muted font-medium' : ''}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Make Filter */}
           <div className="space-y-3">
             <Label className="font-medium text-foreground">Mærke</Label>

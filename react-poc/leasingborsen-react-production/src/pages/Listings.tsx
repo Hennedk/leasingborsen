@@ -199,6 +199,8 @@ const Listings: React.FC = () => {
                 isOpen={mobileFilterOpen}
                 onClose={() => setMobileFilterOpen(false)}
                 resultCount={resultCount}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
               />
             </ErrorBoundary>
 
