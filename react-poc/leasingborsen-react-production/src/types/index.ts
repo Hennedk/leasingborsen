@@ -26,18 +26,31 @@ export interface ReferenceData {
   fuelTypes?: FuelType[]
 }
 
+// Car selection types for multi-select
+export interface CarSelection {
+  makeId: string
+  makeName: string
+  models: {
+    id: string
+    name: string
+    makeId: string
+    makeName: string
+  }[]
+}
+
 // Filter types
 export interface Filters {
-  make: string
-  model: string
-  body_type: string
-  fuel_type: string
-  transmission: string
+  makes: string[]
+  models: string[]
+  body_type: string[]
+  fuel_type: string[]
+  transmission: string[]
   price_min: number | null
   price_max: number | null
   seats_min: number | null
   seats_max: number | null
-  horsepower: number | null
+  horsepower_min: number | null
+  horsepower_max: number | null
 }
 
 // Car listing types
