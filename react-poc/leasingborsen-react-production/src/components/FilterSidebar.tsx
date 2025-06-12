@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { X, RotateCcw, ChevronDown, Plus } from 'lucide-react'
+import { X, RotateCcw, Plus } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
@@ -25,8 +25,7 @@ interface FilterSidebarProps {
 const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
   isOpen = true, 
   onClose, 
-  className = '',
-  variant = 'desktop'
+  className = ''
 }) => {
   const { 
     makes = [],
@@ -75,8 +74,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   // Horsepower steps for filtering
   const horsepowerSteps = [100, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 1000]
   
-  // Local state for expanded make in model selection
-  const [expandedMake, setExpandedMake] = React.useState<string | null>(null)
   // State for modal dialogs
   const [makeModalOpen, setMakeModalOpen] = React.useState(false)
   const [modelModalOpen, setModelModalOpen] = React.useState(false)
@@ -131,21 +128,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const popularMakesList = filteredMakes.filter((make: Make) => popularMakes.includes(make.name))
   const otherMakesList = filteredMakes.filter((make: Make) => !popularMakes.includes(make.name))
   
-  // Filter models for search
-  const filteredModels = React.useMemo(() => {
-    if (selectedMakes.length === 0) return []
-    
-    let allModels: Model[] = []
-    selectedMakes.forEach(makeName => {
-      const models = getModelsForMake(makeName)
-      allModels = [...allModels, ...models]
-    })
-    
-    if (!modelSearch) return allModels
-    return allModels.filter((model: Model) => 
-      model.name.toLowerCase().includes(modelSearch.toLowerCase())
-    )
-  }, [selectedMakes, referenceData?.models, modelSearch])
 
   // Active filters count
   const activeFiltersCount = [
@@ -176,12 +158,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
       else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
-      if (key === 'make') setFilter('make', filterValue as string)
-      else if (key === 'model') setFilter('model', filterValue as string)
-      else if (key === 'body_type') setFilter('body_type', filterValue as string)
-      else if (key === 'fuel_type') setFilter('fuel_type', filterValue as string)
-      else if (key === 'transmission') setFilter('transmission', filterValue as string)
-      else if (isNumericField) {
+      if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
@@ -246,7 +223,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
               {/* Selected Makes Display */}
               {selectedMakes.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {selectedMakes.map((makeName) => (
+                  {selectedMakes.map((makeName: string) => (
                     <Badge
                       key={makeName}
                       variant="secondary"
@@ -356,7 +333,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
               {/* Selected Models Display */}
               {selectedModels.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {selectedModels.map((modelName) => (
+                  {selectedModels.map((modelName: string) => (
                     <Badge
                       key={modelName}
                       variant="secondary"
@@ -409,7 +386,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     
                     <ScrollArea className="h-80">
                       <div className="space-y-4">
-                        {selectedMakes.map((makeName) => {
+                        {selectedMakes.map((makeName: string) => {
                           const makeModels = getModelsForMake(makeName).filter((model: Model) => 
                             !modelSearch || model.name.toLowerCase().includes(modelSearch.toLowerCase())
                           )
