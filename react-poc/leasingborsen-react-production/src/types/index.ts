@@ -49,8 +49,6 @@ export interface Filters {
   price_max: number | null
   seats_min: number | null
   seats_max: number | null
-  horsepower_min: number | null
-  horsepower_max: number | null
 }
 
 // Car listing types

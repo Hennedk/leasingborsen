@@ -27,9 +27,7 @@ const defaultFilters: Filters = {
   price_min: null,
   price_max: null,
   seats_min: null,
-  seats_max: null,
-  horsepower_min: null,
-  horsepower_max: null
+  seats_max: null
 }
 
 export const useFilterStore = create<FilterState>()(
@@ -65,8 +63,6 @@ export const useFilterStore = create<FilterState>()(
           trackingKey = 'price'
         } else if (filterKey === 'seats_min' || filterKey === 'seats_max') {
           trackingKey = 'seats'
-        } else if (filterKey === 'horsepower_min' || filterKey === 'horsepower_max') {
-          trackingKey = 'horsepower'
         }
         
         // If filter is being set (not cleared)
@@ -214,50 +210,50 @@ export const useFilterStore = create<FilterState>()(
         })
       }
       
-      // Create a map of remaining filters
-      const remainingFilterMap: Record<string, FilterChip | null> = {
-        fuel_type: fuel_type.length > 0 ? { 
-          key: 'fuel_type', 
-          label: fuel_type.join(', '), 
-          value: fuel_type.join(',') 
-        } : null,
-        body_type: body_type.length > 0 ? { 
-          key: 'body_type', 
-          label: body_type.join(', '), 
-          value: body_type.join(',') 
-        } : null,
-        transmission: transmission.length > 0 ? { 
-          key: 'transmission', 
-          label: transmission.map(t => transmissionLabels[t] || t).join(', '), 
-          value: transmission.join(',') 
-        } : null,
-        seats: (state.seats_min !== null || state.seats_max !== null) ? {
-          key: 'seats', 
-          label: `${state.seats_min ?? ''} - ${state.seats_max ?? ''} sæder`, 
-          value: `${state.seats_min ?? ''}-${state.seats_max ?? ''}`
-        } : null,
-        price: (state.price_min !== null || state.price_max !== null) ? {
-          key: 'price', 
-          label: `${state.price_min ? state.price_min.toLocaleString('da-DK') : ''} - ${state.price_max ? state.price_max.toLocaleString('da-DK') : ''} kr/md`, 
-          value: `${state.price_min ?? ''}-${state.price_max ?? ''}`
-        } : null,
-        horsepower: (state.horsepower_min !== null || state.horsepower_max !== null) ? {
-          key: 'horsepower', 
-          label: `${state.horsepower_min ? state.horsepower_min.toLocaleString('da-DK') : ''} - ${state.horsepower_max ? state.horsepower_max.toLocaleString('da-DK') : ''} hk`, 
-          value: `${state.horsepower_min ?? ''}-${state.horsepower_max ?? ''}`
-        } : null
-      }
-      
-      // Add remaining filters in the order they were added (newest first)
+      // Add individual filter chips in the order they were added (newest first)
       for (const filterKey of state.filterOrder) {
         // Skip makes and models as they're already added individually
         if (filterKey === 'makes' || filterKey === 'models') {
           continue
         }
         
-        const filter = remainingFilterMap[filterKey]
-        if (filter) {
-          activeFilters.push(filter)
+        // Handle array-based filters (create individual chips for each value)
+        if (filterKey === 'fuel_type' && fuel_type.length > 0) {
+          fuel_type.forEach(fuelType => {
+            activeFilters.push({
+              key: `fuel_type:${fuelType}`,
+              label: fuelType,
+              value: fuelType
+            })
+          })
+        } else if (filterKey === 'body_type' && body_type.length > 0) {
+          body_type.forEach(bodyType => {
+            activeFilters.push({
+              key: `body_type:${bodyType}`,
+              label: bodyType,
+              value: bodyType
+            })
+          })
+        } else if (filterKey === 'transmission' && transmission.length > 0) {
+          transmission.forEach(trans => {
+            activeFilters.push({
+              key: `transmission:${trans}`,
+              label: transmissionLabels[trans] || trans,
+              value: trans
+            })
+          })
+        } else if (filterKey === 'seats' && (state.seats_min !== null || state.seats_max !== null)) {
+          activeFilters.push({
+            key: 'seats',
+            label: `${state.seats_min ?? ''} - ${state.seats_max ?? ''} sæder`,
+            value: `${state.seats_min ?? ''}-${state.seats_max ?? ''}`
+          })
+        } else if (filterKey === 'price' && (state.price_min !== null || state.price_max !== null)) {
+          activeFilters.push({
+            key: 'price',
+            label: `${state.price_min ? state.price_min.toLocaleString('da-DK') : ''} - ${state.price_max ? state.price_max.toLocaleString('da-DK') : ''} kr/md`,
+            value: `${state.price_min ?? ''}-${state.price_max ?? ''}`
+          })
         }
       }
       
