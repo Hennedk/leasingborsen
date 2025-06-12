@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Fuel, 
   Settings, 
@@ -143,11 +144,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
     return (
       <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
         {/* Image skeleton with enhanced shimmer */}
-        <div className="relative rounded-t-xl overflow-hidden bg-gradient-to-br from-muted to-muted/70">
-          <div className="w-full h-56 relative overflow-hidden">
-            {/* Enhanced shimmer effect */}
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-background/40 to-transparent animate-shimmer"></div>
-          </div>
+        <div className="relative rounded-t-xl overflow-hidden">
+          <Skeleton className="w-full h-56" />
         </div>
         
         <CardContent className="p-6">
@@ -155,22 +153,22 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
           <div className="space-y-3 mb-4">
             {/* Car make and model (realistic lengths) */}
             <div className="flex items-center space-x-2">
-              <div className="h-7 bg-muted rounded-lg w-20 animate-pulse"></div> {/* Make */}
-              <div className="h-7 bg-muted rounded-lg w-28 animate-pulse" style={{animationDelay: '0.1s'}}></div> {/* Model */}
+              <Skeleton className="h-7 w-20" />
+              <Skeleton className="h-7 w-28" />
             </div>
             {/* Variant */}
-            <div className="h-4 bg-muted rounded-lg w-36 animate-pulse" style={{animationDelay: '0.2s'}}></div>
+            <Skeleton className="h-4 w-36" />
           </div>
 
           {/* Smart price skeleton */}
           <div className="space-y-2 mb-4">
             {/* Price components */}
             <div className="flex items-baseline space-x-1">
-              <div className="h-6 bg-muted rounded-lg w-20 animate-pulse" style={{animationDelay: '0.3s'}}></div> {/* Amount */}
-              <div className="h-5 bg-muted rounded-lg w-12 animate-pulse" style={{animationDelay: '0.35s'}}></div> {/* /måned */}
+              <Skeleton className="h-6 w-20" />
+              <Skeleton className="h-5 w-12" />
             </div>
             {/* Secondary info */}
-            <div className="h-3 bg-muted rounded-lg w-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
+            <Skeleton className="h-3 w-full" />
           </div>
 
           {/* Divider */}
@@ -180,13 +178,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-2 animate-pulse"
-                  style={{animationDelay: `${0.5 + index * 0.1}s`}}
-                >
-                  <div className="w-4 h-4 bg-muted rounded-full"></div>
-                  <div className={`h-3 bg-muted rounded-lg ${getRandomWidth()}`}></div>
+                <div key={index} className="flex items-center gap-2">
+                  <Skeleton className="w-4 h-4 rounded-full" />
+                  <Skeleton className={`h-3 ${getRandomWidth()}`} />
                 </div>
               ))}
             </div>

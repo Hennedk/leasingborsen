@@ -12,6 +12,7 @@ import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
+import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
 import type { Make, Model } from '@/types'
 
 interface MobileFilterOverlayProps {
@@ -45,7 +46,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
     getActiveFilters
   } = useFilterStore()
   
-  const { data: referenceData } = useReferenceData()
+  const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
   const activeFilters = getActiveFilters()
   
   // Navigation state
@@ -145,6 +146,11 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   }
 
   if (!isOpen) return null
+  
+  // Show skeleton while reference data is loading
+  if (referenceDataLoading) {
+    return <MobileFilterSkeleton />
+  }
   
   const renderMakesView = () => (
     <div className="flex-1 flex flex-col min-h-0">
