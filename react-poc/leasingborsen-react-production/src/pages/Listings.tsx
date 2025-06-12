@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import React, { useState, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
 import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
+import { useUrlSync } from '@/hooks/useUrlSync'
 import { useFilterStore } from '@/stores/filterStore'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
@@ -32,95 +33,20 @@ const sortOptions: SortOption[] = [
 ]
 
 const Listings: React.FC = () => {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   
+  // Use optimized URL sync hook
+  const { currentFilters, sortOrder } = useUrlSync()
+  
   const { 
-    makes = [],
-    models = [],
-    body_type,
-    fuel_type,
-    transmission,
-    price_min,
-    price_max,
-    seats_min,
-    seats_max,
-    sortOrder,
     setFilter,
     setSortOrder,
     getActiveFilters,
     resetFilters
   } = useFilterStore()
 
-  // Initialize filters from URL params
-  useEffect(() => {
-    const urlMake = searchParams.get('make')
-    const urlModel = searchParams.get('model')
-    const urlBodyType = searchParams.get('body_type')
-    const urlFuelType = searchParams.get('fuel_type')
-    const urlTransmission = searchParams.get('transmission')
-    const urlPriceMin = searchParams.get('price_min')
-    const urlPriceMax = searchParams.get('price_max')
-    const urlSeatsMin = searchParams.get('seats_min')
-    const urlSeatsMax = searchParams.get('seats_max')
-    const urlSort = searchParams.get('sort')
-
-    if (urlMake && !makes.includes(urlMake)) setFilter('makes', [urlMake])
-    if (urlModel && !models.includes(urlModel)) setFilter('models', [urlModel])
-    
-    // Handle array-based filters
-    if (urlBodyType) {
-      const bodyTypeArray = urlBodyType.split(',').filter(Boolean)
-      if (JSON.stringify(bodyTypeArray) !== JSON.stringify(body_type)) {
-        setFilter('body_type', bodyTypeArray)
-      }
-    }
-    if (urlFuelType) {
-      const fuelTypeArray = urlFuelType.split(',').filter(Boolean)
-      if (JSON.stringify(fuelTypeArray) !== JSON.stringify(fuel_type)) {
-        setFilter('fuel_type', fuelTypeArray)
-      }
-    }
-    if (urlTransmission) {
-      const transmissionArray = urlTransmission.split(',').filter(Boolean)
-      if (JSON.stringify(transmissionArray) !== JSON.stringify(transmission)) {
-        setFilter('transmission', transmissionArray)
-      }
-    }
-    
-    if (urlPriceMin && parseInt(urlPriceMin) !== price_min) setFilter('price_min', parseInt(urlPriceMin))
-    if (urlPriceMax && parseInt(urlPriceMax) !== price_max) setFilter('price_max', parseInt(urlPriceMax))
-    if (urlSeatsMin && parseInt(urlSeatsMin) !== seats_min) setFilter('seats_min', parseInt(urlSeatsMin))
-    if (urlSeatsMax && parseInt(urlSeatsMax) !== seats_max) setFilter('seats_max', parseInt(urlSeatsMax))
-    if (urlSort && urlSort !== sortOrder) setSortOrder(urlSort as SortOrder)
-  }, [
-    searchParams,
-    makes,
-    models,
-    body_type,
-    fuel_type,
-    transmission,
-    price_min,
-    price_max,
-    seats_min,
-    seats_max,
-    sortOrder,
-    setFilter,
-    setSortOrder
-  ])
-
-  const currentFilters = { 
-    makes,
-    models,
-    body_type, 
-    fuel_type, 
-    transmission, 
-    price_min, 
-    price_max, 
-    seats_min, 
-    seats_max
-  }
+  // URL sync is now handled by the useUrlSync hook
   // Use infinite query for listings
   const {
     data: infiniteData,
@@ -161,12 +87,14 @@ const Listings: React.FC = () => {
   const currentSortLabel = sortOptions.find(option => option.value === sortOrder)?.label || 'Laveste pris'
 
   // Handle sort selection
-  const handleSortChange = (newSortOrder: SortOrder) => {
+  const handleSortChange = useCallback((newSortOrder: SortOrder) => {
     setSortOrder(newSortOrder)
-  }
+  }, [setSortOrder])
 
-  // Handle filter removal
-  const handleRemoveFilter = (key: string) => {
+  // Optimized filter removal with useCallback
+  const handleRemoveFilter = useCallback((key: string) => {
+    const { makes, models, fuel_type, body_type, transmission } = currentFilters
+    
     if (key === 'seats') {
       setFilter('seats_min', null)
       setFilter('seats_max', null)
@@ -174,29 +102,24 @@ const Listings: React.FC = () => {
       setFilter('price_min', null)
       setFilter('price_max', null)
     } else if (key.startsWith('make:')) {
-      // Remove individual make
       const makeToRemove = key.replace('make:', '')
       const updatedMakes = makes.filter(make => make !== makeToRemove)
       setFilter('makes', updatedMakes)
     } else if (key.startsWith('model:')) {
-      // Remove individual model
       const modelToRemove = key.replace('model:', '')
       const updatedModels = models.filter(model => model !== modelToRemove)
       setFilter('models', updatedModels)
     } else if (key.startsWith('fuel_type:')) {
-      // Remove individual fuel type
       const fuelTypeToRemove = key.replace('fuel_type:', '')
-      const updatedFuelTypes = fuel_type.filter(ft => ft !== fuelTypeToRemove)
+      const updatedFuelTypes = (fuel_type || []).filter(ft => ft !== fuelTypeToRemove)
       setFilter('fuel_type', updatedFuelTypes)
     } else if (key.startsWith('body_type:')) {
-      // Remove individual body type
       const bodyTypeToRemove = key.replace('body_type:', '')
-      const updatedBodyTypes = body_type.filter(bt => bt !== bodyTypeToRemove)
+      const updatedBodyTypes = (body_type || []).filter(bt => bt !== bodyTypeToRemove)
       setFilter('body_type', updatedBodyTypes)
     } else if (key.startsWith('transmission:')) {
-      // Remove individual transmission
       const transmissionToRemove = key.replace('transmission:', '')
-      const updatedTransmissions = transmission.filter(t => t !== transmissionToRemove)
+      const updatedTransmissions = (transmission || []).filter(t => t !== transmissionToRemove)
       setFilter('transmission', updatedTransmissions)
     } else if (key === 'makes') {
       setFilter('makes', [])
@@ -209,7 +132,7 @@ const Listings: React.FC = () => {
     } else if (key === 'transmission') {
       setFilter('transmission', [])
     }
-  }
+  }, [currentFilters, setFilter])
 
   return (
     /* =================================================
@@ -220,7 +143,7 @@ const Listings: React.FC = () => {
       {/* Mobile: Sticky Filter Bar - positioned outside Container for proper sticky behavior */}
       <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50">
         <div className="px-4 py-3">
-          <div className="flex items-center gap-3 h-8 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-3 h-8">
             <Button
               variant="outline"
               size="sm"
@@ -236,17 +159,19 @@ const Listings: React.FC = () => {
               )}
             </Button>
             
-            {/* Mobile Filter Chips - same row as filter button */}
+            {/* Mobile Filter Chips - horizontal scroll only applies to chips container */}
             {activeFilters.length > 0 && (
-              <ErrorBoundary minimal>
-                <FilterChips
-                  activeFilters={activeFilters}
-                  onRemoveFilter={handleRemoveFilter}
-                  onResetFilters={resetFilters}
-                  className="flex-shrink-0"
-                  showPlaceholder={false}
-                />
-              </ErrorBoundary>
+              <div className="flex-1 overflow-x-auto scrollbar-hide">
+                <ErrorBoundary minimal>
+                  <FilterChips
+                    activeFilters={activeFilters}
+                    onRemoveFilter={handleRemoveFilter}
+                    onResetFilters={resetFilters}
+                    className="flex-shrink-0"
+                    showPlaceholder={false}
+                  />
+                </ErrorBoundary>
+              </div>
             )}
           </div>
         </div>

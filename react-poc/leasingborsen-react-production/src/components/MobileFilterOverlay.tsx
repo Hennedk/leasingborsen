@@ -528,9 +528,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                     onClick={() => toggleArrayFilter('fuel_type', fuelTypeItem.name)}
                   >
                     {fuelTypeItem.label}
-                    {isSelected && (
-                      <X className="w-3 h-3 ml-1.5" />
-                    )}
                   </Badge>
                 )
               })}
@@ -557,9 +554,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                     onClick={() => toggleArrayFilter('transmission', transmissionType)}
                   >
                     {label}
-                    {isSelected && (
-                      <X className="w-3 h-3 ml-1.5" />
-                    )}
                   </Badge>
                 )
               })}
@@ -585,9 +579,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                     onClick={() => toggleArrayFilter('body_type', bodyTypeItem.name)}
                   >
                     {bodyTypeItem.label}
-                    {isSelected && (
-                      <X className="w-3 h-3 ml-1.5" />
-                    )}
                   </Badge>
                 )
               })}
