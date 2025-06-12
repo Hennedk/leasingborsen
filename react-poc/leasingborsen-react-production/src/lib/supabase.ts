@@ -145,7 +145,7 @@ function expandFuelTypes(consolidatedTypes: string[]): string[] {
 
 // Query Builders with Types
 export class CarListingQueries {
-  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '') {
+  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0) {
     let query = supabase
       .from('full_listing_view')
       .select('*')
@@ -193,7 +193,7 @@ export class CarListingQueries {
     const isDescending = sortOrder === 'desc'
     query = query.order('monthly_price', { ascending: !isDescending })
 
-    const { data, error } = await query.limit(limit)
+    const { data, error } = await query.range(offset, offset + limit - 1)
 
     return { data: data as CarListing[] | null, error }
   }

@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BaseLayout from '@/components/BaseLayout'
@@ -13,14 +14,35 @@ const About = lazy(() => import('@/pages/About'))
 const WhyPrivateLeasing = lazy(() => import('@/pages/WhyPrivateLeasing'))
 const Advertising = lazy(() => import('@/pages/Advertising'))
 
-// Create a client
+// Create a client with optimized configuration
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: 1,
+      gcTime: 15 * 60 * 1000, // 15 minutes
+      retry: (failureCount, error: any) => {
+        // Don't retry on 4xx errors (client errors)
+        if (error?.status >= 400 && error?.status < 500) {
+          return false
+        }
+        // Retry up to 2 times for server errors
+        return failureCount < 2
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
       refetchOnWindowFocus: false,
+      refetchOnMount: true,
+      refetchOnReconnect: 'always',
+      // Network detection
+      networkMode: 'online',
+    },
+    mutations: {
+      retry: 1,
+      retryDelay: 1000,
+      networkMode: 'online',
+      onError: (error) => {
+        console.error('Mutation failed:', error)
+        // Here you could show a global error toast/notification
+      },
     },
   },
 })
@@ -64,6 +86,7 @@ function App() {
             </Suspense>
           </div>
         </Router>
+        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ErrorBoundary>
   )
