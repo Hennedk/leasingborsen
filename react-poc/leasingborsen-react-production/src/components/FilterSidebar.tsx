@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { X, RotateCcw, Plus } from 'lucide-react'
+import { X, RotateCcw, Plus, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
@@ -81,6 +81,10 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   const [makeSearch, setMakeSearch] = React.useState('')
   const [modelSearch, setModelSearch] = React.useState('')
   
+  // Model selection state (for multiple makes flow)
+  const [selectedMakeForModels, setSelectedMakeForModels] = React.useState<string | null>(null)
+  const [modelSelectionView, setModelSelectionView] = React.useState<'makeSelection' | 'models'>('makeSelection')
+  
   // Get selected makes and models
   const selectedMakes = makes
   const selectedModels = models
@@ -142,12 +146,12 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     seats_max, 
     horsepower_min,
     horsepower_max
-  ].filter(value => value !== '' && value !== null && value !== undefined).length
+  ].filter(value => value !== null && value !== undefined).length
 
   const handleFilterChange = (key: string, value: string | number) => {
     const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
     // Handle both 'all' and empty string as clearing the filter
-    const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
+    // const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
     
     if (isNumericField && value !== 'all' && value !== '') {
       const numericValue = parseInt(value as string)
@@ -155,16 +159,16 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
       else if (key === 'price_max') setFilter('price_max', numericValue)
       else if (key === 'seats_min') setFilter('seats_min', numericValue)
       else if (key === 'seats_max') setFilter('seats_max', numericValue)
-      else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
-      else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
+      // else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
+      // else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
       if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
         else if (key === 'seats_max') setFilter('seats_max', null)
-        else if (key === 'horsepower_min') setFilter('horsepower_min', null)
-        else if (key === 'horsepower_max') setFilter('horsepower_max', null)
+        // else if (key === 'horsepower_min') setFilter('horsepower_min', null)
+        // else if (key === 'horsepower_max') setFilter('horsepower_max', null)
       }
     }
   }
@@ -220,27 +224,6 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             <div className="space-y-3">
               <Label className="font-medium text-foreground">Mærke</Label>
               
-              {/* Selected Makes Display */}
-              {selectedMakes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedMakes.map((makeName: string) => (
-                    <Badge
-                      key={makeName}
-                      variant="secondary"
-                      className="text-sm"
-                    >
-                      {makeName}
-                      <button
-                        onClick={() => toggleMake(makeName)}
-                        className="ml-1 hover:bg-destructive/20 rounded-full"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              
               {/* Make Selector Button */}
               <Dialog open={makeModalOpen} onOpenChange={setMakeModalOpen}>
                 <DialogTrigger asChild>
@@ -249,7 +232,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     className="w-full justify-between"
                   >
                     {selectedMakes.length > 0 
-                      ? `${selectedMakes.length} mærker valgt`
+                      ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
                       : 'Vælg mærker'
                     }
                     <Plus className="w-4 h-4" />
@@ -330,29 +313,21 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
             <div className="space-y-3">
               <Label className="font-medium text-foreground">Model</Label>
               
-              {/* Selected Models Display */}
-              {selectedModels.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedModels.map((modelName: string) => (
-                    <Badge
-                      key={modelName}
-                      variant="secondary"
-                      className="text-sm"
-                    >
-                      {modelName}
-                      <button
-                        onClick={() => toggleModel(modelName)}
-                        className="ml-1 hover:bg-destructive/20 rounded-full"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              )}
-              
               {/* Model Selector Button */}
-              <Dialog open={modelModalOpen} onOpenChange={setModelModalOpen}>
+              <Dialog open={modelModalOpen} onOpenChange={(open) => {
+                setModelModalOpen(open)
+                if (open) {
+                  // Reset view state when opening
+                  if (selectedMakes.length === 1) {
+                    setSelectedMakeForModels(selectedMakes[0])
+                    setModelSelectionView('models')
+                  } else {
+                    setSelectedMakeForModels(null)
+                    setModelSelectionView('makeSelection')
+                  }
+                  setModelSearch('')
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button
                     variant="outline"
@@ -362,63 +337,113 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                     {selectedMakes.length === 0 
                       ? 'Vælg mærker først'
                       : selectedModels.length > 0 
-                        ? `${selectedModels.length} modeller valgt`
+                        ? `${selectedModels.length} ${selectedModels.length === 1 ? 'model' : 'modeller'} valgt`
                         : 'Vælg modeller'
                     }
                     <Plus className="w-4 h-4" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Vælg modeller</DialogTitle>
-                    <DialogDescription>
-                      Vælg en eller flere modeller for de valgte bilmærker.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  {/* Search */}
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="Søg modeller..."
-                      value={modelSearch}
-                      onChange={(e) => setModelSearch(e.target.value)}
-                    />
-                    
-                    <ScrollArea className="h-80">
+                  {modelSelectionView === 'makeSelection' ? (
+                    // Make Selection View (for multiple makes)
+                    <>
+                      <DialogHeader>
+                        <DialogTitle>Vælg mærke</DialogTitle>
+                        <DialogDescription>
+                          Vælg hvilket mærke du vil se modeller for.
+                        </DialogDescription>
+                      </DialogHeader>
+                      
+                      <ScrollArea className="h-80">
+                        <div className="space-y-2">
+                          {selectedMakes.map((makeName: string) => {
+                            const makeModels = getModelsForMake(makeName)
+                            const selectedModelsForMake = makeModels.filter(model => selectedModels.includes(model.name))
+                            const selectedModelCount = selectedModelsForMake.length
+                            const modelCount = makeModels.length
+                            
+                            return (
+                              <Button
+                                key={makeName}
+                                variant="outline"
+                                className="w-full justify-between h-auto p-4"
+                                onClick={() => {
+                                  setSelectedMakeForModels(makeName)
+                                  setModelSelectionView('models')
+                                  setModelSearch('')
+                                }}
+                              >
+                                <div className="flex flex-col items-start">
+                                  <span className="font-medium">{makeName}</span>
+                                  <span className="text-sm text-muted-foreground">
+                                    {selectedModelCount > 0 
+                                      ? `${selectedModelCount} af ${modelCount} ${modelCount === 1 ? 'model' : 'modeller'} valgt`
+                                      : `${modelCount} ${modelCount === 1 ? 'model' : 'modeller'} tilgængelige`
+                                    }
+                                  </span>
+                                </div>
+                                <ChevronRight className="w-4 h-4" />
+                              </Button>
+                            )
+                          })}
+                        </div>
+                      </ScrollArea>
+                    </>
+                  ) : (
+                    // Model Selection View (for specific make)
+                    <>
+                      <DialogHeader>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setModelSelectionView('makeSelection')}
+                            className="p-0 h-auto"
+                          >
+                            <ArrowLeft className="w-4 h-4" />
+                          </Button>
+                          <div>
+                            <DialogTitle>{selectedMakeForModels}</DialogTitle>
+                            <DialogDescription className="text-left">
+                              Vælg modeller
+                            </DialogDescription>
+                          </div>
+                        </div>
+                      </DialogHeader>
+                      
                       <div className="space-y-4">
-                        {selectedMakes.map((makeName: string) => {
-                          const makeModels = getModelsForMake(makeName).filter((model: Model) => 
-                            !modelSearch || model.name.toLowerCase().includes(modelSearch.toLowerCase())
-                          )
-                          
-                          if (makeModels.length === 0) return null
-                          
-                          return (
-                            <div key={makeName} className="space-y-2">
-                              <h4 className="text-sm font-medium text-muted-foreground">{makeName}</h4>
-                              <div className="space-y-2">
-                                {makeModels.map((model: Model) => {
-                                  const isSelected = selectedModels.includes(model.name)
-                                  return (
-                                    <div key={model.id} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        checked={isSelected}
-                                        onCheckedChange={() => toggleModel(model.name)}
-                                      />
-                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {model.name}
-                                      </label>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                              {makeName !== selectedMakes[selectedMakes.length - 1] && <Separator />}
-                            </div>
-                          )
-                        })}
+                        <Input
+                          placeholder="Søg modeller..."
+                          value={modelSearch}
+                          onChange={(e) => setModelSearch(e.target.value)}
+                        />
+                        
+                        <ScrollArea className="h-80">
+                          <div className="space-y-2">
+                            {selectedMakeForModels && getModelsForMake(selectedMakeForModels)
+                              .filter((model: Model) => 
+                                !modelSearch || model.name.toLowerCase().includes(modelSearch.toLowerCase())
+                              )
+                              .map((model: Model) => {
+                                const isSelected = selectedModels.includes(model.name)
+                                return (
+                                  <div key={model.id} className="flex items-center space-x-2">
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={() => toggleModel(model.name)}
+                                    />
+                                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      {model.name}
+                                    </label>
+                                  </div>
+                                )
+                              })
+                            }
+                          </div>
+                        </ScrollArea>
                       </div>
-                    </ScrollArea>
-                  </div>
+                    </>
+                  )}
                 </DialogContent>
               </Dialog>
             </div>

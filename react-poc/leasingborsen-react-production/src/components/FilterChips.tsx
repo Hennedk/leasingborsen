@@ -62,57 +62,55 @@ const FilterChips: React.FC<FilterChipsProps> = ({
 
       {/* Active filter chips */}
       {hasActiveFilters && (
-        <div className="flex lg:flex-wrap items-center gap-2 animate-in fade-in duration-300 overflow-x-auto lg:overflow-x-visible scrollbar-hide">
-          <div className="flex items-center gap-2 lg:contents">
-            {activeFilters.map((filter) => {
-              const isAnimatingOut = animatingOut.includes(filter.key)
-              
-              return (
-                <div
-                  key={filter.key}
-                  className={cn(
-                    'transition-all duration-200 ease-out flex-shrink-0',
-                    isAnimatingOut 
-                      ? 'animate-out fade-out slide-out-to-right-2 scale-95' 
-                      : 'animate-in fade-in slide-in-from-left-2 scale-100'
-                  )}
-                >
-                  <Badge 
-                    variant="secondary" 
-                    className="flex items-center gap-2 px-3 !py-0 bg-card border hover:bg-muted/50 transition-colors duration-200 shadow-sm whitespace-nowrap h-8"
-                  >
-                    <span className="text-sm font-medium text-foreground">
-                      {filter.label}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveFilter(filter.key)}
-                      className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive transition-colors duration-200 rounded-full"
-                      aria-label={`Fjern filter: ${filter.label}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
-                  </Badge>
-                </div>
-              )
-            })}
+        <div className="flex items-center gap-2 animate-in fade-in duration-300">
+          {activeFilters.map((filter) => {
+            const isAnimatingOut = animatingOut.includes(filter.key)
             
-            {/* Reset all filters button */}
-            {activeFilters.length > 1 && (
-              <div className="animate-in fade-in duration-300 delay-100 flex-shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onResetFilters}
-                  className="h-8 px-3 text-xs border-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 transition-colors duration-200 whitespace-nowrap"
+            return (
+              <div
+                key={filter.key}
+                className={cn(
+                  'transition-all duration-200 ease-out flex-shrink-0',
+                  isAnimatingOut 
+                    ? 'animate-out fade-out slide-out-to-right-2 scale-95' 
+                    : 'animate-in fade-in slide-in-from-left-2 scale-100'
+                )}
+              >
+                <Badge 
+                  variant="secondary" 
+                  className="flex items-center gap-2 px-3 !py-0 bg-card border hover:bg-muted/50 transition-colors duration-200 shadow-sm whitespace-nowrap h-8"
                 >
-                  <RotateCcw className="w-3 h-3 mr-1.5" />
-                  Nulstil alle
-                </Button>
+                  <span className="text-sm font-medium text-foreground">
+                    {filter.label}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveFilter(filter.key)}
+                    className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive transition-colors duration-200 rounded-full"
+                    aria-label={`Fjern filter: ${filter.label}`}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </Badge>
               </div>
-            )}
-          </div>
+            )
+          })}
+          
+          {/* Reset all filters button */}
+          {activeFilters.length > 1 && (
+            <div className="animate-in fade-in duration-300 delay-100 flex-shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetFilters}
+                className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive transition-colors duration-200 whitespace-nowrap"
+              >
+                <RotateCcw className="w-3 h-3 mr-1.5" />
+                Nulstil alle
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>
