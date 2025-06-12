@@ -14,17 +14,25 @@ export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, so
   })
 }
 
-export function useInfiniteListings(filters: Partial<FilterOptions> = {}) {
+export function useInfiniteListings(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = '') {
   return useInfiniteQuery({
-    queryKey: queryKeys.listingsInfinite(filters),
+    queryKey: queryKeys.listingsInfinite(filters, sortOrder),
     queryFn: ({ pageParam = 0 }) => 
-      CarListingQueries.getListings(filters, 20, '', pageParam * 20), // Proper pagination offset
+      CarListingQueries.getListings(filters, 20, sortOrder, pageParam * 20), // Proper pagination offset with sort
     initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => 
-      lastPage.data && lastPage.data.length === 20 ? pages.length : undefined,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    getNextPageParam: (lastPage, pages) => {
+      // Continue loading if we got a full page of results
+      if (lastPage.data && lastPage.data.length === 20) {
+        return pages.length
+      }
+      // Stop loading if we have less than a full page
+      return undefined
+    },
+    staleTime: 3 * 60 * 1000, // 3 minutes - same as regular listings
     gcTime: 15 * 60 * 1000, // 15 minutes for infinite queries
-    maxPages: 10, // Limit to prevent memory issues
+    maxPages: 50, // Increased limit for better UX (1000 total listings max)
+    refetchOnWindowFocus: false, // Don't refetch infinite queries on focus
+    refetchOnMount: false, // Don't refetch on mount to preserve scroll position
   })
 }
 

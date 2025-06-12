@@ -16,8 +16,8 @@ export const queryKeys = {
   listingsAll: () => [...queryKeys.listings] as const,
   listingsWithFilters: (filters: Partial<FilterOptions>, limit: number, sortOrder: SortOrder) =>
     [...queryKeys.listings, filters, limit, sortOrder] as const,
-  listingsInfinite: (filters: Partial<FilterOptions>) =>
-    [...queryKeys.listings, 'infinite', filters] as const,
+  listingsInfinite: (filters: Partial<FilterOptions>, sortOrder?: SortOrder) =>
+    [...queryKeys.listings, 'infinite', filters, sortOrder] as const,
   listingsCount: (filters: Partial<FilterOptions>) =>
     [...queryKeys.listings, 'count', filters] as const,
   
