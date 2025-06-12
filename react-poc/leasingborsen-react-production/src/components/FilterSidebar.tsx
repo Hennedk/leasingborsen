@@ -15,6 +15,7 @@ import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
+import FilterSkeleton from '@/components/FilterSkeleton'
 import type { Make, Model } from '@/types'
 
 interface FilterSidebarProps {
@@ -46,7 +47,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     resetFilters 
   } = useFilterStore()
   
-  const { data: referenceData } = useReferenceData()
+  const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
 
   // Get consolidated filter options from config
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
@@ -157,6 +158,11 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   const handleResetAllFilters = () => {
     resetFilters()
+  }
+
+  // Show skeleton while reference data is loading
+  if (referenceDataLoading) {
+    return <FilterSkeleton className={className} />
   }
 
   return (
