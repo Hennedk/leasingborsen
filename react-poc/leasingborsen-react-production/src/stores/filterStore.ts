@@ -210,51 +210,58 @@ export const useFilterStore = create<FilterState>()(
         })
       }
       
-      // Add individual filter chips in the order they were added (newest first)
-      for (const filterKey of state.filterOrder) {
-        // Skip makes and models as they're already added individually
-        if (filterKey === 'makes' || filterKey === 'models') {
-          continue
-        }
-        
-        // Handle array-based filters (create individual chips for each value)
-        if (filterKey === 'fuel_type' && fuel_type.length > 0) {
-          fuel_type.forEach(fuelType => {
-            activeFilters.push({
-              key: `fuel_type:${fuelType}`,
-              label: fuelType,
-              value: fuelType
-            })
-          })
-        } else if (filterKey === 'body_type' && body_type.length > 0) {
-          body_type.forEach(bodyType => {
-            activeFilters.push({
-              key: `body_type:${bodyType}`,
-              label: bodyType,
-              value: bodyType
-            })
-          })
-        } else if (filterKey === 'transmission' && transmission.length > 0) {
-          transmission.forEach(trans => {
-            activeFilters.push({
-              key: `transmission:${trans}`,
-              label: transmissionLabels[trans] || trans,
-              value: trans
-            })
-          })
-        } else if (filterKey === 'seats' && (state.seats_min !== null || state.seats_max !== null)) {
+      // Add filter chips for all active filters (not just those in filterOrder)
+      // This ensures filters restored from URL are also displayed
+      
+      // Fuel type filters
+      if (fuel_type.length > 0) {
+        fuel_type.forEach(fuelType => {
           activeFilters.push({
-            key: 'seats',
-            label: `${state.seats_min ?? ''} - ${state.seats_max ?? ''} sæder`,
-            value: `${state.seats_min ?? ''}-${state.seats_max ?? ''}`
+            key: `fuel_type:${fuelType}`,
+            label: fuelType,
+            value: fuelType
           })
-        } else if (filterKey === 'price' && (state.price_min !== null || state.price_max !== null)) {
+        })
+      }
+      
+      // Body type filters
+      if (body_type.length > 0) {
+        body_type.forEach(bodyType => {
           activeFilters.push({
-            key: 'price',
-            label: `${state.price_min ? state.price_min.toLocaleString('da-DK') : ''} - ${state.price_max ? state.price_max.toLocaleString('da-DK') : ''} kr/md`,
-            value: `${state.price_min ?? ''}-${state.price_max ?? ''}`
+            key: `body_type:${bodyType}`,
+            label: bodyType,
+            value: bodyType
           })
-        }
+        })
+      }
+      
+      // Transmission filters
+      if (transmission.length > 0) {
+        transmission.forEach(trans => {
+          activeFilters.push({
+            key: `transmission:${trans}`,
+            label: transmissionLabels[trans] || trans,
+            value: trans
+          })
+        })
+      }
+      
+      // Seats range filter
+      if (state.seats_min !== null || state.seats_max !== null) {
+        activeFilters.push({
+          key: 'seats',
+          label: `${state.seats_min ?? ''} - ${state.seats_max ?? ''} sæder`,
+          value: `${state.seats_min ?? ''}-${state.seats_max ?? ''}`
+        })
+      }
+      
+      // Price range filter
+      if (state.price_min !== null || state.price_max !== null) {
+        activeFilters.push({
+          key: 'price',
+          label: `${state.price_min ? state.price_min.toLocaleString('da-DK') : ''} - ${state.price_max ? state.price_max.toLocaleString('da-DK') : ''} kr/md`,
+          value: `${state.price_min ?? ''}-${state.price_max ?? ''}`
+        })
       }
       
       return activeFilters
