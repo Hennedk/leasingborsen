@@ -10,6 +10,8 @@ import { X, ChevronLeft, Plus, Search } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
+import { FILTER_CONFIG } from '@/config/filterConfig'
+import { useDebouncedSearch } from '@/hooks/useDebounce'
 import type { Make, Model } from '@/types'
 
 interface MobileFilterOverlayProps {
@@ -20,7 +22,7 @@ interface MobileFilterOverlayProps {
 
 type MobileView = 'filters' | 'makes' | 'makeSelection' | 'models'
 
-const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
+const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   isOpen,
   onClose,
   resultCount
@@ -48,7 +50,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   
   // Navigation state
   const [currentView, setCurrentView] = useState<MobileView>('filters')
-  const [searchTerm, setSearchTerm] = useState('')
+  const { searchTerm, debouncedSearchTerm, setSearchTerm, clearSearch } = useDebouncedSearch()
   const [selectedMakeForModels, setSelectedMakeForModels] = useState<string | null>(null)
   
   // Get selected makes and models
@@ -89,7 +91,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   React.useEffect(() => {
     if (isOpen) {
       setCurrentView('filters')
-      setSearchTerm('')
+      clearSearch()
       setSelectedMakeForModels(null)
     }
   }, [isOpen])
@@ -101,43 +103,21 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   const filteredMakes = useMemo(() => {
     if (!referenceData?.makes) return []
     const allMakes = referenceData.makes
-    if (!searchTerm) return allMakes
+    if (!debouncedSearchTerm) return allMakes
     return allMakes.filter((make: Make) => 
-      make.name.toLowerCase().includes(searchTerm.toLowerCase())
+      make.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     )
-  }, [referenceData?.makes, searchTerm])
+  }, [referenceData?.makes, debouncedSearchTerm])
   
   // Separate popular and other makes for display
   const popularMakesList = filteredMakes.filter((make: Make) => popularMakes.includes(make.name))
   const otherMakesList = filteredMakes.filter((make: Make) => !popularMakes.includes(make.name))
   
-  // Consolidated fuel types
-  const consolidatedFuelTypes = [
-    { name: 'Electric', label: 'Electric' },
-    { name: 'Hybrid', label: 'Hybrid' },
-    { name: 'Benzin', label: 'Benzin' },
-    { name: 'Diesel', label: 'Diesel' },
-    { name: 'Others', label: 'Andre' }
-  ]
-
-  // Consolidated body types
-  const consolidatedBodyTypes = [
-    { name: 'Mikro', label: 'Mikro' },
-    { name: 'Stationcar', label: 'Stationcar' },
-    { name: 'SUV', label: 'SUV' },
-    { name: 'Crossover (CUV)', label: 'Crossover (CUV)' },
-    { name: 'Minibus (MPV)', label: 'Minibus (MPV)' },
-    { name: 'Sedan', label: 'Sedan' },
-    { name: 'Hatchback', label: 'Hatchback' },
-    { name: 'Cabriolet', label: 'Cabriolet' },
-    { name: 'Coupe', label: 'Coupe' }
-  ]
-
-  // Price steps for filtering
-  const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
-  
-  // Horsepower steps for filtering
-  const horsepowerSteps = [100, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 1000]
+  // Get consolidated filter options from config
+  const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
+  const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
+  const priceSteps = FILTER_CONFIG.PRICE.STEPS
+  const horsepowerSteps = FILTER_CONFIG.HORSEPOWER.STEPS
   
   const handleFilterChange = (key: string, value: string | number) => {
     const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
@@ -314,7 +294,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
                 className="w-full justify-between p-4 h-auto"
                 onClick={() => {
                   setSelectedMakeForModels(makeName)
-                  setSearchTerm('')
+                  clearSearch()
                   setCurrentView('models')
                 }}
               >
@@ -351,7 +331,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
     if (!selectedMakeForModels) return null
     
     const makeModels = getModelsForMake(selectedMakeForModels).filter((model: Model) => 
-      !searchTerm || model.name.toLowerCase().includes(searchTerm.toLowerCase())
+      !debouncedSearchTerm || model.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
     )
     
     return (
@@ -421,8 +401,8 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
             {makeModels.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
                 <p className="text-sm">
-                  {searchTerm 
-                    ? `Ingen modeller fundet for "${searchTerm}"`
+                  {debouncedSearchTerm 
+                    ? `Ingen modeller fundet for "${debouncedSearchTerm}"`
                     : `Ingen modeller tilgængelige for ${selectedMakeForModels}`
                   }
                 </p>
@@ -487,7 +467,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
               variant="outline"
               className="w-full justify-between"
               onClick={() => {
-                setSearchTerm('')
+                clearSearch()
                 setCurrentView('makes')
               }}
             >
@@ -508,7 +488,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
               className="w-full justify-between"
               disabled={selectedMakes.length === 0}
               onClick={() => {
-                setSearchTerm('')
+                clearSearch()
                 if (selectedMakes.length === 1) {
                   // Direct to models if only one make selected
                   setSelectedMakeForModels(selectedMakes[0])
@@ -781,4 +761,5 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   )
 }
 
+const MobileFilterOverlay = React.memo(MobileFilterOverlayComponent)
 export default MobileFilterOverlay

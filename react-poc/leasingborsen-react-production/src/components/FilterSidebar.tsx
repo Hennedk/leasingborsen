@@ -13,6 +13,8 @@ import { X, RotateCcw, Plus, ChevronRight, ArrowLeft } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
+import { FILTER_CONFIG } from '@/config/filterConfig'
+import { useDebouncedSearch } from '@/hooks/useDebounce'
 import type { Make, Model } from '@/types'
 
 interface FilterSidebarProps {
@@ -22,7 +24,7 @@ interface FilterSidebarProps {
   variant?: 'desktop' | 'mobile'
 }
 
-const FilterSidebar: React.FC<FilterSidebarProps> = ({ 
+const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({ 
   isOpen = true, 
   onClose, 
   className = ''
@@ -46,40 +48,18 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   
   const { data: referenceData } = useReferenceData()
 
-  // Consolidated fuel types
-  const consolidatedFuelTypes = [
-    { name: 'Electric', label: 'Electric' },
-    { name: 'Hybrid', label: 'Hybrid' },
-    { name: 'Benzin', label: 'Benzin' },
-    { name: 'Diesel', label: 'Diesel' },
-    { name: 'Others', label: 'Andre' }
-  ]
-
-  // Consolidated body types
-  const consolidatedBodyTypes = [
-    { name: 'Mikro', label: 'Mikro' },
-    { name: 'Stationcar', label: 'Stationcar' },
-    { name: 'SUV', label: 'SUV' },
-    { name: 'Crossover (CUV)', label: 'Crossover (CUV)' },
-    { name: 'Minibus (MPV)', label: 'Minibus (MPV)' },
-    { name: 'Sedan', label: 'Sedan' },
-    { name: 'Hatchback', label: 'Hatchback' },
-    { name: 'Cabriolet', label: 'Cabriolet' },
-    { name: 'Coupe', label: 'Coupe' }
-  ]
-
-  // Price steps for filtering
-  const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
-  
-  // Horsepower steps for filtering
-  const horsepowerSteps = [100, 150, 200, 250, 300, 350, 400, 500, 600, 700, 800, 1000]
+  // Get consolidated filter options from config
+  const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
+  const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
+  const priceSteps = FILTER_CONFIG.PRICE.STEPS
+  const horsepowerSteps = FILTER_CONFIG.HORSEPOWER.STEPS
   
   // State for modal dialogs
   const [makeModalOpen, setMakeModalOpen] = React.useState(false)
   const [modelModalOpen, setModelModalOpen] = React.useState(false)
-  // Search state for modals
-  const [makeSearch, setMakeSearch] = React.useState('')
-  const [modelSearch, setModelSearch] = React.useState('')
+  // Debounced search state for modals
+  const { searchTerm: makeSearch, debouncedSearchTerm: debouncedMakeSearch, setSearchTerm: setMakeSearch } = useDebouncedSearch()
+  const { searchTerm: modelSearch, debouncedSearchTerm: debouncedModelSearch, setSearchTerm: setModelSearch } = useDebouncedSearch()
   
   // Model selection state (for multiple makes flow)
   const [selectedMakeForModels, setSelectedMakeForModels] = React.useState<string | null>(null)
@@ -115,22 +95,22 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
     toggleArrayFilter('models', modelName)
   }
   
-  // Define popular makes
-  const popularMakes = ['Volkswagen', 'Skoda', 'Toyota', 'Audi', 'Mercedes-Benz', 'BMW', 'Cupra', 'Hyundai', 'Kia', 'Renault']
+  // Get popular makes from config
+  const popularMakes = FILTER_CONFIG.POPULAR_MAKES
   
-  // Filter makes for search
+  // Filter makes for search (using debounced search term)
   const filteredMakes = React.useMemo(() => {
     if (!referenceData?.makes) return []
     const allMakes = referenceData.makes
-    if (!makeSearch) return allMakes
+    if (!debouncedMakeSearch) return allMakes
     return allMakes.filter((make: Make) => 
-      make.name.toLowerCase().includes(makeSearch.toLowerCase())
+      make.name.toLowerCase().includes(debouncedMakeSearch.toLowerCase())
     )
-  }, [referenceData?.makes, makeSearch])
+  }, [referenceData?.makes, debouncedMakeSearch])
   
   // Separate popular and other makes for display
-  const popularMakesList = filteredMakes.filter((make: Make) => popularMakes.includes(make.name))
-  const otherMakesList = filteredMakes.filter((make: Make) => !popularMakes.includes(make.name))
+  const popularMakesList = filteredMakes.filter((make: Make) => (popularMakes as readonly string[]).includes(make.name))
+  const otherMakesList = filteredMakes.filter((make: Make) => !(popularMakes as readonly string[]).includes(make.name))
   
 
   // Active filters count
@@ -422,7 +402,7 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
                           <div className="space-y-2">
                             {selectedMakeForModels && getModelsForMake(selectedMakeForModels)
                               .filter((model: Model) => 
-                                !modelSearch || model.name.toLowerCase().includes(modelSearch.toLowerCase())
+                                !debouncedModelSearch || model.name.toLowerCase().includes(debouncedModelSearch.toLowerCase())
                               )
                               .map((model: Model) => {
                                 const isSelected = selectedModels.includes(model.name)
@@ -660,4 +640,5 @@ const FilterSidebar: React.FC<FilterSidebarProps> = ({
   )
 }
 
+const FilterSidebar = React.memo(FilterSidebarComponent)
 export default FilterSidebar

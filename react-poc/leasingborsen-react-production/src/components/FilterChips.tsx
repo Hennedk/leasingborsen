@@ -13,7 +13,7 @@ interface FilterChipsProps {
   showPlaceholder?: boolean
 }
 
-const FilterChips: React.FC<FilterChipsProps> = ({
+const FilterChipsComponent: React.FC<FilterChipsProps> = ({
   activeFilters,
   onRemoveFilter,
   onResetFilters,
@@ -22,10 +22,15 @@ const FilterChips: React.FC<FilterChipsProps> = ({
 }) => {
   const [isVisible, setIsVisible] = useState(true)
   const [animatingOut, setAnimatingOut] = useState<string[]>([])
+  const [lastRemovedFilter, setLastRemovedFilter] = useState<string | null>(null)
 
   const hasActiveFilters = activeFilters.length > 0
 
   const handleRemoveFilter = (key: string) => {
+    // Find the filter label for accessibility announcement
+    const filter = activeFilters.find(f => f.key === key)
+    setLastRemovedFilter(filter?.label || '')
+    
     // Add to animating out list
     setAnimatingOut(prev => [...prev, key])
     
@@ -33,6 +38,8 @@ const FilterChips: React.FC<FilterChipsProps> = ({
     setTimeout(() => {
       onRemoveFilter(key)
       setAnimatingOut(prev => prev.filter(k => k !== key))
+      // Clear announcement after a short delay
+      setTimeout(() => setLastRemovedFilter(null), 1000)
     }, 200)
   }
 
@@ -48,6 +55,15 @@ const FilterChips: React.FC<FilterChipsProps> = ({
       'filter-chips-container flex items-center gap-2 transition-all duration-300',
       className
     )}>
+      {/* Live region for filter announcements */}
+      <div 
+        aria-live="polite" 
+        aria-atomic="false" 
+        className="sr-only"
+        id="filter-announcements"
+      >
+        {lastRemovedFilter && `Filter fjernet: ${lastRemovedFilter}`}
+      </div>
       {/* Placeholder when no filters */}
       {!hasActiveFilters && showPlaceholder && (
         <div className="animate-in fade-in duration-300">
@@ -117,4 +133,5 @@ const FilterChips: React.FC<FilterChipsProps> = ({
   )
 }
 
+const FilterChips = React.memo(FilterChipsComponent)
 export default FilterChips

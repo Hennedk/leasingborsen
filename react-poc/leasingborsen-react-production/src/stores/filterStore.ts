@@ -166,7 +166,7 @@ export const useFilterStore = create<FilterState>()(
     
     getActiveFilters: () => {
       const state = get()
-      const filters: FilterChip[] = []
+      const activeFilters: FilterChip[] = []
       
       // Ensure all array properties exist with fallbacks
       const selectedCars = state.selectedCars || []
@@ -182,9 +182,27 @@ export const useFilterStore = create<FilterState>()(
         'Manual': 'Manuelt gear'
       }
       
-      // Create a map of all possible filters
-      const filterMap: Record<string, FilterChip | null> = {
-        selectedCars: selectedCars.length > 0 ? {
+      // Add individual make chips
+      makes.forEach(make => {
+        activeFilters.push({
+          key: `make:${make}`,
+          label: make,
+          value: make
+        })
+      })
+      
+      // Add individual model chips
+      models.forEach(model => {
+        activeFilters.push({
+          key: `model:${model}`,
+          label: model,
+          value: model
+        })
+      })
+      
+      // Add selectedCars as combined chip (if any)
+      if (selectedCars.length > 0) {
+        activeFilters.push({
           key: 'selectedCars',
           label: selectedCars.map((car: CarSelection) => {
             const modelCount = car.models.length
@@ -193,17 +211,11 @@ export const useFilterStore = create<FilterState>()(
             return `${car.makeName} (${modelCount} modeller)`
           }).join(', '),
           value: selectedCars.map((car: CarSelection) => `${car.makeId}:${car.models.map((m: any) => m.id).join(',')}`).join('|')
-        } : null,
-        makes: makes.length > 0 ? {
-          key: 'makes',
-          label: makes.join(', '),
-          value: makes.join(',')
-        } : null,
-        models: models.length > 0 ? {
-          key: 'models',
-          label: models.join(', '),
-          value: models.join(',')
-        } : null,
+        })
+      }
+      
+      // Create a map of remaining filters
+      const remainingFilterMap: Record<string, FilterChip | null> = {
         fuel_type: fuel_type.length > 0 ? { 
           key: 'fuel_type', 
           label: fuel_type.join(', '), 
@@ -236,15 +248,20 @@ export const useFilterStore = create<FilterState>()(
         } : null
       }
       
-      // Return filters in the order they were added (newest first)
+      // Add remaining filters in the order they were added (newest first)
       for (const filterKey of state.filterOrder) {
-        const filter = filterMap[filterKey]
+        // Skip makes and models as they're already added individually
+        if (filterKey === 'makes' || filterKey === 'models') {
+          continue
+        }
+        
+        const filter = remainingFilterMap[filterKey]
         if (filter) {
-          filters.push(filter)
+          activeFilters.push(filter)
         }
       }
       
-      return filters
+      return activeFilters
     }
     }
   })

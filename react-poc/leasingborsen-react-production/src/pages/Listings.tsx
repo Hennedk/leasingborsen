@@ -15,6 +15,7 @@ import FilterSidebar from '@/components/FilterSidebar'
 import FilterChips from '@/components/FilterChips'
 import MobileFilterOverlay from '@/components/MobileFilterOverlay'
 import ListingCard from '@/components/ListingCard'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import type { SortOrder, SortOption } from '@/types'
 
 // Sort options configuration
@@ -130,6 +131,16 @@ const Listings: React.FC = () => {
     } else if (key === 'price') {
       setFilter('price_min', null)
       setFilter('price_max', null)
+    } else if (key.startsWith('make:')) {
+      // Remove individual make
+      const makeToRemove = key.replace('make:', '')
+      const updatedMakes = makes.filter(make => make !== makeToRemove)
+      setFilter('makes', updatedMakes)
+    } else if (key.startsWith('model:')) {
+      // Remove individual model
+      const modelToRemove = key.replace('model:', '')
+      const updatedModels = models.filter(model => model !== modelToRemove)
+      setFilter('models', updatedModels)
     } else if (key === 'makes') {
       setFilter('makes', [])
     } else if (key === 'models') {
@@ -173,13 +184,15 @@ const Listings: React.FC = () => {
             
             {/* Mobile Filter Chips - same row as filter button */}
             {activeFilters.length > 0 && (
-              <FilterChips
-                activeFilters={activeFilters}
-                onRemoveFilter={handleRemoveFilter}
-                onResetFilters={resetFilters}
-                className="flex-shrink-0"
-                showPlaceholder={false}
-              />
+              <ErrorBoundary minimal>
+                <FilterChips
+                  activeFilters={activeFilters}
+                  onRemoveFilter={handleRemoveFilter}
+                  onResetFilters={resetFilters}
+                  className="flex-shrink-0"
+                  showPlaceholder={false}
+                />
+              </ErrorBoundary>
             )}
           </div>
         </div>
@@ -196,15 +209,19 @@ const Listings: React.FC = () => {
             
             {/* Desktop Sidebar - Enhanced width and styling */}
             <aside className="hidden lg:block w-80 xl:w-96 flex-shrink-0">
-              <FilterSidebar />
+              <ErrorBoundary minimal>
+                <FilterSidebar />
+              </ErrorBoundary>
             </aside>
 
             {/* Mobile Filter Overlay */}
-            <MobileFilterOverlay
-              isOpen={mobileFilterOpen}
-              onClose={() => setMobileFilterOpen(false)}
-              resultCount={resultCount}
-            />
+            <ErrorBoundary>
+              <MobileFilterOverlay
+                isOpen={mobileFilterOpen}
+                onClose={() => setMobileFilterOpen(false)}
+                resultCount={resultCount}
+              />
+            </ErrorBoundary>
 
             {/* Main Content Area - Enhanced spacing */}
             <div className="flex-1 min-w-0">
@@ -218,6 +235,16 @@ const Listings: React.FC = () => {
 
               {/* Desktop: Result count + sorting + filter chips */}
               <div className="hidden lg:block mb-8">
+                {/* Live region for screen readers */}
+                <div 
+                  aria-live="polite" 
+                  aria-atomic="true" 
+                  className="sr-only"
+                  id="results-announcement"
+                >
+                  Søgeresultater opdateret: {resultCount} {resultCount === 1 ? 'bil fundet' : 'biler fundet'}
+                </div>
+                
                 {/* Result count and sorting row */}
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-xl font-bold text-foreground">
