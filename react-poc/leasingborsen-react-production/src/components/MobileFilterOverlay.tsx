@@ -38,8 +38,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
     price_max,
     seats_min,
     seats_max,
-    horsepower_min,
-    horsepower_max,
     setFilter,
     toggleArrayFilter,
     resetFilters, 
@@ -118,10 +116,9 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
   const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
   const priceSteps = FILTER_CONFIG.PRICE.STEPS
-  const horsepowerSteps = FILTER_CONFIG.HORSEPOWER.STEPS
   
   const handleFilterChange = (key: string, value: string | number) => {
-    const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
+    const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max'].includes(key)
     // Handle both 'all' and empty string as clearing the filter
     // const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
     
@@ -131,16 +128,12 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       else if (key === 'price_max') setFilter('price_max', numericValue)
       else if (key === 'seats_min') setFilter('seats_min', numericValue)
       else if (key === 'seats_max') setFilter('seats_max', numericValue)
-      // else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
-      // else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
       if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
         else if (key === 'seats_max') setFilter('seats_max', null)
-        // else if (key === 'horsepower_min') setFilter('horsepower_min', null)
-        // else if (key === 'horsepower_max') setFilter('horsepower_max', null)
       }
     }
   }
@@ -680,45 +673,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             </div>
           </div>
 
-          {/* Horsepower Range Filter */}
-          <div className="space-y-3">
-            <Label className="font-medium text-foreground">Hestekræfter</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <Select 
-                value={horsepower_min?.toString() || 'all'} 
-                onValueChange={(value) => handleFilterChange('horsepower_min', value)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Min HK" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Min HK</SelectItem>
-                  {horsepowerSteps.map((hp) => (
-                    <SelectItem key={`min-${hp}`} value={hp.toString()}>
-                      {hp.toLocaleString('da-DK')} hk
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={horsepower_max?.toString() || 'all'} 
-                onValueChange={(value) => handleFilterChange('horsepower_max', value)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="Max HK" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Max HK</SelectItem>
-                  {horsepowerSteps.map((hp) => (
-                    <SelectItem key={`max-${hp}`} value={hp.toString()}>
-                      {hp.toLocaleString('da-DK')} hk
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="9999999">1.000+ hk</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
         </div>
       </div>
       
