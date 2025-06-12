@@ -3,12 +3,18 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Plus } from 'lucide-react'
+import { Plus, ArrowUpDown } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
 import MobileViewHeader from './MobileViewHeader'
-import type { FilterChip } from '@/types'
+import type { FilterChip, SortOrder, SortOption } from '@/types'
+
+// Sort options configuration - consistent with backend values
+const sortOptions: SortOption[] = [
+  { value: '', label: 'Laveste pris' },
+  { value: 'desc', label: 'Højeste pris' }
+]
 
 interface MobileFilterMainViewProps {
   onNavigateToMakes: () => void
@@ -16,6 +22,8 @@ interface MobileFilterMainViewProps {
   onClose: () => void
   resultCount: number
   activeFilters: FilterChip[]
+  sortOrder: SortOrder
+  onSortChange: (sortOrder: SortOrder) => void
 }
 
 /**
@@ -34,7 +42,9 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
   onNavigateToModels,
   onClose,
   resultCount,
-  activeFilters
+  activeFilters,
+  sortOrder,
+  onSortChange
 }) => {
   const {
     makes = [],
@@ -73,6 +83,14 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
     resetFilters()
   }, [resetFilters])
 
+  // Sort change handler
+  const handleSortChange = useCallback((newSortOrder: SortOrder) => {
+    onSortChange(newSortOrder)
+  }, [onSortChange])
+
+  // Get current sort label
+  const currentSortLabel = sortOptions.find(option => option.value === sortOrder)?.label || 'Laveste pris'
+
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
@@ -86,6 +104,29 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
       {/* Content */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4 space-y-6">
+          {/* Sorting Section - at the top */}
+          <div className="space-y-3">
+            <Label className="font-medium text-foreground">Sortering</Label>
+            <Select value={sortOrder} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full h-12">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+                  <SelectValue placeholder={currentSortLabel} />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className={sortOrder === option.value ? 'bg-muted font-medium' : ''}
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           {/* Make Filter */}
           <div className="space-y-3">
             <Label className="font-medium text-foreground">Mærke</Label>
