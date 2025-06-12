@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import {
   Flag,
   Loader2
 } from 'lucide-react'
+import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
 
 interface CarListing {
   listing_id?: string
@@ -37,86 +38,52 @@ interface ListingCardProps {
   loading?: boolean
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
+const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false }) => {
   
-  // Image loading states
-  const [imageLoaded, setImageLoaded] = useState(false)
-  const [imageError, setImageError] = useState(false)
-  const imageRef = useRef<HTMLImageElement>(null)
+  // Optimized image loading with shared intersection observer
+  const {
+    imageRef,
+    imageLoaded,
+    imageError,
+    retryImage,
+    canRetry
+  } = useImageLazyLoading(car?.image, {
+    threshold: 0.1,
+    rootMargin: '200px',
+    maxRetries: 3
+  })
   
   // Interaction states
   const [showRipple, setShowRipple] = useState(false)
   const [navigating, setNavigating] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   
-  // Error recovery
-  const [imageRetryCount, setImageRetryCount] = useState(0)
-  const maxRetries = 3
-  
-  // Smart skeleton content
-  const skeletonWidths = ['w-24', 'w-32', 'w-28', 'w-36', 'w-20', 'w-16']
-  const getRandomWidth = () => skeletonWidths[Math.floor(Math.random() * skeletonWidths.length)]
-  
-  // Progressive image loading setup
-  useEffect(() => {
-    if (!loading && car && imageRef.current) {
-      setupImageLoading()
-    }
-  }, [loading, car])
-  
-  const setupImageLoading = () => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          loadImage()
-          observer.unobserve(entry.target)
-        }
-      })
-    }, { threshold: 0.1 })
-    
-    if (imageRef.current) {
-      observer.observe(imageRef.current)
-    }
-  }
-  
-  const loadImage = () => {
-    if (!car?.image) return
-    
-    const img = new Image()
-    img.onload = () => {
-      setImageLoaded(true)
-      setImageError(false)
-    }
-    img.onerror = () => {
-      setImageError(true)
-      setImageLoaded(false)
-    }
-    img.src = car.image
-  }
+  // Memoized skeleton content for consistent rendering
+  const skeletonWidths = useMemo(() => ['w-24', 'w-32', 'w-28', 'w-36', 'w-20', 'w-16'], [])
+  const getRandomWidth = useCallback(() => 
+    skeletonWidths[Math.floor(Math.random() * skeletonWidths.length)], 
+    [skeletonWidths]
+  )
   
   // Error recovery actions
-  const retryImage = (e: React.MouseEvent) => {
+  const handleRetryImage = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    if (imageRetryCount < maxRetries) {
-      setImageRetryCount(prev => prev + 1)
-      setImageError(false)
-      loadImage()
-    }
-  }
+    retryImage()
+  }, [retryImage])
   
-  const reportIssue = (e: React.MouseEvent) => {
+  const reportIssue = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
-    console.log('Issue reported for car:', car?.id || car?.listing_id)
-  }
+    console.error('Issue reported for car:', car?.id || car?.listing_id)
+  }, [car?.id, car?.listing_id])
   
-  // Interaction handlers
-  const onCardClick = async () => {
+  // Optimized interaction handlers with useCallback
+  const onCardClick = useCallback(() => {
     // Immediate visual feedback
     setShowRipple(true)
     setIsPressed(true)
     
     // Clear ripple after animation
-    setTimeout(() => {
+    const rippleTimer = setTimeout(() => {
       setShowRipple(false)
       setIsPressed(false)
     }, 400)
@@ -126,18 +93,30 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
       setNavigating(true)
     }, 150)
     
-    clearTimeout(navigationTimer)
-    setNavigating(false)
-  }
+    // Cleanup function
+    return () => {
+      clearTimeout(rippleTimer)
+      clearTimeout(navigationTimer)
+      setNavigating(false)
+    }
+  }, [])
   
-  // Utility functions
-  const formatPrice = (price?: number) => {
+  // Memoized utility functions for better performance
+  const formatPrice = useCallback((price?: number) => {
     return price ? `${price.toLocaleString('da-DK')} kr/måned` : 'Pris ikke tilgængelig'
-  }
+  }, [])
   
-  const formatMileage = (mileage?: number) => {
+  const formatMileage = useCallback((mileage?: number) => {
     return mileage ? `${mileage.toLocaleString('da-DK')} km/år` : 'Km ikke angivet'
-  }
+  }, [])
+  
+  // Memoized computed values
+  const displayPrice = useMemo(() => formatPrice(car?.monthly_price), [car?.monthly_price, formatPrice])
+  const displayMileage = useMemo(() => formatMileage(car?.mileage_per_year), [car?.mileage_per_year, formatMileage])
+  const carAltText = useMemo(() => 
+    `${car?.make} ${car?.model} ${car?.variant} - ${car?.fuel_type} - ${displayPrice}`,
+    [car?.make, car?.model, car?.variant, car?.fuel_type, displayPrice]
+  )
   
   // Enhanced Skeleton State with Realistic Content Structure
   if (loading) {
@@ -258,7 +237,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
               <img
                 ref={imageRef}
                 src={car.image}
-                alt={`${car.make} ${car.model} ${car.variant} - ${car.fuel_type} - ${formatPrice(car.monthly_price)}`}
+                alt={carAltText}
                 className={`w-full h-56 object-cover transition-opacity duration-500 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
@@ -276,14 +255,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
               </p>
               <div className="flex gap-2">
                 <Button 
-                  onClick={retryImage} 
+                  onClick={handleRetryImage} 
                   size="sm"
                   variant="outline"
-                  disabled={imageRetryCount >= maxRetries}
+                  disabled={!canRetry}
                   className="text-xs"
                 >
                   <RotateCcw className="w-3 h-3 mr-1" />
-                  {imageRetryCount >= maxRetries ? 'Max forsøg' : 'Prøv igen'}
+                  {!canRetry ? 'Max forsøg' : 'Prøv igen'}
                 </Button>
                 <Button 
                   onClick={reportIssue} 
@@ -317,10 +296,10 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
           {/* Enhanced Price Display */}
           <div className="space-y-1 mb-5">
             <p className="text-2xl font-bold text-primary group-hover:text-primary/90 transition-colors duration-200">
-              {formatPrice(car.monthly_price)}
+              {displayPrice}
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{formatMileage(car.mileage_per_year)}</span>
+              <span>{displayMileage}</span>
               {car.first_payment && (
                 <>
                   <span>•</span>
@@ -367,5 +346,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ car, loading = false }) => {
     </Link>
   )
 }
+
+// Memoized component for better performance
+const ListingCard = React.memo(ListingCardComponent)
 
 export default ListingCard

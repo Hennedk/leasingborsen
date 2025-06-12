@@ -43,6 +43,10 @@ src/
 │   ├── filters/         # Search and filter components
 │   │   ├── FilterSidebar.tsx
 │   │   └── PriceRangeFilter.tsx
+│   ├── mobile-filters/  # Mobile-specific filter components
+│   │   ├── MobileViewHeader.tsx
+│   │   ├── MobileSearchInput.tsx
+│   │   └── MobileFilterMainView.tsx
 │   └── ui/              # shadcn/ui components
 │       ├── button.tsx
 │       ├── card.tsx
@@ -59,6 +63,8 @@ src/
 │       ├── AdminMakesPage.tsx
 │       └── AdminModelsPage.tsx
 ├── hooks/               # Custom React hooks
+│   ├── useUrlSync.ts    # URL synchronization with filters
+│   ├── useImageLazyLoading.ts # Optimized image loading
 │   ├── useCarData.ts    # Car data fetching logic
 │   └── useSupabase.ts   # Supabase operations
 ├── lib/                 # Utilities and configurations
@@ -329,6 +335,29 @@ export const useCarData = (filters: CarFilters = {}) => {
 - **Loading**: Implement Skeleton components from shadcn/ui
 - **Images**: Use lazy loading for car gallery images
 
+### React Performance Patterns
+- **Always** memoize expensive listing components with React.memo
+- **Use** custom hooks for complex state logic (useUrlSync, useImageLazyLoading)
+- **Implement** shared intersection observers for image loading
+- **Break down** components over 300 lines into focused pieces
+- **Optimize** with useCallback and useMemo for stable references
+
+### Custom Hooks for Optimization
+```typescript
+// URL synchronization
+import { useUrlSync } from '@/hooks/useUrlSync'
+const { currentFilters, sortOrder } = useUrlSync()
+
+// Optimized image loading
+import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
+const { imageRef, imageLoaded, imageError, retryImage, canRetry } = useImageLazyLoading(imageUrl)
+
+// Component memoization
+const ListingCard = React.memo(({ car, loading }) => {
+  // Implementation with memoized callbacks
+})
+```
+
 ### Code Splitting Pattern
 ```tsx
 import React, { Suspense } from 'react'
@@ -371,13 +400,19 @@ export const errorMessages = {
 - **Never** use console.log (use console.error for actual errors only)
 - **Always** implement proper accessibility with shadcn/ui
 - **Always** use React.memo for expensive components when appropriate
+- **Extract** complex logic to custom hooks for reusability
+- **Break down** large components (>300 lines) into focused pieces
+- **Use** shared components for common patterns (headers, search inputs)
+- **Optimize** with useCallback and useMemo for performance-critical paths
 
 ## File Naming Conventions
 - **Components**: PascalCase with .tsx extension (`ListingCard.tsx`)
 - **Pages**: PascalCase with Page suffix (`ListingsPage.tsx`)
-- **Hooks**: camelCase with "use" prefix (`useCarData.ts`)
+- **Hooks**: camelCase with "use" prefix (`useUrlSync.ts`, `useImageLazyLoading.ts`)
 - **Types**: PascalCase in types file (`types/index.ts`)
 - **Utilities**: camelCase (`utils.ts`)
+- **Mobile Components**: Group in subdirectories (`mobile-filters/MobileViewHeader.tsx`)
+- **Shared Components**: Organize by feature or functionality
 
 ## Testing Approach
 - **Current**: Manual testing in light and dark modes
