@@ -264,3 +264,45 @@ body {
   background-size: 400% 400%;
   animation: shimmer 3s ease-in-out infinite;
 }
+
+/* Mobile viewport and safe area handling */
+@supports (height: 100dvh) {
+  .mobile-overlay {
+    height: min(90vh, 100dvh - 2rem);
+    max-height: 90vh;
+  }
+}
+
+@supports not (height: 100dvh) {
+  .mobile-overlay {
+    height: 90vh;
+    max-height: 90vh;
+  }
+}
+
+/* iOS safe area support for mobile overlays */
+@supports (padding: max(0px)) {
+  .mobile-overlay-footer {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Ensure proper stacking context for mobile overlays */
+.mobile-overlay-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .mobile-overlay-container {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mobile-overlay-container {
+    display: none;
+  }
+}
