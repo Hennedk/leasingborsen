@@ -29,7 +29,13 @@ const HeroBanner: React.FC = () => {
   }, [localFilters.make, referenceData])
 
   // Get result count for current filters
-  const { data: countData } = useListingCount(localFilters)
+  const filterOptions = {
+    makes: localFilters.make ? [localFilters.make] : [],
+    models: localFilters.model ? [localFilters.model] : [],
+    body_type: localFilters.body_type ? [localFilters.body_type] : [],
+    price_max: localFilters.price_max
+  }
+  const { data: countData } = useListingCount(filterOptions)
   const resultCount = countData?.data || 0
 
   // Reset model when make changes
@@ -52,7 +58,15 @@ const HeroBanner: React.FC = () => {
     // Update global filter state
     Object.entries(localFilters).forEach(([key, value]) => {
       if (value && value !== '') {
-        setFilter(key as any, value)
+        if (key === 'make') {
+          setFilter('makes', [value as string])
+        } else if (key === 'model') {
+          setFilter('models', [value as string])
+        } else if (key === 'body_type') {
+          setFilter('body_type', [value as string])
+        } else if (key === 'price_max') {
+          setFilter('price_max', value as number)
+        }
       }
     })
     

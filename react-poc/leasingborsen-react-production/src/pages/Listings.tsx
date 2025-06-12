@@ -29,8 +29,8 @@ const Listings: React.FC = () => {
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   
   const { 
-    make, 
-    model, 
+    makes = [],
+    models = [],
     body_type,
     fuel_type,
     transmission,
@@ -38,7 +38,8 @@ const Listings: React.FC = () => {
     price_max,
     seats_min,
     seats_max,
-    horsepower,
+    horsepower_min,
+    horsepower_max,
     sortOrder,
     setFilter,
     setSortOrder,
@@ -57,25 +58,45 @@ const Listings: React.FC = () => {
     const urlPriceMax = searchParams.get('price_max')
     const urlSeatsMin = searchParams.get('seats_min')
     const urlSeatsMax = searchParams.get('seats_max')
-    const urlHorsepower = searchParams.get('horsepower')
+    const urlHorsepowerMin = searchParams.get('horsepower_min')
+    const urlHorsepowerMax = searchParams.get('horsepower_max')
     const urlSort = searchParams.get('sort')
 
-    if (urlMake && urlMake !== make) setFilter('make', urlMake)
-    if (urlModel && urlModel !== model) setFilter('model', urlModel)
-    if (urlBodyType && urlBodyType !== body_type) setFilter('body_type', urlBodyType)
-    if (urlFuelType && urlFuelType !== fuel_type) setFilter('fuel_type', urlFuelType)
-    if (urlTransmission && urlTransmission !== transmission) setFilter('transmission', urlTransmission)
+    if (urlMake && !makes.includes(urlMake)) setFilter('makes', [urlMake])
+    if (urlModel && !models.includes(urlModel)) setFilter('models', [urlModel])
+    
+    // Handle array-based filters
+    if (urlBodyType) {
+      const bodyTypeArray = urlBodyType.split(',').filter(Boolean)
+      if (JSON.stringify(bodyTypeArray) !== JSON.stringify(body_type)) {
+        setFilter('body_type', bodyTypeArray)
+      }
+    }
+    if (urlFuelType) {
+      const fuelTypeArray = urlFuelType.split(',').filter(Boolean)
+      if (JSON.stringify(fuelTypeArray) !== JSON.stringify(fuel_type)) {
+        setFilter('fuel_type', fuelTypeArray)
+      }
+    }
+    if (urlTransmission) {
+      const transmissionArray = urlTransmission.split(',').filter(Boolean)
+      if (JSON.stringify(transmissionArray) !== JSON.stringify(transmission)) {
+        setFilter('transmission', transmissionArray)
+      }
+    }
+    
     if (urlPriceMin && parseInt(urlPriceMin) !== price_min) setFilter('price_min', parseInt(urlPriceMin))
     if (urlPriceMax && parseInt(urlPriceMax) !== price_max) setFilter('price_max', parseInt(urlPriceMax))
     if (urlSeatsMin && parseInt(urlSeatsMin) !== seats_min) setFilter('seats_min', parseInt(urlSeatsMin))
     if (urlSeatsMax && parseInt(urlSeatsMax) !== seats_max) setFilter('seats_max', parseInt(urlSeatsMax))
-    if (urlHorsepower && parseInt(urlHorsepower) !== horsepower) setFilter('horsepower', parseInt(urlHorsepower))
+    if (urlHorsepowerMin && parseInt(urlHorsepowerMin) !== horsepower_min) setFilter('horsepower_min', parseInt(urlHorsepowerMin))
+    if (urlHorsepowerMax && parseInt(urlHorsepowerMax) !== horsepower_max) setFilter('horsepower_max', parseInt(urlHorsepowerMax))
     if (urlSort && urlSort !== sortOrder) setSortOrder(urlSort as SortOrder)
   }, [searchParams])
 
   const currentFilters = { 
-    make, 
-    model, 
+    makes,
+    models,
     body_type, 
     fuel_type, 
     transmission, 
@@ -83,7 +104,8 @@ const Listings: React.FC = () => {
     price_max, 
     seats_min, 
     seats_max, 
-    horsepower 
+    horsepower_min,
+    horsepower_max
   }
   const { data: listingsResponse, isLoading, error } = useListings(currentFilters, 20, sortOrder)
 
@@ -108,18 +130,19 @@ const Listings: React.FC = () => {
     } else if (key === 'price') {
       setFilter('price_min', null)
       setFilter('price_max', null)
-    } else if (key === 'make') {
-      setFilter('make', '')
-    } else if (key === 'model') {
-      setFilter('model', '')
+    } else if (key === 'makes') {
+      setFilter('makes', [])
+    } else if (key === 'models') {
+      setFilter('models', [])
     } else if (key === 'body_type') {
-      setFilter('body_type', '')
+      setFilter('body_type', [])
     } else if (key === 'fuel_type') {
-      setFilter('fuel_type', '')
+      setFilter('fuel_type', [])
     } else if (key === 'transmission') {
-      setFilter('transmission', '')
+      setFilter('transmission', [])
     } else if (key === 'horsepower') {
-      setFilter('horsepower', null)
+      setFilter('horsepower_min', null)
+      setFilter('horsepower_max', null)
     }
   }
 
@@ -132,7 +155,7 @@ const Listings: React.FC = () => {
       {/* Mobile: Sticky Filter Bar - positioned outside Container for proper sticky behavior */}
       <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50">
         <div className="px-4 py-3">
-          <div className="flex items-center gap-3 h-8">
+          <div className="flex items-center gap-3 h-8 overflow-x-auto scrollbar-hide">
             <Button
               variant="outline"
               size="sm"
@@ -148,18 +171,15 @@ const Listings: React.FC = () => {
               )}
             </Button>
             
-            {/* Mobile Filter Chips - horizontal scrollable */}
+            {/* Mobile Filter Chips - same row as filter button */}
             {activeFilters.length > 0 && (
-              <div className="flex-1 overflow-x-auto flex items-center h-8">
-                <div className="flex gap-2 items-center h-8">
-                  <FilterChips
-                    activeFilters={activeFilters}
-                    onRemoveFilter={handleRemoveFilter}
-                    onResetFilters={resetFilters}
-                    className="flex gap-2 items-center h-8"
-                  />
-                </div>
-              </div>
+              <FilterChips
+                activeFilters={activeFilters}
+                onRemoveFilter={handleRemoveFilter}
+                onResetFilters={resetFilters}
+                className="flex-shrink-0"
+                showPlaceholder={false}
+              />
             )}
           </div>
         </div>

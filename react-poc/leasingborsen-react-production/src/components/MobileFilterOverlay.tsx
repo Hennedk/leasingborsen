@@ -150,16 +150,16 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
       else if (key === 'price_max') setFilter('price_max', numericValue)
       else if (key === 'seats_min') setFilter('seats_min', numericValue)
       else if (key === 'seats_max') setFilter('seats_max', numericValue)
-      else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
-      else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
+      // else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
+      // else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
       if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
         else if (key === 'seats_max') setFilter('seats_max', null)
-        else if (key === 'horsepower_min') setFilter('horsepower_min', null)
-        else if (key === 'horsepower_max') setFilter('horsepower_max', null)
+        // else if (key === 'horsepower_min') setFilter('horsepower_min', null)
+        // else if (key === 'horsepower_max') setFilter('horsepower_max', null)
       }
     }
   }
@@ -322,8 +322,8 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
                   <span className="font-medium">{makeName}</span>
                   <span className="text-sm text-muted-foreground">
                     {selectedModelCount > 0 
-                      ? `${selectedModelCount} af ${modelCount} modeller valgt`
-                      : `${modelCount} modeller tilgængelige`
+                      ? `${selectedModelCount} af ${modelCount} ${modelCount === 1 ? 'model' : 'modeller'} valgt`
+                      : `${modelCount} ${modelCount === 1 ? 'model' : 'modeller'} tilgængelige`
                     }
                   </span>
                 </div>
@@ -483,27 +483,6 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
           <div className="space-y-3">
             <Label className="font-medium text-foreground">Mærke</Label>
             
-            {/* Selected Makes Display */}
-            {selectedMakes.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedMakes.map((makeName: string) => (
-                  <Badge
-                    key={makeName}
-                    variant="secondary"
-                    className="text-sm"
-                  >
-                    {makeName}
-                    <button
-                      onClick={() => toggleMake(makeName)}
-                      className="ml-1 hover:bg-destructive/20 rounded-full"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-            
             <Button
               variant="outline"
               className="w-full justify-between"
@@ -513,7 +492,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
               }}
             >
               {selectedMakes.length > 0 
-                ? `${selectedMakes.length} mærker valgt`
+                ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
                 : 'Vælg mærker'
               }
               <Plus className="w-4 h-4" />
@@ -523,27 +502,6 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
           {/* Model Filter */}
           <div className="space-y-3">
             <Label className="font-medium text-foreground">Model</Label>
-            
-            {/* Selected Models Display */}
-            {selectedModels.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {selectedModels.map((modelName: string) => (
-                  <Badge
-                    key={modelName}
-                    variant="secondary"
-                    className="text-sm"
-                  >
-                    {modelName}
-                    <button
-                      onClick={() => toggleModel(modelName)}
-                      className="ml-1 hover:bg-destructive/20 rounded-full"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
             
             <Button
               variant="outline"
@@ -564,7 +522,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
               {selectedMakes.length === 0 
                 ? 'Vælg mærker først'
                 : selectedModels.length > 0 
-                  ? `${selectedModels.length} modeller valgt`
+                  ? `${selectedModels.length} ${selectedModels.length === 1 ? 'model' : 'modeller'} valgt`
                   : 'Vælg modeller'
               }
               <Plus className="w-4 h-4" />
