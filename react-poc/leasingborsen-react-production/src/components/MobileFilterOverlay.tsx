@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search } from 'lucide-react'
 import { useFilterStore } from '@/stores/filterStore'
@@ -143,7 +142,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   const handleFilterChange = (key: string, value: string | number) => {
     const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
     // Handle both 'all' and empty string as clearing the filter
-    const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
+    // const filterValue = (value === 'all' || value === '') ? (isNumericField ? null : '') : value
     
     if (isNumericField && value !== 'all' && value !== '') {
       const numericValue = parseInt(value as string)
@@ -168,9 +167,9 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
   if (!isOpen) return null
   
   const renderMakesView = () => (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50">
+      <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -193,7 +192,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Search */}
-      <div className="p-4 border-b border-border/50">
+      <div className="p-4 border-b border-border/50 flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
@@ -206,7 +205,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4 space-y-4">
           {/* Popular Makes */}
           {popularMakesList.length > 0 && (
@@ -251,14 +250,26 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
+      
+      {/* Footer - Sticky CTA */}
+      <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+        <Button 
+          onClick={() => setCurrentView('filters')}
+          disabled={selectedMakes.length === 0}
+          className="w-full"
+          size="lg"
+        >
+          {selectedMakes.length === 0 ? 'Vælg mærker' : 'Vælg'}
+        </Button>
+      </div>
     </div>
   )
   
   const renderMakeSelectionView = () => (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50">
+      <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -281,16 +292,16 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Description */}
-      <div className="p-4 border-b border-border/50">
+      <div className="p-4 border-b border-border/50 flex-shrink-0">
         <div className="text-sm text-muted-foreground">
           Vælg hvilket mærke du vil se modeller for:
         </div>
       </div>
       
       {/* Content */}
-      <ScrollArea className="flex-1">
+      <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4 space-y-2">
-          {selectedMakes.map((makeName) => {
+          {selectedMakes.map((makeName: string) => {
             const modelCount = getModelsForMake(makeName).length
             const selectedModelCount = getModelsForMake(makeName).filter(model => 
               selectedModels.includes(model.name)
@@ -321,7 +332,18 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
             )
           })}
         </div>
-      </ScrollArea>
+      </div>
+      
+      {/* Footer - Sticky CTA */}
+      <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+        <Button 
+          onClick={() => setCurrentView('filters')}
+          className="w-full"
+          size="lg"
+        >
+          Vælg
+        </Button>
+      </div>
     </div>
   )
   
@@ -333,9 +355,9 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
     )
     
     return (
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border/50">
+        <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -368,7 +390,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
         </div>
         
         {/* Search */}
-        <div className="p-4 border-b border-border/50">
+        <div className="p-4 border-b border-border/50 flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -381,7 +403,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
         </div>
         
         {/* Content */}
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="p-4 space-y-2">
             {makeModels.map((model: Model) => {
               const isSelected = selectedModels.includes(model.name)
@@ -407,7 +429,26 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
               </div>
             )}
           </div>
-        </ScrollArea>
+        </div>
+        
+        {/* Footer - Sticky CTA */}
+        <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+          <Button 
+            onClick={() => {
+              if (selectedMakes.length > 1) {
+                setCurrentView('makeSelection')
+              } else {
+                setCurrentView('filters')
+              }
+              setSelectedMakeForModels(null)
+            }}
+            disabled={!selectedMakeForModels || makeModels.length === 0}
+            className="w-full"
+            size="lg"
+          >
+            {!selectedMakeForModels || makeModels.length === 0 ? 'Vælg modeller' : 'Vælg'}
+          </Button>
+        </div>
       </div>
     )
   }
@@ -445,7 +486,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
             {/* Selected Makes Display */}
             {selectedMakes.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {selectedMakes.map((makeName) => (
+                {selectedMakes.map((makeName: string) => (
                   <Badge
                     key={makeName}
                     variant="secondary"
@@ -486,7 +527,7 @@ const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
             {/* Selected Models Display */}
             {selectedModels.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {selectedModels.map((modelName) => (
+                {selectedModels.map((modelName: string) => (
                   <Badge
                     key={modelName}
                     variant="secondary"
