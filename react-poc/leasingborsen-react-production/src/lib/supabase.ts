@@ -50,16 +50,17 @@ export interface CarListing {
 }
 
 export interface FilterOptions {
-  make: string
-  model: string
-  body_type: string
-  fuel_type: string
-  transmission: string
+  makes: string[]
+  models: string[]
+  body_type: string[]
+  fuel_type: string[]
+  transmission: string[]
   price_min: number | null
   price_max: number | null
   seats_min: number | null
   seats_max: number | null
-  horsepower: number | null
+  horsepower_min: number | null
+  horsepower_max: number | null
 }
 
 export interface Make {
@@ -100,6 +101,48 @@ export type SupabaseSingleResponse<T> = {
   error: Error | null
 }
 
+// Body type mapping - maps consolidated categories to database values
+const BODY_TYPE_MAPPING: Record<string, string[]> = {
+  'Mikro': ['Microcar', 'Test karosseri'],
+  'Stationcar': ['Stationcar', 'Station Wagon'],
+  'SUV': ['SUV'],
+  'Crossover (CUV)': ['CUV', 'Crossover'],
+  'Minibus (MPV)': ['Minivan', 'MPV'],
+  'Sedan': ['Sedan', 'Personbil'],
+  'Hatchback': ['Hatchback'],
+  'Cabriolet': ['Cabriolet'],
+  'Coupe': ['Coupe']
+}
+
+// Fuel type mapping - maps consolidated categories to database values
+const FUEL_TYPE_MAPPING: Record<string, string[]> = {
+  'Electric': ['Electric', 'Elektrisk', 'EV', 'Battery Electric', 'BEV'],
+  'Hybrid': ['Hybrid', 'Plugin Hybrid', 'PHEV', 'Mild Hybrid', 'HEV', 'Plug-in Hybrid'],
+  'Benzin': ['Benzin', 'Gasoline', 'Petrol', 'Gas'],
+  'Diesel': ['Diesel'],
+  'Others': ['Gas', 'CNG', 'LPG', 'Hydrogen', 'Fuel Cell', 'Other', 'Andre']
+}
+
+// Helper function to convert consolidated body types to database values
+function expandBodyTypes(consolidatedTypes: string[]): string[] {
+  const expandedTypes: string[] = []
+  consolidatedTypes.forEach(type => {
+    const mappedTypes = BODY_TYPE_MAPPING[type] || [type]
+    expandedTypes.push(...mappedTypes)
+  })
+  return [...new Set(expandedTypes)] // Remove duplicates
+}
+
+// Helper function to convert consolidated fuel types to database values
+function expandFuelTypes(consolidatedTypes: string[]): string[] {
+  const expandedTypes: string[] = []
+  consolidatedTypes.forEach(type => {
+    const mappedTypes = FUEL_TYPE_MAPPING[type] || [type]
+    expandedTypes.push(...mappedTypes)
+  })
+  return [...new Set(expandedTypes)] // Remove duplicates
+}
+
 // Query Builders with Types
 export class CarListingQueries {
   static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '') {
@@ -107,21 +150,25 @@ export class CarListingQueries {
       .from('full_listing_view')
       .select('*')
 
-    // Apply filters
-    if (filters.make) {
-      query = query.ilike('make', `%${filters.make}%`)
+    // Apply make filters
+    if (filters.makes && filters.makes.length > 0) {
+      query = query.in('make', filters.makes)
     }
-    if (filters.model) {
-      query = query.ilike('model', `%${filters.model}%`)
+    
+    // Apply model filters
+    if (filters.models && filters.models.length > 0) {
+      query = query.in('model', filters.models)
     }
-    if (filters.body_type) {
-      query = query.eq('body_type', filters.body_type)
+    if (filters.body_type && filters.body_type.length > 0) {
+      const expandedBodyTypes = expandBodyTypes(filters.body_type)
+      query = query.in('body_type', expandedBodyTypes)
     }
-    if (filters.fuel_type) {
-      query = query.eq('fuel_type', filters.fuel_type)
+    if (filters.fuel_type && filters.fuel_type.length > 0) {
+      const expandedFuelTypes = expandFuelTypes(filters.fuel_type)
+      query = query.in('fuel_type', expandedFuelTypes)
     }
-    if (filters.transmission) {
-      query = query.eq('transmission', filters.transmission)
+    if (filters.transmission && filters.transmission.length > 0) {
+      query = query.in('transmission', filters.transmission)
     }
     if (filters.price_min !== null && filters.price_min !== undefined) {
       query = query.gte('monthly_price', filters.price_min)
@@ -135,8 +182,11 @@ export class CarListingQueries {
     if (filters.seats_max !== null && filters.seats_max !== undefined) {
       query = query.lte('seats', filters.seats_max)
     }
-    if (filters.horsepower !== null && filters.horsepower !== undefined) {
-      query = query.gte('horsepower', filters.horsepower)
+    if (filters.horsepower_min !== null && filters.horsepower_min !== undefined) {
+      query = query.gte('horsepower', filters.horsepower_min)
+    }
+    if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
+      query = query.lte('horsepower', filters.horsepower_max)
     }
 
     // Apply sorting
@@ -163,21 +213,24 @@ export class CarListingQueries {
       .from('full_listing_view')
       .select('*', { count: 'exact', head: true })
 
-    // Apply same filters as getListings
-    if (filters.make) {
-      query = query.ilike('make', `%${filters.make}%`)
+    // Apply same make/model filters as getListings
+    if (filters.makes && filters.makes.length > 0) {
+      query = query.in('make', filters.makes)
     }
-    if (filters.model) {
-      query = query.ilike('model', `%${filters.model}%`)
+    
+    if (filters.models && filters.models.length > 0) {
+      query = query.in('model', filters.models)
     }
-    if (filters.body_type) {
-      query = query.eq('body_type', filters.body_type)
+    if (filters.body_type && filters.body_type.length > 0) {
+      const expandedBodyTypes = expandBodyTypes(filters.body_type)
+      query = query.in('body_type', expandedBodyTypes)
     }
-    if (filters.fuel_type) {
-      query = query.eq('fuel_type', filters.fuel_type)
+    if (filters.fuel_type && filters.fuel_type.length > 0) {
+      const expandedFuelTypes = expandFuelTypes(filters.fuel_type)
+      query = query.in('fuel_type', expandedFuelTypes)
     }
-    if (filters.transmission) {
-      query = query.eq('transmission', filters.transmission)
+    if (filters.transmission && filters.transmission.length > 0) {
+      query = query.in('transmission', filters.transmission)
     }
     if (filters.price_min !== null && filters.price_min !== undefined) {
       query = query.gte('monthly_price', filters.price_min)
@@ -191,8 +244,11 @@ export class CarListingQueries {
     if (filters.seats_max !== null && filters.seats_max !== undefined) {
       query = query.lte('seats', filters.seats_max)
     }
-    if (filters.horsepower !== null && filters.horsepower !== undefined) {
-      query = query.gte('horsepower', filters.horsepower)
+    if (filters.horsepower_min !== null && filters.horsepower_min !== undefined) {
+      query = query.gte('horsepower', filters.horsepower_min)
+    }
+    if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
+      query = query.lte('horsepower', filters.horsepower_max)
     }
 
     const { count, error } = await query
