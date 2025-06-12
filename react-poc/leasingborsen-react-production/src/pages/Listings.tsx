@@ -35,7 +35,16 @@ const Listings: React.FC = () => {
   const { 
     setSortOrder,
     getActiveFilters,
-    resetFilters
+    resetFilters,
+    makes,
+    models,
+    body_type,
+    fuel_type,
+    transmission,
+    price_min,
+    price_max,
+    seats_min,
+    seats_max
   } = usePersistentFilterStore()
 
   // Use extracted filter management hook
@@ -67,7 +76,18 @@ const Listings: React.FC = () => {
     [countResponse?.data, listings.length]
   )
   
-  const activeFilters = useMemo(() => getActiveFilters(), [getActiveFilters])
+  const activeFilters = useMemo(() => getActiveFilters(), [
+    getActiveFilters,
+    makes,
+    models,
+    body_type,
+    fuel_type, 
+    transmission,
+    price_min,
+    price_max,
+    seats_min,
+    seats_max
+  ])
   
   // Infinite scroll setup
   const { loadMoreRef } = useInfiniteScroll({
