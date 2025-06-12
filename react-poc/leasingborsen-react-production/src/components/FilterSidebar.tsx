@@ -40,8 +40,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     price_max,
     seats_min,
     seats_max,
-    horsepower_min,
-    horsepower_max,
     setFilter,
     toggleArrayFilter,
     resetFilters 
@@ -53,7 +51,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
   const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
   const priceSteps = FILTER_CONFIG.PRICE.STEPS
-  const horsepowerSteps = FILTER_CONFIG.HORSEPOWER.STEPS
   
   // State for modal dialogs
   const [makeModalOpen, setMakeModalOpen] = React.useState(false)
@@ -124,13 +121,11 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     price_min, 
     price_max, 
     seats_min, 
-    seats_max, 
-    horsepower_min,
-    horsepower_max
+    seats_max
   ].filter(value => value !== null && value !== undefined).length
 
   const handleFilterChange = (key: string, value: string | number) => {
-    const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'].includes(key)
+    const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max'].includes(key)
     
     if (isNumericField && value !== 'all' && value !== '') {
       const numericValue = parseInt(value as string)
@@ -138,16 +133,12 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
       else if (key === 'price_max') setFilter('price_max', numericValue)
       else if (key === 'seats_min') setFilter('seats_min', numericValue)
       else if (key === 'seats_max') setFilter('seats_max', numericValue)
-      else if (key === 'horsepower_min') setFilter('horsepower_min', numericValue)
-      else if (key === 'horsepower_max') setFilter('horsepower_max', numericValue)
     } else {
       if (isNumericField) {
         if (key === 'price_min') setFilter('price_min', null)
         else if (key === 'price_max') setFilter('price_max', null)
         else if (key === 'seats_min') setFilter('seats_min', null)
         else if (key === 'seats_max') setFilter('seats_max', null)
-        else if (key === 'horsepower_min') setFilter('horsepower_min', null)
-        else if (key === 'horsepower_max') setFilter('horsepower_max', null)
       }
     }
   }
@@ -451,9 +442,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       onClick={() => toggleArrayFilter('fuel_type', fuelTypeItem.name)}
                     >
                       {fuelTypeItem.label}
-                      {isSelected && (
-                        <X className="w-3 h-3 ml-1.5" />
-                      )}
                     </Badge>
                   )
                 })}
@@ -480,9 +468,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       onClick={() => toggleArrayFilter('transmission', transmissionType)}
                     >
                       {label}
-                      {isSelected && (
-                        <X className="w-3 h-3 ml-1.5" />
-                      )}
                     </Badge>
                   )
                 })}
@@ -508,9 +493,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       onClick={() => toggleArrayFilter('body_type', bodyTypeItem.name)}
                     >
                       {bodyTypeItem.label}
-                      {isSelected && (
-                        <X className="w-3 h-3 ml-1.5" />
-                      )}
                     </Badge>
                   )
                 })}
@@ -596,45 +578,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               </div>
             </div>
 
-            {/* Horsepower Range Filter */}
-            <div className="space-y-3">
-              <Label className="font-medium text-foreground">Hestekræfter</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Select 
-                  value={horsepower_min?.toString() || 'all'} 
-                  onValueChange={(value) => handleFilterChange('horsepower_min', value)}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Min HK" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Min HK</SelectItem>
-                    {horsepowerSteps.map((hp) => (
-                      <SelectItem key={`min-${hp}`} value={hp.toString()}>
-                        {hp.toLocaleString('da-DK')} hk
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select 
-                  value={horsepower_max?.toString() || 'all'} 
-                  onValueChange={(value) => handleFilterChange('horsepower_max', value)}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="Max HK" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Max HK</SelectItem>
-                    {horsepowerSteps.map((hp) => (
-                      <SelectItem key={`max-${hp}`} value={hp.toString()}>
-                        {hp.toLocaleString('da-DK')} hk
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="9999999">1.000+ hk</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
           </div>
 
 

@@ -40,8 +40,6 @@ const Listings: React.FC = () => {
     price_max,
     seats_min,
     seats_max,
-    horsepower_min,
-    horsepower_max,
     sortOrder,
     setFilter,
     setSortOrder,
@@ -60,8 +58,6 @@ const Listings: React.FC = () => {
     const urlPriceMax = searchParams.get('price_max')
     const urlSeatsMin = searchParams.get('seats_min')
     const urlSeatsMax = searchParams.get('seats_max')
-    const urlHorsepowerMin = searchParams.get('horsepower_min')
-    const urlHorsepowerMax = searchParams.get('horsepower_max')
     const urlSort = searchParams.get('sort')
 
     if (urlMake && !makes.includes(urlMake)) setFilter('makes', [urlMake])
@@ -91,10 +87,22 @@ const Listings: React.FC = () => {
     if (urlPriceMax && parseInt(urlPriceMax) !== price_max) setFilter('price_max', parseInt(urlPriceMax))
     if (urlSeatsMin && parseInt(urlSeatsMin) !== seats_min) setFilter('seats_min', parseInt(urlSeatsMin))
     if (urlSeatsMax && parseInt(urlSeatsMax) !== seats_max) setFilter('seats_max', parseInt(urlSeatsMax))
-    if (urlHorsepowerMin && parseInt(urlHorsepowerMin) !== horsepower_min) setFilter('horsepower_min', parseInt(urlHorsepowerMin))
-    if (urlHorsepowerMax && parseInt(urlHorsepowerMax) !== horsepower_max) setFilter('horsepower_max', parseInt(urlHorsepowerMax))
     if (urlSort && urlSort !== sortOrder) setSortOrder(urlSort as SortOrder)
-  }, [searchParams])
+  }, [
+    searchParams,
+    makes,
+    models,
+    body_type,
+    fuel_type,
+    transmission,
+    price_min,
+    price_max,
+    seats_min,
+    seats_max,
+    sortOrder,
+    setFilter,
+    setSortOrder
+  ])
 
   const currentFilters = { 
     makes,
@@ -105,9 +113,7 @@ const Listings: React.FC = () => {
     price_min, 
     price_max, 
     seats_min, 
-    seats_max, 
-    horsepower_min,
-    horsepower_max
+    seats_max
   }
   // Use infinite query for listings
   const {
@@ -172,6 +178,21 @@ const Listings: React.FC = () => {
       const modelToRemove = key.replace('model:', '')
       const updatedModels = models.filter(model => model !== modelToRemove)
       setFilter('models', updatedModels)
+    } else if (key.startsWith('fuel_type:')) {
+      // Remove individual fuel type
+      const fuelTypeToRemove = key.replace('fuel_type:', '')
+      const updatedFuelTypes = fuel_type.filter(ft => ft !== fuelTypeToRemove)
+      setFilter('fuel_type', updatedFuelTypes)
+    } else if (key.startsWith('body_type:')) {
+      // Remove individual body type
+      const bodyTypeToRemove = key.replace('body_type:', '')
+      const updatedBodyTypes = body_type.filter(bt => bt !== bodyTypeToRemove)
+      setFilter('body_type', updatedBodyTypes)
+    } else if (key.startsWith('transmission:')) {
+      // Remove individual transmission
+      const transmissionToRemove = key.replace('transmission:', '')
+      const updatedTransmissions = transmission.filter(t => t !== transmissionToRemove)
+      setFilter('transmission', updatedTransmissions)
     } else if (key === 'makes') {
       setFilter('makes', [])
     } else if (key === 'models') {
@@ -182,9 +203,6 @@ const Listings: React.FC = () => {
       setFilter('fuel_type', [])
     } else if (key === 'transmission') {
       setFilter('transmission', [])
-    } else if (key === 'horsepower') {
-      setFilter('horsepower_min', null)
-      setFilter('horsepower_max', null)
     }
   }
 
