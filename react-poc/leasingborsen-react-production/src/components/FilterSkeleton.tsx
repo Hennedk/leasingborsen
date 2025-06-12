@@ -119,12 +119,12 @@ const FilterSkeleton: React.FC<FilterSkeletonProps> = ({ className = '' }) => {
  */
 export const MobileFilterSkeleton: React.FC = () => {
   return (
-    <div className="fixed inset-0 z-50 lg:hidden m-0 p-0 w-screen h-screen">
+    <div className="mobile-overlay-container">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm m-0 p-0 w-full h-full" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
       {/* Slide-up overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 h-[90vh] flex flex-col">
+      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 mobile-overlay flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
@@ -171,7 +171,7 @@ export const MobileFilterSkeleton: React.FC = () => {
         </div>
         
         {/* Footer */}
-        <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+        <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
           <div className="flex gap-3">
             <Skeleton className="h-12 flex-1 rounded-md" />
             <Skeleton className="h-12 flex-1 rounded-md" />

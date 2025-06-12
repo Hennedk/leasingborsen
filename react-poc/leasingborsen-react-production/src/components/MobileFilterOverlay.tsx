@@ -239,7 +239,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Footer - Sticky CTA */}
-      <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+      <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
         <Button 
           onClick={() => setCurrentView('filters')}
           disabled={selectedMakes.length === 0}
@@ -321,7 +321,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Footer - Sticky CTA */}
-      <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+      <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
         <Button 
           onClick={() => setCurrentView('filters')}
           className="w-full"
@@ -418,7 +418,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         </div>
         
         {/* Footer - Sticky CTA */}
-        <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+        <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button 
             onClick={() => {
               if (selectedMakes.length > 1) {
@@ -723,7 +723,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       </div>
       
       {/* Footer - Sticky CTA */}
-      <div className="p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0">
+      <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
         <div className="flex gap-3">
           <Button 
             variant="outline"
@@ -747,15 +747,15 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   )
 
   return (
-    <div className="fixed inset-0 z-50 lg:hidden m-0 p-0 w-screen h-screen">
+    <div className="mobile-overlay-container">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm m-0 p-0 w-full h-full"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Slide-up overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 transform transition-transform duration-300 ease-out translate-y-0 h-[90vh] flex flex-col">
+      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 transform transition-transform duration-300 ease-out translate-y-0 mobile-overlay flex flex-col">
         {/* Dynamic content based on current view */}
         {currentView === 'filters' && renderFiltersView()}
         {currentView === 'makes' && renderMakesView()}
