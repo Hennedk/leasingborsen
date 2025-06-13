@@ -32,7 +32,7 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
   className
 }) => {
   return (
-    <div className={cn("hidden lg:block mb-8", className)}>
+    <div className={cn("hidden lg:block mb-6", className)}>
       {/* Screen reader announcement */}
       <div 
         aria-live="polite" 
