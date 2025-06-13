@@ -123,11 +123,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     return (
       <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
         {/* Image skeleton with enhanced shimmer */}
-        <div className="relative rounded-t-xl overflow-hidden">
+        <div className="relative overflow-hidden">
           <Skeleton className="w-full h-56" />
         </div>
         
-        <CardContent className="p-6">
+        <CardContent className="p-4 pt-2">
           {/* Smart title & variant skeleton */}
           <div className="space-y-3 mb-4">
             {/* Car make and model (realistic lengths) */}
@@ -202,7 +202,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}
-        <div className="relative rounded-t-xl overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+        <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
           {/* Enhanced placeholder for missing images */}
           {!car.image ? (
             <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] flex items-center justify-center text-muted-foreground w-full h-56">
@@ -282,63 +282,63 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         </div>
 
         {/* Enhanced Card Body Content */}
-        <CardContent className="p-6">
+        <CardContent className="p-5">
           {/* Enhanced Title & Variant */}
-          <div className="space-y-2 mb-4">
-            <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
+          <div className="space-y-0 mb-4">
+            <h3 className="text-lg font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-sm text-muted-foreground font-medium">{car.variant}</p>
+              <p className="text-sm text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
             )}
           </div>
 
-          {/* Enhanced Price Display */}
-          <div className="space-y-1 mb-5">
-            <p className="text-2xl font-bold text-primary group-hover:text-primary/90 transition-colors duration-200">
-              {displayPrice}
-            </p>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span>{displayMileage}</span>
-              {car.first_payment && (
-                <>
-                  <span>•</span>
-                  <span>Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr</span>
-                </>
-              )}
+          {/* Enhanced Specs Grid */}
+          <div className="mb-4">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                  <Fuel className="w-4 h-4" />
+                </div>
+                <span className="font-medium truncate">{car.fuel_type || '–'}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <span className="font-medium truncate">{car.transmission || '–'}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                  <Car className="w-4 h-4" />
+                </div>
+                <span className="font-medium truncate">{car.body_type || '–'}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                  <Gauge className="w-4 h-4" />
+                </div>
+                <span className="font-medium truncate">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
+              </div>
             </div>
           </div>
 
           {/* Divider */}
-          <Separator className="my-4" />
+          <Separator className="my-5" />
 
-          {/* Enhanced Specs Grid */}
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center">
-                  <Fuel className="w-4 h-4" />
-                </div>
-                <span className="font-medium">{car.fuel_type || '–'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <span className="font-medium">{car.transmission || '–'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center">
-                  <Car className="w-4 h-4" />
-                </div>
-                <span className="font-medium">{car.body_type || '–'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center">
-                  <Gauge className="w-4 h-4" />
-                </div>
-                <span className="font-medium">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
-              </div>
+          {/* Enhanced Price Display */}
+          <div className="space-y-2">
+            <p className="text-2xl font-bold text-primary group-hover:text-primary/90 transition-colors duration-200 leading-none">
+              {displayPrice}
+            </p>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground leading-relaxed">
+              <span className="font-medium">{displayMileage}</span>
+              {car.first_payment && (
+                <>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="font-medium">Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr</span>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
