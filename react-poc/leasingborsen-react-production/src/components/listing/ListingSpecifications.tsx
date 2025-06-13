@@ -1,5 +1,4 @@
 import React from 'react'
-import { Car, Fuel, Settings, Gauge, Users } from 'lucide-react'
 import type { CarListing } from '@/types'
 
 interface ListingSpecificationsProps {
@@ -11,69 +10,51 @@ const ListingSpecifications: React.FC<ListingSpecificationsProps> = ({ car }) =>
     <div>
       {/* Key Specs Section */}
       <div className="space-y-0 mb-4">
-        <h2 className="text-lg font-bold text-foreground leading-tight">
-          Specifikationer
+        <h2 className="text-xl font-bold text-foreground leading-tight">
+          Nøgletal
         </h2>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-sm">
-        {car.horsepower && (
-          <div className="flex items-center gap-3">
-            <Gauge className="w-7 h-7 text-muted-foreground/60" />
-            <div>
-              <div className="text-muted-foreground/60 uppercase text-xs font-medium">Hestekræfter</div>
-              <div className="font-bold text-foreground">{car.horsepower} hk</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
+        <div className="divide-y divide-border">
+          {car.horsepower && car.horsepower > 0 && (
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-muted-foreground">Hestekræfter</span>
+              <span className="font-semibold text-foreground">{car.horsepower} hk</span>
             </div>
-          </div>
-        )}
-        
-        {car.transmission && (
-          <div className="flex items-center gap-3">
-            <Settings className="w-7 h-7 text-muted-foreground/60" />
-            <div>
-              <div className="text-muted-foreground/60 uppercase text-xs font-medium">Gearkasse</div>
-              <div className="font-bold text-foreground">{car.transmission}</div>
+          )}
+          {car.transmission && (
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-muted-foreground">Gearkasse</span>
+              <span className="font-semibold text-foreground">{car.transmission}</span>
             </div>
-          </div>
-        )}
-        
-        {car.fuel_type && (
-          <div className="flex items-center gap-3">
-            <Fuel className="w-7 h-7 text-muted-foreground/60" />
-            <div>
-              <div className="text-muted-foreground/60 uppercase text-xs font-medium">Drivmiddel</div>
-              <div className="font-bold text-foreground">{car.fuel_type}</div>
+          )}
+          {car.fuel_type && (
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-muted-foreground">Drivmiddel</span>
+              <span className="font-semibold text-foreground">{car.fuel_type}</span>
             </div>
-          </div>
-        )}
-        
-        {car.body_type && (
-          <div className="flex items-center gap-3">
-            <Car className="w-7 h-7 text-muted-foreground/60" />
-            <div>
-              <div className="text-muted-foreground/60 uppercase text-xs font-medium">Karrosseri</div>
-              <div className="font-bold text-foreground">{car.body_type}</div>
+          )}
+        </div>
+        <div className="divide-y divide-border">
+          {car.body_type && (
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-muted-foreground">Karrosseri</span>
+              <span className="font-semibold text-foreground">{car.body_type}</span>
             </div>
-          </div>
-        )}
-        
-        {car.seats && (
-          <div className="flex items-center gap-3">
-            <Users className="w-7 h-7 text-muted-foreground/60" />
-            <div>
-              <div className="text-muted-foreground/60 uppercase text-xs font-medium">Sæder</div>
-              <div className="font-bold text-foreground">{car.seats}</div>
+          )}
+          {car.seats && car.seats > 0 && (
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-muted-foreground">Sæder</span>
+              <span className="font-semibold text-foreground">{car.seats}</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      {/* Spacer Divider */}
-      <div className="my-8 border-t border-border"></div>
-
       {/* General Specs Section */}
-      <h3 className="text-lg font-bold text-foreground mb-4">Generelle specifikationer</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <h3 className="text-xl font-bold text-foreground mb-4 mt-8">Detaljer</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
         <div className="divide-y divide-border">
           {car.make && (
             <div className="flex justify-between py-2">
@@ -93,7 +74,7 @@ const ListingSpecifications: React.FC<ListingSpecificationsProps> = ({ car }) =>
               <span className="font-semibold text-foreground">{car.variant}</span>
             </div>
           )}
-          {car.year && (
+          {car.year && car.year > 0 && (
             <div className="flex justify-between py-2">
               <span className="font-medium text-muted-foreground">Årgang</span>
               <span className="font-semibold text-foreground">{car.year}</span>
