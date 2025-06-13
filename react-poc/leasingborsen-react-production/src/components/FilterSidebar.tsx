@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { X, RotateCcw, Plus, ChevronRight, ArrowLeft } from 'lucide-react'
-import { useFilterStore } from '@/stores/filterStore'
+import { usePersistentFilterStore } from '@/stores/persistentFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -43,7 +43,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     setFilter,
     toggleArrayFilter,
     resetFilters 
-  } = useFilterStore()
+  } = usePersistentFilterStore()
   
   const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
 
@@ -156,7 +156,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   return (
     <div className={`${className} ${isOpen ? 'block' : 'hidden'}`}>
-      <Card className="bg-card border border-border shadow-xl gap-0">
+      <Card className="bg-card shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300 rounded-xl overflow-hidden gap-0">
         <CardHeader className="pb-3 pt-8">
           <div className="flex items-center justify-between">
             <div>
@@ -434,10 +434,10 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       key={fuelTypeItem.name}
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm",
+                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm font-medium",
                         isSelected 
                           ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                          : "hover:bg-muted border-border hover:border-primary/50"
+                          : "hover:bg-muted border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50"
                       )}
                       onClick={() => toggleArrayFilter('fuel_type', fuelTypeItem.name)}
                     >
@@ -460,10 +460,10 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       key={transmissionType}
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm",
+                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm font-medium",
                         isSelected 
                           ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                          : "hover:bg-muted border-border hover:border-primary/50"
+                          : "hover:bg-muted border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50"
                       )}
                       onClick={() => toggleArrayFilter('transmission', transmissionType)}
                     >
@@ -485,10 +485,10 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                       key={bodyTypeItem.name}
                       variant={isSelected ? "default" : "outline"}
                       className={cn(
-                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm",
+                        "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm font-medium",
                         isSelected 
                           ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                          : "hover:bg-muted border-border hover:border-primary/50"
+                          : "hover:bg-muted border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50"
                       )}
                       onClick={() => toggleArrayFilter('body_type', bodyTypeItem.name)}
                     >
