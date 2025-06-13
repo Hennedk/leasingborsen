@@ -68,6 +68,17 @@ export interface CarListing {
   seats?: number
   image?: string
   thumbnail_base64?: string
+  year?: number
+  colour?: string
+  color?: string
+  doors?: number
+  drive_type?: string
+  wltp?: number
+  co2_emission?: number
+  consumption_l_100km?: number
+  consumption_kwh_100km?: number
+  co2_tax_half_year?: number
+  period_months?: number
 }
 
 // API response types
