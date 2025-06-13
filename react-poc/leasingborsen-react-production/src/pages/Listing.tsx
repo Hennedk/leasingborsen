@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -7,20 +7,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { 
   ArrowLeft, 
-  Car, 
-  Fuel, 
-  Settings, 
-  Gauge, 
   Loader2,
   ExternalLink,
-  RotateCcw,
-  Users
+  RotateCcw
 } from 'lucide-react'
 import { useListing, useListings } from '@/hooks/useListings'
+import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
 import CarListingGrid from '@/components/CarListingGrid'
 import MobilePriceOverlay from '@/components/MobilePriceOverlay'
 import MobilePriceBar from '@/components/MobilePriceBar'
+import ListingHeader from '@/components/listing/ListingHeader'
+import ListingImage from '@/components/listing/ListingImage'
+import ListingSpecifications from '@/components/listing/ListingSpecifications'
 import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
@@ -52,70 +51,24 @@ const Listing: React.FC = () => {
     return cars.filter(similarCar => similarCar.listing_id !== id)
   }, [similarListingsResponse?.data, id])
 
-  // Lease configuration state
-  const [selectedMileage, setSelectedMileage] = useState<number | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
-  const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
+  // Lease calculator hook
+  const {
+    selectedMileage,
+    selectedPeriod,
+    selectedUpfront,
+    selectedLease,
+    availableMileages,
+    availablePeriods,
+    availableUpfronts,
+    leaseOptions,
+    setSelectedMileage,
+    setSelectedPeriod,
+    setSelectedUpfront,
+    resetToCheapest
+  } = useLeaseCalculator(car)
   
   // Mobile price overlay state
-  const [mobilePriceOpen, setMobilePriceOpen] = useState(false)
-
-  // Mock lease options - in real implementation, this would come from API
-  const leaseOptions = useMemo(() => [
-    { mileage_per_year: 10000, period_months: 36, first_payment: 0, monthly_price: car?.monthly_price || 0 },
-    { mileage_per_year: 15000, period_months: 36, first_payment: 0, monthly_price: (car?.monthly_price || 0) + 200 },
-    { mileage_per_year: 20000, period_months: 36, first_payment: 0, monthly_price: (car?.monthly_price || 0) + 400 },
-    { mileage_per_year: 10000, period_months: 48, first_payment: 0, monthly_price: (car?.monthly_price || 0) - 150 },
-    { mileage_per_year: 15000, period_months: 48, first_payment: 0, monthly_price: (car?.monthly_price || 0) + 50 },
-    { mileage_per_year: 20000, period_months: 48, first_payment: 0, monthly_price: (car?.monthly_price || 0) + 250 },
-    { mileage_per_year: 10000, period_months: 36, first_payment: 50000, monthly_price: (car?.monthly_price || 0) - 300 },
-    { mileage_per_year: 15000, period_months: 36, first_payment: 50000, monthly_price: (car?.monthly_price || 0) - 100 },
-  ], [car?.monthly_price])
-
-  // Derived options
-  const availableMileages = useMemo(() => 
-    [...new Set(leaseOptions.map(o => o.mileage_per_year))].sort((a, b) => a - b),
-    [leaseOptions]
-  )
-  
-  const availablePeriods = useMemo(() => 
-    [...new Set(leaseOptions.map(o => o.period_months))].sort((a, b) => a - b),
-    [leaseOptions]
-  )
-  
-  const availableUpfronts = useMemo(() => 
-    [...new Set(leaseOptions.map(o => o.first_payment))].sort((a, b) => a - b),
-    [leaseOptions]
-  )
-
-  // Selected lease option
-  const selectedLease = useMemo(() => 
-    leaseOptions.find(o =>
-      o.mileage_per_year === selectedMileage &&
-      o.period_months === selectedPeriod &&
-      o.first_payment === selectedUpfront
-    ),
-    [leaseOptions, selectedMileage, selectedPeriod, selectedUpfront]
-  )
-
-  // Reset to cheapest option
-  const resetToCheapest = () => {
-    const cheapest = leaseOptions.reduce((prev, curr) => 
-      prev.monthly_price < curr.monthly_price ? prev : curr
-    )
-    if (cheapest) {
-      setSelectedMileage(cheapest.mileage_per_year)
-      setSelectedPeriod(cheapest.period_months)
-      setSelectedUpfront(cheapest.first_payment)
-    }
-  }
-
-  // Initialize with cheapest option
-  useEffect(() => {
-    if (leaseOptions.length && !selectedLease) {
-      resetToCheapest()
-    }
-  }, [leaseOptions, selectedLease])
+  const [mobilePriceOpen, setMobilePriceOpen] = React.useState(false)
 
   // Seller data
   const seller = {
@@ -164,207 +117,19 @@ const Listing: React.FC = () => {
   return (
     <BaseLayout>
       <div className="max-w-7xl mx-auto px-6 py-8 pb-32 lg:pb-8">
-        {/* Back Navigation */}
-        <div className="mb-6">
-          <Link to="/listings">
-            <Button variant="link" size="sm" className="p-0 h-auto">
-              Tilbage til søgning
-            </Button>
-          </Link>
-        </div>
+        <ListingHeader car={car} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Car Header */}
-            <div className="space-y-0 mb-4">
-              <h1 className="text-3xl font-bold text-foreground leading-tight">
-                {car.make} {car.model}
-              </h1>
-              {car.variant && (
-                <p className="text-lg text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
-              )}
-            </div>
-
-            {/* Car Image */}
-            <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
-              <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
-                {car.image ? (
-                  <img 
-                    src={car.image} 
-                    alt={`${car.make} {car.model}`}
-                    className="w-full h-96 object-cover transition-opacity duration-500 ease-out"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-96 bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
-                    <div className="text-center text-muted-foreground">
-                      <Car className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p>Billede ikke tilgængeligt</p>
-                    </div>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-transparent to-transparent"></div>
-              </div>
-            </Card>
-
-            {/* Car Specifications */}
-            <div>
-              {/* Key Specs Section */}
-              <div className="space-y-0 mb-4">
-                <h2 className="text-lg font-bold text-foreground leading-tight">
-                  Specifikationer
-                </h2>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 text-sm">
-                {car.horsepower && (
-                  <div className="flex items-center gap-3">
-                    <Gauge className="w-7 h-7 text-muted-foreground/60" />
-                    <div>
-                      <div className="text-muted-foreground/60 uppercase text-xs font-medium">Hestekræfter</div>
-                      <div className="font-bold text-foreground">{car.horsepower} hk</div>
-                    </div>
-                  </div>
-                )}
-                
-                {car.transmission && (
-                  <div className="flex items-center gap-3">
-                    <Settings className="w-7 h-7 text-muted-foreground/60" />
-                    <div>
-                      <div className="text-muted-foreground/60 uppercase text-xs font-medium">Gearkasse</div>
-                      <div className="font-bold text-foreground">{car.transmission}</div>
-                    </div>
-                  </div>
-                )}
-                
-                {car.fuel_type && (
-                  <div className="flex items-center gap-3">
-                    <Fuel className="w-7 h-7 text-muted-foreground/60" />
-                    <div>
-                      <div className="text-muted-foreground/60 uppercase text-xs font-medium">Drivmiddel</div>
-                      <div className="font-bold text-foreground">{car.fuel_type}</div>
-                    </div>
-                  </div>
-                )}
-                
-                {car.body_type && (
-                  <div className="flex items-center gap-3">
-                    <Car className="w-7 h-7 text-muted-foreground/60" />
-                    <div>
-                      <div className="text-muted-foreground/60 uppercase text-xs font-medium">Karrosseri</div>
-                      <div className="font-bold text-foreground">{car.body_type}</div>
-                    </div>
-                  </div>
-                )}
-                
-                {car.seats && (
-                  <div className="flex items-center gap-3">
-                    <Users className="w-7 h-7 text-muted-foreground/60" />
-                    <div>
-                      <div className="text-muted-foreground/60 uppercase text-xs font-medium">Sæder</div>
-                      <div className="font-bold text-foreground">{car.seats}</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Spacer Divider */}
-              <div className="my-8 border-t border-border"></div>
-
-              {/* General Specs Section */}
-              <h3 className="text-lg font-bold text-foreground mb-4">Generelle specifikationer</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="divide-y divide-border">
-                  {car.make && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Mærke</span>
-                      <span className="font-semibold text-foreground">{car.make}</span>
-                    </div>
-                  )}
-                  {car.model && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Model</span>
-                      <span className="font-semibold text-foreground">{car.model}</span>
-                    </div>
-                  )}
-                  {car.variant && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Variant</span>
-                      <span className="font-semibold text-foreground">{car.variant}</span>
-                    </div>
-                  )}
-                  {car.year && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Årgang</span>
-                      <span className="font-semibold text-foreground">{car.year}</span>
-                    </div>
-                  )}
-                  {car.drive_type && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Drivtype</span>
-                      <span className="font-semibold text-foreground">{car.drive_type}</span>
-                    </div>
-                  )}
-                  {car.doors && car.doors > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Døre</span>
-                      <span className="font-semibold text-foreground">{car.doors}</span>
-                    </div>
-                  )}
-                  {car.mileage_per_year && car.mileage_per_year > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Årligt kørsel</span>
-                      <span className="font-semibold text-foreground">{car.mileage_per_year.toLocaleString('da-DK')} km/år</span>
-                    </div>
-                  )}
-                </div>
-                <div className="divide-y divide-border">
-                  {car.wltp && car.wltp > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">WLTP</span>
-                      <span className="font-semibold text-foreground">{car.wltp} km</span>
-                    </div>
-                  )}
-                  {car.co2_emission && car.co2_emission > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">CO₂ udslip</span>
-                      <span className="font-semibold text-foreground">{car.co2_emission} g/km</span>
-                    </div>
-                  )}
-                  {car.consumption_l_100km && car.consumption_l_100km > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Forbrug (benzin)</span>
-                      <span className="font-semibold text-foreground">{car.consumption_l_100km} l/100km</span>
-                    </div>
-                  )}
-                  {car.consumption_kwh_100km && car.consumption_kwh_100km > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Forbrug (el)</span>
-                      <span className="font-semibold text-foreground">{car.consumption_kwh_100km} kWh/100km</span>
-                    </div>
-                  )}
-                  {car.co2_tax_half_year && car.co2_tax_half_year > 0 && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">CO₂-afgift (halvår)</span>
-                      <span className="font-semibold text-foreground">{car.co2_tax_half_year.toLocaleString('da-DK')} kr</span>
-                    </div>
-                  )}
-                  {(car.colour || car.color) && (
-                    <div className="flex justify-between py-2">
-                      <span className="font-medium text-muted-foreground">Farve</span>
-                      <span className="font-semibold text-foreground">{car.colour || car.color}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <ListingImage car={car} />
+            <ListingSpecifications car={car} />
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Lease Calculator Card - Hidden on mobile */}
-            <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky" style={{top: '90px'}}>
+            <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
               <CardContent className="p-5 space-y-4">
                 {/* Monthly Price Display */}
                 <div>
