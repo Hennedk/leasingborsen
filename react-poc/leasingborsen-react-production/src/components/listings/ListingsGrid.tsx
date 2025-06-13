@@ -34,7 +34,6 @@ const ListingsGrid: React.FC<ListingsGridProps> = ({
   loadMoreRef,
   onLoadMore,
   onResetFilters,
-  onNavigateToListings,
   className
 }) => {
   // Memoize skeleton count to prevent unnecessary re-renders
@@ -72,10 +71,7 @@ const ListingsGrid: React.FC<ListingsGridProps> = ({
           <Button
             variant="outline"
             size="lg"
-            onClick={() => {
-              onResetFilters()
-              onNavigateToListings()
-            }}
+            onClick={onResetFilters}
             className="mt-6"
           >
             Nulstil alle filtre

@@ -169,7 +169,7 @@ const Listings: React.FC = () => {
 
       {/* Main Content */}
       <Container className={listingStyles.contentPadding}>
-        <div className="flex gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 lg:gap-10">
           
           {/* Desktop Sidebar */}
           <aside className={listingStyles.sidebar}>
