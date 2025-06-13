@@ -21,16 +21,10 @@ interface Car {
   mileage_per_year?: number
 }
 
-interface Seller {
-  website: string
-}
-
 interface MobilePriceOverlayProps {
   isOpen: boolean
   onClose: () => void
   car: Car
-  seller: Seller
-  leaseOptions: LeaseOption[]
   selectedMileage: number | null
   selectedPeriod: number | null
   selectedUpfront: number | null
@@ -42,13 +36,13 @@ interface MobilePriceOverlayProps {
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
   onResetToCheapest: () => void
+  onShowSeller: () => void
 }
 
 const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   isOpen,
   onClose,
   car,
-  seller,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -59,7 +53,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onMileageChange,
   onPeriodChange,
   onUpfrontChange,
-  onResetToCheapest
+  onResetToCheapest,
+  onShowSeller
 }) => {
 
   if (!isOpen) return null
@@ -97,26 +92,24 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-5 space-y-6">
+            <div className="p-5 space-y-6 relative">
+              {/* Reset Button - Top Right Corner */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetToCheapest}
+                className="absolute top-0 right-0 h-auto px-2 py-1 hover:bg-muted"
+                title="Nulstil til laveste pris"
+              >
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Nulstil
+              </Button>
+
               {/* Price Display */}
-              <div>
+              <div className="pr-12">
                 <div className="text-3xl font-bold text-primary leading-tight">
                   {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
                 </div>
-              </div>
-
-              {/* Reset Button */}
-              <div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onResetToCheapest}
-                  className="h-auto px-3 py-2 hover:bg-muted"
-                  title="Nulstil til laveste pris"
-                >
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  Nulstil til laveste pris
-                </Button>
               </div>
 
               {/* Form Fields */}
@@ -195,7 +188,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             <Button 
               className="w-full h-12 gap-2" 
               size="lg"
-              onClick={() => window.open(seller.website, '_blank')}
+              onClick={onShowSeller}
             >
               <ExternalLink className="w-4 h-4" />
               Se tilbud

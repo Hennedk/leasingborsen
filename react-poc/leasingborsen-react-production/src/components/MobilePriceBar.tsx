@@ -25,16 +25,17 @@ interface MobilePriceBarProps {
   seller: Seller
   selectedLease: LeaseOption | undefined
   onEditPrice: () => void
+  onShowSeller: () => void
 }
 
 const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
   car,
-  seller,
   selectedLease,
-  onEditPrice
+  onEditPrice,
+  onShowSeller
 }) => {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-lg z-50">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border/50 shadow-lg z-50 rounded-t-2xl">
       <div className="p-5 relative">
         {/* Edit Button - Top Right Corner */}
         <Button
@@ -61,7 +62,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
           <Button 
             className="w-full h-12" 
             size="lg"
-            onClick={() => window.open(seller.website, '_blank')}
+            onClick={onShowSeller}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             Se tilbud

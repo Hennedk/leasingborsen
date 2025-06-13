@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { 
@@ -20,6 +19,7 @@ import MobilePriceBar from '@/components/MobilePriceBar'
 import ListingHeader from '@/components/listing/ListingHeader'
 import ListingImage from '@/components/listing/ListingImage'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
+import SellerModal from '@/components/SellerModal'
 import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
@@ -60,7 +60,7 @@ const Listing: React.FC = () => {
     availableMileages,
     availablePeriods,
     availableUpfronts,
-    leaseOptions,
+    leaseOptions: _leaseOptions,
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
@@ -69,6 +69,9 @@ const Listing: React.FC = () => {
   
   // Mobile price overlay state
   const [mobilePriceOpen, setMobilePriceOpen] = React.useState(false)
+  
+  // Seller modal state
+  const [sellerModalOpen, setSellerModalOpen] = React.useState(false)
 
   // Seller data
   const seller = {
@@ -130,26 +133,24 @@ const Listing: React.FC = () => {
           <div className="space-y-6">
             {/* Lease Calculator Card - Hidden on mobile */}
             <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
-              <CardContent className="p-5 space-y-4">
+              <CardContent className="p-5 space-y-4 relative">
+                {/* Reset Button - Top Right Corner */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetToCheapest}
+                  className="absolute top-3 right-3 h-auto px-2 py-1 hover:bg-muted"
+                  title="Nulstil til laveste pris"
+                >
+                  <RotateCcw className="w-4 h-4 mr-1" />
+                  Nulstil
+                </Button>
+
                 {/* Monthly Price Display */}
-                <div>
+                <div className="pr-12">
                   <h3 className="text-3xl font-bold text-primary mb-2">
                     {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
                   </h3>
-                </div>
-
-                {/* Reset Button */}
-                <div className="mt-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetToCheapest}
-                    className="h-auto px-2 py-1 hover:bg-muted"
-                    title="Nulstil til laveste pris"
-                  >
-                    <RotateCcw className="w-4 h-4 mr-2" />
-                    Nulstil til laveste pris
-                  </Button>
                 </div>
 
                 {/* Form Fields */}
@@ -226,7 +227,7 @@ const Listing: React.FC = () => {
                   <Button 
                     className="w-full gap-2" 
                     size="lg"
-                    onClick={() => window.open(seller.website, '_blank')}
+                    onClick={() => setSellerModalOpen(true)}
                   >
                     <ExternalLink className="w-4 h-4" />
                     Se tilbud hos leasingselskab
@@ -241,9 +242,8 @@ const Listing: React.FC = () => {
         {/* Similar Cars Section */}
         {car && (
           <div className="mt-16">
-            <Separator className="mb-8" />
             <CarListingGrid
-              title={`Lignende biler som ${car.make} ${car.model}`}
+              title="Lignende annoncer"
               cars={similarCars}
               isLoading={similarLoading}
               error={similarError?.message || null}
@@ -273,6 +273,7 @@ const Listing: React.FC = () => {
               seller={seller}
               selectedLease={selectedLease}
               onEditPrice={() => setMobilePriceOpen(true)}
+              onShowSeller={() => setSellerModalOpen(true)}
             />
 
             {/* Mobile Price Overlay */}
@@ -280,8 +281,6 @@ const Listing: React.FC = () => {
               isOpen={mobilePriceOpen}
               onClose={() => setMobilePriceOpen(false)}
               car={car}
-              seller={seller}
-              leaseOptions={leaseOptions}
               selectedMileage={selectedMileage}
               selectedPeriod={selectedPeriod}
               selectedUpfront={selectedUpfront}
@@ -293,6 +292,15 @@ const Listing: React.FC = () => {
               onPeriodChange={setSelectedPeriod}
               onUpfrontChange={setSelectedUpfront}
               onResetToCheapest={resetToCheapest}
+              onShowSeller={() => setSellerModalOpen(true)}
+            />
+
+            {/* Seller Modal */}
+            <SellerModal
+              isOpen={sellerModalOpen}
+              onClose={() => setSellerModalOpen(false)}
+              seller={seller}
+              car={car}
             />
           </>
         )}
