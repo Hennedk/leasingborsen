@@ -285,40 +285,40 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         <CardContent className="p-5">
           {/* Enhanced Title & Variant */}
           <div className="space-y-0 mb-4">
-            <h3 className="text-lg font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
+            <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-sm text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
+              <p className="text-base text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
             )}
           </div>
 
           {/* Enhanced Specs Grid */}
           <div className="mb-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Fuel className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate">{car.fuel_type || '–'}</span>
+                <span className="font-normal truncate">{car.fuel_type || '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Settings className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate">{car.transmission || '–'}</span>
+                <span className="font-normal truncate">{car.transmission || '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Car className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate">{car.body_type || '–'}</span>
+                <span className="font-normal truncate">{car.body_type || '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground group-hover:text-foreground transition-colors duration-200">
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Gauge className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
+                <span className="font-normal truncate">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
               </div>
             </div>
           </div>

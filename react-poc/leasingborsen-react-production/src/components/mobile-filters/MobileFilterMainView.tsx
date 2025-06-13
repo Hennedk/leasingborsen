@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Plus, ArrowUpDown } from 'lucide-react'
-import { useFilterStore } from '@/stores/filterStore'
+import { usePersistentFilterStore } from '@/stores/persistentFilterStore'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
 import MobileViewHeader from './MobileViewHeader'
@@ -59,7 +59,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
     setFilter,
     toggleArrayFilter,
     resetFilters
-  } = useFilterStore()
+  } = usePersistentFilterStore()
 
   // Get filter options from config
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES

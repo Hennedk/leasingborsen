@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search, ArrowUpDown } from 'lucide-react'
-import { useFilterStore } from '@/stores/filterStore'
+import { usePersistentFilterStore } from '@/stores/persistentFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -62,7 +62,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
     toggleArrayFilter,
     resetFilters, 
     getActiveFilters
-  } = useFilterStore()
+  } = usePersistentFilterStore()
   
   const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
   const activeFilters = getActiveFilters()
