@@ -1,15 +1,7 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
-import { 
-  ArrowLeft, 
-  Loader2,
-  ExternalLink,
-  RotateCcw
-} from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
 import { useListing, useListings } from '@/hooks/useListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
@@ -19,6 +11,7 @@ import MobilePriceBar from '@/components/MobilePriceBar'
 import ListingHeader from '@/components/listing/ListingHeader'
 import ListingImage from '@/components/listing/ListingImage'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
+import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
 import type { CarListing } from '@/types'
 
@@ -68,10 +61,10 @@ const Listing: React.FC = () => {
   } = useLeaseCalculator(car)
   
   // Mobile price overlay state
-  const [mobilePriceOpen, setMobilePriceOpen] = React.useState(false)
+  const [mobilePriceOpen, setMobilePriceOpen] = useState(false)
   
   // Seller modal state
-  const [sellerModalOpen, setSellerModalOpen] = React.useState(false)
+  const [sellerModalOpen, setSellerModalOpen] = useState(false)
 
   // Seller data
   const seller = {
@@ -132,109 +125,20 @@ const Listing: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Lease Calculator Card - Hidden on mobile */}
-            <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
-              <CardContent className="p-5 space-y-4 relative">
-                {/* Reset Button - Top Right Corner */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={resetToCheapest}
-                  className="absolute top-3 right-3 h-auto px-2 py-1 hover:bg-muted"
-                  title="Nulstil til laveste pris"
-                >
-                  <RotateCcw className="w-4 h-4 mr-1" />
-                  Nulstil
-                </Button>
-
-                {/* Monthly Price Display */}
-                <div className="pr-12">
-                  <h3 className="text-3xl font-bold text-primary mb-2">
-                    {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
-                  </h3>
-                </div>
-
-                {/* Form Fields */}
-                <div className="space-y-4">
-                  {/* Mileage Selection */}
-                  <div>
-                    <Label className="text-sm font-semibold text-primary">
-                      Årligt km-forbrug
-                    </Label>
-                    <Select 
-                      value={selectedMileage?.toString() || ''} 
-                      onValueChange={(value) => setSelectedMileage(parseInt(value))}
-                    >
-                      <SelectTrigger className="w-full border-primary/30 focus:border-primary">
-                        <SelectValue placeholder="Vælg km-forbrug" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableMileages.map((mileage) => (
-                          <SelectItem key={mileage} value={mileage.toString()}>
-                            {mileage.toLocaleString('da-DK')} km/år
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Period Selection */}
-                  <div>
-                    <Label className="text-sm font-semibold text-primary">
-                      Leasingperiode
-                    </Label>
-                    <Select 
-                      value={selectedPeriod?.toString() || ''} 
-                      onValueChange={(value) => setSelectedPeriod(parseInt(value))}
-                    >
-                      <SelectTrigger className="w-full border-primary/30 focus:border-primary">
-                        <SelectValue placeholder="Vælg periode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availablePeriods.map((period) => (
-                          <SelectItem key={period} value={period.toString()}>
-                            {period} måneder
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Upfront Payment Selection */}
-                  <div>
-                    <Label className="text-sm font-semibold text-primary">
-                      Udbetaling
-                    </Label>
-                    <Select 
-                      value={selectedUpfront?.toString() || ''} 
-                      onValueChange={(value) => setSelectedUpfront(parseInt(value))}
-                    >
-                      <SelectTrigger className="w-full border-primary/30 focus:border-primary">
-                        <SelectValue placeholder="Vælg udbetaling" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableUpfronts.map((upfront) => (
-                          <SelectItem key={upfront} value={upfront.toString()}>
-                            {upfront.toLocaleString('da-DK')} kr
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Primary CTA Button */}
-                <div className="pt-4">
-                  <Button 
-                    className="w-full gap-2" 
-                    size="lg"
-                    onClick={() => setSellerModalOpen(true)}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Se tilbud hos leasingselskab
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <LeaseCalculatorCard
+              selectedLease={selectedLease}
+              selectedMileage={selectedMileage}
+              selectedPeriod={selectedPeriod}
+              selectedUpfront={selectedUpfront}
+              availableMileages={availableMileages}
+              availablePeriods={availablePeriods}
+              availableUpfronts={availableUpfronts}
+              onMileageChange={setSelectedMileage}
+              onPeriodChange={setSelectedPeriod}
+              onUpfrontChange={setSelectedUpfront}
+              onResetToCheapest={resetToCheapest}
+              onShowSeller={() => setSellerModalOpen(true)}
+            />
 
           </div>
         </div>

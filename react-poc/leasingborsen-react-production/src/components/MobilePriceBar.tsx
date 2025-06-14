@@ -1,27 +1,10 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Edit3, ExternalLink } from 'lucide-react'
-
-interface LeaseOption {
-  mileage_per_year: number
-  period_months: number
-  first_payment: number
-  monthly_price: number
-}
-
-interface Car {
-  monthly_price?: number
-  first_payment?: number
-  period_months?: number
-  mileage_per_year?: number
-}
-
-interface Seller {
-  website: string
-}
+import type { LeaseOption, CarListing, Seller } from '@/types'
 
 interface MobilePriceBarProps {
-  car: Car
+  car: CarListing
   seller: Seller
   selectedLease: LeaseOption | undefined
   onEditPrice: () => void
