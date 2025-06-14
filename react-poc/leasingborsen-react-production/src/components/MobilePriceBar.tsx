@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Edit3, ExternalLink } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { LeaseOption, CarListing, Seller } from '@/types'
 
 interface MobilePriceBarProps {
@@ -18,7 +19,14 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
   onShowSeller
 }) => {
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border/50 shadow-lg z-50 rounded-t-2xl">
+    <div className={cn(
+      // Positioning
+      "fixed bottom-0 left-0 right-0 z-50",
+      // Responsive
+      "lg:hidden",
+      // Styling
+      "bg-background border-t border-border/50 shadow-lg rounded-t-2xl"
+    )}>
       <div className="p-5 relative">
         {/* Edit Button - Top Right Corner */}
         <Button
