@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, RotateCcw, ExternalLink } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { LeaseOption, CarListing } from '@/types'
 
 interface MobilePriceOverlayProps {
@@ -40,28 +41,86 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onResetToCheapest,
   onShowSeller
 }) => {
+  const overlayRef = useRef<HTMLDivElement>(null)
+  const firstFocusableRef = useRef<HTMLButtonElement>(null)
+
+  // Focus management and keyboard event handling
+  useEffect(() => {
+    if (isOpen) {
+      // Focus first element when opened
+      firstFocusableRef.current?.focus()
+      
+      // Prevent background scrolling
+      document.body.style.overflow = 'hidden'
+      
+      // Trap focus within overlay and handle keyboard events
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose()
+        }
+      }
+      
+      document.addEventListener('keydown', handleKeyDown)
+      
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown)
+        document.body.style.overflow = 'unset'
+      }
+    }
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
   return (
-    <div className="mobile-overlay-container">
+    <div 
+      className={cn(
+        // Layout & positioning
+        "fixed inset-0 z-50 overflow-hidden",
+        // Responsive
+        "lg:hidden"
+      )}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="price-overlay-title"
+      aria-describedby="price-overlay-description"
+    >
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className={cn(
+          // Positioning
+          "absolute inset-0",
+          // Styling
+          "bg-black/60 backdrop-blur-sm"
+        )}
         onClick={onClose}
       />
       
       {/* Slide-up overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 transform transition-transform duration-300 ease-out translate-y-0 mobile-overlay flex flex-col">
+      <div 
+        ref={overlayRef}
+        className={cn(
+          // Positioning
+          "absolute bottom-0 left-0 right-0",
+          // Layout
+          "flex flex-col",
+          // Styling
+          "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
+          // Animation
+          "transform transition-transform duration-300 ease-out translate-y-0",
+          // Sizing
+          "h-[min(90vh,100dvh-2rem)] max-h-[90vh]"
+        )}>
         <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
           <div className="flex items-center justify-between p-5 border-b border-border/50 flex-shrink-0">
-            <h3 className="text-lg font-bold">Tilpas pris</h3>
+            <h3 id="price-overlay-title" className="text-lg font-bold">Tilpas pris</h3>
             <Button
+              ref={firstFocusableRef}
               variant="ghost"
               size="sm"
               onClick={onClose}
               className="h-9 w-9 p-0 hover:bg-muted/50 flex-shrink-0"
+              aria-label="Luk prisoverlægning"
             >
               <X className="w-4 h-4" />
             </Button>
@@ -69,8 +128,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
           {/* Car Info */}
           <div className="px-5 py-3 border-b border-border/50 flex-shrink-0">
-            <p className="text-sm text-muted-foreground">
-              {car.make} {car.model}{car.variant ? ` ${car.variant}` : ''}
+            <p id="price-overlay-description" className="text-sm text-muted-foreground">
+              Tilpas leasingbetingelser for {car.make} {car.model}{car.variant ? ` ${car.variant}` : ''}
             </p>
           </div>
 
@@ -107,7 +166,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     value={selectedMileage?.toString() || ''} 
                     onValueChange={(value) => onMileageChange(parseInt(value))}
                   >
-                    <SelectTrigger className="w-full h-12 border-primary/30 focus:border-primary">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
                       <SelectValue placeholder="Vælg km-forbrug" />
                     </SelectTrigger>
                     <SelectContent>
@@ -129,7 +188,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     value={selectedPeriod?.toString() || ''} 
                     onValueChange={(value) => onPeriodChange(parseInt(value))}
                   >
-                    <SelectTrigger className="w-full h-12 border-primary/30 focus:border-primary">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
                       <SelectValue placeholder="Vælg periode" />
                     </SelectTrigger>
                     <SelectContent>
@@ -151,7 +210,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     value={selectedUpfront?.toString() || ''} 
                     onValueChange={(value) => onUpfrontChange(parseInt(value))}
                   >
-                    <SelectTrigger className="w-full h-12 border-primary/30 focus:border-primary">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
                       <SelectValue placeholder="Vælg udbetaling" />
                     </SelectTrigger>
                     <SelectContent>
@@ -168,7 +227,16 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
           </div>
 
           {/* Footer - Sticky CTA */}
-          <div className="sticky bottom-0 p-5 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
+          <div className={cn(
+            // Positioning
+            "sticky bottom-0",
+            // Layout
+            "flex-shrink-0",
+            // Styling
+            "p-5 border-t border-border/50 bg-background shadow-lg",
+            // iOS safe area support
+            "pb-[max(1rem,env(safe-area-inset-bottom))]"
+          )}>
             <Button 
               className="w-full h-12 gap-2" 
               size="lg"

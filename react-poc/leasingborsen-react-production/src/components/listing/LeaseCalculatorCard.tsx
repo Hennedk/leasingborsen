@@ -68,7 +68,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               value={selectedMileage?.toString() || ''} 
               onValueChange={(value) => onMileageChange(parseInt(value))}
             >
-              <SelectTrigger className="w-full border-primary/30 focus:border-primary">
+              <SelectTrigger className="w-full border-input focus:border-ring">
                 <SelectValue placeholder="Vælg km-forbrug" />
               </SelectTrigger>
               <SelectContent>
@@ -90,7 +90,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               value={selectedPeriod?.toString() || ''} 
               onValueChange={(value) => onPeriodChange(parseInt(value))}
             >
-              <SelectTrigger className="w-full border-primary/30 focus:border-primary">
+              <SelectTrigger className="w-full border-input focus:border-ring">
                 <SelectValue placeholder="Vælg periode" />
               </SelectTrigger>
               <SelectContent>
@@ -112,7 +112,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               value={selectedUpfront?.toString() || ''} 
               onValueChange={(value) => onUpfrontChange(parseInt(value))}
             >
-              <SelectTrigger className="w-full border-primary/30 focus:border-primary">
+              <SelectTrigger className="w-full border-input focus:border-ring">
                 <SelectValue placeholder="Vælg udbetaling" />
               </SelectTrigger>
               <SelectContent>
