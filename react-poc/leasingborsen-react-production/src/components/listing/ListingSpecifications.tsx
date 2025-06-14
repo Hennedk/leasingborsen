@@ -5,7 +5,7 @@ interface ListingSpecificationsProps {
   car: CarListing
 }
 
-const ListingSpecifications: React.FC<ListingSpecificationsProps> = ({ car }) => {
+const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) => {
   return (
     <div>
       {/* Key Specs Section */}
@@ -140,6 +140,6 @@ const ListingSpecifications: React.FC<ListingSpecificationsProps> = ({ car }) =>
       </div>
     </div>
   )
-}
+})
 
 export default ListingSpecifications

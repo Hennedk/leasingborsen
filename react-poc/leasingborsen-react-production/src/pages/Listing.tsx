@@ -13,6 +13,7 @@ import ListingImage from '@/components/listing/ListingImage'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
+import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
@@ -118,27 +119,33 @@ const Listing: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <ListingImage car={car} />
-            <ListingSpecifications car={car} />
+            <ErrorBoundary fallback={CompactErrorFallback}>
+              <ListingImage car={car} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={CompactErrorFallback}>
+              <ListingSpecifications car={car} />
+            </ErrorBoundary>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Lease Calculator Card - Hidden on mobile */}
-            <LeaseCalculatorCard
-              selectedLease={selectedLease}
-              selectedMileage={selectedMileage}
-              selectedPeriod={selectedPeriod}
-              selectedUpfront={selectedUpfront}
-              availableMileages={availableMileages}
-              availablePeriods={availablePeriods}
-              availableUpfronts={availableUpfronts}
-              onMileageChange={setSelectedMileage}
-              onPeriodChange={setSelectedPeriod}
-              onUpfrontChange={setSelectedUpfront}
-              onResetToCheapest={resetToCheapest}
-              onShowSeller={() => setSellerModalOpen(true)}
-            />
+            <ErrorBoundary fallback={CompactErrorFallback}>
+              <LeaseCalculatorCard
+                selectedLease={selectedLease}
+                selectedMileage={selectedMileage}
+                selectedPeriod={selectedPeriod}
+                selectedUpfront={selectedUpfront}
+                availableMileages={availableMileages}
+                availablePeriods={availablePeriods}
+                availableUpfronts={availableUpfronts}
+                onMileageChange={setSelectedMileage}
+                onPeriodChange={setSelectedPeriod}
+                onUpfrontChange={setSelectedUpfront}
+                onResetToCheapest={resetToCheapest}
+                onShowSeller={() => setSellerModalOpen(true)}
+              />
+            </ErrorBoundary>
 
           </div>
         </div>
@@ -146,16 +153,18 @@ const Listing: React.FC = () => {
         {/* Similar Cars Section */}
         {car && (
           <div className="mt-16">
-            <CarListingGrid
-              title="Lignende annoncer"
-              cars={similarCars}
-              isLoading={similarLoading}
-              error={similarError?.message || null}
-              ctaText="Se alle biler"
-              ctaLink="/listings"
-              showCta={true}
-              maxCards={6}
-            />
+            <ErrorBoundary fallback={CompactErrorFallback}>
+              <CarListingGrid
+                title="Lignende annoncer"
+                cars={similarCars}
+                isLoading={similarLoading}
+                error={similarError?.message || null}
+                ctaText="Se alle biler"
+                ctaLink="/listings"
+                showCta={true}
+                maxCards={6}
+              />
+            </ErrorBoundary>
           </div>
         )}
 

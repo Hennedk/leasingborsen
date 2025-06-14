@@ -21,7 +21,7 @@ interface LeaseCalculatorCardProps {
   onShowSeller: () => void
 }
 
-const LeaseCalculatorCard: React.FC<LeaseCalculatorCardProps> = ({
+const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   selectedLease,
   selectedMileage,
   selectedPeriod,
@@ -140,6 +140,6 @@ const LeaseCalculatorCard: React.FC<LeaseCalculatorCardProps> = ({
       </CardContent>
     </Card>
   )
-}
+})
 
 export default LeaseCalculatorCard
