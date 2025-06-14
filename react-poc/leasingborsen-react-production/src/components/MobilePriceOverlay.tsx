@@ -3,28 +3,12 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, RotateCcw, ExternalLink } from 'lucide-react'
-
-interface LeaseOption {
-  mileage_per_year: number
-  period_months: number
-  first_payment: number
-  monthly_price: number
-}
-
-interface Car {
-  make: string
-  model: string
-  variant?: string
-  monthly_price?: number
-  first_payment?: number
-  period_months?: number
-  mileage_per_year?: number
-}
+import type { LeaseOption, CarListing } from '@/types'
 
 interface MobilePriceOverlayProps {
   isOpen: boolean
   onClose: () => void
-  car: Car
+  car: CarListing
   selectedMileage: number | null
   selectedPeriod: number | null
   selectedUpfront: number | null

@@ -9,26 +9,13 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ExternalLink, Phone, Mail, Globe } from 'lucide-react'
-
-interface Seller {
-  name: string
-  website: string
-  phone: string
-  email: string
-  description: string
-}
-
-interface Car {
-  make?: string
-  model?: string
-  variant?: string
-}
+import type { Seller, CarListing } from '@/types'
 
 interface SellerModalProps {
   isOpen: boolean
   onClose: () => void
   seller: Seller
-  car: Car
+  car: CarListing
 }
 
 const SellerModal: React.FC<SellerModalProps> = ({

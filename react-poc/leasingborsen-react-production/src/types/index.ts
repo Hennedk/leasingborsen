@@ -107,3 +107,20 @@ export interface SortOption {
   value: SortOrder
   label: string
 }
+
+// Lease option interface
+export interface LeaseOption {
+  mileage_per_year: number
+  period_months: number
+  first_payment: number
+  monthly_price: number
+}
+
+// Seller interface
+export interface Seller {
+  name: string
+  website: string
+  phone: string
+  email: string
+  description: string
+}
