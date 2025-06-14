@@ -79,6 +79,7 @@ export interface CarListing {
   consumption_kwh_100km?: number
   co2_tax_half_year?: number
   period_months?: number
+  description?: string
 }
 
 // API response types

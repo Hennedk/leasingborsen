@@ -7,13 +7,30 @@ interface ListingSpecificationsProps {
 
 const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) => {
   return (
-    <div>
+    <div className="space-y-8">
+      {/* Description Section */}
+      {car.description && (
+        <div>
+          <div className="space-y-0 mb-4">
+            <h2 className="text-xl font-bold text-foreground leading-tight">
+              Beskrivelse
+            </h2>
+          </div>
+          <div className="prose prose-sm max-w-none text-foreground">
+            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {car.description}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Specifications Section */}
-      <div className="space-y-0 mb-4">
-        <h2 className="text-xl font-bold text-foreground leading-tight">
-          Specifikationer
-        </h2>
-      </div>
+      <div>
+        <div className="space-y-0 mb-4">
+          <h2 className="text-xl font-bold text-foreground leading-tight">
+            Specifikationer
+          </h2>
+        </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-8">
         <div className="divide-y divide-border">
@@ -92,6 +109,7 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )
