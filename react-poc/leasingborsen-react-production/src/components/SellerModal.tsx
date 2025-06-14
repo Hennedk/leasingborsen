@@ -18,7 +18,7 @@ interface SellerModalProps {
   car: CarListing
 }
 
-const SellerModal: React.FC<SellerModalProps> = ({
+const SellerModal = React.memo<SellerModalProps>(({
   isOpen,
   onClose,
   seller,
@@ -105,6 +105,6 @@ const SellerModal: React.FC<SellerModalProps> = ({
       </DialogContent>
     </Dialog>
   )
-}
+})
 
 export default SellerModal
