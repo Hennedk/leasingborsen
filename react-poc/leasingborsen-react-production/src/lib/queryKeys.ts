@@ -11,6 +11,7 @@ export const queryKeys = {
   listings: ['listings'] as const,
   listing: ['listing'] as const,
   referenceData: ['reference-data'] as const,
+  admin: ['admin'] as const,
   
   // Listings with filters
   listingsAll: () => [...queryKeys.listings] as const,
@@ -23,6 +24,11 @@ export const queryKeys = {
   
   // Individual listing
   listingDetail: (id: string) => [...queryKeys.listing, id] as const,
+  
+  // Admin listings
+  adminListings: (filters: Partial<FilterOptions> = {}) =>
+    [...queryKeys.admin, 'listings', filters] as const,
+  adminListingStats: () => [...queryKeys.admin, 'listing-stats'] as const,
   
   // Reference data
   referenceDataAll: () => [...queryKeys.referenceData] as const,

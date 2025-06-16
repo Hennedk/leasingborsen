@@ -40,7 +40,7 @@ export function useUpdateListing() {
       const { data, error } = await supabase
         .from('listings')
         .update(updates)
-        .eq('listing_id', id)
+        .eq('id', id)
         .select()
         .single()
 
@@ -68,7 +68,7 @@ export function useDeleteListing() {
       const { error } = await supabase
         .from('listings')
         .delete()
-        .eq('listing_id', id)
+        .eq('id', id)
 
       if (error) throw error
       return { id }
