@@ -14,6 +14,13 @@ const About = lazy(() => import('@/pages/About'))
 const WhyPrivateLeasing = lazy(() => import('@/pages/WhyPrivateLeasing'))
 const Advertising = lazy(() => import('@/pages/Advertising'))
 
+// Lazy load admin pages
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
+const AdminListings = lazy(() => import('@/pages/admin/AdminListings'))
+const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
+const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
+const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
+
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +75,16 @@ function App() {
                 <Route path="/about" element={<About />} />
                 <Route path="/why-private-leasing" element={<WhyPrivateLeasing />} />
                 <Route path="/advertising" element={<Advertising />} />
+                
+                {/* Admin routes */}
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/listings" element={<AdminListings />} />
+                <Route path="/admin/listings/create" element={<AdminListingForm />} />
+                <Route path="/admin/listings/edit/:id" element={<AdminListingForm />} />
+                <Route path="/admin/sellers" element={<AdminSellers />} />
+                <Route path="/admin/sellers/create" element={<AdminSellerForm />} />
+                <Route path="/admin/sellers/edit/:id" element={<AdminSellerForm />} />
                 {/* Catch all route */}
                 <Route path="*" element={
                   <BaseLayout>

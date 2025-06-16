@@ -10,7 +10,9 @@
       "Bash(grep:*)",
       "Bash(ls:*)",
       "Bash(git add:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "WebFetch(domain:ui.shadcn.com)"
     ],
     "deny": []
   }

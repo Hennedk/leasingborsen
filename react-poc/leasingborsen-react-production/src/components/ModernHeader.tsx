@@ -184,6 +184,13 @@ const ModernHeader: React.FC = () => {
           </NavigationMenu>
         </div>
 
+        {/* Admin Link */}
+        <div className="hidden md:flex">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin">Admin</Link>
+          </Button>
+        </div>
+
 
         {/* Mobile Navigation */}
         <div className="flex md:hidden items-center justify-between w-full">
@@ -218,6 +225,13 @@ const ModernHeader: React.FC = () => {
                 >
                   {menuItems.map((item) => renderMobileMenuItem(item))}
                 </Accordion>
+                
+                {/* Mobile Admin Link */}
+                <div className="border-t pt-4">
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link to="/admin">Admin</Link>
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>
