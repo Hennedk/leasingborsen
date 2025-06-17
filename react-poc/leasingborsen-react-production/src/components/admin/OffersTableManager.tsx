@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,7 +33,7 @@ interface EditableOffer {
   errors?: Record<string, string>
 }
 
-export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
+export const OffersTableManager = React.memo<OffersTableManagerProps>(({
   listingId,
   className
 }) => {
@@ -106,7 +106,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
   }
 
   // Update field value and validate
-  const updateField = (index: number, field: keyof EditableOffer, value: string) => {
+  const updateField = useCallback((index: number, field: keyof EditableOffer, value: string) => {
     setEditableOffers(prev => prev.map((offer, i) => {
       if (i !== index) return offer
       
@@ -125,12 +125,20 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
         errors: updatedErrors
       }
     }))
-  }
+  }, [])
+
+  // Track which offers are currently being saved to prevent duplicate submissions
+  const [savingOffers, setSavingOffers] = useState<Set<number>>(new Set())
 
   // Save offer (create or update)
-  const saveOffer = async (index: number) => {
+  const saveOffer = useCallback(async (index: number) => {
     const offer = editableOffers[index]
     if (!listingId || !offer) return
+
+    // Prevent duplicate submissions
+    if (savingOffers.has(index)) {
+      return
+    }
 
     // Validate all fields
     const errors: Record<string, string> = {}
@@ -153,6 +161,9 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
       return
     }
 
+    // Mark this offer as being saved
+    setSavingOffers(prev => new Set(prev).add(index))
+
     try {
       const offerData = {
         monthly_price: parseFloat(offer.monthly_price),
@@ -160,6 +171,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
         period_months: offer.period_months ? parseInt(offer.period_months) : undefined,
         mileage_per_year: offer.mileage_per_year ? parseInt(offer.mileage_per_year) : undefined,
       }
+
 
       if (offer.isNew) {
         // Create new offer
@@ -185,14 +197,23 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
         i === index ? { ...o, isEditing: false, errors: {} } : o
       ))
 
+      toast.success('Tilbud blev gemt')
+
     } catch (error) {
       console.error('Failed to save offer:', error)
       toast.error('Kunne ikke gemme tilbud. Prøv igen.')
+    } finally {
+      // Remove from saving set
+      setSavingOffers(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(index)
+        return newSet
+      })
     }
-  }
+  }, [editableOffers, listingId, createOfferMutation, updateOfferMutation, savingOffers])
 
   // Delete offer
-  const deleteOffer = async (_: number, offerId?: string) => {
+  const deleteOffer = useCallback(async (_: number, offerId?: string) => {
     if (offerId) {
       try {
         await deleteOfferMutation.mutateAsync(offerId)
@@ -202,10 +223,10 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
         toast.error('Kunne ikke slette tilbud. Prøv igen.')
       }
     }
-  }
+  }, [deleteOfferMutation])
 
   // Duplicate offer
-  const duplicateOffer = (index: number) => {
+  const duplicateOffer = useCallback((index: number) => {
     const offer = editableOffers[index]
     if (!offer) return
 
@@ -225,13 +246,16 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
       newOffers.splice(index + 1, 0, duplicatedOffer)
       return newOffers
     })
-  }
+  }, [editableOffers])
 
   // Handle key press (Enter to save, Escape to cancel)
   const handleKeyDown = (e: React.KeyboardEvent, index: number) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      saveOffer(index)
+      // Prevent duplicate saves
+      if (!savingOffers.has(index)) {
+        saveOffer(index)
+      }
     } else if (e.key === 'Escape') {
       setEditableOffers(prev => prev.map((o, i) => 
         i === index ? { ...o, isEditing: false, errors: {} } : o
@@ -327,6 +351,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                     <div className="space-y-1">
                       <Input
                         ref={el => { if (el) inputRefs.current[`${index}-monthly_price`] = el; return undefined }}
+                        name={`monthly_price_${index}`}
                         type="number"
                         min="1"
                         max="50000"
@@ -335,9 +360,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                         onChange={(e) => updateField(index, 'monthly_price', e.target.value)}
                         onFocus={() => updateField(index, 'isEditing', 'true')}
                         onBlur={() => {
-                          if (offer.monthly_price.trim()) {
-                            saveOffer(index)
-                          }
+                          // Remove auto-save on blur - require explicit confirmation
                         }}
                         onKeyDown={(e) => handleKeyDown(e, index)}
                         className={offer.errors?.monthly_price ? 'border-destructive' : ''}
@@ -353,6 +376,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                     <div className="space-y-1">
                       <Input
                         ref={el => { if (el) inputRefs.current[`${index}-first_payment`] = el; return undefined }}
+                        name={`first_payment_${index}`}
                         type="number"
                         min="0"
                         max="500000"
@@ -361,9 +385,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                         onChange={(e) => updateField(index, 'first_payment', e.target.value)}
                         onFocus={() => updateField(index, 'isEditing', 'true')}
                         onBlur={() => {
-                          if (offer.monthly_price.trim()) {
-                            saveOffer(index)
-                          }
+                          // Remove auto-save on blur - require explicit confirmation
                         }}
                         onKeyDown={(e) => handleKeyDown(e, index)}
                         className={offer.errors?.first_payment ? 'border-destructive' : ''}
@@ -379,6 +401,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                     <div className="space-y-1">
                       <Input
                         ref={el => { if (el) inputRefs.current[`${index}-period_months`] = el; return undefined }}
+                        name={`period_months_${index}`}
                         type="number"
                         min="1"
                         max="120"
@@ -387,9 +410,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                         onChange={(e) => updateField(index, 'period_months', e.target.value)}
                         onFocus={() => updateField(index, 'isEditing', 'true')}
                         onBlur={() => {
-                          if (offer.monthly_price.trim()) {
-                            saveOffer(index)
-                          }
+                          // Remove auto-save on blur - require explicit confirmation
                         }}
                         onKeyDown={(e) => handleKeyDown(e, index)}
                         className={offer.errors?.period_months ? 'border-destructive' : ''}
@@ -405,6 +426,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                     <div className="space-y-1">
                       <Input
                         ref={el => { if (el) inputRefs.current[`${index}-mileage_per_year`] = el; return undefined }}
+                        name={`mileage_per_year_${index}`}
                         type="number"
                         min="5000"
                         max="50000"
@@ -413,9 +435,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                         onChange={(e) => updateField(index, 'mileage_per_year', e.target.value)}
                         onFocus={() => updateField(index, 'isEditing', 'true')}
                         onBlur={() => {
-                          if (offer.monthly_price.trim()) {
-                            saveOffer(index)
-                          }
+                          // Remove auto-save on blur - require explicit confirmation
                         }}
                         onKeyDown={(e) => handleKeyDown(e, index)}
                         className={offer.errors?.mileage_per_year ? 'border-destructive' : ''}
@@ -481,8 +501,9 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                           variant="ghost"
                           size="icon"
                           onClick={() => saveOffer(index)}
+                          disabled={savingOffers.has(index)}
                           className="h-6 w-6 text-green-600"
-                          title="Gem nyt tilbud"
+                          title={savingOffers.has(index) ? "Gemmer..." : "Gem nyt tilbud"}
                         >
                           <Check className="h-3 w-3" />
                         </Button>
@@ -504,4 +525,6 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
       </CardContent>
     </Card>
   )
-}
+})
+
+OffersTableManager.displayName = 'OffersTableManager'

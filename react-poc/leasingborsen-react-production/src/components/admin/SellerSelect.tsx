@@ -20,6 +20,7 @@ export const SellerSelect: React.FC<SellerSelectProps> = ({
 }) => {
   const { data: sellers, isLoading, error } = useSellers()
 
+
   const handleCreateNewSeller = () => {
     // Open create seller page in new tab to avoid losing current form data
     window.open('/admin/sellers/create', '_blank')
