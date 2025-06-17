@@ -1,0 +1,5 @@
+export { BasicInfoSection } from './BasicInfoSection'
+export { SpecificationsSection } from './SpecificationsSection'
+export { MediaSection } from './MediaSection'
+export { OffersSection } from './OffersSection'
+export { SellerSection } from './SellerSection'
