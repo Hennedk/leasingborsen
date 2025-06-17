@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Copy, Trash2, Plus, Check, X } from 'lucide-react'
+import { Copy, Trash2, Plus, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -192,7 +192,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
   }
 
   // Delete offer
-  const deleteOffer = async (index: number, offerId?: string) => {
+  const deleteOffer = async (_: number, offerId?: string) => {
     if (offerId) {
       try {
         await deleteOfferMutation.mutateAsync(offerId)
@@ -326,7 +326,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                   <td className="p-2">
                     <div className="space-y-1">
                       <Input
-                        ref={el => inputRefs.current[`${index}-monthly_price`] = el}
+                        ref={el => { if (el) inputRefs.current[`${index}-monthly_price`] = el; return undefined }}
                         type="number"
                         min="1"
                         max="50000"
@@ -352,7 +352,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                   <td className="p-2">
                     <div className="space-y-1">
                       <Input
-                        ref={el => inputRefs.current[`${index}-first_payment`] = el}
+                        ref={el => { if (el) inputRefs.current[`${index}-first_payment`] = el; return undefined }}
                         type="number"
                         min="0"
                         max="500000"
@@ -378,7 +378,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                   <td className="p-2">
                     <div className="space-y-1">
                       <Input
-                        ref={el => inputRefs.current[`${index}-period_months`] = el}
+                        ref={el => { if (el) inputRefs.current[`${index}-period_months`] = el; return undefined }}
                         type="number"
                         min="1"
                         max="120"
@@ -404,7 +404,7 @@ export const OffersTableManager: React.FC<OffersTableManagerProps> = ({
                   <td className="p-2">
                     <div className="space-y-1">
                       <Input
-                        ref={el => inputRefs.current[`${index}-mileage_per_year`] = el}
+                        ref={el => { if (el) inputRefs.current[`${index}-mileage_per_year`] = el; return undefined }}
                         type="number"
                         min="5000"
                         max="50000"

@@ -94,7 +94,7 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
 
   // Watch for changes to show unsaved changes bar
   useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
+    const subscription = form.watch((value, { name }) => {
       // Use React Hook Form's built-in dirty detection first
       let hasChanges = form.formState.isDirty
       
@@ -575,7 +575,7 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
                     )}
                     <Button 
                       type="submit" 
-                      disabled={isLoading || (currentListingId && !hasUnsavedChanges)} 
+                      disabled={isLoading || (Boolean(currentListingId) && !hasUnsavedChanges)} 
                       className="flex items-center gap-2"
                     >
                       <Save className="h-4 w-4" />
