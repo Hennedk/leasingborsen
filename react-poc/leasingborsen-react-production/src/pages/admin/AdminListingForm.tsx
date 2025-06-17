@@ -1,7 +1,8 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import AdminLayout from '@/components/admin/AdminLayout'
-import AdminListingFormComponent from '@/components/admin/AdminListingForm'
+import AdminListingFormComponent from '@/components/admin/AdminListingFormNew'
+import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { useListing } from '@/hooks/useListings'
 
 const AdminListingFormPage: React.FC = () => {
@@ -13,17 +14,27 @@ const AdminListingFormPage: React.FC = () => {
   return (
     <AdminLayout title={isEditing ? 'Rediger Annonce' : 'Opret Annonce'}>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            {isEditing ? 'Rediger Annonce' : 'Opret Ny Annonce'}
-          </h2>
-          <p className="text-muted-foreground">
-            {isEditing 
-              ? 'Opdater annoncens information' 
-              : 'Udfyld formularen for at oprette en ny bil annonce'
-            }
-          </p>
+        {/* Breadcrumb and Header */}
+        <div className="space-y-4">
+          <Breadcrumb 
+            items={[
+              { label: 'Dashboard', href: '/admin' },
+              { label: 'Annoncer', href: '/admin/listings' },
+              { label: isEditing ? 'Rediger' : 'Opret' }
+            ]}
+          />
+          
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {isEditing ? 'Rediger Annonce' : 'Opret Ny Annonce'}
+            </h1>
+            <p className="text-muted-foreground">
+              {isEditing 
+                ? 'Opdater annoncens information og gem ændringerne' 
+                : 'Udfyld formularen for at oprette en ny bil annonce på platformen'
+              }
+            </p>
+          </div>
         </div>
 
         {/* Form */}

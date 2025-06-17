@@ -93,7 +93,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       {/* Table controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4">
         <div className="flex items-center space-x-2">
           {/* Search input */}
           {searchColumn && (
@@ -103,7 +103,7 @@ export function DataTable<TData, TValue>({
               onChange={(event) =>
                 table.getColumn(searchColumn)?.setFilterValue(event.target.value)
               }
-              className="max-w-sm"
+              className="max-w-sm h-9"
             />
           )}
         </div>
@@ -111,7 +111,7 @@ export function DataTable<TData, TValue>({
         {/* Column visibility dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" size="sm" className="h-9">
               Kolonner <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -139,13 +139,15 @@ export function DataTable<TData, TValue>({
 
       {/* Selected rows indicator */}
       {Object.keys(rowSelection).length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {Object.keys(rowSelection).length} af {table.getFilteredRowModel().rows.length} række(r) valgt
+        <div className="px-4">
+          <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
+            {Object.keys(rowSelection).length} af {table.getFilteredRowModel().rows.length} række(r) valgt
+          </div>
         </div>
       )}
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="overflow-hidden border-0">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -220,7 +222,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between space-x-2 py-4">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t bg-muted/20">
         <div className="text-sm text-muted-foreground">
           Viser {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} til{" "}
           {Math.min(
@@ -229,38 +231,47 @@ export function DataTable<TData, TValue>({
           )}{" "}
           af {table.getFilteredRowModel().rows.length} resultater
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1">
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
+            className="h-8 w-8 p-0"
           >
-            <ChevronsLeft className="h-4 w-4" />
+            <ChevronsLeft className="h-3 w-3" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
+            className="h-8 w-8 p-0"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3 w-3" />
           </Button>
+          <div className="flex items-center space-x-2 mx-2">
+            <span className="text-sm font-medium">
+              Side {table.getState().pagination.pageIndex + 1} af {table.getPageCount()}
+            </span>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
+            className="h-8 w-8 p-0"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3 w-3" />
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
             disabled={!table.getCanNextPage()}
+            className="h-8 w-8 p-0"
           >
-            <ChevronsRight className="h-4 w-4" />
+            <ChevronsRight className="h-3 w-3" />
           </Button>
         </div>
       </div>

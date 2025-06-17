@@ -35,7 +35,7 @@ export const useFilterManagement = () => {
       const filterKey = prefix as keyof Filters
       
       // Get current array from currentFilters and remove the specific value
-      const currentArray = currentFilters[filterKey] as string[]
+      const currentArray = (currentFilters as any)[filterKey] as string[]
       
       if (Array.isArray(currentArray)) {
         const updatedArray = currentArray.filter(item => item !== value)

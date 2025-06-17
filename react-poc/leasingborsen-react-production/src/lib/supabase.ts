@@ -1,4 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
+import type { 
+  CarListing, 
+  FilterOptions, 
+  Make, 
+  Model, 
+  BodyType, 
+  FuelType, 
+  Transmission, 
+  Colour,
+  SupabaseResponse,
+  SupabaseSingleResponse
+} from '@/types'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -9,97 +21,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Database Types
-export interface CarListing {
-  listing_id?: string
-  id?: string
-  offer_id?: string
-  make: string
-  model: string
-  variant?: string
-  body_type: string
-  fuel_type: string
-  transmission: string
-  colour?: string
-  color?: string // Alias for colour
-  year?: number
-  mileage?: number
-  horsepower?: number
-  drive_type?: 'fwd' | 'rwd' | 'awd'
-  condition?: string
-  listing_status?: string
-  status?: string // Alias for listing_status
-  availability_date?: string
-  security_deposit?: number
-  final_payment?: number
-  excess_km_rate?: number
-  total_lease_cost?: number
-  mileage_per_year?: number
-  first_payment?: number
-  period_months?: number
-  monthly_price?: number
-  image?: string
-  thumbnail_base64?: string
-  seats?: number
-  co2_emission?: number
-  co2_tax_half_year?: number
-  wltp?: number
-  description?: string
-  seller_name?: string
-  seller_location?: string
-}
-
-export interface FilterOptions {
-  makes: string[]
-  models: string[]
-  body_type: string[]
-  fuel_type: string[]
-  transmission: string[]
-  price_min: number | null
-  price_max: number | null
-  seats_min: number | null
-  seats_max: number | null
-  horsepower_min: number | null
-  horsepower_max: number | null
-}
-
-export interface Make {
-  id: string
-  name: string
-}
-
-export interface Model {
-  id: string
-  name: string
-  make_id: string
-}
-
-export interface BodyType {
-  name: string
-}
-
-export interface FuelType {
-  name: string
-}
-
-export interface Transmission {
-  name: string
-}
-
-export interface Colour {
-  name: string
-}
-
-// API Response Types
-export type SupabaseResponse<T> = {
-  data: T[] | null
-  error: Error | null
-}
-
-export type SupabaseSingleResponse<T> = {
-  data: T | null
-  error: Error | null
-}
 
 // Body type mapping - maps consolidated categories to database values
 const BODY_TYPE_MAPPING: Record<string, string[]> = {
@@ -143,51 +64,72 @@ function expandFuelTypes(consolidatedTypes: string[]): string[] {
   return [...new Set(expandedTypes)] // Remove duplicates
 }
 
+// Shared filter application function to reduce code duplication
+function applyFilters(query: any, filters: Partial<FilterOptions>) {
+  // Apply make filters
+  if (filters.makes && filters.makes.length > 0) {
+    query = query.in('make', filters.makes)
+  }
+  
+  // Apply model filters
+  if (filters.models && filters.models.length > 0) {
+    query = query.in('model', filters.models)
+  }
+  
+  if (filters.body_type && filters.body_type.length > 0) {
+    const expandedBodyTypes = expandBodyTypes(filters.body_type)
+    query = query.in('body_type', expandedBodyTypes)
+  }
+  
+  if (filters.fuel_type && filters.fuel_type.length > 0) {
+    const expandedFuelTypes = expandFuelTypes(filters.fuel_type)
+    query = query.in('fuel_type', expandedFuelTypes)
+  }
+  
+  if (filters.transmission && filters.transmission.length > 0) {
+    query = query.in('transmission', filters.transmission)
+  }
+  
+  if (filters.price_min !== null && filters.price_min !== undefined) {
+    query = query.gte('monthly_price', filters.price_min)
+  }
+  
+  if (filters.price_max !== null && filters.price_max !== undefined) {
+    query = query.lte('monthly_price', filters.price_max)
+  }
+  
+  if (filters.seats_min !== null && filters.seats_min !== undefined) {
+    query = query.gte('seats', filters.seats_min)
+  }
+  
+  if (filters.seats_max !== null && filters.seats_max !== undefined) {
+    query = query.lte('seats', filters.seats_max)
+  }
+  
+  if (filters.horsepower_min !== null && filters.horsepower_min !== undefined) {
+    query = query.gte('horsepower', filters.horsepower_min)
+  }
+  
+  if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
+    query = query.lte('horsepower', filters.horsepower_max)
+  }
+
+  return query
+}
+
+// Export types for external use
+export type { CarListing, FilterOptions, Make, Model, BodyType, FuelType, Transmission, Colour, SupabaseResponse, SupabaseSingleResponse }
+
 // Query Builders with Types
 export class CarListingQueries {
-  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0) {
+  static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0): Promise<SupabaseResponse<CarListing>> {
     let query = supabase
       .from('full_listing_view')
       .select('*')
+      .not('monthly_price', 'is', null) // Only show listings with offers
 
-    // Apply make filters
-    if (filters.makes && filters.makes.length > 0) {
-      query = query.in('make', filters.makes)
-    }
-    
-    // Apply model filters
-    if (filters.models && filters.models.length > 0) {
-      query = query.in('model', filters.models)
-    }
-    if (filters.body_type && filters.body_type.length > 0) {
-      const expandedBodyTypes = expandBodyTypes(filters.body_type)
-      query = query.in('body_type', expandedBodyTypes)
-    }
-    if (filters.fuel_type && filters.fuel_type.length > 0) {
-      const expandedFuelTypes = expandFuelTypes(filters.fuel_type)
-      query = query.in('fuel_type', expandedFuelTypes)
-    }
-    if (filters.transmission && filters.transmission.length > 0) {
-      query = query.in('transmission', filters.transmission)
-    }
-    if (filters.price_min !== null && filters.price_min !== undefined) {
-      query = query.gte('monthly_price', filters.price_min)
-    }
-    if (filters.price_max !== null && filters.price_max !== undefined) {
-      query = query.lte('monthly_price', filters.price_max)
-    }
-    if (filters.seats_min !== null && filters.seats_min !== undefined) {
-      query = query.gte('seats', filters.seats_min)
-    }
-    if (filters.seats_max !== null && filters.seats_max !== undefined) {
-      query = query.lte('seats', filters.seats_max)
-    }
-    if (filters.horsepower_min !== null && filters.horsepower_min !== undefined) {
-      query = query.gte('horsepower', filters.horsepower_min)
-    }
-    if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
-      query = query.lte('horsepower', filters.horsepower_max)
-    }
+    // Apply filters using shared function
+    query = applyFilters(query, filters)
 
     // Apply sorting
     const isDescending = sortOrder === 'desc'
@@ -198,58 +140,25 @@ export class CarListingQueries {
     return { data: data as CarListing[] | null, error }
   }
 
-  static async getListingById(id: string) {
+  static async getListingById(id: string): Promise<SupabaseSingleResponse<CarListing>> {
     const { data, error } = await supabase
       .from('full_listing_view')
       .select('*')
       .eq('listing_id', id)
+      .not('monthly_price', 'is', null) // Only show listings with offers
       .single()
 
     return { data: data as CarListing | null, error }
   }
 
-  static async getListingCount(filters: Partial<FilterOptions> = {}) {
+  static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
     let query = supabase
       .from('full_listing_view')
       .select('*', { count: 'exact', head: true })
+      .not('monthly_price', 'is', null) // Only count listings with offers
 
-    // Apply same make/model filters as getListings
-    if (filters.makes && filters.makes.length > 0) {
-      query = query.in('make', filters.makes)
-    }
-    
-    if (filters.models && filters.models.length > 0) {
-      query = query.in('model', filters.models)
-    }
-    if (filters.body_type && filters.body_type.length > 0) {
-      const expandedBodyTypes = expandBodyTypes(filters.body_type)
-      query = query.in('body_type', expandedBodyTypes)
-    }
-    if (filters.fuel_type && filters.fuel_type.length > 0) {
-      const expandedFuelTypes = expandFuelTypes(filters.fuel_type)
-      query = query.in('fuel_type', expandedFuelTypes)
-    }
-    if (filters.transmission && filters.transmission.length > 0) {
-      query = query.in('transmission', filters.transmission)
-    }
-    if (filters.price_min !== null && filters.price_min !== undefined) {
-      query = query.gte('monthly_price', filters.price_min)
-    }
-    if (filters.price_max !== null && filters.price_max !== undefined) {
-      query = query.lte('monthly_price', filters.price_max)
-    }
-    if (filters.seats_min !== null && filters.seats_min !== undefined) {
-      query = query.gte('seats', filters.seats_min)
-    }
-    if (filters.seats_max !== null && filters.seats_max !== undefined) {
-      query = query.lte('seats', filters.seats_max)
-    }
-    if (filters.horsepower_min !== null && filters.horsepower_min !== undefined) {
-      query = query.gte('horsepower', filters.horsepower_min)
-    }
-    if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
-      query = query.lte('horsepower', filters.horsepower_max)
-    }
+    // Apply same filters using shared function
+    query = applyFilters(query, filters)
 
     const { count, error } = await query
     return { data: count || 0, error }
@@ -257,7 +166,7 @@ export class CarListingQueries {
 }
 
 export class ReferenceDataQueries {
-  static async getMakes() {
+  static async getMakes(): Promise<SupabaseResponse<Make>> {
     const { data, error } = await supabase
       .from('makes')
       .select('*')
@@ -266,7 +175,7 @@ export class ReferenceDataQueries {
     return { data: data as Make[] | null, error }
   }
 
-  static async getModels(makeId?: string) {
+  static async getModels(makeId?: string): Promise<SupabaseResponse<Model>> {
     let query = supabase
       .from('models')
       .select('*')
@@ -279,7 +188,7 @@ export class ReferenceDataQueries {
     return { data: data as Model[] | null, error }
   }
 
-  static async getBodyTypes() {
+  static async getBodyTypes(): Promise<SupabaseResponse<BodyType>> {
     const { data, error } = await supabase
       .from('body_types')
       .select('*')
@@ -288,7 +197,7 @@ export class ReferenceDataQueries {
     return { data: data as BodyType[] | null, error }
   }
 
-  static async getFuelTypes() {
+  static async getFuelTypes(): Promise<SupabaseResponse<FuelType>> {
     const { data, error } = await supabase
       .from('fuel_types')
       .select('*')
@@ -297,7 +206,7 @@ export class ReferenceDataQueries {
     return { data: data as FuelType[] | null, error }
   }
 
-  static async getTransmissions() {
+  static async getTransmissions(): Promise<SupabaseResponse<Transmission>> {
     const { data, error } = await supabase
       .from('transmissions')
       .select('*')
@@ -306,7 +215,7 @@ export class ReferenceDataQueries {
     return { data: data as Transmission[] | null, error }
   }
 
-  static async getColours() {
+  static async getColours(): Promise<SupabaseResponse<Colour>> {
     const { data, error } = await supabase
       .from('colours')
       .select('*')
