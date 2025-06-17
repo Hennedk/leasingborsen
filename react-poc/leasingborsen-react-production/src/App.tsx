@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import BaseLayout from '@/components/BaseLayout'
+import { Toaster } from '@/components/ui/sonner'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('@/pages/Home'))
@@ -104,6 +105,7 @@ function App() {
           </div>
         </Router>
         <ReactQueryDevtools initialIsOpen={false} />
+        <Toaster />
       </QueryClientProvider>
     </ErrorBoundary>
   )

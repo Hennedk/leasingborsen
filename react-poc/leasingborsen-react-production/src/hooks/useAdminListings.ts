@@ -12,7 +12,27 @@ import type { CarListing } from '@/lib/supabase'
 export function useAdminListings(filters: Partial<FilterOptions> = {}) {
   return useQuery({
     queryKey: queryKeys.adminListings(filters),
-    queryFn: () => CarListingQueries.getListings(filters, 1000), // Get more listings for admin
+    queryFn: async () => {
+      // Get listings with offer count
+      const { data: listings, error } = await supabase
+        .from('full_listing_view')
+        .select(`
+          *,
+          offer_count:lease_pricing(count)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(1000)
+
+      if (error) throw error
+
+      // Transform the data to include offer count
+      const transformedListings = listings?.map(listing => ({
+        ...listing,
+        offer_count: listing.offer_count?.[0]?.count || 0
+      })) || []
+
+      return { data: transformedListings, error: null }
+    },
     staleTime: 2 * 60 * 1000, // 2 minutes - shorter for admin to see updates quickly
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnMount: true,

@@ -27,7 +27,9 @@ const defaultFilters: Filters = {
   price_min: null,
   price_max: null,
   seats_min: null,
-  seats_max: null
+  seats_max: null,
+  horsepower_min: null,
+  horsepower_max: null
 }
 
 export const useFilterStore = create<FilterState>()(
@@ -63,6 +65,8 @@ export const useFilterStore = create<FilterState>()(
           trackingKey = 'price'
         } else if (filterKey === 'seats_min' || filterKey === 'seats_max') {
           trackingKey = 'seats'
+        } else if (filterKey === 'horsepower_min' || filterKey === 'horsepower_max') {
+          trackingKey = 'horsepower'
         }
         
         // If filter is being set (not cleared)

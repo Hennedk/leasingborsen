@@ -8,6 +8,7 @@ import PopularCategories from '@/components/PopularCategories'
 const Home: React.FC = () => {
   const { data: listingsResponse, isLoading, error } = useListings({}, 4)
   const [navigationError, setNavigationError] = useState<string | null>(null)
+  
 
   // Error handler for category navigation
   const handleNavigationError = useCallback((error: Error) => {

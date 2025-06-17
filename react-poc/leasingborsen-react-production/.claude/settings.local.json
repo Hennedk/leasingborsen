@@ -12,8 +12,20 @@
       "Bash(git add:*)",
       "Bash(rg:*)",
       "Bash(find:*)",
-      "WebFetch(domain:ui.shadcn.com)"
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(cp:*)",
+      "Bash(env)",
+      "Bash(node:*)",
+      "Bash(export VITE_SUPABASE_URL=https://hqqouszbgskteivjoems.supabase.co)",
+      "Bash(export:*)",
+      "Bash(rm:*)",
+      "mcp__supabase__execute_sql"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
 }

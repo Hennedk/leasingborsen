@@ -7,23 +7,26 @@ export function useReferenceData() {
   return useQuery({
     queryKey: queryKeys.referenceDataAll(),
     queryFn: async (): Promise<ReferenceData> => {
-      const [makesResult, modelsResult, bodyTypesResult, fuelTypesResult] = await Promise.all([
+      const [makesResult, modelsResult, bodyTypesResult, fuelTypesResult, transmissionsResult] = await Promise.all([
         supabase.from('makes').select('*').order('name'),
         supabase.from('models').select('*').order('name'), 
         supabase.from('body_types').select('*').order('name'),
-        supabase.from('fuel_types').select('*').order('name')
+        supabase.from('fuel_types').select('*').order('name'),
+        supabase.from('transmissions').select('*').order('name')
       ])
 
       if (makesResult.error) throw makesResult.error
       if (modelsResult.error) throw modelsResult.error
       if (bodyTypesResult.error) throw bodyTypesResult.error
       if (fuelTypesResult.error) throw fuelTypesResult.error
+      if (transmissionsResult.error) throw transmissionsResult.error
 
       return {
         makes: makesResult.data || [],
         models: modelsResult.data || [],
         bodyTypes: bodyTypesResult.data || [],
-        fuelTypes: fuelTypesResult.data || []
+        fuelTypes: fuelTypesResult.data || [],
+        transmissions: transmissionsResult.data || []
       }
     },
     staleTime: 60 * 60 * 1000, // 1 hour - reference data changes very rarely

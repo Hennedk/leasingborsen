@@ -421,6 +421,54 @@ export const errorMessages = {
 
 ## Environment Variables
 ```bash
+# Use .env.local for local development (already in .gitignore)
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
+
+## Supabase Setup Improvements
+
+### Enhanced Architecture
+- **Type Safety**: Split `CarListing` interface into focused, composable types:
+  - `CarListingCore` - Essential car data
+  - `CarSpecifications` - Technical specifications
+  - `LeasePricing` - Pricing information
+  - `CarMedia` - Images and descriptions
+  - `SellerInfo` - Contact information
+- **Code Reuse**: Shared `applyFilters()` function eliminates duplication
+- **Performance**: React Query integration with intelligent caching
+- **Error Handling**: Comprehensive error boundary for connection failures
+
+### React Query Integration
+```typescript
+// New hooks for optimized data fetching
+import { useListings, useListingById, useMakes, useModels } from '@/hooks/useSupabaseQueries'
+
+// Example usage with automatic caching
+const { data: listings, isLoading, error } = useListings(filters, 20, 'desc', 0)
+const { data: makes } = useMakes() // Cached for 30 minutes
+```
+
+### Performance Optimizations
+- **Caching Strategy**: 
+  - Listings: 5 minutes cache
+  - Reference data: 30 minutes cache
+  - Individual listings: 10 minutes cache
+- **Error Recovery**: Automatic retry for network errors
+- **Prefetching**: Available for pagination and detail views
+- **Query Invalidation**: Smart cache updates after mutations
+
+### Error Boundary Usage
+```typescript
+import { SupabaseErrorBoundary } from '@/components/SupabaseErrorBoundary'
+
+// Wrap components that use Supabase
+<SupabaseErrorBoundary>
+  <ListingsPage />
+</SupabaseErrorBoundary>
+```
+
+### Security Enhancements
+- Environment variables secured in `.gitignore`
+- Local development uses `.env.local`
+- Production environment separation maintained
