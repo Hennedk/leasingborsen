@@ -2,7 +2,6 @@ import React from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from './DataTable'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   AlertDialog,

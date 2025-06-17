@@ -1,21 +1,10 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { CommandPalette } from '@/components/CommandPalette'
 import { 
   Menu,
   Search,
   Bell,
-  User,
-  Settings,
-  LogOut,
   Sun,
   Moon
 } from 'lucide-react'

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { CarListingQueries, type FilterOptions } from '@/lib/supabase'
+import { type FilterOptions } from '@/lib/supabase'
 import { queryKeys, queryInvalidation } from '@/lib/queryKeys'
 import { supabase } from '@/lib/supabase'
 import type { CarListing } from '@/lib/supabase'
