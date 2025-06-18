@@ -115,9 +115,9 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 </div>
               </SelectTrigger>
               <SelectContent>
-                {sortOptions.map((option) => (
+                {sortOptions.map((option, index) => (
                   <SelectItem
-                    key={option.value}
+                    key={`sort-option-${index}`}
                     value={option.value}
                     className={sortOrder === option.value ? 'bg-muted font-medium' : ''}
                   >

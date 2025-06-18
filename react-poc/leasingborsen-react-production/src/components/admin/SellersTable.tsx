@@ -254,11 +254,11 @@ const SellersTable: React.FC<SellersTableProps> = ({
 
       {/* Data table */}
       <DataTable
-        columns={columns}
-        data={sellers}
+        columns={columns as any}
+        data={sellers as any}
         searchPlaceholder="Søg efter navn, e-mail eller telefon..."
         searchColumn="name"
-        onRowSelection={setSelectedSellers}
+        onRowSelection={setSelectedSellers as any}
         loading={loading}
       />
     </div>

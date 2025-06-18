@@ -86,8 +86,14 @@ export const useCreateOffer = () => {
       // Also force refetch the specific query
       queryClient.refetchQueries({ queryKey: ['offers', data.listing_id] })
       
-      // Update listings cache if it exists
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      // Only invalidate listing collections, not individual listing details to prevent form reset
+      queryClient.invalidateQueries({ 
+        queryKey: ['listings'],
+        predicate: (query) => {
+          // Only invalidate listing collections, not individual listing details
+          return query.queryKey.length > 1 && !query.queryKey.includes(data.listing_id)
+        }
+      })
     },
   })
 }
@@ -120,8 +126,14 @@ export const useUpdateOffer = () => {
       // Invalidate and refetch offers for this listing
       queryClient.invalidateQueries({ queryKey: ['offers', data.listing_id] })
       
-      // Update listings cache if it exists
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      // Only invalidate listing collections, not individual listing details to prevent form reset
+      queryClient.invalidateQueries({ 
+        queryKey: ['listings'],
+        predicate: (query) => {
+          // Only invalidate listing collections, not individual listing details
+          return query.queryKey.length > 1 && !query.queryKey.includes(data.listing_id)
+        }
+      })
     },
   })
 }
@@ -160,8 +172,14 @@ export const useDeleteOffer = () => {
         // Invalidate and refetch offers for this listing
         queryClient.invalidateQueries({ queryKey: ['offers', data.listingId] })
         
-        // Update listings cache if it exists
-        queryClient.invalidateQueries({ queryKey: ['listings'] })
+        // Only invalidate listing collections, not individual listing details to prevent form reset
+        queryClient.invalidateQueries({ 
+          queryKey: ['listings'],
+          predicate: (query) => {
+            // Only invalidate listing collections, not individual listing details
+            return query.queryKey.length > 1 && !query.queryKey.includes(data.listingId)
+          }
+        })
       }
     },
   })

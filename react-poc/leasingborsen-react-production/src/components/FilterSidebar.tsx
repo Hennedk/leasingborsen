@@ -239,7 +239,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                               {popularMakesList.map((make: Make) => {
                                 const isSelected = selectedMakes.includes(make.name)
                                 return (
-                                  <div key={make.id} className="flex items-center space-x-2">
+                                  <div key={`filter-popular-make-${make.id}`} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={isSelected}
                                       onCheckedChange={() => toggleMake(make.name)}
@@ -263,7 +263,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                               {otherMakesList.map((make: Make) => {
                                 const isSelected = selectedMakes.includes(make.name)
                                 return (
-                                  <div key={make.id} className="flex items-center space-x-2">
+                                  <div key={`filter-other-make-${make.id}`} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={isSelected}
                                       onCheckedChange={() => toggleMake(make.name)}
@@ -402,7 +402,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                               .map((model: Model) => {
                                 const isSelected = selectedModels.includes(model.name)
                                 return (
-                                  <div key={model.id} className="flex items-center space-x-2">
+                                  <div key={`filter-model-${model.id}`} className="flex items-center space-x-2">
                                     <Checkbox
                                       checked={isSelected}
                                       onCheckedChange={() => toggleModel(model.name)}

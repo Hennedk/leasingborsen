@@ -73,7 +73,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availableMileages.map((mileage) => (
-                  <SelectItem key={mileage} value={mileage.toString()}>
+                  <SelectItem key={`mileage-${mileage}`} value={mileage.toString()}>
                     {mileage.toLocaleString('da-DK')} km/år
                   </SelectItem>
                 ))}
@@ -95,7 +95,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availablePeriods.map((period) => (
-                  <SelectItem key={period} value={period.toString()}>
+                  <SelectItem key={`period-${period}`} value={period.toString()}>
                     {period} måneder
                   </SelectItem>
                 ))}
@@ -117,7 +117,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availableUpfronts.map((upfront) => (
-                  <SelectItem key={upfront} value={upfront.toString()}>
+                  <SelectItem key={`upfront-${upfront}`} value={upfront.toString()}>
                     {upfront.toLocaleString('da-DK')} kr
                   </SelectItem>
                 ))}

@@ -9,7 +9,7 @@ import {
   Form,
 } from '@/components/ui/form'
 import { useReferenceData } from '@/hooks/useReferenceData'
-import { useCreateListingWithOffers, useUpdateListingWithOffers } from '@/hooks/useMutations'
+import { useCreateListingWithOffers, useUpdateListingWithOffers } from '@/hooks/mutations'
 import { carListingSchema, type CarListingFormData } from '@/lib/validations'
 import { Save, ArrowLeft, RotateCcw } from 'lucide-react'
 import type { CarListing } from '@/types'
@@ -210,7 +210,8 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
       }
       
       setHasUnsavedChanges(false)
-      form.reset(form.getValues())
+      // Don't reset form values after save - just mark as clean
+      // The cache invalidation will handle updating the form with fresh data
       
     } catch (error: any) {
       console.error('Form submission failed:', error)
@@ -261,31 +262,51 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
   // Initialize form data when listing changes
   useEffect(() => {
     if (listing && referenceData?.makes && isEditing) {
+      // Only reset if this is actually a different listing or first load
+      const currentListingInForm = form.getValues()
+      const hasFormData = currentListingInForm.make || currentListingInForm.model || currentListingInForm.variant
       
-      // Reset form with the listing data to establish proper default state
-      form.reset(defaultValues)
-      
-      // Set make selection
-      if (listing.make_id) {
-        const make = referenceData.makes.find(m => m.id === listing.make_id)
-        if (make) {
-          setSelectedMakeId(make.id)
-        }
-      } else if (listing.make) {
-        const make = referenceData.makes.find(m => m.name === listing.make)
-        if (make) {
-          setSelectedMakeId(make.id)
-        }
+      // Protective check: Don't reset form if we have unsaved changes or recent data
+      if (hasUnsavedChanges && hasFormData) {
+        console.log('🛡️ Preserving form data during cache update - has unsaved changes')
+        return
       }
       
-      // Force clean state after initialization
-      setTimeout(() => {
-        setHasUnsavedChanges(false)
-        // Ensure form recognizes current values as the clean baseline
-        form.reset(form.getValues())
-      }, 100)
+      // Don't reset form if we have data and it's the same listing (prevents wiping during refetch)
+      if (hasFormData && currentListingId === listing.listing_id) {
+        console.log('🛡️ Preserving form data for same listing ID:', currentListingId)
+        return
+      }
+      
+      // Only reset if listing actually changed or this is initial load
+      if (currentListingId !== listing.listing_id || !hasFormData) {
+        console.log('✅ Resetting form for listing change:', listing.listing_id)
+        
+        // Reset form with the listing data to establish proper default state
+        form.reset(defaultValues)
+        
+        // Set make selection
+        if (listing.make_id) {
+          const make = referenceData.makes.find(m => m.id === listing.make_id)
+          if (make) {
+            setSelectedMakeId(make.id)
+          }
+        } else if (listing.make) {
+          const make = referenceData.makes.find(m => m.name === listing.make)
+          if (make) {
+            setSelectedMakeId(make.id)
+          }
+        }
+        
+        // Force clean state after initialization
+        setTimeout(() => {
+          setHasUnsavedChanges(false)
+          // Ensure form recognizes current values as the clean baseline
+          form.reset(form.getValues())
+        }, 100)
+      }
     }
-  }, [listing?.id, referenceData?.makes, isEditing, defaultValues, form])
+  }, [listing?.id, referenceData?.makes, isEditing, defaultValues, form, currentListingId, hasUnsavedChanges])
 
   // Keyboard shortcuts
   useEffect(() => {

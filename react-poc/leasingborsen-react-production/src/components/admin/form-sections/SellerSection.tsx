@@ -10,7 +10,7 @@ import {
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelpCircle } from 'lucide-react'
 import type { CarListingFormData } from '@/lib/validations'
-import { SellerSelect } from '../SellerSelect'
+import { SellerSelect } from '@/components/admin/SellerSelect'
 
 interface SellerSectionProps {
   control: Control<CarListingFormData>

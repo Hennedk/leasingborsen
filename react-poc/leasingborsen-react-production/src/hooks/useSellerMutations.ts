@@ -24,10 +24,7 @@ export const useCreateSeller = () => {
     mutationFn: async (data: CreateSellerData): Promise<Seller> => {
       const { data: seller, error } = await supabase
         .from('sellers')
-        .insert({
-          ...data,
-          created_at: new Date().toISOString()
-        })
+        .insert(data) // Let Supabase handle timestamps automatically
         .select()
         .single()
 
@@ -56,10 +53,7 @@ export const useUpdateSeller = () => {
     mutationFn: async ({ id, ...updates }: UpdateSellerData): Promise<Seller> => {
       const { data: seller, error } = await supabase
         .from('sellers')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(updates) // Let Supabase handle timestamps automatically
         .eq('id', id)
         .select()
         .single()

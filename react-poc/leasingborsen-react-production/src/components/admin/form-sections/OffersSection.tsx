@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelpCircle, Info } from 'lucide-react'
 import type { CarListingFormData } from '@/lib/validations'
-import { OffersTableManager } from '../OffersTableManager'
+import { OffersTableManager } from '../offers'
 
 interface OffersSectionProps {
   control: Control<CarListingFormData>

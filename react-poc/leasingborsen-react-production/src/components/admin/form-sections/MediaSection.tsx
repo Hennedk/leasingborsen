@@ -10,7 +10,7 @@ import {
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { HelpCircle } from 'lucide-react'
 import type { CarListingFormData } from '@/lib/validations'
-import { ImageUpload } from '../ImageUpload'
+import { ImageUpload } from '@/components/admin/ImageUpload'
 
 interface MediaSectionProps {
   control: Control<CarListingFormData>

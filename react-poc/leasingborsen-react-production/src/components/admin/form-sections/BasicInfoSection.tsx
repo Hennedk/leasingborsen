@@ -84,7 +84,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                 </FormControl>
                 <SelectContent>
                   {referenceData?.makes?.map((make: any) => (
-                    <SelectItem key={make.id} value={make.name}>
+                    <SelectItem key={`make-${make.id || make.name}`} value={make.name}>
                       {make.name}
                     </SelectItem>
                   ))}
@@ -121,7 +121,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                 </FormControl>
                 <SelectContent>
                   {filteredModels.map((model: any) => (
-                    <SelectItem key={model.id} value={model.name}>
+                    <SelectItem key={`model-${model.id || model.name}-${selectedMakeId}`} value={model.name}>
                       {model.name}
                     </SelectItem>
                   ))}
@@ -180,7 +180,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                 </FormControl>
                 <SelectContent>
                   {referenceData?.bodyTypes?.map((type: any) => (
-                    <SelectItem key={type.name} value={type.name}>
+                    <SelectItem key={`body-type-${type.id || type.name}`} value={type.name}>
                       {type.name}
                     </SelectItem>
                   ))}
@@ -214,7 +214,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                 </FormControl>
                 <SelectContent>
                   {referenceData?.fuelTypes?.map((type: any) => (
-                    <SelectItem key={type.name} value={type.name}>
+                    <SelectItem key={`fuel-type-${type.id || type.name}`} value={type.name}>
                       {type.name}
                     </SelectItem>
                   ))}
@@ -248,7 +248,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                 </FormControl>
                 <SelectContent>
                   {referenceData?.transmissions?.map((transmission: any) => (
-                    <SelectItem key={transmission.name} value={transmission.name}>
+                    <SelectItem key={`transmission-${transmission.id || transmission.name}`} value={transmission.name}>
                       {transmission.name}
                     </SelectItem>
                   ))}
