@@ -10,8 +10,8 @@ export interface Seller {
   address?: string | null
   country?: string | null
   logo_url?: string | null
-  created_at: string
-  updated_at?: string
+  created_at?: string // Made optional in case DB doesn't have this column
+  updated_at?: string | null // Made optional since DB doesn't have this column
 }
 
 export const useSellers = () => {

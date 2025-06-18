@@ -224,7 +224,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 {popularMakesList.map((make: Make) => {
                   const isSelected = selectedMakes.includes(make.name)
                   return (
-                    <div key={make.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
+                    <div key={`mobile-popular-make-${make.id}`} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleMake(make.name)}
@@ -246,7 +246,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 {otherMakesList.map((make: Make) => {
                   const isSelected = selectedMakes.includes(make.name)
                   return (
-                    <div key={make.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
+                    <div key={`mobile-other-make-${make.id}`} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleMake(make.name)}
@@ -417,7 +417,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             {makeModels.map((model: Model) => {
               const isSelected = selectedModels.includes(model.name)
               return (
-                <div key={model.id} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
+                <div key={`mobile-model-${model.id}`} className="flex items-center space-x-3 p-2 hover:bg-muted/50 rounded-lg">
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => toggleModel(model.name)}

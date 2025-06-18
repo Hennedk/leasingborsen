@@ -278,11 +278,11 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
 
       {/* Data table */}
       <DataTable
-        columns={columns}
-        data={listings}
+        columns={columns as any}
+        data={listings as any}
         searchPlaceholder="Søg efter mærke, model eller type..."
         searchColumn="make"
-        onRowSelection={setSelectedListings}
+        onRowSelection={setSelectedListings as any}
         loading={loading}
       />
     </div>

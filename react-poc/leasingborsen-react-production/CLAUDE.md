@@ -2,6 +2,136 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with the React migration of the Vue leasingborsen application.
 
+## 🧠 Context Awareness & Session Continuity
+
+### Quick Context Pickup
+When starting a new session, Claude should quickly establish context by reviewing:
+
+1. **README.md** - Overall project structure, dependencies, and tech stack
+2. **This file (CLAUDE.md)** - Architectural principles and migration strategy  
+3. **Key source files:**
+   - `src/lib/supabase.ts` - Database client and query patterns
+   - `src/hooks/useListings.ts` - Core data fetching logic
+   - `src/components/ListingCard.tsx` - Main component patterns
+   - `src/stores/filterStore.ts` - State management architecture
+   - `src/types/index.ts` - TypeScript definitions
+
+### High-Level Goals Clarification
+If needed, Claude should ask for clarification on:
+- **Performance focus** - Component optimization, bundle size, lazy loading
+- **Accessibility improvements** - ARIA labels, keyboard navigation, screen reader support
+- **Refactoring priorities** - Component decomposition, code organization, pattern consistency
+- **Feature development** - New functionality vs. improvement of existing features
+
+## 📝 Documenting Changes for Session Continuity
+
+### Change Documentation Standard
+For each significant modification, Claude should include:
+
+#### **Inline Documentation:**
+```tsx
+/* Claude Change Summary:
+ * Refactored MobileFilterOverlay (769→200 lines) into focused components.
+ * Added React.memo optimization and useCallback for performance.
+ * Extracted shared filter logic to useFilterOperations hook.
+ * Related to: CODEBASE_IMPROVEMENTS_ADMIN.md Critical Issue #1
+ */
+```
+
+#### **Component Header Comments:**
+```tsx
+// Component: MobileFilterMainView
+// Purpose: Mobile filter interface with category selection
+// Dependencies: useFilterStore, useReferenceData
+// Performance: Memoized with React.memo
+// Last Modified: [Date] - Split from MobileFilterOverlay for maintainability
+```
+
+#### **File Organization Changes:**
+When reorganizing files, document the move:
+```tsx
+// Moved from: src/components/MobileFilterOverlay.tsx
+// New location: src/components/mobile-filters/MobileFilterMainView.tsx
+// Reason: Component decomposition for maintainability (CODEBASE_IMPROVEMENTS_ADMIN.md)
+```
+
+### Commit Message Standards
+When making commits, use this format:
+```
+type(scope): description
+
+refactor(admin): split MobileFilterOverlay into focused components
+
+- Extract MobileFilterHeader, MobileFilterSearch, MobileFilterCategories
+- Add React.memo optimization for performance
+- Reduce main component from 769 to 200 lines
+- Related to CODEBASE_IMPROVEMENTS_ADMIN.md Critical Issue #1
+
+Claude Change Summary: Component decomposition for maintainability
+```
+
+## 🔁 Maintaining Consistency Across Sessions
+
+### Architecture Patterns to Preserve
+When working across multiple sessions, Claude should:
+
+#### **1. Reuse Established Utilities**
+- **formatPrice()** - Danish currency formatting (`1.234,56 kr`)
+- **useUrlSync()** - URL parameter synchronization
+- **useImageLazyLoading()** - Optimized image loading with intersection observer
+- **cn()** - Tailwind class merging utility
+
+#### **2. Follow Component Patterns**
+- **React.memo()** for expensive components
+- **useCallback()** and **useMemo()** for performance optimization
+- **Error boundaries** for graceful failure handling
+- **shadcn/ui components** over custom styling
+
+#### **3. Maintain File Naming Conventions**
+- **Components**: PascalCase with .tsx extension (`ListingCard.tsx`)
+- **Hooks**: camelCase with "use" prefix (`useUrlSync.ts`)
+- **Types**: PascalCase in types file (`types/index.ts`)
+- **Pages**: PascalCase with Page suffix (`AdminListings.tsx`)
+
+#### **4. State Management Consistency**
+- **Zustand** for global state (filters, theme)
+- **React Query** for server state with consistent caching patterns
+- **React Hook Form** + **Zod** for form validation
+- **Local useState** for component-specific state
+
+#### **5. Import/Export Standards**
+- **Always use path aliases**: `@/components` not `../components`
+- **Barrel exports** in major directories (`index.ts` files)
+- **Consistent import order**: React, third-party, local components, types
+
+### Current Architecture Reference Files
+Before making changes, review these key files for established patterns:
+
+```typescript
+// Key Reference Files for Patterns
+src/components/ListingCard.tsx          // Component optimization patterns
+src/hooks/useImageLazyLoading.ts       // Custom hook patterns  
+src/components/admin/DataTable.tsx     // Table component patterns
+src/stores/filterStore.ts              // State management patterns
+src/lib/validations.ts                 // Form validation patterns
+src/components/ui/                     // shadcn/ui usage patterns
+```
+
+### Session Handoff Guidelines
+When ending a session, Claude should:
+
+1. **Update relevant documentation** (this file, README.md, or improvement plans)
+2. **Test critical functionality** to ensure no regressions
+3. **Note any breaking changes** or incomplete refactors
+4. **Highlight next priority items** from improvement plans
+
+When starting a new session, Claude should:
+
+1. **Review recent changes** in git history or session summaries
+2. **Check current project state** with `npm run build` and `npm run lint`
+3. **Identify continuation points** from improvement documentation
+4. **Confirm development server** is working with `npm run dev`
+
 ## Development Commands
 
 ### Core Commands

@@ -315,7 +315,7 @@ export const OffersManager: React.FC<OffersManagerProps> = ({
       {offers.length > 0 ? (
         <div className="space-y-3">
           {offers.map((offer, index) => (
-            <Card key={index} className="relative">
+            <Card key={offer.id || `offer-${index}`} className="relative">
               <CardContent className="pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">

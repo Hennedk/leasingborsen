@@ -85,7 +85,7 @@ const CarMakesDropdown: React.FC<CarMakesDropdownProps> = ({
               Populære mærker
             </SelectLabel>
             {popularMakes.map((make: Make) => (
-              <SelectItem key={make.id} value={make.name}>
+              <SelectItem key={`popular-${make.id}`} value={make.name}>
                 {make.name}
               </SelectItem>
             ))}
@@ -104,7 +104,7 @@ const CarMakesDropdown: React.FC<CarMakesDropdownProps> = ({
               Alle mærker
             </SelectLabel>
             {allMakes.map((make: Make) => (
-              <SelectItem key={`all-${make.id}`} value={make.name}>
+              <SelectItem key={make.id} value={make.name}>
                 {make.name}
               </SelectItem>
             ))}

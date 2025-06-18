@@ -157,7 +157,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="flex items-center gap-2">
+                <div key={`skeleton-spec-${car?.listing_id || 'loading'}-${index}`} className="flex items-center gap-2">
                   <Skeleton className="w-4 h-4 rounded-full" />
                   <Skeleton className={`h-3 ${getRandomWidth()}`} />
                 </div>

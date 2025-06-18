@@ -118,7 +118,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
           {images.map((image, index) => (
-            <div key={index} className="relative group">
+            <div key={`image-${index}-${image.slice(-10)}`} className="relative group">
               <div className="aspect-video bg-muted rounded-lg overflow-hidden">
                 <img
                   src={image}

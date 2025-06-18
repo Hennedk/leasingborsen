@@ -171,7 +171,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {availableMileages.map((mileage) => (
-                        <SelectItem key={mileage} value={mileage.toString()}>
+                        <SelectItem key={`mileage-${mileage}`} value={mileage.toString()}>
                           {mileage.toLocaleString('da-DK')} km/år
                         </SelectItem>
                       ))}
@@ -193,7 +193,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {availablePeriods.map((period) => (
-                        <SelectItem key={period} value={period.toString()}>
+                        <SelectItem key={`period-${period}`} value={period.toString()}>
                           {period} måneder
                         </SelectItem>
                       ))}
@@ -215,7 +215,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       {availableUpfronts.map((upfront) => (
-                        <SelectItem key={upfront} value={upfront.toString()}>
+                        <SelectItem key={`upfront-${upfront}`} value={upfront.toString()}>
                           {upfront.toLocaleString('da-DK')} kr
                         </SelectItem>
                       ))}

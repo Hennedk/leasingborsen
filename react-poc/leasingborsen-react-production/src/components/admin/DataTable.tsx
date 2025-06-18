@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { 
   flexRender, 
   getCoreRowModel, 
@@ -50,20 +50,21 @@ interface DataTableProps<TData, TValue> {
   loading?: boolean
 }
 
-export function DataTable<TData, TValue>({
+export const DataTable = React.memo(<TData, TValue>({
   columns,
   data,
   searchPlaceholder = "Søg...",
   searchColumn,
   onRowSelection,
   loading = false
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData, TValue>) => {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
-  const table = useReactTable({
+  // Memoized table configuration
+  const tableConfig = useMemo(() => ({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -80,15 +81,22 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
-  })
+  }), [data, columns, sorting, columnFilters, columnVisibility, rowSelection])
+
+  const table = useReactTable(tableConfig)
+
+  // Memoized selected rows
+  const selectedRows = useMemo(() => 
+    table.getFilteredSelectedRowModel().rows.map(row => row.original),
+    [table.getFilteredSelectedRowModel().rows]
+  )
 
   // Notify parent component of selected rows
-  React.useEffect(() => {
+  useEffect(() => {
     if (onRowSelection) {
-      const selectedRows = table.getFilteredSelectedRowModel().rows.map(row => row.original)
       onRowSelection(selectedRows)
     }
-  }, [rowSelection, onRowSelection, table])
+  }, [selectedRows, onRowSelection])
 
   return (
     <div className="space-y-4">
@@ -189,9 +197,9 @@ export function DataTable<TData, TValue>({
             {loading ? (
               // Loading skeleton
               Array.from({ length: 5 }).map((_, index) => (
-                <TableRow key={index}>
+                <TableRow key={`loading-row-${index}`}>
                   {columns.map((_, cellIndex) => (
-                    <TableCell key={cellIndex}>
+                    <TableCell key={`loading-cell-${index}-${cellIndex}`}>
                       <div className="h-4 bg-muted animate-pulse rounded" />
                     </TableCell>
                   ))}
@@ -277,4 +285,7 @@ export function DataTable<TData, TValue>({
       </div>
     </div>
   )
-}
+})
+
+// @ts-ignore
+DataTable.displayName = 'DataTable'
