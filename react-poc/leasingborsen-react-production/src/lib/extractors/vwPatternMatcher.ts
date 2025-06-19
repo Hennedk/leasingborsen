@@ -139,6 +139,86 @@ export class VWPDFExtractor {
       }
     })
     
+    // For the new ID.3 format, we need to handle continuous text blocks
+    // Look for variant patterns in the concatenated text
+    const fullText = lines.join(' ')
+    
+    // Enhanced pattern to find ID.3 variants in continuous text:
+    // Use regex to find each variant with its full content
+    const variantMatches = [
+      { name: 'Life+', pattern: /Life\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=Max\+|GTX Performance\+|$)/s },
+      { name: 'Max+', pattern: /Max\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=GTX Performance\+|$)/s },
+      { name: 'GTX Performance+', pattern: /GTX Performance\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?$/s }
+    ]
+    
+    for (const variantMatch of variantMatches) {
+      const match = fullText.match(variantMatch.pattern)
+      if (!match) continue
+      
+      const horsepower = parseInt(match[1])
+      const range = parseInt(match[2])
+      const variantContent = match[0]
+      
+      console.log(`✅ Found ID.3 variant in continuous text: "${variantMatch.name}" (${horsepower} hk, ${range} km range)`)
+      
+      // Extract all pricing options for this variant
+      const pricingOptions: Array<{
+        mileage_per_year: number
+        period_months: number
+        total_cost: number
+        min_price_12_months: number
+        deposit: number
+        monthly_price: number
+      }> = []
+      
+      // Pattern to match pricing lines: "10.000 km/år 48 mdr. 163.760 kr. 45.140 kr. 5.000 kr. 3.295 kr."
+      const pricingPattern = /(\d{1,2}[.,]?\d{3})\s*km\/år\s*(\d+)\s*mdr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\./g
+      
+      let pricingMatch
+      while ((pricingMatch = pricingPattern.exec(variantContent)) !== null) {
+        const mileage = parseInt(pricingMatch[1].replace(/[.,]/g, ''))
+        const period = parseInt(pricingMatch[2])
+        const totalCost = parseInt(pricingMatch[3].replace(/[.,]/g, ''))
+        const minPrice = parseInt(pricingMatch[4].replace(/[.,]/g, ''))
+        const deposit = parseInt(pricingMatch[5].replace(/[.,]/g, ''))
+        const monthlyPrice = parseInt(pricingMatch[6].replace(/[.,]/g, ''))
+        
+        pricingOptions.push({
+          mileage_per_year: mileage,
+          period_months: period,
+          total_cost: totalCost,
+          min_price_12_months: minPrice,
+          deposit: deposit,
+          monthly_price: monthlyPrice
+        })
+      }
+      
+      console.log(`  📋 Found ${pricingOptions.length} pricing options for ${variantMatch.name}`)
+      
+      if (pricingOptions.length > 0) {
+        const result: VWExtractionResult = {
+          model: section.model,
+          variant: variantMatch.name,
+          horsepower,
+          is_electric: true,
+          range_km: range,
+          pricing_options: pricingOptions,
+          line_numbers: [section.startIndex + 1],
+          confidence_score: 0.90, // Higher confidence for complete data
+          source_section: `${section.model} Section`
+        }
+        
+        results.push(result)
+      }
+    }
+    
+    // If we found variants in continuous text, return them
+    if (results.length > 0) {
+      console.log(`📋 Section "${section.model}" extracted ${results.length} variants from continuous text`)
+      return results
+    }
+    
+    // Fallback to line-by-line analysis for other formats
     let currentVariant: Partial<VWExtractionResult> | null = null
     let currentSpecs: any = {}
     
