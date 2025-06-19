@@ -72,7 +72,7 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
         if (additionalDrafts && additionalDrafts.length > 0) {
           console.log(`Found ${additionalDrafts.length} additional draft listings not in full_listing_view`)
           
-          const transformedAdditionalDrafts = additionalDrafts.map(listing => {
+          const transformedAdditionalDrafts = additionalDrafts.map((listing: any) => {
             const firstPricing = listing.lease_pricing?.[0]
             const missingFields = []
             
@@ -132,7 +132,7 @@ export function useAdminListing(id: string) {
       if (!id) return { data: null, error: null }
       
       // First try to get from full_listing_view (published listings)
-      const { data: publishedListing, error: publishedError } = await supabase
+      const { data: publishedListing } = await supabase
         .from('full_listing_view')
         .select('*')
         .eq('listing_id', id)
@@ -181,37 +181,38 @@ export function useAdminListing(id: string) {
       if (draftListing) {
         console.log('Found draft listing in raw listings table')
         // Transform to match CarListing interface
-        const firstPricing = draftListing.lease_pricing?.[0]
+        const draftListingAny = draftListing as any
+        const firstPricing = draftListingAny.lease_pricing?.[0]
         
         const transformedListing = {
-          listing_id: draftListing.id,
-          make: draftListing.makes?.name || 'Ukendt',
-          model: draftListing.models?.name || 'Ukendt',
-          variant: draftListing.variant,
-          year: draftListing.year,
-          mileage: draftListing.mileage,
-          horsepower: draftListing.horsepower,
-          description: draftListing.description,
-          image: draftListing.image,
-          body_type: draftListing.body_types?.name || null,
-          fuel_type: draftListing.fuel_types?.name || null,
-          transmission: draftListing.transmissions?.name || null,
-          seller_name: draftListing.sellers?.name || null,
+          listing_id: draftListingAny.id,
+          make: draftListingAny.makes?.name || 'Ukendt',
+          model: draftListingAny.models?.name || 'Ukendt',
+          variant: draftListingAny.variant,
+          year: draftListingAny.year,
+          mileage: draftListingAny.mileage,
+          horsepower: draftListingAny.horsepower,
+          description: draftListingAny.description,
+          image: draftListingAny.image,
+          body_type: draftListingAny.body_types?.name || null,
+          fuel_type: draftListingAny.fuel_types?.name || null,
+          transmission: draftListingAny.transmissions?.name || null,
+          seller_name: draftListingAny.sellers?.name || null,
           monthly_price: firstPricing?.monthly_price || null,
           first_payment: firstPricing?.first_payment || null,
           period_months: firstPricing?.period_months || null,
           mileage_per_year: firstPricing?.mileage_per_year || null,
-          created_at: draftListing.created_at,
-          updated_at: draftListing.created_at,
+          created_at: draftListingAny.created_at,
+          updated_at: draftListingAny.created_at,
           // Raw IDs for form editing
-          make_id: draftListing.make_id,
-          model_id: draftListing.model_id,
-          seller_id: draftListing.seller_id,
-          body_type_id: draftListing.body_type_id,
-          fuel_type_id: draftListing.fuel_type_id,
-          transmission_id: draftListing.transmission_id,
+          make_id: draftListingAny.make_id,
+          model_id: draftListingAny.model_id,
+          seller_id: draftListingAny.seller_id,
+          body_type_id: draftListingAny.body_type_id,
+          fuel_type_id: draftListingAny.fuel_type_id,
+          transmission_id: draftListingAny.transmission_id,
           // Admin metadata
-          offer_count: draftListing.lease_pricing?.length || 0,
+          offer_count: draftListingAny.lease_pricing?.length || 0,
           is_draft: true
         }
         
@@ -270,7 +271,7 @@ export function useAdminDraftListings() {
       }
       
       // Transform draft listings to match admin interface
-      const transformedDrafts = draftListings?.map(listing => {
+      const transformedDrafts = draftListings?.map((listing: any) => {
         const firstPricing = listing.lease_pricing?.[0]
         const missingFields = []
         
