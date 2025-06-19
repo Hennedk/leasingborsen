@@ -316,12 +316,42 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
   }
   
   private async compareWithExistingListings(
-    _sellerId: string,
+    sellerId: string,
     extractedModels: VWExtractionResult[]
   ): Promise<ProcessedVWItem[]> {
     
-    // Mock implementation - simulate no existing listings for demo
-    const existingListings: any[] = []
+    console.log(`🔍 Checking for existing listings for seller: ${sellerId}`)
+    
+    // Get existing listings for this seller with make/model/variant combinations
+    let existingListings: any[] = []
+    
+    try {
+      // Query for existing listings from this seller  
+      const { data: existing, error } = await supabase
+        .from('listings')
+        .select(`
+          id,
+          variant,
+          horsepower,
+          makes!left(name),
+          models!left(name),
+          lease_pricing!left(monthly_price, first_payment, period_months, mileage_per_year)
+        `)
+        .eq('seller_id', sellerId)
+        .is('deleted_at', null) // Only active listings (not deleted)
+      
+      if (error) {
+        console.error('❌ Error fetching existing listings:', error)
+        throw error
+      }
+      
+      existingListings = existing || []
+      console.log(`📋 Found ${existingListings.length} existing listings for this seller`)
+      
+    } catch (error) {
+      console.error('❌ Failed to fetch existing listings, proceeding with empty list:', error)
+      existingListings = []
+    }
     
     const processedItems: ProcessedVWItem[] = []
     
@@ -329,15 +359,19 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     for (const extracted of extractedModels) {
       // Try to find matching existing listing by make/model/variant combination
       const existing = existingListings?.find((listing: any) => 
+        listing.makes?.name === 'Volkswagen' && // Ensure it's VW
         listing.models?.name === extracted.model &&
         listing.variant === extracted.variant &&
-        listing.horsepower === extracted.horsepower
+        (listing.horsepower === extracted.horsepower || !listing.horsepower) // Allow null horsepower
       )
       
       if (existing) {
+        console.log(`🔄 Found existing listing: ${extracted.model} ${extracted.variant} (${existing.id})`)
+        
         // Compare pricing options to see if there are changes
         const changes = this.detectVehicleChanges(existing, extracted)
         if (Object.keys(changes).length > 0) {
+          console.log(`  📝 Changes detected, marking for update`)
           processedItems.push({
             action: 'update',
             extracted,
@@ -345,8 +379,13 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
             changes,
             confidence_score: extracted.confidence_score
           })
+        } else {
+          console.log(`  ✅ No changes needed, skipping`)
+          // Skip this item - no changes needed
         }
       } else {
+        console.log(`✨ New listing: ${extracted.model} ${extracted.variant}`)
+        
         // Completely new vehicle listing with all its pricing options
         processedItems.push({
           action: 'new',
@@ -503,7 +542,10 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
         id: batchData.id,
         status: batchData.status,
         created_at: batchData.created_at,
-        seller: { name: batchData.sellers.name }
+        seller: { 
+          id: batchData.seller_id,
+          name: batchData.sellers.name 
+        }
       }
       
       const items = itemsData.map(item => ({
@@ -632,6 +674,12 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     const batchDetails = await this.getBatchDetails(batchId)
     const itemsToProcess = batchDetails.items.filter(item => itemIds.includes(item.id))
     
+    // Get the seller_id from the batch
+    const batchSellerId = 'id' in batchDetails.batch.seller ? batchDetails.batch.seller.id : null
+    if (!batchSellerId) {
+      throw new Error('Cannot find seller_id for this batch')
+    }
+    
     const results = {
       applied: 0,
       created: 0,
@@ -647,7 +695,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
         
         switch (item.action) {
           case 'new':
-            await this.createNewListing(item)
+            await this.createNewListing(item, batchSellerId)
             results.created++
             console.log(`  ✅ Created new listing`)
             break
@@ -687,7 +735,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     return results
   }
   
-  private async createNewListing(item: any): Promise<void> {
+  private async createNewListing(item: any, sellerId: string): Promise<void> {
     const extracted = item.parsed_data
     const pricingOptions = extracted.pricing_options || []
     
@@ -696,18 +744,13 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     // Resolve foreign keys for make and model only
     const { makeId, modelId } = await this.resolveMakeAndModel('Volkswagen', extracted.model)
     
-    // Get the default Volkswagen seller for VW imports
-    const vwSellerId = await this.getVWSellerId()
-    
-    if (!vwSellerId) {
-      throw new Error('No seller found for VW imports')
-    }
+    console.log(`    🎯 Using correct seller ID: ${sellerId}`)
     
     const listingData = {
       make_id: makeId,
       model_id: modelId,
       variant: extracted.variant,
-      seller_id: vwSellerId
+      seller_id: sellerId // Use the correct seller ID passed from batch
       // body_type_id, fuel_type_id, transmission_id are now nullable - will be added manually
     }
     
@@ -824,35 +867,6 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     }
   }
   
-  private async getVWSellerId(): Promise<string | null> {
-    try {
-      // Try to find existing Volkswagen seller
-      const { data: seller, error } = await supabase
-        .from('sellers')
-        .select('id')
-        .ilike('name', '%volkswagen%')
-        .single()
-      
-      if (error || !seller) {
-        console.log(`    ⚠️ No Volkswagen seller found, using default seller`)
-        // Return the first available seller as fallback
-        const { data: defaultSeller } = await supabase
-          .from('sellers')
-          .select('id')
-          .limit(1)
-          .single()
-        
-        return defaultSeller?.id || null
-      }
-      
-      console.log(`    ✅ Using VW seller: ${seller.id}`)
-      return seller.id
-      
-    } catch (error) {
-      console.error(`    ❌ Failed to get VW seller:`, error)
-      return null
-    }
-  }
   
   private async resolveMakeAndModel(makeName: string, modelName: string): Promise<{ makeId: string; modelId: string }> {
     try {
