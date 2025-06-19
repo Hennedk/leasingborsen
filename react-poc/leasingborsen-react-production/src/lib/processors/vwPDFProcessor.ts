@@ -1,4 +1,4 @@
-import { VWPDFExtractor, type VWExtractionResult, convertVWToCarListing } from '../extractors/vwPatternMatcher'
+import { VWPDFExtractor, type VWExtractionResult } from '../extractors/vwPatternMatcher'
 import { hybridVehicleExtractor } from '../extractors/hybridExtractor'
 import { supabase } from '@/lib/supabase'
 import { pdfTextExtractor, PDFTextExtractor, type PDFExtractionResult } from '../services/pdfTextExtractor'
@@ -316,7 +316,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
   }
   
   private async compareWithExistingListings(
-    sellerId: string,
+    _sellerId: string,
     extractedModels: VWExtractionResult[]
   ): Promise<ProcessedVWItem[]> {
     
@@ -380,32 +380,6 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     return processedItems
   }
   
-  private detectChanges(existing: any, extracted: any): Record<string, {old: any, new: any}> {
-    const changes: Record<string, {old: any, new: any}> = {}
-    
-    if (existing.monthly_price !== extracted.monthly_price) {
-      changes.monthly_price = {
-        old: existing.monthly_price,
-        new: extracted.monthly_price
-      }
-    }
-    
-    if (existing.security_deposit !== extracted.security_deposit) {
-      changes.security_deposit = {
-        old: existing.security_deposit,
-        new: extracted.security_deposit
-      }
-    }
-    
-    if (existing.total_lease_cost !== extracted.total_lease_cost) {
-      changes.total_lease_cost = {
-        old: existing.total_lease_cost,
-        new: extracted.total_lease_cost
-      }
-    }
-    
-    return changes
-  }
 
   private detectVehicleChanges(existing: any, extracted: VWExtractionResult): Record<string, {old: any, new: any}> {
     const changes: Record<string, {old: any, new: any}> = {}
@@ -717,14 +691,17 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     const extracted = item.parsed_data
     const pricingOptions = extracted.pricing_options || []
     
-    // Use the first pricing option for main listing data (required fields)
-    const firstPricing = pricingOptions[0] || {}
+    // Note: We now store all pricing options in lease_pricing table, no need for main listing pricing
     
     // Resolve foreign keys for make and model only
     const { makeId, modelId } = await this.resolveMakeAndModel('Volkswagen', extracted.model)
     
     // Get the default Volkswagen seller for VW imports
     const vwSellerId = await this.getVWSellerId()
+    
+    if (!vwSellerId) {
+      throw new Error('No seller found for VW imports')
+    }
     
     const listingData = {
       make_id: makeId,
@@ -754,7 +731,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
       
       // 2. Create lease pricing options for all pricing data
       if (pricingOptions.length > 0) {
-        const leasePricingInserts = pricingOptions.map(option => ({
+        const leasePricingInserts = pricingOptions.map((option: any) => ({
           listing_id: listing.id,
           monthly_price: option.monthly_price || 0,
           first_payment: option.deposit || 0,
@@ -847,7 +824,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     }
   }
   
-  private async getVWSellerId(): Promise<string> {
+  private async getVWSellerId(): Promise<string | null> {
     try {
       // Try to find existing Volkswagen seller
       const { data: seller, error } = await supabase
@@ -896,10 +873,14 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
           .select()
           .single()
         
-        if (createMakeError) {
-          throw new Error(`Failed to create make "${makeName}": ${createMakeError.message}`)
+        if (createMakeError || !newMake) {
+          throw new Error(`Failed to create make "${makeName}": ${createMakeError?.message || 'Unknown error'}`)
         }
         make = newMake
+      }
+      
+      if (!make) {
+        throw new Error(`Make "${makeName}" not found and could not be created`)
       }
       
       console.log(`    ✅ Make resolved: ${makeName} → ${make.id}`)
@@ -923,10 +904,14 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
           .select()
           .single()
         
-        if (createModelError) {
-          throw new Error(`Failed to create model "${modelName}": ${createModelError.message}`)
+        if (createModelError || !newModel) {
+          throw new Error(`Failed to create model "${modelName}": ${createModelError?.message || 'Unknown error'}`)
         }
         model = newModel
+      }
+      
+      if (!model) {
+        throw new Error(`Model "${modelName}" not found and could not be created`)
       }
       
       console.log(`    ✅ Model resolved: ${modelName} → ${model.id}`)
@@ -942,7 +927,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     }
   }
   
-  private async updateBatchStatus(batchId: string, status: string, results: any): Promise<void> {
+  private async updateBatchStatus(batchId: string, status: string, _results: any): Promise<void> {
     console.log(`📊 Updating batch ${batchId} status to: ${status}`)
     
     try {
