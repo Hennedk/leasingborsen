@@ -3,13 +3,13 @@ import { useParams } from 'react-router-dom'
 import AdminLayout from '@/components/admin/AdminLayout'
 import AdminListingFormComponent from '@/components/admin/AdminListingFormNew'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
-import { useListing } from '@/hooks/useListings'
+import { useAdminListing } from '@/hooks/useAdminListings'
 
 const AdminListingFormPage: React.FC = () => {
   const { id } = useParams()
   const isEditing = Boolean(id)
   
-  const { data: listingData, isLoading } = useListing(id || '')
+  const { data: listingData, isLoading } = useAdminListing(id || '')
 
   return (
     <AdminLayout title={isEditing ? 'Rediger Annonce' : 'Opret Annonce'}>
