@@ -131,21 +131,10 @@ export function useAdminListing(id: string) {
     queryFn: async () => {
       if (!id) return { data: null, error: null }
       
-      // First try to get from full_listing_view (published listings)
-      const { data: publishedListing } = await supabase
-        .from('full_listing_view')
-        .select('*')
-        .eq('listing_id', id)
-        .single()
+      console.log('🔍 Admin fetching listing:', id)
       
-      if (publishedListing) {
-        console.log('Found listing in full_listing_view')
-        return { data: publishedListing, error: null }
-      }
-      
-      // If not found, try to get from raw listings table (draft listings)
-      console.log('Listing not in full_listing_view, checking raw listings table...')
-      const { data: draftListing, error: draftError } = await supabase
+      // Admin-first approach: Query raw listings table with all joins to get complete data
+      const { data: listing, error } = await supabase
         .from('listings')
         .select(`
           id,
@@ -173,49 +162,54 @@ export function useAdminListing(id: string) {
         .eq('id', id)
         .single()
       
-      if (draftError) {
-        console.error('Draft listing fetch failed:', draftError)
-        return { data: null, error: draftError }
+      if (error) {
+        console.error('Admin listing fetch failed:', error)
+        return { data: null, error }
       }
       
-      if (draftListing) {
-        console.log('Found draft listing in raw listings table')
+      if (listing) {
+        console.log('✅ Admin listing retrieved successfully')
+        
         // Transform to match CarListing interface
-        const draftListingAny = draftListing as any
-        const firstPricing = draftListingAny.lease_pricing?.[0]
+        const listingAny = listing as any
+        const firstPricing = listingAny.lease_pricing?.[0]
+        
+        // Determine if this is a draft (missing required reference data)
+        const isDraft = !listingAny.body_type_id || !listingAny.fuel_type_id || !listingAny.transmission_id
         
         const transformedListing = {
-          listing_id: draftListingAny.id,
-          make: draftListingAny.makes?.name || 'Ukendt',
-          model: draftListingAny.models?.name || 'Ukendt',
-          variant: draftListingAny.variant,
-          year: draftListingAny.year,
-          mileage: draftListingAny.mileage,
-          horsepower: draftListingAny.horsepower,
-          description: draftListingAny.description,
-          image: draftListingAny.image,
-          body_type: draftListingAny.body_types?.name || null,
-          fuel_type: draftListingAny.fuel_types?.name || null,
-          transmission: draftListingAny.transmissions?.name || null,
-          seller_name: draftListingAny.sellers?.name || null,
+          listing_id: listingAny.id,
+          make: listingAny.makes?.name || 'Ukendt',
+          model: listingAny.models?.name || 'Ukendt',
+          variant: listingAny.variant,
+          year: listingAny.year,
+          mileage: listingAny.mileage,
+          horsepower: listingAny.horsepower,
+          description: listingAny.description,
+          image: listingAny.image,
+          body_type: listingAny.body_types?.name || null,
+          fuel_type: listingAny.fuel_types?.name || null,
+          transmission: listingAny.transmissions?.name || null,
+          seller_name: listingAny.sellers?.name || null,
           monthly_price: firstPricing?.monthly_price || null,
           first_payment: firstPricing?.first_payment || null,
           period_months: firstPricing?.period_months || null,
           mileage_per_year: firstPricing?.mileage_per_year || null,
-          created_at: draftListingAny.created_at,
-          updated_at: draftListingAny.created_at,
+          created_at: listingAny.created_at,
+          updated_at: listingAny.created_at,
           // Raw IDs for form editing
-          make_id: draftListingAny.make_id,
-          model_id: draftListingAny.model_id,
-          seller_id: draftListingAny.seller_id,
-          body_type_id: draftListingAny.body_type_id,
-          fuel_type_id: draftListingAny.fuel_type_id,
-          transmission_id: draftListingAny.transmission_id,
+          make_id: listingAny.make_id,
+          model_id: listingAny.model_id,
+          seller_id: listingAny.seller_id,
+          body_type_id: listingAny.body_type_id,
+          fuel_type_id: listingAny.fuel_type_id,
+          transmission_id: listingAny.transmission_id,
           // Admin metadata
-          offer_count: draftListingAny.lease_pricing?.length || 0,
-          is_draft: true
+          offer_count: listingAny.lease_pricing?.length || 0,
+          is_draft: isDraft
         }
         
+        console.log(`📋 Listing type: ${isDraft ? 'DRAFT' : 'PUBLISHED'}`)
         return { data: transformedListing, error: null }
       }
       
