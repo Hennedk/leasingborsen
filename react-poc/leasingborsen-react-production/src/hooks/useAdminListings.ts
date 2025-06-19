@@ -13,7 +13,7 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
   return useQuery({
     queryKey: queryKeys.adminListings(filters),
     queryFn: async () => {
-      // Get listings with offer count
+      // Start with basic full_listing_view query (working baseline)
       const { data: listings, error } = await supabase
         .from('full_listing_view')
         .select(`
@@ -25,19 +25,310 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
 
       if (error) throw error
 
-      // Transform the data to include offer count
-      const transformedListings = listings?.map(listing => ({
-        ...listing,
-        offer_count: listing.offer_count?.[0]?.count || 0
-      })) || []
+      // Transform the data to include admin metadata for draft detection
+      const transformedListings = listings?.map(listing => {
+        // Determine draft status based on missing required fields
+        const missingFields = []
+        if (!listing.monthly_price) missingFields.push('Månedspris')
+        if (!listing.body_type) missingFields.push('Biltype')
+        if (!listing.fuel_type) missingFields.push('Brændstof')
+        if (!listing.transmission) missingFields.push('Gearkasse')
+        
+        return {
+          ...listing,
+          offer_count: listing.offer_count?.[0]?.count || 0,
+          is_draft: missingFields.length > 0,
+          missing_fields: missingFields
+        }
+      }) || []
+
+      // Now add draft listings that don't appear in full_listing_view (like VW batch imports)
+      try {
+        const existingIds = transformedListings.map(l => l.listing_id)
+        
+        const { data: additionalDrafts, error: draftError } = await supabase
+          .from('listings')
+          .select(`
+            id,
+            created_at,
+            variant,
+            makes!left(name),
+            models!left(name),
+            sellers!left(name),
+            body_types!left(name),
+            fuel_types!left(name),
+            transmissions!left(name),
+            lease_pricing!left(monthly_price, first_payment, period_months, mileage_per_year)
+          `)
+          .not('id', 'in', `(${existingIds.join(',')})`)
+          .order('created_at', { ascending: false })
+          .limit(50)
+          
+        if (draftError) {
+          console.error('Additional drafts query failed:', draftError)
+          throw draftError
+        }
+        
+        if (additionalDrafts && additionalDrafts.length > 0) {
+          console.log(`Found ${additionalDrafts.length} additional draft listings not in full_listing_view`)
+          
+          const transformedAdditionalDrafts = additionalDrafts.map(listing => {
+            const firstPricing = listing.lease_pricing?.[0]
+            const missingFields = []
+            
+            if (!firstPricing?.monthly_price) missingFields.push('Månedspris')
+            if (!listing.body_types?.name) missingFields.push('Biltype')
+            if (!listing.fuel_types?.name) missingFields.push('Brændstof')
+            if (!listing.transmissions?.name) missingFields.push('Gearkasse')
+            
+            return {
+              listing_id: listing.id,
+              make: listing.makes?.name || 'Ukendt',
+              model: listing.models?.name || 'Ukendt',
+              variant: listing.variant,
+              year: null,
+              monthly_price: firstPricing?.monthly_price || null,
+              first_payment: firstPricing?.first_payment || null,
+              period_months: firstPricing?.period_months || null,
+              mileage_per_year: firstPricing?.mileage_per_year || null,
+              body_type: listing.body_types?.name || null,
+              fuel_type: listing.fuel_types?.name || null,
+              transmission: listing.transmissions?.name || null,
+              seller_name: listing.sellers?.name || null,
+              created_at: listing.created_at,
+              updated_at: listing.created_at, // Use created_at as fallback since updated_at doesn't exist
+              offer_count: listing.lease_pricing?.length || 0,
+              is_draft: true,
+              missing_fields: missingFields
+            }
+          })
+          
+          // Merge and sort all listings by creation date
+          const allListings = [...transformedListings, ...transformedAdditionalDrafts]
+          allListings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          
+          console.log(`Total admin listings: ${allListings.length} (${transformedListings.length} published + ${transformedAdditionalDrafts.length} additional drafts)`)
+          
+          return { data: allListings, error: null }
+        }
+      } catch (draftError) {
+        console.warn('Could not fetch additional draft listings:', draftError)
+      }
 
       return { data: transformedListings, error: null }
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes - shorter for admin to see updates quickly
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 1 * 60 * 1000, // 1 minute - very short for admin to see draft updates quickly
+    gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   })
+}
+
+// Admin version of single listing fetch that works with both published and draft listings
+export function useAdminListing(id: string) {
+  return useQuery({
+    queryKey: ['admin', 'listing', id], // Use admin-specific key to avoid cache conflicts
+    queryFn: async () => {
+      if (!id) return { data: null, error: null }
+      
+      // First try to get from full_listing_view (published listings)
+      const { data: publishedListing, error: publishedError } = await supabase
+        .from('full_listing_view')
+        .select('*')
+        .eq('listing_id', id)
+        .single()
+      
+      if (publishedListing) {
+        console.log('Found listing in full_listing_view')
+        return { data: publishedListing, error: null }
+      }
+      
+      // If not found, try to get from raw listings table (draft listings)
+      console.log('Listing not in full_listing_view, checking raw listings table...')
+      const { data: draftListing, error: draftError } = await supabase
+        .from('listings')
+        .select(`
+          id,
+          created_at,
+          variant,
+          year,
+          mileage,
+          horsepower,
+          description,
+          image,
+          make_id,
+          model_id,
+          seller_id,
+          body_type_id,
+          fuel_type_id,
+          transmission_id,
+          makes!left(name),
+          models!left(name),
+          sellers!left(name),
+          body_types!left(name),
+          fuel_types!left(name),
+          transmissions!left(name),
+          lease_pricing!left(monthly_price, first_payment, period_months, mileage_per_year)
+        `)
+        .eq('id', id)
+        .single()
+      
+      if (draftError) {
+        console.error('Draft listing fetch failed:', draftError)
+        return { data: null, error: draftError }
+      }
+      
+      if (draftListing) {
+        console.log('Found draft listing in raw listings table')
+        // Transform to match CarListing interface
+        const firstPricing = draftListing.lease_pricing?.[0]
+        
+        const transformedListing = {
+          listing_id: draftListing.id,
+          make: draftListing.makes?.name || 'Ukendt',
+          model: draftListing.models?.name || 'Ukendt',
+          variant: draftListing.variant,
+          year: draftListing.year,
+          mileage: draftListing.mileage,
+          horsepower: draftListing.horsepower,
+          description: draftListing.description,
+          image: draftListing.image,
+          body_type: draftListing.body_types?.name || null,
+          fuel_type: draftListing.fuel_types?.name || null,
+          transmission: draftListing.transmissions?.name || null,
+          seller_name: draftListing.sellers?.name || null,
+          monthly_price: firstPricing?.monthly_price || null,
+          first_payment: firstPricing?.first_payment || null,
+          period_months: firstPricing?.period_months || null,
+          mileage_per_year: firstPricing?.mileage_per_year || null,
+          created_at: draftListing.created_at,
+          updated_at: draftListing.created_at,
+          // Raw IDs for form editing
+          make_id: draftListing.make_id,
+          model_id: draftListing.model_id,
+          seller_id: draftListing.seller_id,
+          body_type_id: draftListing.body_type_id,
+          fuel_type_id: draftListing.fuel_type_id,
+          transmission_id: draftListing.transmission_id,
+          // Admin metadata
+          offer_count: draftListing.lease_pricing?.length || 0,
+          is_draft: true
+        }
+        
+        return { data: transformedListing, error: null }
+      }
+      
+      return { data: null, error: { message: 'Listing not found' } }
+    },
+    enabled: !!id,
+    staleTime: 1 * 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000,
+  })
+}
+
+// Hook to get draft listings that don't appear in full_listing_view
+export function useAdminDraftListings() {
+  return useQuery({
+    queryKey: ['admin', 'draft-listings'],
+    queryFn: async () => {
+      // Get all listing IDs that appear in full_listing_view
+      const { data: publishedIds } = await supabase
+        .from('full_listing_view')
+        .select('listing_id')
+      
+      const existingIds = publishedIds?.map(l => l.listing_id) || []
+      
+      // Query for listings that don't appear in the view
+      let draftQuery = supabase
+        .from('listings')
+        .select(`
+          id,
+          created_at,
+          updated_at,
+          variant,
+          makes!left(name),
+          models!left(name),
+          sellers!left(name),
+          body_types!left(name),
+          fuel_types!left(name),
+          transmissions!left(name),
+          lease_pricing!left(monthly_price, first_payment, period_months, mileage_per_year)
+        `)
+        
+      // Only filter if there are existing IDs to avoid empty filter
+      if (existingIds.length > 0) {
+        draftQuery = draftQuery.not('id', 'in', `(${existingIds.join(',')})`) 
+      }
+      
+      const { data: draftListings, error } = await draftQuery
+        .order('created_at', { ascending: false })
+        .limit(50) // Limit drafts to reasonable number
+        
+      if (error) {
+        console.warn('Could not fetch draft listings:', error.message)
+        return { data: [], error: null }
+      }
+      
+      // Transform draft listings to match admin interface
+      const transformedDrafts = draftListings?.map(listing => {
+        const firstPricing = listing.lease_pricing?.[0]
+        const missingFields = []
+        
+        if (!firstPricing?.monthly_price) missingFields.push('Månedspris')
+        if (!listing.body_types?.name) missingFields.push('Biltype')
+        if (!listing.fuel_types?.name) missingFields.push('Brændstof')
+        if (!listing.transmissions?.name) missingFields.push('Gearkasse')
+        
+        return {
+          listing_id: listing.id,
+          make: listing.makes?.name || 'Ukendt',
+          model: listing.models?.name || 'Ukendt',
+          variant: listing.variant,
+          year: null,
+          monthly_price: firstPricing?.monthly_price || null,
+          first_payment: firstPricing?.first_payment || null,
+          period_months: firstPricing?.period_months || null,
+          mileage_per_year: firstPricing?.mileage_per_year || null,
+          body_type: listing.body_types?.name || null,
+          fuel_type: listing.fuel_types?.name || null,
+          transmission: listing.transmissions?.name || null,
+          seller_name: listing.sellers?.name || null,
+          created_at: listing.created_at,
+          updated_at: listing.updated_at,
+          offer_count: listing.lease_pricing?.length || 0,
+          is_draft: true, // All results from this query are drafts
+          missing_fields: missingFields
+        }
+      }) || []
+      
+      return { data: transformedDrafts, error: null }
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 10 * 60 * 1000,
+    refetchOnMount: true,
+  })
+}
+
+// Combined hook for all admin listings (published + drafts)
+export function useAllAdminListings(filters: Partial<FilterOptions> = {}) {
+  const publishedQuery = useAdminListings(filters)
+  const draftQuery = useAdminDraftListings()
+  
+  return {
+    data: {
+      data: [
+        ...(publishedQuery.data?.data || []),
+        ...(draftQuery.data?.data || [])
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+      error: null
+    },
+    isLoading: publishedQuery.isLoading || draftQuery.isLoading,
+    error: publishedQuery.error || draftQuery.error,
+    refetch: () => {
+      publishedQuery.refetch()
+      draftQuery.refetch()
+    }
+  }
 }
 
 export function useAdminListingStats() {
@@ -245,8 +536,8 @@ export function useAdminUpdateListing() {
       return data
     },
     onSuccess: (data, { id }) => {
-      // Update the specific listing in cache
-      queryClient.setQueryData(queryKeys.listingDetail(id), { data, error: null })
+      // Update the admin listing in cache
+      queryClient.setQueryData(['admin', 'listing', id], { data, error: null })
       
       // Invalidate listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
