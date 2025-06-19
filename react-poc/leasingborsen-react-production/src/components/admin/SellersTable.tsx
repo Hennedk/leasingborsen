@@ -24,19 +24,22 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Seller } from '@/hooks/useSellers'
+import { SellerImportButton } from './sellers/SellerImportButton'
 
 interface SellersTableProps {
   sellers: Seller[]
   loading?: boolean
   onDelete?: (seller: Seller) => void
   onBulkAction?: (selectedSellers: Seller[], action: string) => void
+  onRefresh?: () => void
 }
 
 const SellersTable: React.FC<SellersTableProps> = ({
   sellers,
   loading = false,
   onDelete,
-  onBulkAction
+  onBulkAction,
+  onRefresh
 }) => {
   const [selectedSellers, setSelectedSellers] = React.useState<Seller[]>([])
 
@@ -156,6 +159,22 @@ const SellersTable: React.FC<SellersTableProps> = ({
           </div>
         )
       },
+    },
+    {
+      id: "import",
+      header: "Import",
+      meta: { displayName: "Import" },
+      cell: ({ row }) => {
+        const seller = row.original
+        return (
+          <SellerImportButton
+            seller={seller}
+            onImportClick={() => onRefresh?.()} 
+          />
+        )
+      },
+      enableSorting: false,
+      enableHiding: false,
     },
     {
       id: "actions",

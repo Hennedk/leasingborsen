@@ -16,7 +16,7 @@ import type { CarListing } from '@/lib/supabase'
 const AdminListings: React.FC = () => {
   const [filters] = useState({})
   
-  // Data fetching
+  // Data fetching 
   const { data: listingsData, isLoading: listingsLoading, refetch } = useAdminListings(filters)
   
   // Mutations

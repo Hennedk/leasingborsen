@@ -88,6 +88,7 @@ const AdminSellers: React.FC = () => {
               loading={sellersLoading}
               onDelete={handleDelete}
               onBulkAction={handleBulkAction}
+              onRefresh={handleRefresh}
             />
           </CardContent>
         </Card>

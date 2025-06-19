@@ -364,23 +364,29 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
                         Ctrl+S for at gemme
                       </span>
                     )}
-                    <Button 
-                      type="submit" 
-                      disabled={isLoading || (Boolean(currentListingId) && !hasUnsavedChanges)} 
-                      className="flex items-center gap-2 px-6"
-                      size="lg"
-                    >
-                      <Save className="h-4 w-4" />
-                      {isLoading ? 'Gemmer...' : 
-                       currentListingId && !hasUnsavedChanges ? 'Bil gemt' :
-                       (isEditing ? 'Gem biloplysninger' : 'Opret bil')}
-                    </Button>
-                    {isEditing && (
+                    {(hasUnsavedChanges || !currentListingId) && (
+                      <Button 
+                        type="submit" 
+                        disabled={isLoading} 
+                        className="flex items-center gap-2 px-6"
+                        size="lg"
+                      >
+                        <Save className="h-4 w-4" />
+                        {isLoading ? 'Gemmer...' : (isEditing ? 'Gem biloplysninger' : 'Opret bil')}
+                      </Button>
+                    )}
+                    {currentListingId && !hasUnsavedChanges && (
+                      <span className="text-sm text-green-600 bg-green-50 border border-green-200 px-3 py-1 rounded-md flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        Bil gemt succesfuldt
+                      </span>
+                    )}
+                    {isEditing && hasUnsavedChanges && (
                       <Button 
                         type="button" 
                         variant="outline"
                         onClick={handleReset}
-                        disabled={isLoading || !hasUnsavedChanges}
+                        disabled={isLoading}
                         className="flex items-center gap-2 px-6"
                         size="lg"
                       >

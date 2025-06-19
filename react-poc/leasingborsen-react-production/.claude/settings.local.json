@@ -20,7 +20,12 @@
       "Bash(export VITE_SUPABASE_URL=https://hqqouszbgskteivjoems.supabase.co)",
       "Bash(export:*)",
       "Bash(rm:*)",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__list_projects"
     ],
     "deny": []
   },

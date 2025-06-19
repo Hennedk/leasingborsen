@@ -21,6 +21,7 @@ const AdminListings = lazy(() => import('@/pages/admin/AdminListings'))
 const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
 const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
 const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
+const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
 
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
@@ -86,6 +87,7 @@ function App() {
                 <Route path="/admin/sellers" element={<AdminSellers />} />
                 <Route path="/admin/sellers/create" element={<AdminSellerForm />} />
                 <Route path="/admin/sellers/edit/:id" element={<AdminSellerForm />} />
+                <Route path="/admin/batch/:batchId/review" element={<BatchReviewPage />} />
                 {/* Catch all route */}
                 <Route path="*" element={
                   <BaseLayout>
