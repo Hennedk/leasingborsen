@@ -131,7 +131,7 @@ export function useUpdateListingWithOffers() {
 
           if (deleteError) throw deleteError
 
-          // Insert new lease pricing offers
+          // Prepare offer inserts with duplicate prevention
           const offerInserts = offers.map(offer => ({
             listing_id: listingId,
             monthly_price: Number(offer.monthly_price),
@@ -140,9 +140,25 @@ export function useUpdateListingWithOffers() {
             mileage_per_year: Number(offer.mileage_per_year)
           }))
 
+          // Deduplicate offers based on unique constraint: (listing_id, mileage_per_year, first_payment, period_months)
+          // Keep the one with higher monthly_price if duplicates exist
+          const constraintMap = new Map<string, any>()
+          
+          offerInserts.forEach((option: any) => {
+            const constraintKey = `${option.listing_id}-${option.mileage_per_year}-${option.first_payment}-${option.period_months}`
+            const existing = constraintMap.get(constraintKey)
+            if (!existing || option.monthly_price > existing.monthly_price) {
+              constraintMap.set(constraintKey, option)
+            }
+          })
+
+          const deduplicatedOffers = Array.from(constraintMap.values())
+          
+          console.log(`🔍 Offer deduplication: ${offerInserts.length} offers → ${deduplicatedOffers.length} unique offers`)
+
           const { error: insertError } = await supabase
             .from('lease_pricing')
-            .insert(offerInserts)
+            .insert(deduplicatedOffers)
 
           if (insertError) throw insertError
         }
@@ -206,9 +222,25 @@ export function useCreateListingWithOffers() {
             mileage_per_year: Number(offer.mileage_per_year)
           }))
 
+          // Deduplicate offers based on unique constraint: (listing_id, mileage_per_year, first_payment, period_months)
+          // Keep the one with higher monthly_price if duplicates exist
+          const constraintMap = new Map<string, any>()
+          
+          offerInserts.forEach((option: any) => {
+            const constraintKey = `${option.listing_id}-${option.mileage_per_year}-${option.first_payment}-${option.period_months}`
+            const existing = constraintMap.get(constraintKey)
+            if (!existing || option.monthly_price > existing.monthly_price) {
+              constraintMap.set(constraintKey, option)
+            }
+          })
+
+          const deduplicatedOffers = Array.from(constraintMap.values())
+          
+          console.log(`🔍 Create offer deduplication: ${offerInserts.length} offers → ${deduplicatedOffers.length} unique offers`)
+
           const { error: insertError } = await supabase
             .from('lease_pricing')
-            .insert(offerInserts)
+            .insert(deduplicatedOffers)
 
           if (insertError) throw insertError
         }
