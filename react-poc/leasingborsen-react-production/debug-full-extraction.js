@@ -296,6 +296,20 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
 10.000 km/år12 mdr.69.540 kr.69.540 kr.5.000 kr.5.295 kr.
 15.000 km/år12 mdr.71.940 kr.71.940 kr.5.000 kr.5.495 kr.
 20.000 km/år12 mdr.74.340 kr.74.340 kr.5.000 kr.5.695 kr.
+
+GTX+ Lang 4Motion 250 kW (340 hk)
+Rækkevidde: 487 km | Forbrug: 21,8 kWh/100km
+
+10.000 km/år12 mdr.89.540 kr.89.540 kr.5.000 kr.6.795 kr.
+15.000 km/år12 mdr.91.940 kr.91.940 kr.5.000 kr.6.995 kr.
+20.000 km/år12 mdr.94.340 kr.94.340 kr.5.000 kr.7.195 kr.
+
+GTX+ Kort 4Motion 250 kW (340 hk)
+Rækkevidde: 431 km | Forbrug: 22,1 kWh/100km
+
+10.000 km/år12 mdr.86.540 kr.86.540 kr.5.000 kr.6.595 kr.
+15.000 km/år12 mdr.88.940 kr.88.940 kr.5.000 kr.6.795 kr.
+20.000 km/år12 mdr.91.340 kr.91.340 kr.5.000 kr.6.995 kr.
 `;
 
 function runFullExtractionDebug() {

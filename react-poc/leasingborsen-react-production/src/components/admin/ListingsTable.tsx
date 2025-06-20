@@ -1,9 +1,8 @@
-import React from 'react'
-import type { ColumnDef } from '@tanstack/react-table'
-import { DataTable } from './DataTable'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
@@ -27,10 +26,22 @@ import {
   Eye,
   Calendar,
   Car,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Loader2
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 import type { CarListing } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
+
+interface PricingOption {
+  monthly_price: number
+  first_payment?: number
+  period_months: number
+  mileage_per_year: number
+}
 
 interface ListingsTableProps {
   listings: CarListing[]
@@ -47,278 +58,73 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
   onView,
   onBulkAction
 }) => {
-  const [selectedListings, setSelectedListings] = React.useState<CarListing[]>([])
+  const [selectedListings, setSelectedListings] = useState<CarListing[]>([])
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
+  const [pricingData, setPricingData] = useState<Record<string, PricingOption[]>>({})
+  const [loadingPricing, setLoadingPricing] = useState<Set<string>>(new Set())
 
-  const columns: ColumnDef<CarListing>[] = [
-    {
-      id: "select",
-      header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Vælg alle"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Vælg række"
-        />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "make",
-      header: "Bil",
-      meta: { displayName: "Bil" },
-      cell: ({ row }) => {
-        const listing = row.original as any
-        const variant = listing.variant ? ` ${listing.variant}` : ''
-        const isDraft = listing.is_draft
-        const missingFields = listing.missing_fields || []
-        
-        return (
-          <div className={`flex items-center gap-2 ${isDraft ? 'opacity-75' : ''}`}>
-            <Car className="h-4 w-4 text-muted-foreground" />
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="font-medium">
-                  {listing.make} {listing.model}{variant}
-                </span>
-                {isDraft && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Badge variant="outline" className="text-xs border-orange-200 text-orange-700 bg-orange-50">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Kladde
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="font-medium mb-1">Manglende data:</p>
-                        <ul className="text-xs space-y-1">
-                          {missingFields.map((field: string) => (
-                            <li key={field}>• {field}</li>
-                          ))}
-                        </ul>
-                        <p className="text-xs mt-2 opacity-75">Vises ikke til forbrugere</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
-            </div>
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "body_type",
-      header: "Type",
-      meta: { displayName: "Biltype" },
-      cell: ({ row }) => {
-        const bodyType = row.getValue("body_type") as string
-        return bodyType ? (
-          <Badge variant="outline">
-            {bodyType}
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground border-dashed">
-            Ikke angivet
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "fuel_type",
-      header: "Brændstof",
-      meta: { displayName: "Brændstof" },
-      cell: ({ row }) => {
-        const fuelType = row.getValue("fuel_type") as string
-        return fuelType ? (
-          <Badge variant="secondary">
-            {fuelType}
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground border-dashed">
-            Ikke angivet
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "seller_name",
-      header: "Sælger",
-      meta: { displayName: "Sælger" },
-      cell: ({ row }) => {
-        const listing = row.original
-        return (
-          <div>
-            <div className="font-medium text-sm">
-              {listing.seller_name || "–"}
-            </div>
-            {listing.seller_phone && (
-              <div className="text-xs text-muted-foreground">
-                {listing.seller_phone}
-              </div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "year",
-      header: "År",
-      meta: { displayName: "År" },
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          {row.getValue("year")}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "monthly_price",
-      header: "Månedspris",
-      meta: { displayName: "Månedspris" },
-      cell: ({ row }) => {
-        const price = row.getValue("monthly_price") as number
-        const listing = row.original as any
-        
-        return price ? (
-          <div className="font-medium">
-            {price.toLocaleString('da-DK')} kr/md
-          </div>
-        ) : (
-          <div className="text-muted-foreground text-sm italic">
-            {listing.offer_count > 0 ? 'Ingen hovedpris' : 'Ingen tilbud'}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "offer_count",
-      header: "Tilbud",
-      meta: { displayName: "Tilbud" },
-      cell: ({ row }) => {
-        const count = (row.original as any).offer_count || 0
-        return (
-          <div className="text-sm font-medium">
-            {count}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "created_at",
-      header: "Oprettet",
-      meta: { displayName: "Oprettet" },
-      cell: ({ row }) => {
-        const date = row.getValue("created_at") as string
-        return (
-          <div className="text-sm text-muted-foreground">
-            {new Date(date).toLocaleDateString('da-DK')}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "updated_at",
-      header: "Sidst opdateret",
-      meta: { displayName: "Sidst opdateret" },
-      cell: ({ row }) => {
-        const listing = row.original as any
-        const createdAt = new Date(listing.created_at).getTime()
-        const updatedAt = new Date(listing.updated_at).getTime()
-        const wasUpdated = updatedAt > createdAt + 1000 // Allow 1 second tolerance
-        
-        return (
-          <div className="text-sm">
-            <div className={wasUpdated ? "font-medium" : "text-muted-foreground"}>
-              {new Date(listing.updated_at).toLocaleDateString('da-DK')}
-            </div>
-            {wasUpdated && (
-              <div className="text-xs text-blue-600">
-                Opdateret
-              </div>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      id: "actions",
-      header: "Handlinger",
-      meta: { displayName: "Handlinger" },
-      cell: ({ row }) => {
-        const listing = row.original
+  const toggleRowExpansion = async (listingId: string) => {
+    const newExpanded = new Set(expandedRows)
+    
+    if (newExpanded.has(listingId)) {
+      newExpanded.delete(listingId)
+      setExpandedRows(newExpanded)
+    } else {
+      newExpanded.add(listingId)
+      setExpandedRows(newExpanded)
+      
+      // Load pricing data if not already loaded
+      if (!pricingData[listingId]) {
+        await loadPricingOptions(listingId)
+      }
+    }
+  }
 
-        return (
-          <div className="flex items-center gap-1">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="h-8 w-8 p-0"
-              onClick={() => onView?.(listing)}
-              title="Se på hjemmeside"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="h-8 w-8 p-0"
-              asChild
-              title="Rediger annonce"
-            >
-              <Link to={`/admin/listings/edit/${listing.listing_id}`}>
-                <Edit className="h-4 w-4" />
-              </Link>
-            </Button>
-            
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  title="Slet annonce"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Denne handling kan ikke fortrydes. Dette vil permanent slette annoncen for 
-                    <strong> {listing.make} {listing.model} ({listing.year})</strong> fra databasen.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuller</AlertDialogCancel>
-                  <AlertDialogAction 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => onDelete?.(listing)}
-                  >
-                    Slet annonce
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-  ]
+  const loadPricingOptions = async (listingId: string) => {
+    setLoadingPricing(prev => new Set(prev).add(listingId))
+    
+    try {
+      const { data, error } = await supabase
+        .from('lease_pricing')
+        .select('monthly_price, first_payment, period_months, mileage_per_year')
+        .eq('listing_id', listingId)
+        .order('monthly_price', { ascending: true })
+
+      if (error) throw error
+
+      setPricingData(prev => ({
+        ...prev,
+        [listingId]: data || []
+      }))
+    } catch (error) {
+      console.error('Error loading pricing options:', error)
+    } finally {
+      setLoadingPricing(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(listingId)
+        return newSet
+      })
+    }
+  }
+
+  const toggleListingSelection = (listing: CarListing) => {
+    const isSelected = selectedListings.some(l => l.listing_id === listing.listing_id)
+    if (isSelected) {
+      setSelectedListings(prev => prev.filter(l => l.listing_id !== listing.listing_id))
+    } else {
+      setSelectedListings(prev => [...prev, listing])
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedListings.length === listings.length) {
+      setSelectedListings([])
+    } else {
+      setSelectedListings(listings)
+    }
+  }
+
+  const formatPrice = (price?: number) => price ? `${price.toLocaleString('da-DK')} kr/md` : '–'
 
   // Handle bulk actions
   const handleBulkAction = (action: string) => {
@@ -330,6 +136,14 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
   // Calculate draft statistics
   const draftCount = listings.filter((l: any) => l.is_draft).length
   const publishedCount = listings.length - draftCount
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <TooltipProvider>
@@ -376,15 +190,259 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
           </div>
         )}
 
-        {/* Data table */}
-        <DataTable
-          columns={columns as any}
-          data={listings as any}
-          searchPlaceholder="Søg efter mærke, model eller type..."
-          searchColumn="make"
-          onRowSelection={setSelectedListings as any}
-          loading={loading}
-        />
+        {/* Table */}
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12">
+                  <Checkbox
+                    checked={selectedListings.length === listings.length && listings.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                    aria-label="Vælg alle"
+                  />
+                </TableHead>
+                <TableHead className="w-12"></TableHead>
+                <TableHead>Bil</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Brændstof</TableHead>
+                <TableHead>Sælger</TableHead>
+                <TableHead>År</TableHead>
+                <TableHead>Laveste pris</TableHead>
+                <TableHead className="w-20">Tilbud</TableHead>
+                <TableHead>Oprettet</TableHead>
+                <TableHead className="w-32">Handlinger</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {listings.map((listing) => (
+                <React.Fragment key={listing.listing_id}>
+                  {/* Main row */}
+                  <TableRow
+                    className={cn(
+                      "cursor-pointer hover:bg-muted/50",
+                      selectedListings.some(l => l.listing_id === listing.listing_id) && "bg-blue-50",
+                      (listing as any).is_draft && "opacity-75"
+                    )}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedListings.some(l => l.listing_id === listing.listing_id)}
+                        onCheckedChange={() => toggleListingSelection(listing)}
+                        aria-label="Vælg række"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleRowExpansion(listing.listing_id!)}
+                        className="h-6 w-6 p-0"
+                        disabled={(listing as any).offer_count === 0}
+                      >
+                        {(listing as any).offer_count > 0 ? (
+                          expandedRows.has(listing.listing_id!) ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )
+                        ) : null}
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Car className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {listing.make} {listing.model}
+                              {(listing as any).variant ? ` ${(listing as any).variant}` : ''}
+                            </span>
+                            {(listing as any).is_draft && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Badge variant="outline" className="text-xs border-orange-200 text-orange-700 bg-orange-50">
+                                    <AlertTriangle className="h-3 w-3 mr-1" />
+                                    Kladde
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p className="font-medium mb-1">Manglende data:</p>
+                                  <ul className="text-xs space-y-1">
+                                    {((listing as any).missing_fields || []).map((field: string) => (
+                                      <li key={field}>• {field}</li>
+                                    ))}
+                                  </ul>
+                                  <p className="text-xs mt-2 opacity-75">Vises ikke til forbrugere</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {listing.body_type ? (
+                        <Badge variant="outline">{listing.body_type}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground border-dashed">
+                          Ikke angivet
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {listing.fuel_type ? (
+                        <Badge variant="secondary">{listing.fuel_type}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground border-dashed">
+                          Ikke angivet
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium text-sm">
+                        {(listing as any).seller_name || "–"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {listing.year}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {listing.monthly_price ? (
+                        <div className="font-medium">
+                          {formatPrice(listing.monthly_price)}
+                        </div>
+                      ) : (
+                        <div className="text-muted-foreground text-sm italic">
+                          {(listing as any).offer_count > 0 ? 'Ingen hovedpris' : 'Ingen tilbud'}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className="text-xs">
+                        {(listing as any).offer_count || 0}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm text-muted-foreground">
+                        {(listing as any).created_at ? new Date((listing as any).created_at).toLocaleDateString('da-DK') : '–'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => onView?.(listing)}
+                          title="Se på hjemmeside"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          asChild
+                          title="Rediger annonce"
+                        >
+                          <Link to={`/admin/listings/edit/${listing.listing_id}`}>
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              title="Slet annonce"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Denne handling kan ikke fortrydes. Dette vil permanent slette annoncen for 
+                                <strong> {listing.make} {listing.model} ({listing.year})</strong> fra databasen.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuller</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => onDelete?.(listing)}
+                              >
+                                Slet annonce
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+
+                  {/* Expanded row content */}
+                  {expandedRows.has(listing.listing_id!) && (
+                    <TableRow>
+                      <TableCell colSpan={11} className="bg-muted/30 p-4">
+                        {loadingPricing.has(listing.listing_id!) ? (
+                          <div className="flex items-center justify-center py-4">
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            <span className="text-sm text-muted-foreground">Indlæser prisindstillinger...</span>
+                          </div>
+                        ) : pricingData[listing.listing_id!] && pricingData[listing.listing_id!].length > 0 ? (
+                          <div>
+                            <h4 className="text-sm font-medium mb-3">Prisindstillinger ({pricingData[listing.listing_id!].length})</h4>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className="h-8 text-xs">Månedlig pris</TableHead>
+                                  <TableHead className="h-8 text-xs">Kørsel per år</TableHead>
+                                  <TableHead className="h-8 text-xs">Periode</TableHead>
+                                  <TableHead className="h-8 text-xs">Førsteudgift</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {pricingData[listing.listing_id!].map((option, index) => (
+                                  <TableRow key={index} className="h-8">
+                                    <TableCell className="py-1 font-medium text-sm">
+                                      {formatPrice(option.monthly_price)}
+                                    </TableCell>
+                                    <TableCell className="py-1 text-sm">
+                                      {option.mileage_per_year?.toLocaleString('da-DK')} km/år
+                                    </TableCell>
+                                    <TableCell className="py-1 text-sm">
+                                      {option.period_months} mdr
+                                    </TableCell>
+                                    <TableCell className="py-1 text-sm">
+                                      {option.first_payment ? formatPrice(option.first_payment) : '–'}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted-foreground">Ingen prisindstillinger fundet</p>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </TooltipProvider>
   )
