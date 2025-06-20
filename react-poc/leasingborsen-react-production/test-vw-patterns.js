@@ -6,7 +6,7 @@
 // VW extraction patterns from the TypeScript implementation
 const VW_EXTRACTION_PATTERNS = {
   modelHeader: /^(.+?)\s+leasingpriser$/gm,
-  variantLine: /^(.+?)\s+(\d+)\s+hk$/gm,
+  variantLine: /^(.+?)\s+(\d+)\s+hk$|^(.+?)\s+\d+\s*kW\s*\((\d+)\s+hk\)$/gm,
   co2Specs: /CO₂:\s*(\d+)\s*g\/km.*?Forbrug:\s*([\d,]+)\s*km\/l.*?ejerafgift\s*:\s*(\d+)\s*kr\./g,
   electricSpecs: /Rækkevidde:\s*(\d+)\s*km.*?Forbrug:\s*([\d,]+)\s*kWh\/100km/g,
   pricingLine: /^(\d{1,2}[.,]?\d{3})\s*km\/år(\d+)\s*mdr\.([\d\s.,kr]+)(\d{1,3}[.,]?\d{3})\s*kr\.$/gm,
@@ -85,7 +85,9 @@ function testPatterns() {
   const variantMatches = [...SAMPLE_VW_PDF_TEXT.matchAll(VW_EXTRACTION_PATTERNS.variantLine)];
   console.log(`Found ${variantMatches.length} variant lines:`);
   variantMatches.forEach((match, i) => {
-    console.log(`  ${i + 1}. Variant: "${match[1]}" | Horsepower: ${match[2]} hk`);
+    const variant = match[1]?.trim() || match[3]?.trim() || 'Unknown';
+    const horsepower = parseInt(match[2] || match[4] || '0');
+    console.log(`  ${i + 1}. Variant: "${variant}" | Horsepower: ${horsepower} hk`);
   });
   console.log('');
 

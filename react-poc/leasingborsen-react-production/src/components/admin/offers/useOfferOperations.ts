@@ -30,6 +30,12 @@ export const useOfferOperations = ({ listingId }: UseOfferOperationsProps) => {
 
   // Convert database offers to editable format
   useEffect(() => {
+    // Don't update editableOffers if we're currently saving any offers to prevent conflicts
+    if (savingOffers.size > 0) {
+      console.log('⚠️ Skipping offers update - save in progress')
+      return
+    }
+
     const formattedOffers = offers.map(offer => ({
       id: offer.id,
       monthly_price: offer.monthly_price?.toString() || '',
@@ -52,8 +58,9 @@ export const useOfferOperations = ({ listingId }: UseOfferOperationsProps) => {
       errors: {}
     }
 
+    console.log(`📋 Updating editable offers: ${formattedOffers.length} existing + 1 new row`)
     setEditableOffers([...formattedOffers, newRow])
-  }, [offers.length, offers.map(o => o.id).join(',')])
+  }, [offers.length, offers.map(o => o.id).join(','), savingOffers.size])
 
   // Validation function
   const validateField = (field: string, value: string): string | null => {
@@ -115,6 +122,11 @@ export const useOfferOperations = ({ listingId }: UseOfferOperationsProps) => {
 
     // Prevent duplicate submissions
     if (savingOffers.has(index)) {
+      return
+    }
+
+    // Don't save empty new offers (only validates when user explicitly tries to save)
+    if (offer.isNew && !offer.monthly_price.trim()) {
       return
     }
 
