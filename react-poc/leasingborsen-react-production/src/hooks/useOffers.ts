@@ -54,6 +54,21 @@ export const useCreateOffer = () => {
       try {
         console.log('🔄 Creating offer for listing:', listingId, 'with data:', offer)
         
+        // Check for existing duplicate offer to prevent creating multiple identical offers
+        const { data: existingOffers } = await supabase
+          .from('lease_pricing')
+          .select('*')
+          .eq('listing_id', listingId)
+          .eq('monthly_price', Number(offer.monthly_price))
+          .eq('first_payment', offer.first_payment ? Number(offer.first_payment) : null)
+          .eq('period_months', offer.period_months ? Number(offer.period_months) : null)
+          .eq('mileage_per_year', offer.mileage_per_year ? Number(offer.mileage_per_year) : null)
+        
+        if (existingOffers && existingOffers.length > 0) {
+          console.log('⚠️ Duplicate offer detected - returning existing offer instead of creating new')
+          return existingOffers[0]
+        }
+        
         const { data, error } = await supabase
           .from('lease_pricing')
           .insert([{

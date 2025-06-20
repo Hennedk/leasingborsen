@@ -83,8 +83,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {referenceData?.makes?.map((make: any) => (
-                    <SelectItem key={`make-${make.id || make.name}`} value={make.name}>
+                  {referenceData?.makes?.map((make: any, index: number) => (
+                    <SelectItem key={`make-${make.id || make.name}-${index}`} value={make.name}>
                       {make.name}
                     </SelectItem>
                   ))}
@@ -120,8 +120,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {filteredModels.map((model: any) => (
-                    <SelectItem key={`model-${model.id || model.name}-${selectedMakeId}`} value={model.name}>
+                  {filteredModels.map((model: any, index: number) => (
+                    <SelectItem key={`model-${model.id || model.name}-${selectedMakeId}-${index}`} value={model.name}>
                       {model.name}
                     </SelectItem>
                   ))}
@@ -179,8 +179,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {referenceData?.bodyTypes?.map((type: any) => (
-                    <SelectItem key={`body-type-${type.id || type.name}`} value={type.name}>
+                  {referenceData?.bodyTypes?.map((type: any, index: number) => (
+                    <SelectItem key={`body-type-${type.id || type.name}-${index}`} value={type.name}>
                       {type.name}
                     </SelectItem>
                   ))}
@@ -213,8 +213,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {referenceData?.fuelTypes?.map((type: any) => (
-                    <SelectItem key={`fuel-type-${type.id || type.name}`} value={type.name}>
+                  {referenceData?.fuelTypes?.map((type: any, index: number) => (
+                    <SelectItem key={`fuel-type-${type.id || type.name}-${index}`} value={type.name}>
                       {type.name}
                     </SelectItem>
                   ))}
@@ -247,8 +247,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {referenceData?.transmissions?.map((transmission: any) => (
-                    <SelectItem key={`transmission-${transmission.id || transmission.name}`} value={transmission.name}>
+                  {referenceData?.transmissions?.map((transmission: any, index: number) => (
+                    <SelectItem key={`transmission-${transmission.id || transmission.name}-${index}`} value={transmission.name}>
                       {transmission.name}
                     </SelectItem>
                   ))}

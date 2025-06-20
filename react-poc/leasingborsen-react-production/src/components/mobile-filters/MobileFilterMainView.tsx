@@ -252,7 +252,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Min pris</SelectItem>
                   {priceSteps.map((price) => (
-                    <SelectItem key={`min-${price}`} value={price.toString()}>
+                    <SelectItem key={`main-price-min-${price}`} value={price.toString()}>
                       {price.toLocaleString('da-DK')} kr
                     </SelectItem>
                   ))}
@@ -268,7 +268,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Max pris</SelectItem>
                   {priceSteps.map((price) => (
-                    <SelectItem key={`max-${price}`} value={price.toString()}>
+                    <SelectItem key={`main-price-max-${price}`} value={price.toString()}>
                       {price.toLocaleString('da-DK')} kr
                     </SelectItem>
                   ))}
@@ -292,7 +292,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Min sæder</SelectItem>
                   {Array.from({ length: 9 }, (_, i) => i + 1).map((seats) => (
-                    <SelectItem key={`min-seats-${seats}`} value={seats.toString()}>
+                    <SelectItem key={`main-seats-min-${seats}`} value={seats.toString()}>
                       {seats}
                     </SelectItem>
                   ))}
@@ -308,7 +308,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 <SelectContent>
                   <SelectItem value="all">Max sæder</SelectItem>
                   {Array.from({ length: 9 }, (_, i) => i + 1).map((seats) => (
-                    <SelectItem key={`max-seats-${seats}`} value={seats.toString()}>
+                    <SelectItem key={`main-seats-max-${seats}`} value={seats.toString()}>
                       {seats}
                     </SelectItem>
                   ))}

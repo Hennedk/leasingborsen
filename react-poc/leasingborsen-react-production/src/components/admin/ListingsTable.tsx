@@ -228,6 +228,30 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
       },
     },
     {
+      accessorKey: "updated_at",
+      header: "Sidst opdateret",
+      meta: { displayName: "Sidst opdateret" },
+      cell: ({ row }) => {
+        const listing = row.original as any
+        const createdAt = new Date(listing.created_at).getTime()
+        const updatedAt = new Date(listing.updated_at).getTime()
+        const wasUpdated = updatedAt > createdAt + 1000 // Allow 1 second tolerance
+        
+        return (
+          <div className="text-sm">
+            <div className={wasUpdated ? "font-medium" : "text-muted-foreground"}>
+              {new Date(listing.updated_at).toLocaleDateString('da-DK')}
+            </div>
+            {wasUpdated && (
+              <div className="text-xs text-blue-600">
+                Opdateret
+              </div>
+            )}
+          </div>
+        )
+      },
+    },
+    {
       id: "actions",
       header: "Handlinger",
       meta: { displayName: "Handlinger" },

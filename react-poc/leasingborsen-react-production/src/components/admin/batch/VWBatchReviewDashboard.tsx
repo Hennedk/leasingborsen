@@ -487,9 +487,13 @@ export const VWBatchReviewDashboard: React.FC = () => {
                         <div key={field} className="flex justify-between text-sm">
                           <span className="font-medium">{field}:</span>
                           <span>
-                            <span className="text-red-600 line-through">{change.old}</span>
+                            <span className="text-red-600 line-through">
+                              {typeof change.old === 'object' ? JSON.stringify(change.old) : String(change.old)}
+                            </span>
                             {' → '}
-                            <span className="text-green-600">{change.new}</span>
+                            <span className="text-green-600">
+                              {typeof change.new === 'object' ? JSON.stringify(change.new) : String(change.new)}
+                            </span>
                           </span>
                         </div>
                       ))}

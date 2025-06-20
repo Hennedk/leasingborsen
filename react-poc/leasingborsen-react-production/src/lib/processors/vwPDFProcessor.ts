@@ -327,21 +327,27 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     
     try {
       // Query for existing listings from this seller  
+      console.log(`🔍 Querying listings for seller: ${sellerId}`)
+      
       const { data: existing, error } = await supabase
         .from('listings')
         .select(`
           id,
           variant,
           horsepower,
-          makes!left(name),
-          models!left(name),
-          lease_pricing!left(monthly_price, first_payment, period_months, mileage_per_year)
+          make_id,
+          model_id,
+          makes!make_id(name),
+          models!model_id(name),
+          lease_pricing(monthly_price, first_payment, period_months, mileage_per_year)
         `)
         .eq('seller_id', sellerId)
-        .is('deleted_at', null) // Only active listings (not deleted)
       
       if (error) {
         console.error('❌ Error fetching existing listings:', error)
+        console.error('Error details:', error.details)
+        console.error('Error hint:', error.hint)
+        console.error('Error message:', error.message)
         throw error
       }
       
@@ -355,35 +361,62 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     
     const processedItems: ProcessedVWItem[] = []
     
+    // Track which existing listings we've processed to avoid duplicates
+    const processedExistingIds = new Set<string>()
+    
     // Process each extracted model (each model already contains all pricing options)
     for (const extracted of extractedModels) {
-      // Try to find matching existing listing by make/model/variant combination
-      const existing = existingListings?.find((listing: any) => 
+      console.log(`🔍 Looking for existing: ${extracted.model} ${extracted.variant} (${extracted.horsepower} hk)`)
+      
+      // Find ALL matching existing listings for this variant (there might be duplicates)
+      const matchingListings = existingListings?.filter((listing: any) => 
         listing.makes?.name === 'Volkswagen' && // Ensure it's VW
         listing.models?.name === extracted.model &&
-        listing.variant === extracted.variant &&
-        (listing.horsepower === extracted.horsepower || !listing.horsepower) // Allow null horsepower
-      )
+        listing.variant === extracted.variant 
+        // Note: Ignore horsepower for matching as it may be null in existing listings
+      ) || []
       
-      if (existing) {
-        console.log(`🔄 Found existing listing: ${extracted.model} ${extracted.variant} (${existing.id})`)
+      if (matchingListings.length > 0) {
+        console.log(`  🎯 Found ${matchingListings.length} matching listing(s)`)
+        
+        // Use the first matching listing for update, mark others for deletion
+        const primaryListing = matchingListings[0]
+        processedExistingIds.add(primaryListing.id)
+        
+        console.log(`🔄 Using primary listing: ${extracted.model} ${extracted.variant} (${primaryListing.id})`)
+        
+        // Get duplicate listings for cleanup
+        const duplicateListings = matchingListings.slice(1) // All except the first one
+        for (const duplicate of duplicateListings) {
+          processedExistingIds.add(duplicate.id)
+          console.log(`🗑️ Will clean up duplicate listing internally: ${duplicate.id}`)
+        }
         
         // Compare pricing options to see if there are changes
-        const changes = this.detectVehicleChanges(existing, extracted)
+        const changes = this.detectVehicleChanges(primaryListing, extracted)
         if (Object.keys(changes).length > 0) {
           console.log(`  📝 Changes detected, marking for update`)
           processedItems.push({
             action: 'update',
             extracted,
-            existing: existing,
+            existing: primaryListing,
             changes,
             confidence_score: extracted.confidence_score
           })
         } else {
-          console.log(`  ✅ No changes needed, skipping`)
-          // Skip this item - no changes needed
+          console.log(`  ✅ No changes needed`)
+          // Still create an update item in case of future processing needs
+          processedItems.push({
+            action: 'update',
+            extracted,
+            existing: primaryListing,
+            changes: {},
+            confidence_score: extracted.confidence_score
+          })
         }
+        
       } else {
+        console.log(`  ✨ No existing match found`)
         console.log(`✨ New listing: ${extracted.model} ${extracted.variant}`)
         
         // Completely new vehicle listing with all its pricing options
@@ -397,21 +430,21 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
       }
     }
     
-    // Check for removed listings (in existing but not in extracted)
-    const extractedModelKeys = new Set(
-      extractedModels.map(model => `${model.model}-${model.variant}-${model.horsepower}`)
-    )
+    // Check for any remaining VW listings that weren't processed above (shouldn't happen with current logic)
+    const existingVWListings = (existingListings as any[])?.filter(listing => 
+      listing.makes?.name === 'Volkswagen' && !processedExistingIds.has(listing.id)
+    ) || []
     
-    for (const existing of (existingListings as any[]) || []) {
-      const existingKey = `${existing.models?.name}-${existing.variant}-${existing.horsepower}`
-      
-      if (!extractedModelKeys.has(existingKey)) {
+    if (existingVWListings.length > 0) {
+      console.log(`⚠️ Found ${existingVWListings.length} unprocessed VW listings - this shouldn't happen with current logic`)
+      for (const existing of existingVWListings) {
+        console.log(`🗑️ Unprocessed VW listing, marking for deletion: ${existing.models?.name} ${existing.variant} (${existing.id})`)
         processedItems.push({
           action: 'delete',
           extracted: null,
           existing,
           changes: {},
-          confidence_score: 1.0 // High confidence for removals
+          confidence_score: 1.0
         })
       }
     }
@@ -462,14 +495,44 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
     try {
       console.log(`💾 Creating ${processedItems.length} batch items in database`)
       
-      const batchItems = processedItems.map((item) => ({
-        batch_id: batchId,
-        action: item.action,
-        parsed_data: item.extracted,
-        existing_data: item.existing,
-        changes: item.changes,
-        confidence_score: item.confidence_score
-      }))
+      const batchItems = processedItems.map((item) => {
+        // For deletion items, use existing listing data instead of "Unknown" placeholders
+        let parsedData
+        if (item.action === 'delete' && item.existing && !item.extracted) {
+          // Use existing listing data for deletion display
+          parsedData = {
+            model: item.existing.models?.name || 'Unknown',
+            variant: item.existing.variant || 'Unknown',
+            horsepower: item.existing.horsepower || 0,
+            pricing_options: item.existing.lease_pricing || [],
+            confidence_score: 1.0,
+            is_electric: false,
+            line_numbers: [],
+            source_section: 'Existing Listing'
+          }
+        } else {
+          // For new/update items, use extracted data or minimal fallback
+          parsedData = item.extracted || {
+            model: 'Unknown',
+            variant: 'Unknown',
+            horsepower: 0,
+            pricing_options: [],
+            confidence_score: 0,
+            is_electric: false,
+            line_numbers: [],
+            source_section: 'Unknown'
+          }
+        }
+        
+        return {
+          batch_id: batchId,
+          action: item.action,
+          parsed_data: parsedData,
+          existing_data: item.existing || null,
+          changes: item.changes || {},
+          confidence_score: item.confidence_score || 0
+        }
+      })
       
       const { data, error } = await supabase
         .from('batch_import_items')
@@ -783,9 +846,26 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
           // total_lease_cost column doesn't exist in lease_pricing table
         }))
         
+        // Deduplicate pricing options based on unique constraint: (listing_id, mileage_per_year, first_payment, period_months)
+        // Keep the one with higher monthly_price if duplicates exist
+        const constraintMap = new Map<string, any>()
+        
+        leasePricingInserts.forEach((option: any) => {
+          const constraintKey = `${option.listing_id}-${option.mileage_per_year}-${option.first_payment}-${option.period_months}`
+          const existing = constraintMap.get(constraintKey)
+          if (!existing || option.monthly_price > existing.monthly_price) {
+            constraintMap.set(constraintKey, option)
+          } else {
+            console.log(`    ⚠️ Skipping duplicate pricing combination (keeping higher price): ${option.mileage_per_year}km/year, ${option.first_payment}kr deposit, ${option.period_months} months`)
+          }
+        })
+        
+        const uniquePricingInserts = Array.from(constraintMap.values())
+        console.log(`    📋 Deduplicated ${leasePricingInserts.length} → ${uniquePricingInserts.length} pricing options`)
+        
         const { error: pricingError } = await supabase
           .from('lease_pricing')
-          .insert(leasePricingInserts)
+          .insert(uniquePricingInserts)
         
         if (pricingError) {
           console.error(`    ❌ Pricing options creation failed:`, pricingError)
@@ -794,7 +874,7 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
           // This is critical now since listing has no pricing data
           throw new Error(`Failed to create lease pricing: ${pricingError.message}`)
         } else {
-          console.log(`    ✅ Created ${pricingOptions.length} lease pricing options`)
+          console.log(`    ✅ Created ${uniquePricingInserts.length} lease pricing options`)
         }
       } else {
         console.log(`    ⚠️ No pricing options found, listing created without pricing`)
@@ -807,33 +887,166 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
   }
   
   private async updateExistingListing(item: any): Promise<void> {
-    const updates: Record<string, any> = {}
+    console.log(`    🔄 Updating existing listing: ${item.existing_data.id}`)
     
-    // Apply only the changed fields
+    // Handle duplicate cleanup first
+    if (item.duplicatesToCleanup && item.duplicatesToCleanup.length > 0) {
+      console.log(`    🗑️ Cleaning up ${item.duplicatesToCleanup.length} duplicate listings`)
+      for (const duplicate of item.duplicatesToCleanup) {
+        try {
+          // Soft delete duplicate listings
+          const { error: deleteError } = await supabase
+            .from('listings')
+            .update({ deleted_at: new Date().toISOString() })
+            .eq('id', duplicate.id)
+          
+          if (deleteError) {
+            console.error(`    ❌ Failed to delete duplicate ${duplicate.id}:`, deleteError)
+          } else {
+            console.log(`    ✅ Deleted duplicate listing: ${duplicate.id}`)
+          }
+        } catch (error) {
+          console.error(`    ❌ Error deleting duplicate ${duplicate.id}:`, error)
+        }
+      }
+    }
+    
+    // Handle pricing options separately from main listing fields
+    let hasPricingChanges = false
+    let newPricingOptions: any[] = []
+    const listingUpdates: Record<string, any> = {}
+    
     if (item.changes) {
       Object.entries(item.changes).forEach(([field, change]: [string, any]) => {
-        updates[field] = change.new
+        if (field === 'pricing_options') {
+          hasPricingChanges = true
+          newPricingOptions = change.new || []
+          console.log(`    📋 Found pricing changes: ${newPricingOptions.length} new options`)
+        } else {
+          // Other listing fields (variant, horsepower, etc.)
+          listingUpdates[field] = change.new
+        }
       })
     }
     
-    // Note: updated_at is handled by database triggers
-    
-    console.log(`    💾 Updating listing in database with:`, updates)
-    
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .update(updates)
-        .eq('id', item.existing_data.id)
-        .select()
-        .single()
-      
-      if (error) {
-        console.error(`    ❌ Listing update failed:`, error)
-        throw new Error(`Failed to update listing: ${error.message}`)
+      // 1. Update main listing fields if any changed
+      if (Object.keys(listingUpdates).length > 0) {
+        console.log(`    💾 Updating listing fields:`, listingUpdates)
+        
+        const { error } = await supabase
+          .from('listings')
+          .update(listingUpdates)
+          .eq('id', item.existing_data.id)
+          .select()
+          .single()
+        
+        if (error) {
+          console.error(`    ❌ Listing update failed:`, error)
+          throw new Error(`Failed to update listing: ${error.message}`)
+        }
+        
+        console.log(`    ✅ Listing fields updated successfully`)
       }
       
-      console.log(`    ✅ Listing updated successfully: ID ${data.id}`)
+      // 2. Update pricing options if changed
+      if (hasPricingChanges) {
+        console.log(`    💰 Updating lease pricing options`)
+        
+        // Replace all pricing options for this listing (delete-then-insert approach)
+        if (newPricingOptions.length > 0) {
+          console.log(`    🗑️ Clearing existing pricing options for listing ${item.existing_data.id}`)
+          
+          // First, check what existing pricing we have
+          const { data: existingPricing, error: selectError } = await supabase
+            .from('lease_pricing')
+            .select('*')
+            .eq('listing_id', item.existing_data.id)
+          
+          if (!selectError) {
+            console.log(`    📋 Found ${existingPricing?.length || 0} existing pricing options`)
+          }
+          
+          // Delete existing pricing options for this listing
+          const { data: deletedData, error: deleteError } = await supabase
+            .from('lease_pricing')
+            .delete()
+            .eq('listing_id', item.existing_data.id)
+            .select()
+          
+          if (deleteError) {
+            console.error(`    ❌ Failed to delete old pricing:`, deleteError)
+            throw new Error(`Failed to delete old pricing: ${deleteError.message}`)
+          }
+          
+          console.log(`    🗑️ Deleted ${deletedData?.length || 0} existing pricing options`)
+          
+          // Verify deletion worked
+          const { data: verifyData, error: verifyError } = await supabase
+            .from('lease_pricing')
+            .select('*')
+            .eq('listing_id', item.existing_data.id)
+          
+          if (!verifyError) {
+            console.log(`    ✅ Verified: ${verifyData?.length || 0} pricing options remain after delete`)
+          }
+          
+          // Insert new pricing options with deduplication based on constraint keys
+          const leasePricingRaw = newPricingOptions.map((option: any) => ({
+            listing_id: item.existing_data.id,
+            monthly_price: option.monthly_price || 0,
+            first_payment: option.deposit || 0,
+            period_months: option.period_months || 12,
+            mileage_per_year: option.mileage_per_year || 10000
+          }))
+          
+          // Deduplicate based on constraint keys: listing_id, mileage_per_year, first_payment, period_months
+          // Keep the one with higher monthly_price if duplicates exist
+          const constraintMap = new Map<string, any>()
+          
+          leasePricingRaw.forEach(option => {
+            const constraintKey = `${option.listing_id}-${option.mileage_per_year}-${option.first_payment}-${option.period_months}`
+            const existing = constraintMap.get(constraintKey)
+            
+            if (!existing || option.monthly_price > existing.monthly_price) {
+              constraintMap.set(constraintKey, option)
+            }
+          })
+          
+          const leasePricingInserts = Array.from(constraintMap.values())
+          
+          console.log(`    📝 Inserting ${leasePricingInserts.length} deduplicated pricing options (from ${leasePricingRaw.length} raw):`)
+          leasePricingInserts.forEach((option, i) => {
+            console.log(`      ${i + 1}. ${option.mileage_per_year} km/år, ${option.period_months} mdr, ${option.first_payment} kr deposit, ${option.monthly_price} kr/md`)
+          })
+          
+          const { error: insertError } = await supabase
+            .from('lease_pricing')
+            .insert(leasePricingInserts)
+          
+          if (insertError) {
+            console.error(`    ❌ Failed to insert new pricing:`, insertError)
+            throw new Error(`Failed to insert new pricing: ${insertError.message}`)
+          }
+          
+          console.log(`    ✅ Inserted ${leasePricingInserts.length} new lease pricing options`)
+        }
+        
+        // Touch the listing to update its updated_at timestamp when pricing changes
+        const { error: touchError } = await supabase
+          .from('listings')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', item.existing_data.id)
+        
+        if (touchError) {
+          console.error(`    ⚠️ Failed to update listing timestamp:`, touchError)
+          // Don't throw - this is not critical
+        } else {
+          console.log(`    ⏰ Updated listing timestamp for pricing changes`)
+        }
+      }
+      
+      console.log(`    ✅ Listing update completed successfully`)
       
     } catch (error) {
       console.error(`    ❌ Database error:`, error)
@@ -900,6 +1113,9 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
       console.log(`    ✅ Make resolved: ${makeName} → ${make.id}`)
       
       // 2. Find or create the model under this make
+      console.log(`    🔍 Searching for model: "${modelName}" (length: ${modelName.length})`)
+      console.log(`    🔍 Make ID: ${make.id}`)
+      
       let { data: model, error: modelError } = await supabase
         .from('models')
         .select('id')
@@ -907,21 +1123,51 @@ Rækkevidde: 423 km | Forbrug: 20,3 kWh/100km
         .eq('name', modelName)
         .single()
       
+      if (modelError) {
+        console.log(`    ❌ Model lookup error:`, modelError)
+        console.log(`    🔍 Error details:`, JSON.stringify(modelError, null, 2))
+      }
+      
       if (modelError || !model) {
-        console.log(`    ➕ Creating new model: ${modelName} under ${makeName}`)
-        const { data: newModel, error: createModelError } = await supabase
-          .from('models')
-          .insert({ 
-            make_id: make.id,
-            name: modelName 
-          })
-          .select()
-          .single()
+        // Try a fallback search with trimmed/normalized name
+        console.log(`    🔄 Trying fallback search for model with name variations`)
+        const trimmedModelName = modelName.trim()
         
-        if (createModelError || !newModel) {
-          throw new Error(`Failed to create model "${modelName}": ${createModelError?.message || 'Unknown error'}`)
+        let { data: fallbackModel } = await supabase
+          .from('models')
+          .select('id, name')
+          .eq('make_id', make.id)
+          .ilike('name', `%${trimmedModelName}%`)
+        
+        console.log(`    🔍 Fallback search results:`, fallbackModel)
+        
+        if (fallbackModel && fallbackModel.length > 0) {
+          // Found a potential match
+          const exactMatch = fallbackModel.find(m => m.name === modelName)
+          if (exactMatch) {
+            console.log(`    ✅ Found exact match in fallback: ${exactMatch.name}`)
+            model = exactMatch
+          } else {
+            console.log(`    ⚠️  Found similar models but no exact match:`, fallbackModel.map(m => m.name))
+          }
         }
-        model = newModel
+        
+        if (!model) {
+          console.log(`    ➕ Creating new model: ${modelName} under ${makeName}`)
+          const { data: newModel, error: createModelError } = await supabase
+            .from('models')
+            .insert({ 
+              make_id: make.id,
+              name: modelName 
+            })
+            .select()
+            .single()
+          
+          if (createModelError || !newModel) {
+            throw new Error(`Failed to create model "${modelName}": ${createModelError?.message || 'Unknown error'}`)
+          }
+          model = newModel
+        }
       }
       
       if (!model) {

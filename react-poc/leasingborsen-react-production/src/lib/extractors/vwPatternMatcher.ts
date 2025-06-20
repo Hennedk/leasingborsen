@@ -139,27 +139,88 @@ export class VWPDFExtractor {
       }
     })
     
-    // For the new ID.3 format, we need to handle continuous text blocks
-    // Look for variant patterns in the concatenated text
+    // Handle different model types with specific variant patterns
     const fullText = lines.join(' ')
+    let variantMatches: { name: string, pattern: RegExp }[] = []
     
-    // Enhanced pattern to find ID.3 variants in continuous text:
-    // Use regex to find each variant with its full content
-    const variantMatches = [
-      { name: 'Life+', pattern: /Life\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=Max\+|GTX Performance\+|$)/s },
-      { name: 'Max+', pattern: /Max\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=GTX Performance\+|$)/s },
-      { name: 'GTX Performance+', pattern: /GTX Performance\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?$/s }
-    ]
+    // Model-specific variant patterns
+    if (section.model.includes('ID.Buzz') || section.model.includes('ID. Buzz')) {
+      // ID.Buzz has special structure: size (Lang/Kort) in header, variant in subheader
+      // Extract size from section model name
+      const sizeMatch = section.model.match(/(Lang|Kort)/)
+      const size = sizeMatch ? sizeMatch[1] : ''
+      
+      // ID.Buzz variant patterns with full pricing capture
+      variantMatches = [
+        { name: `${size} Life+`, pattern: /Life\+\s+(\d+)\s+hk.*?(?=Style\+|GTX\+|$)/s },
+        { name: `${size} Style+`, pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX\+|Life\+|$)/s },
+        { name: `${size} GTX+`, pattern: /GTX\+\s+4Motion\s+(\d+)\s+hk.*?(?=Life\+|Style\+|$)/s }
+      ]
+      
+      console.log(`🔍 ID.Buzz patterns created for size "${size}":`)
+      variantMatches.forEach((variant, i) => {
+        console.log(`  ${i + 1}. "${variant.name}" - ${variant.pattern}`)
+      })
+    } else if (section.model.includes('ID.3') || section.model.includes('ID.4')) {
+      // Electric ID models with electric specs
+      variantMatches = [
+        { name: 'Life+', pattern: /Life\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=Style\+|Max\+|GTX.*?\+|$)/s },
+        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Life\+|Max\+|$)/s },
+        { name: 'Max+', pattern: /Max\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style\+|Life\+|$)/s },
+        { name: 'GTX Performance+', pattern: /GTX Performance\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s },
+        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s },
+        { name: 'GTX+', pattern: /GTX\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s }
+      ]
+    } else if (section.model.includes('ID.5') || section.model.includes('ID.7')) {
+      // Larger ID models
+      variantMatches = [
+        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style S\+|$)/s },
+        { name: 'Style S+', pattern: /Style S\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style\+|$)/s },
+        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk.*?(?=Style.*?\+|$)/s }
+      ]
+    } else {
+      // Traditional gas/hybrid models - look for trim levels
+      variantMatches = [
+        { name: 'R-Line Black Edition', pattern: /R-Line Black Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Elegance|Style|$)/s },
+        { name: 'Comfortline Edition', pattern: /Comfortline Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Elegance|Style|$)/s },
+        { name: 'Elegance', pattern: /Elegance\s+[\d.,]+\s+[eT]TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Style|$)/s }
+      ]
+    }
     
     for (const variantMatch of variantMatches) {
+      console.log(`🔍 Testing pattern for "${variantMatch.name}": ${variantMatch.pattern}`)
       const match = fullText.match(variantMatch.pattern)
-      if (!match) continue
+      if (!match) {
+        console.log(`❌ No match found for ${variantMatch.name}`)
+        continue
+      }
+      console.log(`✅ Pattern matched for ${variantMatch.name}:`, match[0])
       
-      const horsepower = parseInt(match[1])
-      const range = parseInt(match[2])
       const variantContent = match[0]
       
-      console.log(`✅ Found ID.3 variant in continuous text: "${variantMatch.name}" (${horsepower} hk, ${range} km range)`)
+      // Extract horsepower - different patterns for electric vs gas models
+      let horsepower = 0
+      let range = 0
+      
+      if (section.model.includes('ID.')) {
+        // Electric models: handle both kW and hk patterns
+        if (match[2]) {
+          // Pattern has both kW and hk: match[1] = kW, match[2] = hk
+          horsepower = parseInt(match[2]) || 0
+        } else {
+          // Pattern has only hk: match[1] = hk
+          horsepower = parseInt(match[1]) || 0
+        }
+        const rangeMatch = variantContent.match(/Rækkevidde:\s*(\d+)\s*km/)
+        range = rangeMatch ? parseInt(rangeMatch[1]) : 0
+      } else {
+        // Gas models: horsepower is in the capture group
+        horsepower = parseInt(match[1]) || 0
+        // Gas models don't have electric range
+        range = 0
+      }
+      
+      console.log(`✅ Found ${section.model} variant in continuous text: "${variantMatch.name}" (${horsepower} hk${range > 0 ? `, ${range} km range` : ''})`)
       
       // Extract all pricing options for this variant
       const pricingOptions: Array<{
@@ -247,7 +308,7 @@ export class VWPDFExtractor {
           results.push(this.completeVariant(currentVariant, section.model))
         }
         
-        // Start new variant - handle both patterns
+        // Start new variant - handle both patterns (hk format and kW format)
         const variant = variantMatch[1]?.trim() || variantMatch[3]?.trim() || 'Unknown Variant'
         const horsepower = parseInt(variantMatch[2] || variantMatch[4] || '0')
         
