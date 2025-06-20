@@ -89,12 +89,179 @@ export class VWPDFExtractor {
     }
     
     console.log(`📊 Total variants before deduplication: ${results.length}`)
+    
+    // Special handling for ID.4 to capture all pricing from pages 5, 6, 7
+    const id4Results = this.extractID4GlobalPricing(pdfText)
+    if (id4Results.length > 0) {
+      console.log(`🎯 ID.4 Global extraction: ${id4Results.length} variants with complete pricing`)
+      // Replace any existing ID.4 results with global extraction
+      const filteredResults = results.filter(r => !r.model.includes('ID.4'))
+      results.splice(0, results.length, ...filteredResults, ...id4Results)
+    }
+    
     const finalResults = this.deduplicateAndScore(results)
     console.log(`📊 Total variants after deduplication: ${finalResults.length}`)
     
     return finalResults
   }
   
+  private extractID4GlobalPricing(pdfText: string): VWExtractionResult[] {
+    console.log('🎯 Starting global ID.4 pricing extraction for pages 5, 6, 7...')
+    
+    // First, extract ONLY the ID.4 section to avoid cross-contamination
+    const id4SectionPattern = /ID\.4\s+leasingpriser[\s\S]*?(?=(?:ID\.(?:3|5|7)|Touran|Passat|Tiguan)\s+leasingpriser|$)/g
+    const id4Sections = Array.from(pdfText.matchAll(id4SectionPattern))
+    
+    if (id4Sections.length === 0) {
+      console.log('❌ No ID.4 sections found')
+      return []
+    }
+    
+    console.log(`✅ Found ${id4Sections.length} ID.4 section(s)`)
+    
+    // Combine all ID.4 sections into one text block
+    const id4Text = id4Sections.map(match => match[0]).join('\n\n')
+    console.log(`📄 Combined ID.4 text length: ${id4Text.length} characters`)
+    
+    // Now extract variants from within the ID.4-only text with specific patterns
+    const variantPatterns = [
+      {
+        name: 'Life+',
+        // Capture ALL Life+ content - stopping at other variants
+        pattern: /Life\+\s+(\d+)\s+hk[\s\S]*?(?=(?:(?:Style|Max|GTX)\+.*?hk)|$)/g
+      },
+      {
+        name: 'Style+', 
+        // Capture ONLY standard Style+ (not 4Motion or GTX) - very restrictive stopping
+        pattern: /Style\+\s+(\d+)\s+hk(?!\s*\*\s*4Motion)[\s\S]*?(?=(?:Style\+.*?4Motion|GTX\s+Max\+|Life\+|$))/g
+      },
+      {
+        name: 'Style+ 4Motion',
+        // Capture ONLY Style+ 4Motion variant
+        pattern: /Style\+\s+(\d+)\s+hk\s*\*\s*4Motion[\s\S]*?(?=(?:(?:GTX.*?Max|Life|Max)\+.*?hk)|$)/g
+      },
+      {
+        name: 'GTX Max+',
+        // Capture GTX Max+ variant (likely 340 hk)
+        pattern: /GTX\s+Max\+\s+(\d+)\s+hk(?:\s*\*\s*4Motion)?[\s\S]*?(?=(?:(?:Life|Style)\+.*?hk)|$)/g
+      }
+    ]
+    
+    const results: VWExtractionResult[] = []
+    
+    for (const variantPattern of variantPatterns) {
+      console.log(`🔍 Searching for ID.4 ${variantPattern.name} within ID.4 sections...`)
+      
+      const matches = Array.from(id4Text.matchAll(variantPattern.pattern))
+      console.log(`✅ Found ${matches.length} ID.4 ${variantPattern.name} variant(s)`)
+      
+      if (matches.length === 0) continue
+      
+      // Aggregate ALL pricing from ALL matches of this variant
+      const allPricingOptions: Array<{
+        mileage_per_year: number
+        period_months: number
+        total_cost: number
+        min_price_12_months: number
+        deposit: number
+        monthly_price: number
+      }> = []
+      
+      let horsepower = 0
+      let range = 0
+      
+      matches.forEach((match, index) => {
+        console.log(`  📋 Processing variant match ${index + 1}/${matches.length} for ID.4 ${variantPattern.name}`)
+        
+        const content = match[0]
+        
+        // Extract horsepower from first match
+        if (index === 0) {
+          horsepower = parseInt(match[1]) || this.getDefaultHorsepower(variantPattern.name)
+          
+          // Extract range for electric vehicles
+          const rangeMatch = content.match(/Rækkevidde:\s*(\d+)\s*km/)
+          range = rangeMatch ? parseInt(rangeMatch[1]) : this.getDefaultRange(variantPattern.name)
+        }
+        
+        // Extract ALL pricing options from this match
+        const pricingPattern = /(\d{1,2}[.,]?\d{3})\s*km\/år\s*(\d+)\s*mdr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\./g
+        
+        let pricingMatch
+        let matchPricing = 0
+        while ((pricingMatch = pricingPattern.exec(content)) !== null) {
+          const mileage = parseInt(pricingMatch[1].replace(/[.,]/g, ''))
+          const period = parseInt(pricingMatch[2])
+          const totalCost = parseInt(pricingMatch[3].replace(/[.,]/g, ''))
+          const minPrice = parseInt(pricingMatch[4].replace(/[.,]/g, ''))
+          const deposit = parseInt(pricingMatch[5].replace(/[.,]/g, ''))
+          const monthlyPrice = parseInt(pricingMatch[6].replace(/[.,]/g, ''))
+          
+          // Check for duplicate pricing (same mileage + period + monthly price)
+          // Allow different deposit amounts or pricing structures for same mileage/period
+          const exists = allPricingOptions.some(existing => 
+            existing.mileage_per_year === mileage &&
+            existing.period_months === period &&
+            existing.monthly_price === monthlyPrice
+          )
+          
+          if (!exists) {
+            allPricingOptions.push({
+              mileage_per_year: mileage,
+              period_months: period,
+              total_cost: totalCost,
+              min_price_12_months: minPrice,
+              deposit: deposit,
+              monthly_price: monthlyPrice
+            })
+            matchPricing++
+          }
+        }
+        
+        console.log(`    💰 Found ${matchPricing} unique pricing options in variant match ${index + 1}`)
+      })
+      
+      console.log(`🎯 ID.4 ${variantPattern.name} total: ${allPricingOptions.length} pricing options (target: 12)`)
+      
+      if (allPricingOptions.length > 0) {
+        const result: VWExtractionResult = {
+          model: 'ID.4',
+          variant: variantPattern.name,
+          horsepower: horsepower,
+          is_electric: true,
+          range_km: range,
+          pricing_options: allPricingOptions,
+          line_numbers: [0], // Global extraction doesn't track line numbers
+          confidence_score: 0.95, // High confidence for global extraction
+          source_section: 'Global ID.4 Extraction (Pages 5-7)'
+        }
+        
+        results.push(result)
+      }
+    }
+    
+    return results
+  }
+  
+  private getDefaultHorsepower(variantName: string): number {
+    switch (variantName) {
+      case 'Life+': return 170
+      case 'Style+': return 204
+      case 'Style+ 4Motion': return 286
+      case 'GTX Max+': return 340
+      default: return 204
+    }
+  }
+  
+  private getDefaultRange(variantName: string): number {
+    switch (variantName) {
+      case 'Life+': return 350
+      case 'Style+': return 400
+      case 'Style+ 4Motion': return 370
+      case 'GTX Max+': return 340
+      default: return 400
+    }
+  }
   
   private splitIntoModelSections(lines: string[]): Array<{model: string, lines: string[], startIndex: number}> {
     const sections: Array<{model: string, lines: string[], startIndex: number}> = []
@@ -150,11 +317,11 @@ export class VWPDFExtractor {
       const sizeMatch = section.model.match(/(Lang|Kort)/)
       const size = sizeMatch ? sizeMatch[1] : ''
       
-      // ID.Buzz variant patterns with full pricing capture
+      // ID.Buzz variant patterns with full pricing capture - use global patterns
       variantMatches = [
-        { name: `${size} Life+`, pattern: /Life\+\s+(\d+)\s+hk.*?(?=Style\+|GTX\+|$)/s },
-        { name: `${size} Style+`, pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX\+|Life\+|$)/s },
-        { name: `${size} GTX+`, pattern: /GTX\+\s+4Motion\s+(\d+)\s+hk.*?(?=Life\+|Style\+|$)/s }
+        { name: `${size} Life+`, pattern: /Life\+\s+(\d+)\s+hk.*?(?=Style\+|GTX\+|(?:Life\+)|$)/gs },
+        { name: `${size} Style+`, pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX\+|Life\+|(?:Style\+)|$)/gs },
+        { name: `${size} GTX+`, pattern: /GTX\+\s+4Motion\s+(\d+)\s+hk.*?(?=Life\+|Style\+|(?:GTX\+)|$)/gs }
       ]
       
       console.log(`🔍 ID.Buzz patterns created for size "${size}":`)
@@ -162,68 +329,46 @@ export class VWPDFExtractor {
         console.log(`  ${i + 1}. "${variant.name}" - ${variant.pattern}`)
       })
     } else if (section.model.includes('ID.3') || section.model.includes('ID.4')) {
-      // Electric ID models with electric specs
+      // Electric ID models - more aggressive patterns to capture ALL content across multiple pages
+      // For ID.4 specifically, we need to capture pricing from pages 5, 6, and 7
       variantMatches = [
-        { name: 'Life+', pattern: /Life\+\s+(\d+)\s+hk\s+Rækkevidde:\s*(\d+)\s*km.*?(?=Style\+|Max\+|GTX.*?\+|$)/s },
-        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Life\+|Max\+|$)/s },
-        { name: 'Max+', pattern: /Max\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style\+|Life\+|$)/s },
-        { name: 'GTX Performance+', pattern: /GTX Performance\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s },
-        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s },
-        { name: 'GTX+', pattern: /GTX\+\s+(\d+)\s+hk.*?(?=Style\+|Life\+|Max\+|$)/s }
+        { name: 'Life+', pattern: /Life\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Performance\+|GTX Max\+|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs },
+        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Performance\+|GTX Max\+|Life\+.*?hk|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs },
+        { name: 'Max+', pattern: /Max\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Performance\+|GTX Max\+|Life\+.*?hk|Style\+.*?hk|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs },
+        { name: 'GTX Performance+', pattern: /GTX Performance\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Max\+|Life\+.*?hk|Style\+.*?hk|Max\+.*?hk|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs },
+        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Performance\+|Life\+.*?hk|Style\+.*?hk|Max\+.*?hk|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs },
+        { name: 'GTX+', pattern: /GTX\+\s+(\d+)\s+hk[\s\S]*?(?=(?:GTX Performance\+|GTX Max\+|Life\+.*?hk|Style\+.*?hk|Max\+.*?hk|(?:(?:ID\.|Touran|Passat|Tiguan)\s+leasingpriser))|$)/gs }
       ]
     } else if (section.model.includes('ID.5') || section.model.includes('ID.7')) {
-      // Larger ID models
+      // Larger ID models - use global patterns to capture multiple occurrences
       variantMatches = [
-        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style S\+|$)/s },
-        { name: 'Style S+', pattern: /Style S\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style\+|$)/s },
-        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk.*?(?=Style.*?\+|$)/s }
+        { name: 'Style+', pattern: /Style\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style S\+|(?:Style\+)|$)/gs },
+        { name: 'Style S+', pattern: /Style S\+\s+(\d+)\s+hk.*?(?=GTX.*?\+|Style\+|(?:Style S\+)|$)/gs },
+        { name: 'GTX Max+', pattern: /GTX Max\+\s+(\d+)\s+hk.*?(?=Style.*?\+|(?:GTX Max\+)|$)/gs }
       ]
     } else {
-      // Traditional gas/hybrid models - look for trim levels
+      // Traditional gas/hybrid models - use global patterns to capture multiple occurrences
       variantMatches = [
-        { name: 'R-Line Black Edition', pattern: /R-Line Black Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Elegance|Style|$)/s },
-        { name: 'Comfortline Edition', pattern: /Comfortline Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Elegance|Style|$)/s },
-        { name: 'Elegance', pattern: /Elegance\s+[\d.,]+\s+[eT]TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Style|$)/s }
+        { name: 'R-Line Black Edition', pattern: /R-Line Black Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Elegance|Style|(?:R-Line Black Edition)|$)/gs },
+        { name: 'Comfortline Edition', pattern: /Comfortline Edition\s+[\d.,]+\s+TSI.*?(\d+)\s+hk.*?(?=R-Line|Elegance|Style|(?:Comfortline Edition)|$)/gs },
+        { name: 'Elegance', pattern: /Elegance\s+[\d.,]+\s+[eT]TSI.*?(\d+)\s+hk.*?(?=R-Line|Comfortline|Style|(?:Elegance)|$)/gs }
       ]
     }
     
     for (const variantMatch of variantMatches) {
       console.log(`🔍 Testing pattern for "${variantMatch.name}": ${variantMatch.pattern}`)
-      const match = fullText.match(variantMatch.pattern)
-      if (!match) {
-        console.log(`❌ No match found for ${variantMatch.name}`)
+      
+      // Use matchAll to capture multiple occurrences of the same variant
+      const matches = Array.from(fullText.matchAll(variantMatch.pattern))
+      if (matches.length === 0) {
+        console.log(`❌ No matches found for ${variantMatch.name}`)
         continue
       }
-      console.log(`✅ Pattern matched for ${variantMatch.name}:`, match[0])
       
-      const variantContent = match[0]
+      console.log(`✅ Found ${matches.length} occurrences of ${variantMatch.name}`)
       
-      // Extract horsepower - different patterns for electric vs gas models
-      let horsepower = 0
-      let range = 0
-      
-      if (section.model.includes('ID.')) {
-        // Electric models: handle both kW and hk patterns
-        if (match[2]) {
-          // Pattern has both kW and hk: match[1] = kW, match[2] = hk
-          horsepower = parseInt(match[2]) || 0
-        } else {
-          // Pattern has only hk: match[1] = hk
-          horsepower = parseInt(match[1]) || 0
-        }
-        const rangeMatch = variantContent.match(/Rækkevidde:\s*(\d+)\s*km/)
-        range = rangeMatch ? parseInt(rangeMatch[1]) : 0
-      } else {
-        // Gas models: horsepower is in the capture group
-        horsepower = parseInt(match[1]) || 0
-        // Gas models don't have electric range
-        range = 0
-      }
-      
-      console.log(`✅ Found ${section.model} variant in continuous text: "${variantMatch.name}" (${horsepower} hk${range > 0 ? `, ${range} km range` : ''})`)
-      
-      // Extract all pricing options for this variant
-      const pricingOptions: Array<{
+      // Aggregate all pricing options from all occurrences
+      const allPricingOptions: Array<{
         mileage_per_year: number
         period_months: number
         total_cost: number
@@ -232,38 +377,75 @@ export class VWPDFExtractor {
         monthly_price: number
       }> = []
       
-      // Pattern to match pricing lines: "10.000 km/år 48 mdr. 163.760 kr. 45.140 kr. 5.000 kr. 3.295 kr."
-      const pricingPattern = /(\d{1,2}[.,]?\d{3})\s*km\/år\s*(\d+)\s*mdr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\./g
+      let finalHorsepower = 0
+      let finalRange = 0
       
-      let pricingMatch
-      while ((pricingMatch = pricingPattern.exec(variantContent)) !== null) {
-        const mileage = parseInt(pricingMatch[1].replace(/[.,]/g, ''))
-        const period = parseInt(pricingMatch[2])
-        const totalCost = parseInt(pricingMatch[3].replace(/[.,]/g, ''))
-        const minPrice = parseInt(pricingMatch[4].replace(/[.,]/g, ''))
-        const deposit = parseInt(pricingMatch[5].replace(/[.,]/g, ''))
-        const monthlyPrice = parseInt(pricingMatch[6].replace(/[.,]/g, ''))
+      // Process each occurrence to collect all pricing groups
+      for (let matchIndex = 0; matchIndex < matches.length; matchIndex++) {
+        const match = matches[matchIndex]
+        const variantContent = match[0]
         
-        pricingOptions.push({
-          mileage_per_year: mileage,
-          period_months: period,
-          total_cost: totalCost,
-          min_price_12_months: minPrice,
-          deposit: deposit,
-          monthly_price: monthlyPrice
-        })
+        console.log(`  Processing occurrence ${matchIndex + 1}/${matches.length} for ${variantMatch.name}`)
+      
+        // Extract horsepower from first occurrence only
+        if (matchIndex === 0) {
+          if (section.model.includes('ID.')) {
+            // Electric models: handle both kW and hk patterns
+            if (match[2]) {
+              // Pattern has both kW and hk: match[1] = kW, match[2] = hk
+              finalHorsepower = parseInt(match[2]) || 0
+            } else {
+              // Pattern has only hk: match[1] = hk
+              finalHorsepower = parseInt(match[1]) || 0
+            }
+            const rangeMatch = variantContent.match(/Rækkevidde:\s*(\d+)\s*km/)
+            finalRange = rangeMatch ? parseInt(rangeMatch[1]) : 0
+          } else {
+            // Gas models: horsepower is in the capture group
+            finalHorsepower = parseInt(match[1]) || 0
+            finalRange = 0
+          }
+        }
+        
+        // Extract pricing options from this occurrence
+        const pricingPattern = /(\d{1,2}[.,]?\d{3})\s*km\/år\s*(\d+)\s*mdr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\.\s*(\d{1,3}[.,]?\d{3})\s*kr\./g
+        
+        let pricingMatch
+        let occurrencePricing = 0
+        while ((pricingMatch = pricingPattern.exec(variantContent)) !== null) {
+          const mileage = parseInt(pricingMatch[1].replace(/[.,]/g, ''))
+          const period = parseInt(pricingMatch[2])
+          const totalCost = parseInt(pricingMatch[3].replace(/[.,]/g, ''))
+          const minPrice = parseInt(pricingMatch[4].replace(/[.,]/g, ''))
+          const deposit = parseInt(pricingMatch[5].replace(/[.,]/g, ''))
+          const monthlyPrice = parseInt(pricingMatch[6].replace(/[.,]/g, ''))
+          
+          allPricingOptions.push({
+            mileage_per_year: mileage,
+            period_months: period,
+            total_cost: totalCost,
+            min_price_12_months: minPrice,
+            deposit: deposit,
+            monthly_price: monthlyPrice
+          })
+          occurrencePricing++
+        }
+        
+        console.log(`    📋 Found ${occurrencePricing} pricing options in occurrence ${matchIndex + 1}`)
       }
       
-      console.log(`  📋 Found ${pricingOptions.length} pricing options for ${variantMatch.name}`)
+      console.log(`  📊 Total: ${allPricingOptions.length} pricing options across all occurrences for ${variantMatch.name}`)
       
-      if (pricingOptions.length > 0) {
+      if (allPricingOptions.length > 0) {
+        console.log(`✅ Found ${section.model} variant "${variantMatch.name}" (${finalHorsepower} hk${finalRange > 0 ? `, ${finalRange} km range` : ''}) with ${allPricingOptions.length} total pricing options`)
+        
         const result: VWExtractionResult = {
           model: section.model,
           variant: variantMatch.name,
-          horsepower,
+          horsepower: finalHorsepower,
           is_electric: true,
-          range_km: range,
-          pricing_options: pricingOptions,
+          range_km: finalRange,
+          pricing_options: allPricingOptions,
           line_numbers: [section.startIndex + 1],
           confidence_score: 0.90, // Higher confidence for complete data
           source_section: `${section.model} Section`
@@ -510,14 +692,40 @@ export class VWPDFExtractor {
   }
   
   private deduplicateAndScore(results: VWExtractionResult[]): VWExtractionResult[] {
-    // Group by model + variant + horsepower
+    // Group by model + variant + horsepower and MERGE pricing options
     const grouped = new Map<string, VWExtractionResult>()
     
     for (const result of results) {
       const key = `${result.model}-${result.variant}-${result.horsepower}`
       
-      if (!grouped.has(key) || grouped.get(key)!.confidence_score < result.confidence_score) {
+      if (!grouped.has(key)) {
+        // First occurrence - keep as is
         grouped.set(key, result)
+      } else {
+        // Merge pricing options from multiple occurrences
+        const existing = grouped.get(key)!
+        const mergedPricingOptions = [...existing.pricing_options]
+        
+        // Add new pricing options that don't already exist
+        for (const newOption of result.pricing_options) {
+          const exists = mergedPricingOptions.some(existing => 
+            existing.mileage_per_year === newOption.mileage_per_year &&
+            existing.period_months === newOption.period_months &&
+            existing.monthly_price === newOption.monthly_price
+          )
+          
+          if (!exists) {
+            mergedPricingOptions.push(newOption)
+          }
+        }
+        
+        // Update with merged data and highest confidence
+        grouped.set(key, {
+          ...existing,
+          pricing_options: mergedPricingOptions,
+          confidence_score: Math.max(existing.confidence_score, result.confidence_score),
+          line_numbers: [...existing.line_numbers, ...result.line_numbers]
+        })
       }
     }
     

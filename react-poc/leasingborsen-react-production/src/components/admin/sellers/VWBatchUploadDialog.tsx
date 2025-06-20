@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -240,15 +240,15 @@ export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md" aria-describedby="vw-upload-description">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
             Upload VW Prisliste
           </DialogTitle>
-          <p id="vw-upload-description" className="text-sm text-muted-foreground">
+          <DialogDescription>
             {sellerName} - Batch import af Volkswagen modeller
-          </p>
+          </DialogDescription>
         </DialogHeader>
 
         {/* AI Spending Display */}

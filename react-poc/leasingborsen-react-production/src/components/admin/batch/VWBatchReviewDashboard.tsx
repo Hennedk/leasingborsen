@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
-import { AlertCircle, CheckCircle, XCircle, Car, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { AlertCircle, CheckCircle, XCircle, Car, RefreshCw, ThumbsUp, ThumbsDown, ChevronDown, ChevronRight } from 'lucide-react'
 import { VWPDFProcessor } from '@/lib/processors/vwPDFProcessor'
 import { cn } from '@/lib/utils'
 
@@ -17,10 +18,18 @@ interface BatchItem {
     model: string
     variant: string
     horsepower: number
-    monthly_price: number
-    mileage_per_year: number
-    period_months: number
     is_electric?: boolean
+    // Pricing information is stored in pricing_options array
+    pricing_options?: Array<{
+      monthly_price: number
+      mileage_per_year: number
+      period_months: number
+      deposit?: number
+    }>
+    // Fallback fields for mock data compatibility
+    monthly_price?: number
+    mileage_per_year?: number
+    period_months?: number
   }
   existing_data?: any
   changes?: Record<string, { old: any; new: any }>
@@ -46,6 +55,7 @@ export const VWBatchReviewDashboard: React.FC = () => {
   const [applying, setApplying] = useState(false)
   const [activeTab, setActiveTab] = useState('all')
   const [rejectedItems, setRejectedItems] = useState<Set<string>>(new Set())
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
 
   const processor = new VWPDFProcessor()
 
@@ -81,6 +91,30 @@ export const VWBatchReviewDashboard: React.FC = () => {
       newSelection.add(itemId)
     }
     setSelectedItems(newSelection)
+  }
+
+  const toggleRowExpansion = (itemId: string) => {
+    const newExpanded = new Set(expandedRows)
+    if (newExpanded.has(itemId)) {
+      newExpanded.delete(itemId)
+    } else {
+      newExpanded.add(itemId)
+    }
+    setExpandedRows(newExpanded)
+  }
+
+  const getLowestPrice = (item: BatchItem): number | null => {
+    if (item.parsed_data.pricing_options && item.parsed_data.pricing_options.length > 0) {
+      return Math.min(...item.parsed_data.pricing_options.map(option => option.monthly_price))
+    }
+    return item.parsed_data.monthly_price || null
+  }
+
+  const getOfferCount = (item: BatchItem): number => {
+    if (item.parsed_data.pricing_options) {
+      return item.parsed_data.pricing_options.length
+    }
+    return item.parsed_data.monthly_price ? 1 : 0
   }
 
   const selectAllInTab = () => {
@@ -381,130 +415,7 @@ export const VWBatchReviewDashboard: React.FC = () => {
         </div>
 
         <TabsContent value={activeTab} className="space-y-4">
-          {getFilteredItems().map((item) => (
-            <Card key={item.id} className={cn(
-              "transition-colors",
-              selectedItems.has(item.id) && "ring-2 ring-blue-500",
-              rejectedItems.has(item.id) && "ring-2 ring-red-500 opacity-60"
-            )}>
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={selectedItems.has(item.id)}
-                      onCheckedChange={() => toggleItemSelection(item.id)}
-                    />
-                    {getActionIcon(item.action)}
-                    <div>
-                      <CardTitle className="text-lg">
-                        {item.parsed_data.model} {item.parsed_data.variant}
-                      </CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span>{item.parsed_data.horsepower} hk</span>
-                        {item.parsed_data.is_electric && (
-                          <Badge variant="outline" className="text-xs">Elektrisk</Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {getActionBadge(item.action)}
-                    <Badge 
-                      variant={item.confidence_score >= 0.9 ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {Math.round(item.confidence_score * 100)}% sikkerhed
-                    </Badge>
-                    
-                    {/* Individual approve/reject buttons */}
-                    <div className="flex gap-1 ml-2">
-                      {rejectedItems.has(item.id) ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => approveItem(item.id)}
-                          className="h-7 px-2"
-                        >
-                          <ThumbsUp className="h-3 w-3 mr-1" />
-                          Godkend
-                        </Button>
-                      ) : (
-                        <>
-                          {!selectedItems.has(item.id) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => approveItem(item.id)}
-                              className="h-7 px-2"
-                            >
-                              <ThumbsUp className="h-3 w-3 mr-1" />
-                              Godkend
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => rejectItem(item.id)}
-                            className="h-7 px-2 text-red-600 hover:text-red-700"
-                          >
-                            <ThumbsDown className="h-3 w-3 mr-1" />
-                            Afvis
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Månedlig pris</p>
-                    <p className="text-lg font-bold text-green-600">
-                      {formatPrice(item.parsed_data.monthly_price)}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium">Kørsel per år</p>
-                    <p className="text-lg">{item.parsed_data.mileage_per_year?.toLocaleString('da-DK') || '–'} km</p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium">Leasingperiode</p>
-                    <p className="text-lg">{item.parsed_data.period_months} måneder</p>
-                  </div>
-                </div>
-
-                {/* Show changes for update items */}
-                {item.action === 'update' && item.changes && Object.keys(item.changes).length > 0 && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium mb-2">Ændringer:</h4>
-                    <div className="space-y-2">
-                      {Object.entries(item.changes).map(([field, change]) => (
-                        <div key={field} className="flex justify-between text-sm">
-                          <span className="font-medium">{field}:</span>
-                          <span>
-                            <span className="text-red-600 line-through">
-                              {typeof change.old === 'object' ? JSON.stringify(change.old) : String(change.old)}
-                            </span>
-                            {' → '}
-                            <span className="text-green-600">
-                              {typeof change.new === 'object' ? JSON.stringify(change.new) : String(change.new)}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-
-          {getFilteredItems().length === 0 && (
+          {getFilteredItems().length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -513,6 +424,233 @@ export const VWBatchReviewDashboard: React.FC = () => {
                   Der er ingen items i denne kategori.
                 </p>
               </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={getFilteredItems().length > 0 && getFilteredItems().every(item => selectedItems.has(item.id))}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            selectAllInTab()
+                          } else {
+                            setSelectedItems(new Set())
+                          }
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead>Mærke & Model</TableHead>
+                    <TableHead>Variant</TableHead>
+                    <TableHead>Laveste pris</TableHead>
+                    <TableHead className="w-24">Tilbud</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Sikkerhed</TableHead>
+                    <TableHead className="w-32">Handlinger</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {getFilteredItems().map((item) => (
+                    <React.Fragment key={item.id}>
+                      {/* Main row */}
+                      <TableRow 
+                        className={cn(
+                          "cursor-pointer hover:bg-muted/50",
+                          selectedItems.has(item.id) && "bg-blue-50",
+                          rejectedItems.has(item.id) && "bg-red-50 opacity-60"
+                        )}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedItems.has(item.id)}
+                            onCheckedChange={() => toggleItemSelection(item.id)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleRowExpansion(item.id)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {expandedRows.has(item.id) ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getActionIcon(item.action)}
+                            <span className="font-medium">Volkswagen {item.parsed_data.model}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span>{item.parsed_data.variant}</span>
+                            {item.parsed_data.is_electric && (
+                              <Badge variant="outline" className="text-xs">Elektrisk</Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {item.parsed_data.horsepower} hk
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium text-green-600">
+                            {formatPrice(getLowestPrice(item) || 0)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {getOfferCount(item)} tilbud
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {getActionBadge(item.action)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={item.confidence_score >= 0.9 ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {Math.round(item.confidence_score * 100)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            {rejectedItems.has(item.id) ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => approveItem(item.id)}
+                                className="h-7 px-2"
+                              >
+                                <ThumbsUp className="h-3 w-3" />
+                              </Button>
+                            ) : (
+                              <>
+                                {!selectedItems.has(item.id) && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => approveItem(item.id)}
+                                    className="h-7 px-2"
+                                  >
+                                    <ThumbsUp className="h-3 w-3" />
+                                  </Button>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => rejectItem(item.id)}
+                                  className="h-7 px-2 text-red-600 hover:text-red-700"
+                                >
+                                  <ThumbsDown className="h-3 w-3" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+
+                      {/* Expanded row content */}
+                      {expandedRows.has(item.id) && (
+                        <TableRow>
+                          <TableCell colSpan={9} className="bg-muted/30 p-2">
+                            {/* Pricing options table */}
+                            {item.parsed_data.pricing_options && item.parsed_data.pricing_options.length > 0 ? (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="h-8 text-xs">Månedlig pris</TableHead>
+                                    <TableHead className="h-8 text-xs">Kørsel per år</TableHead>
+                                    <TableHead className="h-8 text-xs">Periode</TableHead>
+                                    <TableHead className="h-8 text-xs">Udbetaling</TableHead>
+                                    <TableHead className="h-8 text-xs">Total omkostning</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {item.parsed_data.pricing_options.map((option: any, index: number) => (
+                                    <TableRow key={index} className="h-8">
+                                      <TableCell className="py-1 font-medium text-sm">
+                                        {formatPrice(option.monthly_price)}
+                                      </TableCell>
+                                      <TableCell className="py-1 text-sm">
+                                        {option.mileage_per_year?.toLocaleString('da-DK')} km/år
+                                      </TableCell>
+                                      <TableCell className="py-1 text-sm">
+                                        {option.period_months} mdr
+                                      </TableCell>
+                                      <TableCell className="py-1 text-sm">
+                                        {option.deposit ? formatPrice(option.deposit) : '–'}
+                                      </TableCell>
+                                      <TableCell className="py-1 text-sm">
+                                        {option.total_cost ? formatPrice(option.total_cost) : '–'}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            ) : (
+                              /* Fallback for single pricing */
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="h-8 text-xs">Månedlig pris</TableHead>
+                                    <TableHead className="h-8 text-xs">Kørsel per år</TableHead>
+                                    <TableHead className="h-8 text-xs">Periode</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  <TableRow className="h-8">
+                                    <TableCell className="py-1 font-medium text-sm">
+                                      {formatPrice(item.parsed_data.monthly_price)}
+                                    </TableCell>
+                                    <TableCell className="py-1 text-sm">
+                                      {item.parsed_data.mileage_per_year?.toLocaleString('da-DK') || '–'} km/år
+                                    </TableCell>
+                                    <TableCell className="py-1 text-sm">
+                                      {item.parsed_data.period_months} mdr
+                                    </TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            )}
+
+                            {/* Show changes for update items */}
+                            {item.action === 'update' && item.changes && Object.keys(item.changes).length > 0 && (
+                              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                                <h4 className="font-medium mb-2">Ændringer:</h4>
+                                <div className="space-y-2">
+                                  {Object.entries(item.changes).map(([field, change]) => (
+                                    <div key={field} className="flex justify-between text-sm">
+                                      <span className="font-medium">{field}:</span>
+                                      <span>
+                                        <span className="text-red-600 line-through">
+                                          {typeof change.old === 'object' ? JSON.stringify(change.old) : String(change.old)}
+                                        </span>
+                                        {' → '}
+                                        <span className="text-green-600">
+                                          {typeof change.new === 'object' ? JSON.stringify(change.new) : String(change.new)}
+                                        </span>
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
             </Card>
           )}
         </TabsContent>
