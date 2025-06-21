@@ -57,7 +57,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
 
   return (
     <TooltipProvider>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="admin-form-grid">
           {/* Make */}
         <FormField
           control={control as any}
