@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import AdminLayout from '@/components/admin/AdminLayout'
 import ListingsTable from '@/components/admin/ListingsTable'
 import { Card, CardContent } from '@/components/ui/card'
@@ -75,27 +75,27 @@ const AdminListings: React.FC = () => {
   const endIndex = startIndex + itemsPerPage
   const paginatedListings = filteredListings.slice(startIndex, endIndex)
 
-  // Filter handlers
-  const handleSellerChange = (sellerId: string) => {
+  // Filter handlers with useCallback
+  const handleSellerChange = useCallback((sellerId: string) => {
     setFilters(prev => ({
       ...prev,
       seller_id: sellerId === 'all' ? undefined : sellerId
     }))
     setCurrentPage(1) // Reset to first page when changing filters
-  }
+  }, [])
 
-  const handleStatusChange = (status: string) => {
+  const handleStatusChange = useCallback((status: string) => {
     setFilters(prev => ({
       ...prev,
       status: status as 'draft' | 'active' | 'all'
     }))
     setCurrentPage(1) // Reset to first page when changing filters
-  }
+  }, [])
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({ status: 'all' })
     setCurrentPage(1) // Reset to first page when clearing filters
-  }
+  }, [])
 
   // Pagination handlers
   const handlePageChange = (page: number) => {

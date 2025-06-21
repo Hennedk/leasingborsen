@@ -11,7 +11,7 @@ import {
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useCreateListingWithOffers, useUpdateListingWithOffers } from '@/hooks/mutations'
 import { carListingSchema, type CarListingFormData } from '@/lib/validations'
-import { Save, ArrowLeft, RotateCcw } from 'lucide-react'
+import { Save, ArrowLeft, RotateCcw, Loader2 } from 'lucide-react'
 import type { CarListing } from '@/types'
 import {
   BasicInfoSection,
@@ -351,7 +351,7 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
               <h1 className="text-2xl font-bold">
                 {isEditing ? 'Edit listing' : 'Add listing'}
               </h1>
-              <div className="flex items-center gap-3">
+              <div className="admin-button-group gap-3">
                 {(hasUnsavedChanges || !currentListingId) && (
                   <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-md">
                     Ctrl+S for at gemme
@@ -362,7 +362,11 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
                   disabled={isLoading || (!hasUnsavedChanges && !!currentListingId)} 
                   className="flex items-center gap-2 px-4"
                 >
-                  <Save className="h-4 w-4" />
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
                   {isLoading ? 'Gemmer...' : (isEditing ? 'Gem biloplysninger' : 'Opret bil')}
                 </Button>
                 {isEditing && (
@@ -385,14 +389,14 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
               {/* Left Column - 2/3 width */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Basic Information */}
-                <Card className="shadow-lg border-border/50 py-6">
-                  <CardHeader className="pb-2 px-6">
-                    <CardTitle className="flex items-center gap-2 text-lg">
+                <Card className="admin-card py-6">
+                  <CardHeader className="admin-card-header">
+                    <CardTitle className="admin-section-title">
                       Grundoplysninger
                       <span className="text-destructive text-sm">*</span>
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="px-6">
+                  <CardContent className="admin-card-content">
                     <BasicInfoSection
                       control={form.control}
                       referenceData={referenceData!}
@@ -405,11 +409,11 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
                 </Card>
 
                 {/* Specifications */}
-                <Card className="shadow-lg border-border/50 py-6">
-                  <CardHeader className="pb-2 px-6">
-                    <CardTitle className="text-lg">Specifikationer</CardTitle>
+                <Card className="admin-card py-6">
+                  <CardHeader className="admin-card-header">
+                    <CardTitle className="admin-section-title">Specifikationer</CardTitle>
                   </CardHeader>
-                  <CardContent className="px-6">
+                  <CardContent className="admin-card-content">
                     <SpecificationsSection 
                       control={form.control} 
                       fuelType={form.watch('fuel_type')}

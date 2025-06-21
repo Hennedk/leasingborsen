@@ -306,3 +306,46 @@ body {
     display: none;
   }
 }
+
+/* Admin-specific component classes */
+@layer components {
+  .admin-card {
+    @apply bg-card border border-border/50 rounded-lg shadow-lg;
+  }
+  
+  .admin-card-header {
+    @apply pb-2 px-6;
+  }
+  
+  .admin-card-content {
+    @apply px-6;
+  }
+  
+  .admin-section-title {
+    @apply flex items-center gap-2 text-lg font-semibold;
+  }
+  
+  .admin-form-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+  
+  .admin-button-group {
+    @apply flex items-center gap-2;
+  }
+  
+  .admin-table-actions {
+    @apply flex items-center gap-1;
+  }
+  
+  .admin-icon-button {
+    @apply h-8 w-8 p-0;
+  }
+  
+  .admin-badge-missing {
+    @apply text-muted-foreground border-dashed;
+  }
+  
+  .admin-draft-badge {
+    @apply text-xs border-orange-200 text-orange-700 bg-orange-50;
+  }
+}
