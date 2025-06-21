@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
 import { 
   useAdminListings, 
   useBulkDeleteListings,
@@ -34,7 +33,7 @@ const AdminListings: React.FC = () => {
   const [itemsPerPage] = useState(20)
   
   // Data fetching 
-  const { data: listingsData, isLoading: listingsLoading, refetch } = useAdminListings({})
+  const { data: listingsData, isLoading: listingsLoading } = useAdminListings({})
   
   // Mutations
   const bulkDeleteMutation = useBulkDeleteListings()

@@ -359,7 +359,7 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
                 )}
                 <Button 
                   type="submit" 
-                  disabled={isLoading || (!hasUnsavedChanges && currentListingId)} 
+                  disabled={isLoading || (!hasUnsavedChanges && !!currentListingId)} 
                   className="flex items-center gap-2 px-4"
                 >
                   <Save className="h-4 w-4" />

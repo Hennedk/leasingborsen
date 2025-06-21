@@ -1,5 +1,4 @@
 import React from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { OffersTable } from './OffersTable'
 import { OffersNoListingState, OffersLoadingState, OffersErrorState } from './OffersStates'
 import { useOfferOperations } from './useOfferOperations'
@@ -21,7 +20,6 @@ export const OffersTableManager = React.memo<OffersTableManagerProps>(({
   className
 }) => {
   const {
-    offers,
     editableOffers,
     offersLoading,
     offersError,

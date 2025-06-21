@@ -147,7 +147,7 @@ export class CarListingQueries {
     // Deduplicate by listing_id, keeping the one with lowest monthly_price (already sorted ascending)
     const uniqueListings = new Map<string, CarListing>()
     allData.forEach((listing: CarListing) => {
-      if (!uniqueListings.has(listing.listing_id)) {
+      if (listing.listing_id && !uniqueListings.has(listing.listing_id)) {
         uniqueListings.set(listing.listing_id, listing)
       }
     })
@@ -185,7 +185,7 @@ export class CarListingQueries {
     }
 
     if (!data || data.length === 0) {
-      return { data: null, error: { message: 'Listing not found' } }
+      return { data: null, error: new Error('Listing not found') }
     }
 
     // Return the first result (which has the lowest price due to ordering)
