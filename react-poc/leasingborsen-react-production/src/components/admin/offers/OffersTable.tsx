@@ -44,11 +44,11 @@ export const OffersTable: React.FC<OffersTableProps> = ({
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b">
-            <th className="text-left p-2 font-medium">Månedspris *</th>
-            <th className="text-left p-2 font-medium">Udbetaling</th>
-            <th className="text-left p-2 font-medium">Periode (mdr)</th>
-            <th className="text-left p-2 font-medium">Km/år</th>
-            <th className="text-left p-2 font-medium w-20">Handlinger</th>
+            <th className="text-left py-2 pl-0 pr-3 font-medium">Månedspris *</th>
+            <th className="text-left py-2 px-3 font-medium">Udbetaling</th>
+            <th className="text-left py-2 px-3 font-medium">Periode (mdr)</th>
+            <th className="text-left py-2 px-3 font-medium">Km/år</th>
+            <th className="text-left py-2 px-3 font-medium w-20">Handlinger</th>
           </tr>
         </thead>
         <tbody>
@@ -58,7 +58,7 @@ export const OffersTable: React.FC<OffersTableProps> = ({
               className={`border-b hover:bg-muted/30 ${offer.isNew ? 'bg-muted/10' : ''}`}
             >
               {/* Monthly Price */}
-              <td className="p-2">
+              <td className="py-2 pl-0 pr-3">
                 <div className="space-y-1">
                   <Input
                     ref={el => { if (el) inputRefs.current[`${index}-monthly_price`] = el; return undefined }}
@@ -80,7 +80,7 @@ export const OffersTable: React.FC<OffersTableProps> = ({
               </td>
 
               {/* First Payment */}
-              <td className="p-2">
+              <td className="py-2 px-3">
                 <div className="space-y-1">
                   <Input
                     ref={el => { if (el) inputRefs.current[`${index}-first_payment`] = el; return undefined }}
@@ -102,7 +102,7 @@ export const OffersTable: React.FC<OffersTableProps> = ({
               </td>
 
               {/* Period Months */}
-              <td className="p-2">
+              <td className="py-2 px-3">
                 <div className="space-y-1">
                   <Input
                     ref={el => { if (el) inputRefs.current[`${index}-period_months`] = el; return undefined }}
@@ -124,7 +124,7 @@ export const OffersTable: React.FC<OffersTableProps> = ({
               </td>
 
               {/* Mileage Per Year */}
-              <td className="p-2">
+              <td className="py-2 px-3">
                 <div className="space-y-1">
                   <Input
                     ref={el => { if (el) inputRefs.current[`${index}-mileage_per_year`] = el; return undefined }}
@@ -146,7 +146,7 @@ export const OffersTable: React.FC<OffersTableProps> = ({
               </td>
 
               {/* Actions */}
-              <td className="p-2">
+              <td className="py-2 px-3">
                 <div className="flex gap-1">
                   {!offer.isNew && (
                     <>

@@ -20,33 +20,19 @@ interface SellerSectionProps {
 export const SellerSection = React.memo<SellerSectionProps>(({ control, setValue }) => {
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-3">
         {/* Seller Selection */}
         <FormField
           control={control as any}
           name="seller_id"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center gap-1">
-                Sælger *
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-3 w-3 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Vælg hvilken sælger der skal være ansvarlig for denne bil</p>
-                  </TooltipContent>
-                </Tooltip>
-              </FormLabel>
               <FormControl>
                 <SellerSelect
                   value={field.value}
-                  onValueChange={(sellerId) => {
-                    field.onChange(sellerId)
-                    // Also use setValue to ensure form dirty state is triggered
-                    if (setValue) {
-                      setValue('seller_id', sellerId, { shouldDirty: true })
-                    }
+                  onValueChange={(value) => {
+                    field.onChange(value)
+                    setValue?.('seller_id', value, { shouldDirty: true })
                   }}
                 />
               </FormControl>
@@ -54,17 +40,6 @@ export const SellerSection = React.memo<SellerSectionProps>(({ control, setValue
             </FormItem>
           )}
         />
-
-        {/* Seller Guidelines */}
-        <div className="bg-muted/50 rounded-lg p-4">
-          <h4 className="text-sm font-medium mb-2">Sælger information</h4>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Sælgeren vil være synlig på bilens detaljeside</li>
-            <li>• Henvendelser vil blive sendt til sælgerens kontaktoplysninger</li>
-            <li>• Sørg for at sælgerens profil er opdateret</li>
-            <li>• Kun aktive sælgere vises i listen</li>
-          </ul>
-        </div>
       </div>
     </TooltipProvider>
   )

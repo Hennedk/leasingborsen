@@ -123,6 +123,8 @@ export type { CarListing, FilterOptions, Make, Model, BodyType, FuelType, Transm
 // Query Builders with Types
 export class CarListingQueries {
   static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0): Promise<SupabaseResponse<CarListing>> {
+    // Use a subquery to get unique listings with their lowest monthly price
+    // This prevents duplicates from the full_listing_view which has one row per pricing option
     let query = supabase
       .from('full_listing_view')
       .select('*')
@@ -131,13 +133,42 @@ export class CarListingQueries {
     // Apply filters using shared function
     query = applyFilters(query, filters)
 
-    // Apply sorting
+    // Get all data first, then deduplicate in JavaScript to get unique listings with lowest price
+    const { data: allData, error } = await query.order('monthly_price', { ascending: true })
+
+    if (error) {
+      return { data: null, error }
+    }
+
+    if (!allData) {
+      return { data: [], error: null }
+    }
+
+    // Deduplicate by listing_id, keeping the one with lowest monthly_price (already sorted ascending)
+    const uniqueListings = new Map<string, CarListing>()
+    allData.forEach((listing: CarListing) => {
+      if (!uniqueListings.has(listing.listing_id)) {
+        uniqueListings.set(listing.listing_id, listing)
+      }
+    })
+
+    // Convert back to array and apply sorting based on sortOrder
+    let deduplicatedData = Array.from(uniqueListings.values())
+    
+    // Apply final sorting
     const isDescending = sortOrder === 'desc'
-    query = query.order('monthly_price', { ascending: !isDescending })
+    deduplicatedData.sort((a, b) => {
+      if (isDescending) {
+        return (b.monthly_price || 0) - (a.monthly_price || 0)
+      } else {
+        return (a.monthly_price || 0) - (b.monthly_price || 0)
+      }
+    })
 
-    const { data, error } = await query.range(offset, offset + limit - 1)
+    // Apply pagination to deduplicated data
+    const paginatedData = deduplicatedData.slice(offset, offset + limit)
 
-    return { data: data as CarListing[] | null, error }
+    return { data: paginatedData as CarListing[], error: null }
   }
 
   static async getListingById(id: string): Promise<SupabaseSingleResponse<CarListing>> {
@@ -152,16 +183,28 @@ export class CarListingQueries {
   }
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
+    // Get unique listing IDs to count properly (since full_listing_view has duplicates)
     let query = supabase
       .from('full_listing_view')
-      .select('*', { count: 'exact', head: true })
+      .select('listing_id')
       .not('monthly_price', 'is', null) // Only count listings with offers
 
     // Apply same filters using shared function
     query = applyFilters(query, filters)
 
-    const { count, error } = await query
-    return { data: count || 0, error }
+    const { data, error } = await query
+
+    if (error) {
+      return { data: 0, error }
+    }
+
+    if (!data) {
+      return { data: 0, error: null }
+    }
+
+    // Count unique listing IDs
+    const uniqueListingIds = new Set(data.map((item: any) => item.listing_id))
+    return { data: uniqueListingIds.size, error: null }
   }
 }
 

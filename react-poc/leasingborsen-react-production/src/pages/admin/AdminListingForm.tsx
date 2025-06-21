@@ -14,28 +14,14 @@ const AdminListingFormPage: React.FC = () => {
   return (
     <AdminLayout title={isEditing ? 'Rediger Annonce' : 'Opret Annonce'}>
       <div className="space-y-6">
-        {/* Breadcrumb and Header */}
-        <div className="space-y-4">
-          <Breadcrumb 
-            items={[
-              { label: 'Dashboard', href: '/admin' },
-              { label: 'Annoncer', href: '/admin/listings' },
-              { label: isEditing ? 'Rediger' : 'Opret' }
-            ]}
-          />
-          
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {isEditing ? 'Rediger Annonce' : 'Opret Ny Annonce'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isEditing 
-                ? 'Opdater annoncens information og gem ændringerne' 
-                : 'Udfyld formularen for at oprette en ny bil annonce på platformen'
-              }
-            </p>
-          </div>
-        </div>
+        {/* Breadcrumb only */}
+        <Breadcrumb 
+          items={[
+            { label: 'Dashboard', href: '/admin' },
+            { label: 'Annoncer', href: '/admin/listings' },
+            { label: isEditing ? 'Rediger' : 'Opret' }
+          ]}
+        />
 
         {/* Form */}
         {isLoading ? (

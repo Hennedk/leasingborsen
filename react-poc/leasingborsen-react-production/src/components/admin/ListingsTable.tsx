@@ -133,9 +133,6 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
     }
   }
 
-  // Calculate draft statistics
-  const draftCount = listings.filter((l: any) => l.is_draft).length
-  const publishedCount = listings.length - draftCount
 
   if (loading) {
     return (
@@ -148,24 +145,6 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
   return (
     <TooltipProvider>
       <div className="space-y-4">
-        {/* Status summary */}
-        {draftCount > 0 && (
-          <div className="flex items-center gap-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-            <AlertTriangle className="h-5 w-5 text-orange-600" />
-            <div className="text-sm">
-              <span className="font-medium text-orange-800">
-                {draftCount} kladde{draftCount !== 1 ? 'r' : ''}
-              </span>
-              <span className="text-orange-700 ml-2">
-                • {publishedCount} publiceret{publishedCount !== 1 ? 'e' : ''}
-              </span>
-              <span className="text-orange-600 ml-2 text-xs">
-                Kladder vises kun i admin og mangler data før publicering
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Bulk actions */}
         {selectedListings.length > 0 && (
           <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
@@ -404,25 +383,25 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
                             <Table>
                               <TableHeader>
                                 <TableRow>
-                                  <TableHead className="h-8 text-xs">Månedlig pris</TableHead>
-                                  <TableHead className="h-8 text-xs">Kørsel per år</TableHead>
-                                  <TableHead className="h-8 text-xs">Periode</TableHead>
-                                  <TableHead className="h-8 text-xs">Førsteudgift</TableHead>
+                                  <TableHead className="h-8 text-xs w-1/4">Månedlig pris</TableHead>
+                                  <TableHead className="h-8 text-xs w-1/4">Kørsel per år</TableHead>
+                                  <TableHead className="h-8 text-xs w-1/4">Periode</TableHead>
+                                  <TableHead className="h-8 text-xs w-1/4">Førsteudgift</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
                                 {pricingData[listing.listing_id!].map((option, index) => (
                                   <TableRow key={index} className="h-8">
-                                    <TableCell className="py-1 font-medium text-sm">
+                                    <TableCell className="py-1 font-medium text-sm w-1/4">
                                       {formatPrice(option.monthly_price)}
                                     </TableCell>
-                                    <TableCell className="py-1 text-sm">
+                                    <TableCell className="py-1 text-sm w-1/4">
                                       {option.mileage_per_year?.toLocaleString('da-DK')} km/år
                                     </TableCell>
-                                    <TableCell className="py-1 text-sm">
+                                    <TableCell className="py-1 text-sm w-1/4">
                                       {option.period_months} mdr
                                     </TableCell>
-                                    <TableCell className="py-1 text-sm">
+                                    <TableCell className="py-1 text-sm w-1/4">
                                       {option.first_payment ? formatPrice(option.first_payment) : '–'}
                                     </TableCell>
                                   </TableRow>
