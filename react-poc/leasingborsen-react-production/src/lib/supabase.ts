@@ -172,14 +172,24 @@ export class CarListingQueries {
   }
 
   static async getListingById(id: string): Promise<SupabaseSingleResponse<CarListing>> {
+    // Get all rows for this listing (there may be multiple due to multiple pricing options)
     const { data, error } = await supabase
       .from('full_listing_view')
       .select('*')
       .eq('listing_id', id)
       .not('monthly_price', 'is', null) // Only show listings with offers
-      .single()
+      .order('monthly_price', { ascending: true }) // Get lowest price first
 
-    return { data: data as CarListing | null, error }
+    if (error) {
+      return { data: null, error }
+    }
+
+    if (!data || data.length === 0) {
+      return { data: null, error: { message: 'Listing not found' } }
+    }
+
+    // Return the first result (which has the lowest price due to ordering)
+    return { data: data[0] as CarListing, error: null }
   }
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {

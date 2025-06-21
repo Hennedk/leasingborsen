@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { CarListing } from '@/types'
+import { useOffers } from './useOffers'
 
 export interface LeaseOption {
   mileage_per_year: number
@@ -21,6 +22,8 @@ export interface LeaseCalculatorData {
   setSelectedPeriod: (value: number) => void
   setSelectedUpfront: (value: number) => void
   resetToCheapest: () => void
+  isLoading: boolean
+  error: any
 }
 
 export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculatorData => {
@@ -28,21 +31,25 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
   const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
 
-  // Mock lease options - in real implementation, this would come from API
+  // Fetch real pricing data from database instead of using mock data
+  const { data: offers, isLoading, error } = useOffers(car?.listing_id || '')
+
+  // Convert offers to lease options format
   const leaseOptions = useMemo(() => {
-    if (!car?.monthly_price) return []
+    if (!offers || offers.length === 0) return []
     
-    return [
-      { mileage_per_year: 10000, period_months: 36, first_payment: 0, monthly_price: car.monthly_price },
-      { mileage_per_year: 15000, period_months: 36, first_payment: 0, monthly_price: car.monthly_price + 200 },
-      { mileage_per_year: 20000, period_months: 36, first_payment: 0, monthly_price: car.monthly_price + 400 },
-      { mileage_per_year: 10000, period_months: 48, first_payment: 0, monthly_price: car.monthly_price - 150 },
-      { mileage_per_year: 15000, period_months: 48, first_payment: 0, monthly_price: car.monthly_price + 50 },
-      { mileage_per_year: 20000, period_months: 48, first_payment: 0, monthly_price: car.monthly_price + 250 },
-      { mileage_per_year: 10000, period_months: 36, first_payment: 50000, monthly_price: car.monthly_price - 300 },
-      { mileage_per_year: 15000, period_months: 36, first_payment: 50000, monthly_price: car.monthly_price - 100 },
-    ]
-  }, [car?.monthly_price])
+    return offers.map(offer => ({
+      mileage_per_year: offer.mileage_per_year || 0,
+      period_months: offer.period_months || 0,
+      first_payment: offer.first_payment || 0,
+      monthly_price: offer.monthly_price
+    })).filter(option => 
+      // Filter out options with missing required data
+      option.mileage_per_year > 0 && 
+      option.period_months > 0 && 
+      option.monthly_price > 0
+    )
+  }, [offers])
 
   // Derived options
   const availableMileages = useMemo(() => 
@@ -102,6 +109,8 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
-    resetToCheapest
+    resetToCheapest,
+    isLoading,
+    error
   }
 }
