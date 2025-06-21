@@ -4,11 +4,9 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { HelpCircle } from 'lucide-react'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import type { CarListingFormData } from '@/lib/validations'
 import { SellerSelect } from '@/components/admin/SellerSelect'
 
