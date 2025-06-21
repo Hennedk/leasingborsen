@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ExternalLink, RotateCcw } from 'lucide-react'
+import { ExternalLink, RotateCcw, Loader2, AlertTriangle } from 'lucide-react'
 import type { LeaseOption } from '@/types'
 
 interface LeaseCalculatorCardProps {
@@ -19,6 +19,8 @@ interface LeaseCalculatorCardProps {
   onUpfrontChange: (value: number) => void
   onResetToCheapest: () => void
   onShowSeller: () => void
+  isLoading?: boolean
+  error?: any
 }
 
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
@@ -33,13 +35,38 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onPeriodChange,
   onUpfrontChange,
   onResetToCheapest,
-  onShowSeller
+  onShowSeller,
+  isLoading = false,
+  error = null
 }) => {
   return (
     <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
       <CardContent className="p-5 space-y-4 relative">
-        {/* Reset Button - Top Right Corner */}
-        <Button
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Indlæser prisindstillinger...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <AlertTriangle className="w-6 h-6 text-destructive mx-auto mb-2" />
+              <p className="text-sm text-destructive">Kunne ikke indlæse prisindstillinger</p>
+            </div>
+          </div>
+        )}
+
+        {/* Content - Only show when not loading and no error */}
+        {!isLoading && !error && (
+          <>
+            {/* Reset Button - Top Right Corner */}
+            <Button
           variant="ghost"
           size="sm"
           onClick={onResetToCheapest}
@@ -136,7 +163,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             <ExternalLink className="w-4 h-4" />
             Se tilbud hos leasingselskab
           </Button>
-        </div>
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   )
