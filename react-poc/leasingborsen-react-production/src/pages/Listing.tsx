@@ -58,7 +58,9 @@ const Listing: React.FC = () => {
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
-    resetToCheapest
+    resetToCheapest,
+    isLoading: leaseLoading,
+    error: leaseError
   } = useLeaseCalculator(car)
   
   // Mobile price overlay state
@@ -144,6 +146,8 @@ const Listing: React.FC = () => {
                 onUpfrontChange={setSelectedUpfront}
                 onResetToCheapest={resetToCheapest}
                 onShowSeller={() => setSellerModalOpen(true)}
+                isLoading={leaseLoading}
+                error={leaseError}
               />
             </ErrorBoundary>
 
