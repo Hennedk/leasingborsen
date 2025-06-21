@@ -3,6 +3,11 @@ export { default as AdminLayout } from './AdminLayout'
 export { default as AdminSidebar } from './AdminSidebar'
 export { default as AdminListingFormNew } from './AdminListingFormNew'
 
+// New form architecture components
+export { AdminFormHeader } from './AdminFormHeader'
+export { AdminFormLayout } from './AdminFormLayout'
+export { AdminFormSections } from './AdminFormSections'
+
 // Form sections
 export * from './form-sections'
 
@@ -10,6 +15,9 @@ export * from './form-sections'
 export { DataTable } from './DataTable'
 export { default as ListingsTable } from './ListingsTable'
 export { default as SellersTable } from './SellersTable'
+
+// Table architecture components
+export * from './table'
 
 // Form components
 export { ImageUpload } from './ImageUpload'

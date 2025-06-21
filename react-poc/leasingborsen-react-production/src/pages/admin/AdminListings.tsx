@@ -16,6 +16,10 @@ import {
   useBulkDeleteListings,
   useAdminDeleteListing 
 } from '@/hooks/useAdminListings'
+import { 
+  DataErrorBoundary, 
+  ComponentErrorBoundary 
+} from '@/components/ErrorBoundaries'
 import { Plus, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CarListing } from '@/lib/supabase'
@@ -192,68 +196,72 @@ const AdminListings: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Seller filter */}
-          <div className="min-w-[200px]">
-            <Select
-              value={filters.seller_id || 'all'}
-              onValueChange={handleSellerChange}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue placeholder="Vælg sælger" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle sælgere</SelectItem>
-                {sellers.map((seller) => (
-                  <SelectItem key={seller.id} value={seller.id}>
-                    {seller.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <ComponentErrorBoundary componentName="Admin Filters">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Seller filter */}
+            <div className="min-w-[200px]">
+              <Select
+                value={filters.seller_id || 'all'}
+                onValueChange={handleSellerChange}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Vælg sælger" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle sælgere</SelectItem>
+                  {sellers.map((seller) => (
+                    <SelectItem key={seller.id} value={seller.id}>
+                      {seller.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Status filter */}
-          <div className="min-w-[150px]">
-            <Select
-              value={filters.status}
-              onValueChange={handleStatusChange}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue placeholder="Vælg listing status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle</SelectItem>
-                <SelectItem value="active">Aktive</SelectItem>
-                <SelectItem value="draft">Kladder</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            {/* Status filter */}
+            <div className="min-w-[150px]">
+              <Select
+                value={filters.status}
+                onValueChange={handleStatusChange}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Vælg listing status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle</SelectItem>
+                  <SelectItem value="active">Aktive</SelectItem>
+                  <SelectItem value="draft">Kladder</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Reset filters button */}
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="h-8 px-3 text-xs"
-            >
-              <X className="h-3 w-3 mr-1" />
-              Ryd filtre
-            </Button>
-          )}
-        </div>
+            {/* Reset filters button */}
+            {activeFiltersCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="h-8 px-3 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Ryd filtre
+              </Button>
+            )}
+          </div>
+        </ComponentErrorBoundary>
 
         {/* Listings table */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-0">
-            <ListingsTable
-              listings={paginatedListings}
-              loading={listingsLoading}
-              onDelete={handleDelete}
-              onView={handleView}
-              onBulkAction={handleBulkAction}
-            />
+            <DataErrorBoundary>
+              <ListingsTable
+                listings={paginatedListings}
+                loading={listingsLoading}
+                onDelete={handleDelete}
+                onView={handleView}
+                onBulkAction={handleBulkAction}
+              />
+            </DataErrorBoundary>
           </CardContent>
         </Card>
 

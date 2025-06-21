@@ -4,6 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { lazy, Suspense } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { 
+  AdminErrorBoundary, 
+  RouteErrorBoundary, 
+  ListingErrorBoundary 
+} from '@/components/ErrorBoundaries'
 import BaseLayout from '@/components/BaseLayout'
 import { Toaster } from '@/components/ui/sonner'
 
@@ -71,36 +76,70 @@ function App() {
           <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
             <Suspense fallback={<PageLoader />}>
               <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/listings" element={<Listings />} />
-                <Route path="/listing/:id" element={<Listing />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/why-private-leasing" element={<WhyPrivateLeasing />} />
-                <Route path="/advertising" element={<Advertising />} />
+                {/* Public routes with route-specific error boundaries */}
+                <Route path="/" element={
+                  <RouteErrorBoundary routeName="Forside">
+                    <Home />
+                  </RouteErrorBoundary>
+                } />
+                <Route path="/listings" element={
+                  <RouteErrorBoundary routeName="Bil annoncer">
+                    <Listings />
+                  </RouteErrorBoundary>
+                } />
+                <Route path="/listing/:id" element={
+                  <ListingErrorBoundary>
+                    <Listing />
+                  </ListingErrorBoundary>
+                } />
+                <Route path="/about" element={
+                  <RouteErrorBoundary routeName="Om os">
+                    <About />
+                  </RouteErrorBoundary>
+                } />
+                <Route path="/why-private-leasing" element={
+                  <RouteErrorBoundary routeName="Privatleasing guide">
+                    <WhyPrivateLeasing />
+                  </RouteErrorBoundary>
+                } />
+                <Route path="/advertising" element={
+                  <RouteErrorBoundary routeName="Annoncering">
+                    <Advertising />
+                  </RouteErrorBoundary>
+                } />
                 
-                {/* Admin routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/listings" element={<AdminListings />} />
-                <Route path="/admin/listings/create" element={<AdminListingForm />} />
-                <Route path="/admin/listings/edit/:id" element={<AdminListingForm />} />
-                <Route path="/admin/sellers" element={<AdminSellers />} />
-                <Route path="/admin/sellers/create" element={<AdminSellerForm />} />
-                <Route path="/admin/sellers/edit/:id" element={<AdminSellerForm />} />
-                <Route path="/admin/batch/:batchId/review" element={<BatchReviewPage />} />
+                {/* Admin routes with admin-specific error boundary */}
+                <Route path="/admin/*" element={
+                  <AdminErrorBoundary>
+                    <Routes>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="dashboard" element={<AdminDashboard />} />
+                      <Route path="listings" element={<AdminListings />} />
+                      <Route path="listings/create" element={<AdminListingForm />} />
+                      <Route path="listings/edit/:id" element={<AdminListingForm />} />
+                      <Route path="sellers" element={<AdminSellers />} />
+                      <Route path="sellers/create" element={<AdminSellerForm />} />
+                      <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
+                      <Route path="batch/:batchId/review" element={<BatchReviewPage />} />
+                    </Routes>
+                  </AdminErrorBoundary>
+                } />
+                
                 {/* Catch all route */}
                 <Route path="*" element={
-                  <BaseLayout>
-                    <div className="min-h-[50vh] flex items-center justify-center">
-                      <div className="text-center">
-                        <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
-                        <p className="text-muted-foreground mb-4">Siden blev ikke fundet</p>
-                        <a href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
-                          Gå til forsiden
-                        </a>
+                  <RouteErrorBoundary routeName="404">
+                    <BaseLayout>
+                      <div className="min-h-[50vh] flex items-center justify-center">
+                        <div className="text-center">
+                          <h1 className="text-4xl font-bold text-foreground mb-4">404</h1>
+                          <p className="text-muted-foreground mb-4">Siden blev ikke fundet</p>
+                          <a href="/" className="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90 transition-colors">
+                            Gå til forsiden
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  </BaseLayout>
+                    </BaseLayout>
+                  </RouteErrorBoundary>
                 } />
               </Routes>
             </Suspense>
