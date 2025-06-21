@@ -57,8 +57,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
 
   return (
     <TooltipProvider>
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Make */}
         <FormField
           control={control as any}
@@ -258,15 +257,14 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             </FormItem>
           )}
         />
-        </div>
-
-        {/* Description */}
-        <div className="space-y-4">
+        
+        {/* Description - full width */}
+        <div className="col-span-full mt-4">
           <FormField
             control={control as any}
             name="description"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="space-y-1">
                 <FormLabel className="flex items-center gap-1 text-base font-medium">
                   Beskrivelse
                   <Tooltip>

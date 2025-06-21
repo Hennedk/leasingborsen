@@ -50,28 +50,18 @@ export const OffersTableManager = React.memo<OffersTableManagerProps>(({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pt-6 pb-3">
-        <CardTitle className="flex items-center justify-between">
-          <span>Tilbud ({offers.length})</span>
-          <div className="text-xs text-muted-foreground">
-            Klik for at redigere • Enter for at gemme • Esc for at annullere
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-6 pb-6">
-        <OffersTable
-          editableOffers={editableOffers}
-          savingOffers={savingOffers}
-          inputRefs={inputRefs}
-          onUpdateField={updateField}
-          onSaveOffer={saveOffer}
-          onDeleteOffer={deleteOffer}
-          onDuplicateOffer={duplicateOffer}
-          onKeyDown={handleKeyDown}
-        />
-      </CardContent>
-    </Card>
+    <div className={className}>
+      <OffersTable
+        editableOffers={editableOffers}
+        savingOffers={savingOffers}
+        inputRefs={inputRefs}
+        onUpdateField={updateField}
+        onSaveOffer={saveOffer}
+        onDeleteOffer={deleteOffer}
+        onDuplicateOffer={duplicateOffer}
+        onKeyDown={handleKeyDown}
+      />
+    </div>
   )
 })
 

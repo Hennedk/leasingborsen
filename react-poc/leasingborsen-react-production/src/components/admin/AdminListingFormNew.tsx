@@ -330,14 +330,14 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-0 max-w-6xl">
+      <div className="container mx-auto pb-8 px-0 max-w-6xl">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmitCarDetails)} className="space-y-8">
             {/* Header Navigation */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={handleCancel}
                 className="flex items-center gap-2"
               >
@@ -347,128 +347,117 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
             </div>
 
             {/* Header with Save Actions */}
-            <Card className="shadow-lg border-border/50">
-              <CardHeader className="py-6 px-8">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl font-semibold">
-                      {isEditing ? 'Rediger bil' : 'Opret ny bil'}
+            <div className="flex items-center justify-between py-2">
+              <h1 className="text-2xl font-bold">
+                {isEditing ? 'Edit listing' : 'Add listing'}
+              </h1>
+              <div className="flex items-center gap-3">
+                {(hasUnsavedChanges || !currentListingId) && (
+                  <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-md">
+                    Ctrl+S for at gemme
+                  </span>
+                )}
+                <Button 
+                  type="submit" 
+                  disabled={isLoading || (!hasUnsavedChanges && currentListingId)} 
+                  className="flex items-center gap-2 px-4"
+                >
+                  <Save className="h-4 w-4" />
+                  {isLoading ? 'Gemmer...' : (isEditing ? 'Gem biloplysninger' : 'Opret bil')}
+                </Button>
+                {isEditing && (
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={handleReset}
+                    disabled={isLoading || !hasUnsavedChanges}
+                    className="flex items-center gap-2 px-4"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    Nulstil
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* 2/1 Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Left Column - 2/3 width */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Basic Information */}
+                <Card className="shadow-lg border-border/50 py-6">
+                  <CardHeader className="pb-2 px-6">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      Grundoplysninger
+                      <span className="text-destructive text-sm">*</span>
                     </CardTitle>
-                    <p className="text-muted-foreground mt-2">
-                      {isEditing ? 'Opdater bilens oplysninger nedenfor' : 'Udfyld alle nødvendige felter for at oprette en ny bil'}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {(hasUnsavedChanges || !currentListingId) && (
-                      <span className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-md">
-                        Ctrl+S for at gemme
-                      </span>
-                    )}
-                    {(hasUnsavedChanges || !currentListingId) && (
-                      <Button 
-                        type="submit" 
-                        disabled={isLoading} 
-                        className="flex items-center gap-2 px-6"
-                        size="lg"
-                      >
-                        <Save className="h-4 w-4" />
-                        {isLoading ? 'Gemmer...' : (isEditing ? 'Gem biloplysninger' : 'Opret bil')}
-                      </Button>
-                    )}
-                    {currentListingId && !hasUnsavedChanges && (
-                      <span className="text-sm text-green-600 bg-green-50 border border-green-200 px-3 py-1 rounded-md flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        Bil gemt succesfuldt
-                      </span>
-                    )}
-                    {isEditing && hasUnsavedChanges && (
-                      <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={handleReset}
-                        disabled={isLoading}
-                        className="flex items-center gap-2 px-6"
-                        size="lg"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        Nulstil
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
+                  </CardHeader>
+                  <CardContent className="px-6">
+                    <BasicInfoSection
+                      control={form.control}
+                      referenceData={referenceData!}
+                      selectedMakeId={selectedMakeId}
+                      onMakeChange={handleMakeChange}
+                      onModelChange={handleModelChange}
+                      setValue={form.setValue}
+                    />
+                  </CardContent>
+                </Card>
 
-            {/* All Form Sections in One Page */}
-            <div className="space-y-8">
-              {/* Basic Information */}
-              <Card className="shadow-lg border-border/50">
-                <CardHeader className="py-4 px-4 border-b border-border/50">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    Grundoplysninger
-                    <span className="text-destructive text-sm">*</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="py-6 px-4">
-                  <BasicInfoSection
-                    control={form.control}
-                    referenceData={referenceData!}
-                    selectedMakeId={selectedMakeId}
-                    onMakeChange={handleMakeChange}
-                    onModelChange={handleModelChange}
-                    setValue={form.setValue}
-                  />
-                </CardContent>
-              </Card>
+                {/* Specifications */}
+                <Card className="shadow-lg border-border/50 py-6">
+                  <CardHeader className="pb-2 px-6">
+                    <CardTitle className="text-lg">Specifikationer</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-6">
+                    <SpecificationsSection 
+                      control={form.control} 
+                      fuelType={form.watch('fuel_type')}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
 
-              {/* Specifications */}
-              <Card className="shadow-lg border-border/50">
-                <CardHeader className="py-4 px-4 border-b border-border/50">
-                  <CardTitle className="text-xl">Specifikationer</CardTitle>
-                </CardHeader>
-                <CardContent className="py-6 px-4">
-                  <SpecificationsSection 
-                    control={form.control} 
-                    fuelType={form.watch('fuel_type')}
-                  />
-                </CardContent>
-              </Card>
+              {/* Right Column - 1/3 width */}
+              <div className="space-y-6">
+                {/* Seller */}
+                <Card className="shadow-lg border-border/50 py-6">
+                  <CardHeader className="pb-2 px-6">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      Sælger
+                      <span className="text-destructive text-sm">*</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-6">
+                    <SellerSection 
+                      control={form.control} 
+                      setValue={form.setValue}
+                    />
+                  </CardContent>
+                </Card>
 
-              {/* Seller */}
-              <Card className="shadow-lg border-border/50">
-                <CardHeader className="py-4 px-4 border-b border-border/50">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    Sælger
-                    <span className="text-destructive text-sm">*</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="py-6 px-4">
-                  <SellerSection 
-                    control={form.control} 
-                    setValue={form.setValue}
-                  />
-                </CardContent>
-              </Card>
+                {/* Media */}
+                <Card className="shadow-lg border-border/50 py-6">
+                  <CardHeader className="pb-2 px-6">
+                    <CardTitle className="text-lg">Billeder</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-6">
+                    <MediaSection 
+                      control={form.control}
+                      onImagesChange={handleImagesChange}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
-              {/* Media */}
-              <Card className="shadow-lg border-border/50">
-                <CardHeader className="py-4 px-4 border-b border-border/50">
-                  <CardTitle className="text-xl">Billeder</CardTitle>
+            {/* Offers - Full Width Below */}
+            <div className="mt-6">
+              <Card className="shadow-lg border-border/50 py-6">
+                <CardHeader className="pb-2 px-6">
+                  <CardTitle className="text-lg">Tilbud</CardTitle>
                 </CardHeader>
-                <CardContent className="py-6 px-4">
-                  <MediaSection 
-                    control={form.control}
-                    onImagesChange={handleImagesChange}
-                  />
-                </CardContent>
-              </Card>
-
-              {/* Offers */}
-              <Card className="shadow-lg border-border/50">
-                <CardHeader className="py-4 px-4 border-b border-border/50">
-                  <CardTitle className="text-xl">Tilbud</CardTitle>
-                </CardHeader>
-                <CardContent className="py-6 px-4">
+                <CardContent className="px-6">
                   <OffersSection 
                     control={form.control}
                     currentListingId={currentListingId}
