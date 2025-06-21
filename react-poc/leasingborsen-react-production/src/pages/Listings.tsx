@@ -15,7 +15,11 @@ import MobileFilterOverlay from '@/components/MobileFilterOverlay'
 import ListingsHeader from '@/components/listings/ListingsHeader'
 import ListingsErrorState from '@/components/listings/ListingsErrorState'
 import ListingsGrid from '@/components/listings/ListingsGrid'
-import ErrorBoundary from '@/components/ErrorBoundary'
+import { 
+  DataErrorBoundary, 
+  SearchErrorBoundary, 
+  ComponentErrorBoundary 
+} from '@/components/ErrorBoundaries'
 import { listingStyles } from '@/lib/listingStyles'
 import type { SortOrder, SortOption } from '@/types'
 
@@ -152,7 +156,7 @@ const Listings: React.FC = () => {
             {/* Mobile Filter Chips */}
             {activeFilters.length > 0 && (
               <div className={listingStyles.scrollContainer}>
-                <ErrorBoundary minimal>
+                <SearchErrorBoundary searchContext="mobile-filter-chips">
                   <FilterChips
                     activeFilters={activeFilters}
                     onRemoveFilter={handleRemoveFilter}
@@ -160,7 +164,7 @@ const Listings: React.FC = () => {
                     className={listingStyles.filterChip}
                     showPlaceholder={false}
                   />
-                </ErrorBoundary>
+                </SearchErrorBoundary>
               </div>
             )}
           </div>
@@ -173,13 +177,13 @@ const Listings: React.FC = () => {
           
           {/* Desktop Sidebar */}
           <aside className={listingStyles.sidebar}>
-            <ErrorBoundary minimal>
+            <SearchErrorBoundary searchContext="desktop-filters">
               <FilterSidebar />
-            </ErrorBoundary>
+            </SearchErrorBoundary>
           </aside>
 
           {/* Mobile Filter Overlay */}
-          <ErrorBoundary>
+          <SearchErrorBoundary searchContext="mobile-filter-overlay">
             <MobileFilterOverlay
               isOpen={mobileFilterOpen}
               onClose={() => setMobileFilterOpen(false)}
@@ -187,7 +191,7 @@ const Listings: React.FC = () => {
               sortOrder={sortOrder}
               onSortChange={handleSortChange}
             />
-          </ErrorBoundary>
+          </SearchErrorBoundary>
 
           {/* Main Content Area */}
           <main className={listingStyles.mainContent} role="main" aria-label="Billeasing søgning">
@@ -200,22 +204,26 @@ const Listings: React.FC = () => {
             </div>
 
             {/* Desktop: Header with sorting */}
-            <ListingsHeader
-              resultCount={resultCount}
-              sortOptions={sortOptions}
-              currentSortLabel={currentSortLabel}
-              sortOrder={sortOrder}
-              onSortChange={handleSortChange}
-            />
+            <ComponentErrorBoundary componentName="ListingsHeader">
+              <ListingsHeader
+                resultCount={resultCount}
+                sortOptions={sortOptions}
+                currentSortLabel={currentSortLabel}
+                sortOrder={sortOrder}
+                onSortChange={handleSortChange}
+              />
+            </ComponentErrorBoundary>
 
             {/* Desktop: Filter chips */}
             <div className="hidden lg:block mb-8">
-              <FilterChips
-                activeFilters={activeFilters}
-                onRemoveFilter={handleRemoveFilter}
-                onResetFilters={resetFilters}
-                className="flex flex-wrap gap-2"
-              />
+              <SearchErrorBoundary searchContext="desktop-filter-chips">
+                <FilterChips
+                  activeFilters={activeFilters}
+                  onRemoveFilter={handleRemoveFilter}
+                  onResetFilters={resetFilters}
+                  className="flex flex-wrap gap-2"
+                />
+              </SearchErrorBoundary>
             </div>
 
             {/* Error State */}
@@ -229,18 +237,20 @@ const Listings: React.FC = () => {
             {/* Results Grid */}
             {!isError && (
               <section aria-label="Søgeresultater">
-                <ListingsGrid
-                  listings={listings}
-                  isLoading={isLoading}
-                  isFetchingNextPage={isFetchingNextPage}
-                  hasNextPage={hasNextPage || false}
-                  canLoadMore={canLoadMore}
-                  isLoadingMore={isLoadingMore}
-                  loadMoreRef={loadMoreRef}
-                  onLoadMore={handleLoadMore}
-                  onResetFilters={resetFilters}
-                  onNavigateToListings={handleNavigateToListings}
-                />
+                <DataErrorBoundary onRetry={handleRetry}>
+                  <ListingsGrid
+                    listings={listings}
+                    isLoading={isLoading}
+                    isFetchingNextPage={isFetchingNextPage}
+                    hasNextPage={hasNextPage || false}
+                    canLoadMore={canLoadMore}
+                    isLoadingMore={isLoadingMore}
+                    loadMoreRef={loadMoreRef}
+                    onLoadMore={handleLoadMore}
+                    onResetFilters={resetFilters}
+                    onNavigateToListings={handleNavigateToListings}
+                  />
+                </DataErrorBoundary>
               </section>
             )}
 
