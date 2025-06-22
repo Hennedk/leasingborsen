@@ -1097,18 +1097,233 @@ class ToyotaDanishExtractor:
         if self.debug_info and category in self.debug_info:
             self.debug_info[category].append(info)
 
+# Unique Variant ID Generation System
+def generate_unique_variant_id(model: str, variant: str, engine_specification: str, drivetrain: Optional[str] = None) -> str:
+    """
+    Generate unique identifier for each variant configuration
+    
+    Args:
+        model: str - "BZ4X", "YARIS", etc.
+        variant: str - "Active", "Executive", etc.
+        engine_specification: str - "73.1 kWh, 343 hk AWD"
+        drivetrain: str - "FWD", "AWD", "manual", "automatic"
+    
+    Returns:
+        str - unique identifier like "bz4x_active_343hp_awd"
+    """
+    
+    # Extract power from engine specification
+    power_hp = extract_power_from_specification(engine_specification)
+    
+    # Extract drivetrain info
+    drivetrain_code = normalize_drivetrain(engine_specification, drivetrain)
+    
+    # Create base ID
+    base_id = f"{model.lower().replace(' ', '').replace('-', '')}_{variant.lower().replace(' ', '_')}"
+    
+    # Add differentiators
+    if power_hp:
+        base_id += f"_{power_hp}hp"
+    
+    # Add drivetrain/transmission - prioritize specific info over generic
+    if 'awd' in drivetrain_code:
+        base_id += "_awd"
+    elif drivetrain_code in ['auto', 'manual']:
+        base_id += f"_{drivetrain_code}"
+    elif drivetrain_code in ['electric', 'hybrid']:
+        # For electric/hybrid, only add if it's not the default
+        base_id += f"_{drivetrain_code}"
+    # For gasoline with manual transmission, check if we need to add manual
+    elif categorize_powertrain(engine_specification) == 'gasoline':
+        transmission_code = extract_transmission_code(engine_specification)
+        if transmission_code:
+            base_id += f"_{transmission_code}"
+    # Skip adding 'fwd' as it's the default for most cars
+    
+    return base_id
+
+def extract_power_from_specification(engine_spec: str) -> Optional[int]:
+    """Extract horsepower from engine specification"""
+    if not engine_spec:
+        return None
+    
+    # Pattern for horsepower: "343 hk", "167 hp", etc.
+    power_pattern = r'(\d+)\s*(?:hk|hp)'
+    match = re.search(power_pattern, engine_spec, re.IGNORECASE)
+    
+    return int(match.group(1)) if match else None
+
+def normalize_drivetrain(engine_spec: str, drivetrain_field: Optional[str]) -> str:
+    """Normalize drivetrain information"""
+    
+    if drivetrain_field:
+        return drivetrain_field.lower()
+    
+    if not engine_spec:
+        return 'fwd'
+    
+    # Extract from engine specification
+    engine_lower = engine_spec.lower()
+    
+    if 'awd' in engine_lower:
+        return 'awd'
+    elif 'automatgear' in engine_lower:
+        return 'auto'
+    elif 'manual' in engine_lower:
+        return 'manual'
+    elif 'hybrid' in engine_lower:
+        return 'hybrid'
+    elif 'elbil' in engine_lower or 'kwh' in engine_lower:
+        return 'electric'
+    
+    return 'fwd'  # Default for most cars
+
+def extract_transmission_code(engine_spec: str) -> Optional[str]:
+    """Extract transmission type for non-electric vehicles"""
+    
+    if not engine_spec:
+        return None
+    
+    engine_lower = engine_spec.lower()
+    
+    if 'automatgear' in engine_lower:
+        return 'auto'
+    elif 'manual' in engine_lower or 'benzin' in engine_lower:
+        return 'manual' 
+    
+    return None  # Don't add transmission code for hybrids/electric
+
+def categorize_powertrain(engine_spec: str) -> str:
+    """Categorize powertrain type for filtering"""
+    
+    if not engine_spec:
+        return 'unknown'
+    
+    engine_lower = engine_spec.lower()
+    
+    if 'kwh' in engine_lower or 'elbil' in engine_lower:
+        return 'electric'
+    elif 'hybrid' in engine_lower:
+        return 'hybrid'
+    elif 'benzin' in engine_lower:
+        return 'gasoline'
+    else:
+        return 'unknown'
+
+def extract_battery_capacity(engine_spec: str) -> Optional[float]:
+    """Extract battery capacity for electric vehicles"""
+    if not engine_spec:
+        return None
+    
+    # Pattern for battery: "73.1 kWh", "57,7 KWh"
+    battery_pattern = r'(\d+[,.]?\d*)\s*kwh'
+    match = re.search(battery_pattern, engine_spec, re.IGNORECASE)
+    
+    if match:
+        capacity_str = match.group(1).replace(',', '.')
+        return float(capacity_str)
+    
+    return None
+
+def enhance_variant_with_unique_id(variant_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Enhance variant data with unique identification"""
+    
+    model = variant_data.get('model', '')
+    variant = variant_data.get('variant', '')
+    engine_spec = variant_data.get('engine_specification', '')
+    drivetrain = variant_data.get('drivetrain')
+    
+    # Generate unique identifier
+    unique_id = generate_unique_variant_id(
+        model=model,
+        variant=variant,
+        engine_specification=engine_spec,
+        drivetrain=drivetrain
+    )
+    
+    # Add enhanced fields
+    enhanced_variant = {
+        **variant_data,
+        'id': unique_id,
+        'composite_key': f"{model}_{variant}_{unique_id}",
+        'power_hp': extract_power_from_specification(engine_spec),
+        'battery_capacity_kwh': extract_battery_capacity(engine_spec) if categorize_powertrain(engine_spec) == 'electric' else None,
+        'drivetrain_type': normalize_drivetrain(engine_spec, drivetrain),
+        'powertrain_category': categorize_powertrain(engine_spec)
+    }
+    
+    return enhanced_variant
+
+def validate_unique_variants(extracted_items: List[Dict[str, Any]]) -> bool:
+    """Validate that all variants have unique identifiers"""
+    
+    seen_ids = set()
+    duplicates = []
+    
+    for item in extracted_items:
+        variant_id = item.get('id')
+        
+        if not variant_id:
+            raise ValueError(f"Missing ID for variant: {item.get('model')} {item.get('variant')}")
+        
+        if variant_id in seen_ids:
+            duplicates.append(variant_id)
+        else:
+            seen_ids.add(variant_id)
+    
+    if duplicates:
+        raise ValueError(f"Duplicate variant IDs found: {duplicates}")
+    
+    return True
+
+def validate_variant_completeness(extracted_items: List[Dict[str, Any]]) -> bool:
+    """Ensure all variants have required fields for uniqueness"""
+    
+    required_fields = ['id', 'make', 'model', 'variant', 'monthly_price']
+    
+    for item in extracted_items:
+        missing_fields = [field for field in required_fields if not item.get(field)]
+        
+        if missing_fields:
+            raise ValueError(f"Missing required fields {missing_fields} for variant {item.get('id', 'unknown')}")
+    
+    return True
+
 # Helper function for API integration
 def extract_with_template(pdf_content: bytes, template_config: Dict[str, Any]) -> Dict[str, Any]:
     """Main function for Toyota Danish template-based extraction"""
     extractor = ToyotaDanishExtractor(template_config)
     result = extractor.extract_from_pdf(pdf_content)
     
+    # Enhance items with unique variant IDs
+    enhanced_items = []
+    for item in result.items:
+        try:
+            enhanced_item = enhance_variant_with_unique_id(item)
+            enhanced_items.append(enhanced_item)
+        except Exception as e:
+            # Keep original item if enhancement fails
+            print(f"Warning: Failed to enhance variant {item.get('model')} {item.get('variant')}: {e}")
+            enhanced_items.append(item)
+    
+    # Validate uniqueness
+    validation_errors = []
+    try:
+        validate_unique_variants(enhanced_items)
+        validate_variant_completeness(enhanced_items)
+    except ValueError as e:
+        validation_errors.append(str(e))
+    
     return {
         "success": result.success,
-        "items_extracted": len(result.items),
-        "items": result.items,
-        "metadata": result.metadata,
-        "errors": result.errors,
+        "items_extracted": len(enhanced_items),
+        "items": enhanced_items,
+        "metadata": {
+            **result.metadata,
+            "unique_variants_count": len(set(item.get('id') for item in enhanced_items if item.get('id'))),
+            "enhancement_applied": True
+        },
+        "errors": result.errors + validation_errors,
         "template_id": template_config.get("id"),
         "template_version": template_config.get("version"),
         "debug_info": result.debug_info
