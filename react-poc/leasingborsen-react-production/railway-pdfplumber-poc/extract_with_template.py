@@ -3,6 +3,7 @@
 import pdfplumber
 import re
 import json
+import io
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
@@ -38,7 +39,9 @@ class ToyotaDanishExtractor:
         errors = []
         
         try:
-            with pdfplumber.open(pdf_content) as pdf:
+            # Convert bytes to file-like object for PDFPlumber
+            pdf_file = io.BytesIO(pdf_content)
+            with pdfplumber.open(pdf_file) as pdf:
                 self._log_debug("extraction_stages", f"Starting extraction from {len(pdf.pages)} pages")
                 
                 # Extract document metadata
@@ -92,11 +95,18 @@ class ToyotaDanishExtractor:
                 )
                 
         except Exception as e:
+            import traceback
+            error_details = f"Extraction failed: {str(e)}"
+            traceback_str = traceback.format_exc()
+            
+            self._log_debug("extraction_stages", f"ERROR: {error_details}")
+            self._log_debug("extraction_stages", f"TRACEBACK: {traceback_str}")
+            
             return ExtractionResult(
                 success=False,
                 items=[],
-                metadata={},
-                errors=[f"Extraction failed: {str(e)}"],
+                metadata={"error_type": type(e).__name__},
+                errors=[error_details, f"Traceback: {traceback_str}"],
                 debug_info=self.debug_info
             )
     

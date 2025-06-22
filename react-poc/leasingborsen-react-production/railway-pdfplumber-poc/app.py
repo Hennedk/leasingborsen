@@ -415,6 +415,36 @@ async def extract_with_template_endpoint(file: UploadFile = File(...)):
             content={"error": str(e), "traceback": traceback.format_exc()}
         )
 
+@app.post("/extract/template-debug")
+async def extract_template_debug(file: UploadFile = File(...)):
+    """Debug template extraction with detailed logging"""
+    try:
+        content = await file.read()
+        
+        # Load Toyota template configuration
+        with open('toyota-template-config.json', 'r') as f:
+            template_config = json.load(f)
+        
+        # Enable all debugging
+        template_config["debugging"] = {
+            "log_table_structure": True,
+            "log_text_extraction": True,
+            "log_pattern_matches": True,
+            "save_intermediate_results": True
+        }
+        
+        # Extract using template
+        result = extract_with_template(content, template_config)
+        
+        # Return everything including debug info
+        return JSONResponse(content=result)
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()}
+        )
+
 @app.post("/extract/table-content")
 async def extract_table_content(file: UploadFile = File(...)):
     """Show actual table content for debugging"""
