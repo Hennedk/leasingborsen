@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import traceback
+import re
 from typing import List, Dict, Any
 import io
 
@@ -42,8 +43,14 @@ async def extract_basic(file: UploadFile = File(...)):
             
             # Extract from each page
             for i, page in enumerate(pdf.pages):
-                # Extract tables
-                tables = page.extract_tables()
+                # Extract tables with better settings
+                tables = page.extract_tables({
+                    "vertical_strategy": "lines",
+                    "horizontal_strategy": "text",
+                    "snap_tolerance": 3,
+                    "join_tolerance": 3,
+                    "edge_min_length": 5
+                })
                 
                 # Extract text (with layout)
                 text = page.extract_text()
@@ -95,62 +102,114 @@ async def extract_toyota(file: UploadFile = File(...)):
                 all_tables.extend(tables)
                 
                 for table_idx, table in enumerate(tables):
-                    # Parse Toyota price table format
+                    # Debug: Store table info
+                    table_info = {
+                        "page": page_num + 1,
+                        "table": table_idx + 1,
+                        "rows": len(table) if table else 0,
+                        "sample_rows": table[:3] if table else []
+                    }
+                    all_tables.append(table_info)
+                    
+                    if not table or len(table) < 2:
+                        continue
+                    
+                    # Parse Toyota price table format with more flexible approach
                     for row_idx, row in enumerate(table):
-                        if row_idx == 0:  # Skip header row
-                            continue
+                        if not row or all(cell is None or str(cell).strip() == "" for cell in row):
+                            continue  # Skip empty rows
                             
-                        if len(row) >= 3 and row[0]:  # Has enough columns
-                            try:
-                                # Clean and extract data
-                                model_variant = clean_text(row[0])
-                                
-                                # Try to split model and variant
-                                model = "Toyota"  # Default
-                                variant = model_variant
-                                
-                                # Look for known Toyota models
-                                toyota_models = ["Yaris", "Corolla", "RAV4", "C-HR", "Camry", "Prius", "Aygo"]
-                                for tm in toyota_models:
-                                    if tm.lower() in model_variant.lower():
-                                        model = tm
-                                        variant = model_variant.replace(tm, "").strip()
-                                        break
-                                
-                                item = {
-                                    "model": model,
-                                    "variant": variant,
-                                    "source": f"page_{page_num + 1}_table_{table_idx + 1}_row_{row_idx + 1}",
-                                    "raw_data": row,
-                                    "prices": []
-                                }
-                                
-                                # Extract prices from remaining columns
-                                for col_idx, cell in enumerate(row[1:], 1):
-                                    if cell and isinstance(cell, str):
-                                        # Look for price patterns
-                                        cell_clean = cell.replace(" ", "").replace(".", "")
-                                        if "kr" in cell_clean.lower():
-                                            try:
-                                                # Extract numeric value
-                                                price_str = cell_clean.lower().replace("kr", "").strip()
-                                                price = int(price_str)
-                                                
-                                                if 1000 < price < 50000:  # Reasonable price range
-                                                    item["prices"].append({
-                                                        "column": col_idx,
-                                                        "value": price,
-                                                        "raw": cell
-                                                    })
-                                            except:
-                                                pass
-                                
-                                # Only add items with prices
-                                if item["prices"]:
-                                    items.append(item)
-                                    
-                            except Exception as e:
+                        try:
+                            # Convert all cells to strings and clean
+                            row_clean = [str(cell).strip() if cell is not None else "" for cell in row]
+                            
+                            # Look for any row with price indicators
+                            has_price = any("kr" in str(cell).lower() for cell in row_clean if cell)
+                            has_numbers = any(any(char.isdigit() for char in str(cell)) for cell in row_clean if cell)
+                            
+                            if not (has_price or has_numbers):
                                 continue
+                            
+                            # Extract model/variant from first non-empty cell
+                            model_text = ""
+                            for cell in row_clean:
+                                if cell and len(cell) > 1:
+                                    model_text = cell
+                                    break
+                            
+                            if not model_text:
+                                continue
+                            
+                            # Try to identify Toyota models
+                            model = "Toyota"  # Default
+                            variant = model_text
+                            
+                            toyota_models = ["Yaris", "Corolla", "RAV4", "C-HR", "Camry", "Prius", "Aygo", "Highlander", "bZ4X"]
+                            for tm in toyota_models:
+                                if tm.lower() in model_text.lower():
+                                    model = tm
+                                    variant = model_text.replace(tm, "").strip()
+                                    break
+                            
+                            item = {
+                                "model": model,
+                                "variant": variant,
+                                "source": f"page_{page_num + 1}_table_{table_idx + 1}_row_{row_idx + 1}",
+                                "raw_data": row_clean,
+                                "prices": [],
+                                "debug_info": {
+                                    "has_price": has_price,
+                                    "has_numbers": has_numbers,
+                                    "original_row": row[:10]  # First 10 cells only
+                                }
+                            }
+                            
+                            # Extract prices from ALL columns with more flexible patterns
+                            for col_idx, cell in enumerate(row_clean):
+                                if not cell:
+                                    continue
+                                    
+                                # Look for various price patterns
+                                cell_lower = cell.lower()
+                                
+                                # Pattern 1: Contains "kr"
+                                if "kr" in cell_lower:
+                                    try:
+                                        # Extract numeric part
+                                        numbers = re.findall(r'\d{1,3}(?:[.,]\d{3})*', cell)
+                                        for num_str in numbers:
+                                            price = int(num_str.replace(".", "").replace(",", ""))
+                                            if 1000 <= price <= 50000:
+                                                item["prices"].append({
+                                                    "column": col_idx,
+                                                    "value": price,
+                                                    "raw": cell,
+                                                    "pattern": "kr_pattern"
+                                                })
+                                    except:
+                                        pass
+                                
+                                # Pattern 2: Pure numbers that look like prices
+                                elif re.match(r'^\d{1,2}[.,]?\d{3}$', cell):
+                                    try:
+                                        price = int(cell.replace(".", "").replace(",", ""))
+                                        if 1000 <= price <= 50000:
+                                            item["prices"].append({
+                                                "column": col_idx,
+                                                "value": price,
+                                                "raw": cell,
+                                                "pattern": "number_pattern"
+                                            })
+                                    except:
+                                        pass
+                            
+                            # Add item even without prices for debugging
+                            if item["prices"] or len(model_text) > 3:  # Either has prices OR meaningful text
+                                items.append(item)
+                                    
+                        except Exception as e:
+                            # Continue processing even if one row fails
+                            continue
                 
                 # Also try text-based extraction as fallback
                 text = page.extract_text()
@@ -232,23 +291,88 @@ async def extract_debug(file: UploadFile = File(...)):
                 
                 for variation in settings_variations:
                     tables = page.extract_tables(variation["settings"])
-                    page_info["extractions"].append({
+                    extraction_result = {
                         "method": variation["name"],
                         "tables_found": len(tables),
-                        "first_table_sample": tables[0][:5] if tables else None  # First 5 rows
-                    })
+                        "tables_detail": []
+                    }
+                    
+                    # Show actual table content
+                    for table_idx, table in enumerate(tables[:3]):  # First 3 tables
+                        if table:
+                            extraction_result["tables_detail"].append({
+                                "table_index": table_idx,
+                                "rows": len(table),
+                                "columns": len(table[0]) if table else 0,
+                                "first_5_rows": table[:5],
+                                "has_kr_content": any("kr" in str(cell).lower() for row in table[:5] for cell in row if cell),
+                                "has_numbers": any(any(char.isdigit() for char in str(cell)) for row in table[:5] for cell in row if cell)
+                            })
+                    
+                    page_info["extractions"].append(extraction_result)
                 
                 # Sample text extraction
                 text = page.extract_text()
                 page_info["text_sample"] = text[:500] if text else None
                 
-                # Words for debugging
-                words = page.extract_words()
-                page_info["words_sample"] = words[:20] if words else []
+                # Look for Toyota models in text
+                toyota_models = ["Yaris", "Corolla", "RAV4", "C-HR", "Camry", "Prius", "Aygo"]
+                found_models = [model for model in toyota_models if model.lower() in text.lower()]
+                page_info["toyota_models_found"] = found_models
+                
+                # Look for price patterns in text
+                price_patterns = re.findall(r'\d{1,3}[.,]?\d{3}\s*kr', text.lower()) if text else []
+                page_info["price_patterns_found"] = price_patterns[:10]  # First 10
                 
                 debug_info["pages"].append(page_info)
             
             return JSONResponse(content=debug_info)
+            
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()}
+        )
+
+@app.post("/extract/table-content")
+async def extract_table_content(file: UploadFile = File(...)):
+    """Show actual table content for debugging"""
+    try:
+        content = await file.read()
+        
+        with pdfplumber.open(io.BytesIO(content)) as pdf:
+            all_tables_content = {
+                "filename": file.filename,
+                "total_pages": len(pdf.pages),
+                "tables": []
+            }
+            
+            for page_num, page in enumerate(pdf.pages):
+                tables = page.extract_tables({
+                    "vertical_strategy": "lines",
+                    "horizontal_strategy": "text",
+                    "snap_tolerance": 3,
+                    "join_tolerance": 3,
+                    "edge_min_length": 5
+                })
+                
+                for table_idx, table in enumerate(tables):
+                    if table and len(table) > 1:
+                        table_info = {
+                            "page": page_num + 1,
+                            "table_index": table_idx,
+                            "rows": len(table),
+                            "columns": len(table[0]) if table else 0,
+                            "content": table[:10],  # First 10 rows
+                            "analysis": {
+                                "has_prices": any("kr" in str(cell).lower() for row in table for cell in row if cell),
+                                "has_toyota_models": any(any(model.lower() in str(cell).lower() for model in ["Yaris", "Corolla", "RAV4", "C-HR"]) for row in table for cell in row if cell),
+                                "numeric_cells": sum(1 for row in table for cell in row if cell and any(char.isdigit() for char in str(cell)))
+                            }
+                        }
+                        all_tables_content["tables"].append(table_info)
+            
+            return JSONResponse(content=all_tables_content)
             
     except Exception as e:
         return JSONResponse(
