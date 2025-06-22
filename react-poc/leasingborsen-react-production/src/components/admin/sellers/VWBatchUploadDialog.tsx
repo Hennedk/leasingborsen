@@ -29,7 +29,7 @@ interface UploadState {
   aiSpending: number
 }
 
-export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
+export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
   open,
   onOpenChange,
   sellerId,
@@ -112,7 +112,7 @@ export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
     return null
   }
 
-  const handleFile = async (file: File) => {
+  const handleFile = useCallback(async (file: File) => {
     const validationError = validateFile(file)
     if (validationError) {
       setState(prev => ({ ...prev, error: validationError }))
@@ -175,7 +175,7 @@ export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
         error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling af filen'
       }))
     }
-  }
+  }, [sellerId, onUploadComplete])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -185,14 +185,14 @@ export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
     if (files.length > 0) {
       handleFile(files[0])
     }
-  }, [sellerId, onUploadComplete])
+  }, [handleFile])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
       handleFile(files[0])
     }
-  }, [sellerId, onUploadComplete])
+  }, [handleFile])
 
   const handleClose = () => {
     if (!state.isProcessing) {
@@ -382,4 +382,6 @@ export const VWBatchUploadDialog: React.FC<VWBatchUploadDialogProps> = ({
       </DialogContent>
     </Dialog>
   )
-}
+})
+
+VWBatchUploadDialog.displayName = 'VWBatchUploadDialog'

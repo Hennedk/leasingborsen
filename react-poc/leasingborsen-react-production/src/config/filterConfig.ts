@@ -19,10 +19,9 @@ export const FILTER_CONFIG = {
   // Consolidated fuel type options
   FUEL_TYPES: [
     { name: 'Electric', label: 'Electric' },
-    { name: 'Hybrid', label: 'Hybrid' },
     { name: 'Benzin', label: 'Benzin' },
     { name: 'Diesel', label: 'Diesel' },
-    { name: 'Others', label: 'Andre' }
+    { name: 'Hybrid', label: 'Hybrid' }
   ],
 
   // Consolidated body type options

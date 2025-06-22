@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import type { CarListing } from '@/lib/supabase'
+import type { AdminListing } from '@/types/admin'
 
 interface PricingOption {
   monthly_price: number
@@ -10,7 +10,7 @@ interface PricingOption {
 }
 
 interface UseListingsTableStateProps {
-  onBulkAction?: (selectedListings: CarListing[], action: string) => void
+  onBulkAction?: (selectedListings: AdminListing[], action: string) => void
 }
 
 /**
@@ -18,7 +18,7 @@ interface UseListingsTableStateProps {
  * Handles selection, expansion, and pricing data loading
  */
 export const useListingsTableState = ({ onBulkAction }: UseListingsTableStateProps = {}) => {
-  const [selectedListings, setSelectedListings] = useState<CarListing[]>([])
+  const [selectedListings, setSelectedListings] = useState<AdminListing[]>([])
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set())
   const [pricingData, setPricingData] = useState<Record<string, PricingOption[]>>({})
   const [loadingPricing, setLoadingPricing] = useState<Set<string>>(new Set())
@@ -70,7 +70,7 @@ export const useListingsTableState = ({ onBulkAction }: UseListingsTableStatePro
   }, [expandedRows, pricingData, loadPricingOptions])
 
   // Toggle individual listing selection
-  const toggleListingSelection = useCallback((listing: CarListing) => {
+  const toggleListingSelection = useCallback((listing: AdminListing) => {
     const isSelected = selectedListings.some(l => l.listing_id === listing.listing_id)
     if (isSelected) {
       setSelectedListings(prev => prev.filter(l => l.listing_id !== listing.listing_id))
@@ -80,7 +80,7 @@ export const useListingsTableState = ({ onBulkAction }: UseListingsTableStatePro
   }, [selectedListings])
 
   // Toggle select all listings
-  const toggleSelectAll = useCallback((listings: CarListing[]) => {
+  const toggleSelectAll = useCallback((listings: AdminListing[]) => {
     if (selectedListings.length === listings.length) {
       setSelectedListings([])
     } else {
@@ -96,7 +96,7 @@ export const useListingsTableState = ({ onBulkAction }: UseListingsTableStatePro
   }, [selectedListings, onBulkAction])
 
   // Check if listing is selected
-  const isListingSelected = useCallback((listing: CarListing) => 
+  const isListingSelected = useCallback((listing: AdminListing) => 
     selectedListings.some(l => l.listing_id === listing.listing_id),
     [selectedListings]
   )

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import AdminLayout from '@/components/admin/AdminLayout'
-import ListingsTable from '@/components/admin/ListingsTable'
+import { ListingsTable } from '@/components/admin/listings/tables'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
@@ -22,12 +22,18 @@ import {
 } from '@/components/ErrorBoundaries'
 import { Plus, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { CarListing } from '@/lib/supabase'
-
-interface AdminFilters {
-  seller_id?: string
-  status?: 'draft' | 'active' | 'all'
-}
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import type { AdminListing, AdminFilters, SellerReference } from '@/types/admin'
 
 const AdminListings: React.FC = () => {
   const [filters, setFilters] = useState<AdminFilters>({
@@ -35,6 +41,14 @@ const AdminListings: React.FC = () => {
   })
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(20)
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean
+    listing?: AdminListing
+    isBulk?: boolean
+    selectedListings?: AdminListing[]
+  }>({
+    open: false
+  })
   
   // Data fetching 
   const { data: listingsData, isLoading: listingsLoading } = useAdminListings({})
@@ -43,12 +57,12 @@ const AdminListings: React.FC = () => {
   const bulkDeleteMutation = useBulkDeleteListings()
   const deleteMutation = useAdminDeleteListing()
 
-  // Available sellers for filtering
-  const sellers = [
-    { id: '2bbeae55-2db6-415b-b00b-5de22889de4e', name: 'Audi Privatleasing Online' },
-    { id: '11327fb8-4305-4156-8897-ddedb23e508b', name: 'Škoda Privatleasing' },
-    { id: 'f5cdd423-d949-49fa-a68d-937c25c2269a', name: 'Volkswagen Privatleasing' }
-  ]
+  // Available sellers for filtering - TODO: Move to reference data hook
+  const sellers: SellerReference[] = useMemo(() => [
+    { id: '2bbeae55-2db6-415b-b00b-5de22889de4e', name: 'Audi Privatleasing Online', active: true },
+    { id: '11327fb8-4305-4156-8897-ddedb23e508b', name: 'Škoda Privatleasing', active: true },
+    { id: 'f5cdd423-d949-49fa-a68d-937c25c2269a', name: 'Volkswagen Privatleasing', active: true }
+  ], [])
 
   // Filter listings based on selected filters
   const filteredListings = useMemo(() => {
@@ -61,10 +75,10 @@ const AdminListings: React.FC = () => {
       }
       
       // Filter by status
-      if (filters.status === 'draft' && !(listing as any).is_draft) {
+      if (filters.status === 'draft' && !listing.is_draft) {
         return false
       }
-      if (filters.status === 'active' && (listing as any).is_draft) {
+      if (filters.status === 'active' && listing.is_draft) {
         return false
       }
       
@@ -101,22 +115,28 @@ const AdminListings: React.FC = () => {
     setCurrentPage(1) // Reset to first page when clearing filters
   }, [])
 
-  // Pagination handlers
-  const handlePageChange = (page: number) => {
+  // Pagination handlers - memoized to prevent unnecessary re-renders
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
-  }
+  }, [])
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentPage > 1) {
       setCurrentPage(currentPage - 1)
     }
-  }
+  }, [currentPage])
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1)
     }
-  }
+  }, [currentPage, totalPages])
+
+  // Memoize pagination array to prevent recreation on every render
+  const paginationPages = useMemo(() => 
+    Array.from({ length: totalPages }, (_, i) => i + 1), 
+    [totalPages]
+  )
 
   const activeFiltersCount = useMemo(() => {
     let count = 0
@@ -127,26 +147,56 @@ const AdminListings: React.FC = () => {
 
   // Handlers
 
-  const handleDelete = async (listing: CarListing) => {
-    if (listing.listing_id && confirm(`Er du sikker på, du vil slette "${listing.make} ${listing.model}"?`)) {
-      deleteMutation.mutate(listing.listing_id)
-    }
+  const handleDelete = (listing: AdminListing) => {
+    setDeleteConfirmation({
+      open: true,
+      listing,
+      isBulk: false
+    })
   }
 
-  const handleView = (listing: CarListing) => {
+  const handleView = (listing: AdminListing) => {
     window.open(`/listing/${listing.listing_id}`, '_blank')
   }
 
-  const handleBulkAction = async (selectedListings: CarListing[], action: string) => {
+  const handleBulkAction = (selectedListings: AdminListing[], action: string) => {
     if (action === 'delete') {
-      if (confirm(`Er du sikker på, du vil slette ${selectedListings.length} annonce(r)?`)) {
-        const listingIds = selectedListings.map(l => l.listing_id).filter(Boolean) as string[]
-        bulkDeleteMutation.mutate(listingIds)
-      }
+      setDeleteConfirmation({
+        open: true,
+        isBulk: true,
+        selectedListings
+      })
     } else if (action === 'export') {
-      // Implement export functionality
-      console.log('Export functionality not yet implemented')
+      toast.info('Export funktionalitet kommer snart')
     }
+  }
+
+  const executeDelete = () => {
+    if (deleteConfirmation.isBulk && deleteConfirmation.selectedListings) {
+      const listingIds = deleteConfirmation.selectedListings
+        .map(l => l.listing_id)
+        .filter(Boolean) as string[]
+      
+      bulkDeleteMutation.mutate(listingIds, {
+        onSuccess: () => {
+          toast.success(`${deleteConfirmation.selectedListings?.length} annoncer slettet`)
+        },
+        onError: () => {
+          toast.error('Kunne ikke slette annoncer')
+        }
+      })
+    } else if (deleteConfirmation.listing?.listing_id) {
+      deleteMutation.mutate(deleteConfirmation.listing.listing_id, {
+        onSuccess: () => {
+          toast.success('Annonce slettet')
+        },
+        onError: () => {
+          toast.error('Kunne ikke slette annonce')
+        }
+      })
+    }
+    
+    setDeleteConfirmation({ open: false })
   }
 
 
@@ -278,7 +328,7 @@ const AdminListings: React.FC = () => {
             </Button>
             
             <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {paginationPages.map((page) => (
                 <Button
                   key={page}
                   variant={currentPage === page ? "default" : "outline"}
@@ -301,6 +351,48 @@ const AdminListings: React.FC = () => {
             </Button>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          open={deleteConfirmation.open}
+          onOpenChange={(open) => setDeleteConfirmation({ open })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteConfirmation.isBulk ? 'Slet annoncer' : 'Slet annonce'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteConfirmation.isBulk ? (
+                  <>
+                    Er du sikker på, du vil slette{' '}
+                    <strong>{deleteConfirmation.selectedListings?.length} annoncer</strong>?
+                    <br />
+                    Denne handling kan ikke fortrydes.
+                  </>
+                ) : (
+                  <>
+                    Er du sikker på, du vil slette{' '}
+                    <strong>
+                      "{deleteConfirmation.listing?.make} {deleteConfirmation.listing?.model}"
+                    </strong>?
+                    <br />
+                    Denne handling kan ikke fortrydes.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuller</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={executeDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {deleteConfirmation.isBulk ? 'Slet annoncer' : 'Slet annonce'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   )

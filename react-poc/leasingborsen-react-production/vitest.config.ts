@@ -10,6 +10,24 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    coverage: {
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'dist/',
+      ],
+      thresholds: {
+        global: {
+          branches: 80,
+          functions: 90,
+          lines: 90,
+          statements: 90,
+        },
+      },
+    },
   },
   resolve: {
     alias: {

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Upload, FileText, Clock, CheckCircle } from 'lucide-react'
 import { VWBatchUploadDialog } from './VWBatchUploadDialog'
+import { BatchUploadErrorBoundary } from '@/components/ErrorBoundaries'
 import type { BatchProcessingResult } from '@/lib/processors/vwPDFProcessor'
 
 interface Seller {
@@ -134,13 +135,18 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
       )}
       </div>
 
-      <VWBatchUploadDialog
-        open={showUploadDialog}
-        onOpenChange={setShowUploadDialog}
-        sellerId={seller.id}
-        sellerName={seller.name}
-        onUploadComplete={handleUploadComplete}
-      />
+      <BatchUploadErrorBoundary
+        onRetry={() => setShowUploadDialog(true)}
+        onCancel={() => setShowUploadDialog(false)}
+      >
+        <VWBatchUploadDialog
+          open={showUploadDialog}
+          onOpenChange={setShowUploadDialog}
+          sellerId={seller.id}
+          sellerName={seller.name}
+          onUploadComplete={handleUploadComplete}
+        />
+      </BatchUploadErrorBoundary>
     </>
   )
 }

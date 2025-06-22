@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import AdminLayout from '@/components/admin/AdminLayout'
 import SellersTable from '@/components/admin/SellersTable'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,9 +8,29 @@ import { useSellers } from '@/hooks/useSellers'
 import { useDeleteSeller, useBulkDeleteSellers } from '@/hooks/useSellerMutations'
 import { Plus, RefreshCw } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import type { Seller } from '@/hooks/useSellers'
 
 const AdminSellers: React.FC = () => {
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    open: boolean
+    seller?: Seller
+    isBulk?: boolean
+    selectedSellers?: Seller[]
+  }>({
+    open: false
+  })
+
   // Data fetching
   const { data: sellers = [], isLoading: sellersLoading, refetch } = useSellers()
   
@@ -19,22 +39,49 @@ const AdminSellers: React.FC = () => {
   const bulkDeleteMutation = useBulkDeleteSellers()
 
   // Handlers
-  const handleDelete = async (seller: Seller) => {
-    if (confirm(`Er du sikker på, du vil slette sælgeren "${seller.name}"?`)) {
-      deleteMutation.mutate(seller.id)
+  const handleDelete = (seller: Seller) => {
+    setDeleteConfirmation({
+      open: true,
+      seller,
+      isBulk: false
+    })
+  }
+
+  const handleBulkAction = (selectedSellers: Seller[], action: string) => {
+    if (action === 'delete') {
+      setDeleteConfirmation({
+        open: true,
+        isBulk: true,
+        selectedSellers
+      })
+    } else if (action === 'export') {
+      toast.info('Export funktionalitet kommer snart')
     }
   }
 
-  const handleBulkAction = async (selectedSellers: Seller[], action: string) => {
-    if (action === 'delete') {
-      if (confirm(`Er du sikker på, du vil slette ${selectedSellers.length} sælger(e)?`)) {
-        const sellerIds = selectedSellers.map(s => s.id)
-        bulkDeleteMutation.mutate(sellerIds)
-      }
-    } else if (action === 'export') {
-      // Implement export functionality
-      console.log('Export functionality not yet implemented')
+  const executeDelete = () => {
+    if (deleteConfirmation.isBulk && deleteConfirmation.selectedSellers) {
+      const sellerIds = deleteConfirmation.selectedSellers.map(s => s.id)
+      bulkDeleteMutation.mutate(sellerIds, {
+        onSuccess: () => {
+          toast.success(`${deleteConfirmation.selectedSellers?.length} sælgere slettet`)
+        },
+        onError: () => {
+          toast.error('Kunne ikke slette sælgere')
+        }
+      })
+    } else if (deleteConfirmation.seller?.id) {
+      deleteMutation.mutate(deleteConfirmation.seller.id, {
+        onSuccess: () => {
+          toast.success('Sælger slettet')
+        },
+        onError: () => {
+          toast.error('Kunne ikke slette sælger')
+        }
+      })
     }
+    
+    setDeleteConfirmation({ open: false })
   }
 
   const handleRefresh = () => {
@@ -92,6 +139,46 @@ const AdminSellers: React.FC = () => {
             />
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          open={deleteConfirmation.open}
+          onOpenChange={(open) => setDeleteConfirmation({ open })}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteConfirmation.isBulk ? 'Slet sælgere' : 'Slet sælger'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteConfirmation.isBulk ? (
+                  <>
+                    Er du sikker på, du vil slette{' '}
+                    <strong>{deleteConfirmation.selectedSellers?.length} sælgere</strong>?
+                    <br />
+                    Denne handling kan ikke fortrydes.
+                  </>
+                ) : (
+                  <>
+                    Er du sikker på, du vil slette sælgeren{' '}
+                    <strong>"{deleteConfirmation.seller?.name}"</strong>?
+                    <br />
+                    Denne handling kan ikke fortrydes.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuller</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={executeDelete}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {deleteConfirmation.isBulk ? 'Slet sælgere' : 'Slet sælger'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AdminLayout>
   )

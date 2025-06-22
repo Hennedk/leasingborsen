@@ -289,3 +289,5 @@ export const DataTable = React.memo(<TData, TValue>({
 
 // @ts-ignore
 DataTable.displayName = 'DataTable'
+
+export default DataTable

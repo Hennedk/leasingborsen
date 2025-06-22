@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useFilterStore } from '@/stores/filterStore'
+import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import type { SortOrder } from '@/types'
 
 /**

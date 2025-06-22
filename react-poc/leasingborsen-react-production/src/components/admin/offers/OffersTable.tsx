@@ -29,7 +29,7 @@ interface OffersTableProps {
 const formatPrice = (price?: string) => 
   price ? `${parseFloat(price).toLocaleString('da-DK')} kr` : '–'
 
-export const OffersTable: React.FC<OffersTableProps> = ({
+export const OffersTable = React.memo<OffersTableProps>(({
   editableOffers,
   savingOffers,
   inputRefs,
@@ -222,4 +222,6 @@ export const OffersTable: React.FC<OffersTableProps> = ({
       )}
     </div>
   )
-}
+})
+
+OffersTable.displayName = 'OffersTable'

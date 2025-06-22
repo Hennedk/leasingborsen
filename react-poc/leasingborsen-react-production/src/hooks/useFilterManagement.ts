@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { usePersistentFilterStore } from '@/stores/persistentFilterStore'
+import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import type { Filters } from '@/types'
 

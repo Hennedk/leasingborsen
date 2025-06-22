@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useMemo, useCallback } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { DataTable } from './DataTable'
+import { DataTable } from './shared/DataTable'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -25,6 +25,7 @@ import {
 import { Link } from 'react-router-dom'
 import type { Seller } from '@/hooks/useSellers'
 import { SellerImportButton } from './sellers/SellerImportButton'
+import { ComponentErrorBoundary } from '@/components/ErrorBoundaries'
 
 interface SellersTableProps {
   sellers: Seller[]
@@ -34,7 +35,7 @@ interface SellersTableProps {
   onRefresh?: () => void
 }
 
-const SellersTable: React.FC<SellersTableProps> = ({
+const SellersTable = React.memo<SellersTableProps>(({
   sellers,
   loading = false,
   onDelete,
@@ -43,7 +44,12 @@ const SellersTable: React.FC<SellersTableProps> = ({
 }) => {
   const [selectedSellers, setSelectedSellers] = React.useState<Seller[]>([])
 
-  const columns: ColumnDef<Seller>[] = [
+  // Memoize delete handler to prevent column recreation
+  const handleDelete = useCallback((seller: Seller) => {
+    onDelete?.(seller)
+  }, [onDelete])
+
+  const columns = useMemo<ColumnDef<Seller>[]>(() => [
     {
       id: "select",
       header: ({ table }) => (
@@ -223,7 +229,7 @@ const SellersTable: React.FC<SellersTableProps> = ({
                   <AlertDialogCancel>Annuller</AlertDialogCancel>
                   <AlertDialogAction 
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => onDelete?.(seller)}
+                    onClick={() => handleDelete(seller)}
                   >
                     Slet sælger
                   </AlertDialogAction>
@@ -236,14 +242,14 @@ const SellersTable: React.FC<SellersTableProps> = ({
       enableSorting: false,
       enableHiding: false,
     },
-  ]
+  ], [handleDelete])
 
-  // Handle bulk actions
-  const handleBulkAction = (action: string) => {
+  // Handle bulk actions - memoized to prevent unnecessary re-renders
+  const handleBulkAction = useCallback((action: string) => {
     if (selectedSellers.length > 0 && onBulkAction) {
       onBulkAction(selectedSellers, action)
     }
-  }
+  }, [selectedSellers, onBulkAction])
 
   return (
     <div className="space-y-4">
@@ -272,16 +278,20 @@ const SellersTable: React.FC<SellersTableProps> = ({
       )}
 
       {/* Data table */}
-      <DataTable
-        columns={columns as any}
-        data={sellers as any}
-        searchPlaceholder="Søg efter navn, e-mail eller telefon..."
-        searchColumn="name"
-        onRowSelection={setSelectedSellers as any}
-        loading={loading}
-      />
+      <ComponentErrorBoundary componentName="Sellers Table">
+        <DataTable
+          columns={columns as any}
+          data={sellers as any}
+          searchPlaceholder="Søg efter navn, e-mail eller telefon..."
+          searchColumn="name"
+          onRowSelection={setSelectedSellers as any}
+          loading={loading}
+        />
+      </ComponentErrorBoundary>
     </div>
   )
-}
+})
+
+SellersTable.displayName = 'SellersTable'
 
 export default SellersTable

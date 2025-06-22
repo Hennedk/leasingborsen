@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:refactored": "vitest run src/hooks/useBatchReviewState.simple.test.ts src/components/admin/batch/BatchReviewHeader.simple.test.tsx",
+    "build:test": "npm run test:refactored && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -71,6 +73,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "jsdom": "^26.1.0",
+    "msw": "^2.10.2",
     "tailwind-scrollbar-hide": "^4.0.0",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",

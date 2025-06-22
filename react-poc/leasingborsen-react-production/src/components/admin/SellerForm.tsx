@@ -43,7 +43,7 @@ interface SellerFormProps {
   isEditing?: boolean
 }
 
-const SellerForm: React.FC<SellerFormProps> = ({ 
+const SellerForm = React.memo<SellerFormProps>(({ 
   seller, 
   isEditing = false 
 }) => {
@@ -321,6 +321,8 @@ const SellerForm: React.FC<SellerFormProps> = ({
       </form>
     </Form>
   )
-}
+})
+
+SellerForm.displayName = 'SellerForm'
 
 export default SellerForm

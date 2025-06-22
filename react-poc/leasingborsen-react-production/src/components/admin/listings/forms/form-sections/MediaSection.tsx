@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/form'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import type { CarListingFormData } from '@/lib/validations'
-import { ImageUpload } from '@/components/admin/ImageUpload'
+import { ImageUpload } from '@/components/admin/shared/ImageUpload'
 
 interface MediaSectionProps {
   control: Control<CarListingFormData>
@@ -31,7 +31,7 @@ export const MediaSection = React.memo<MediaSectionProps>(({
               <FormControl>
                 <ImageUpload
                   images={field.value || []}
-                  onImagesChange={(images) => {
+                  onImagesChange={(images: string[]) => {
                     field.onChange(images)
                     onImagesChange(images)
                   }}

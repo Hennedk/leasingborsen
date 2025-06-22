@@ -190,6 +190,60 @@ export const ListingErrorBoundary: React.FC<{
   </ErrorBoundary>
 )
 
+// Batch upload error boundary with file operation recovery
+export const BatchUploadErrorBoundary: React.FC<{ 
+  children: React.ReactNode
+  onRetry?: () => void
+  onCancel?: () => void
+}> = ({ children, onRetry, onCancel }) => (
+  <ErrorBoundary
+    fallback={
+      <div className="p-6 border border-destructive bg-destructive/10 rounded-lg text-center">
+        <div className="flex justify-center mb-4">
+          <div className="p-3 bg-destructive/20 rounded-full">
+            <AlertTriangle className="h-6 w-6 text-destructive" />
+          </div>
+        </div>
+        <h3 className="text-lg font-semibold text-destructive mb-2">
+          Fil upload fejlede
+        </h3>
+        <p className="text-muted-foreground mb-4">
+          Der opstod en fejl under behandling af filen. Dette kan skyldes:
+        </p>
+        <ul className="text-xs text-muted-foreground text-left mb-4 space-y-1">
+          <li>• Filen er beskadiget eller i et ugyldigt format</li>
+          <li>• Netværksforbindelse blev afbrudt</li>
+          <li>• Serveren er midlertidigt utilgængelig</li>
+        </ul>
+        <div className="flex gap-2 justify-center">
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 text-sm"
+            >
+              Prøv igen
+            </button>
+          )}
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="px-4 py-2 border border-border rounded-lg hover:bg-muted text-sm"
+            >
+              Annuller
+            </button>
+          )}
+        </div>
+      </div>
+    }
+    maxRetries={1}
+    onError={(error, errorInfo) => {
+      console.error('Batch Upload Error:', { error, errorInfo, context: 'file-upload' })
+    }}
+  >
+    {children}
+  </ErrorBoundary>
+)
+
 // Component isolation boundary for individual components
 export const ComponentErrorBoundary: React.FC<{ 
   children: React.ReactNode

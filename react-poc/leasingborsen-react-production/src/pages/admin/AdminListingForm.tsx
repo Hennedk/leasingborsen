@@ -1,7 +1,7 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 import AdminLayout from '@/components/admin/AdminLayout'
-import AdminListingFormComponent from '@/components/admin/AdminListingFormNew'
+import { AdminListingFormNew as AdminListingFormComponent } from '@/components/admin/listings/forms'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { useAdminListing } from '@/hooks/useAdminListings'
 

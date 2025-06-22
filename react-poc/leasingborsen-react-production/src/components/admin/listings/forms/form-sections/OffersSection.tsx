@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Info } from 'lucide-react'
-import { OffersTableManager } from '../offers'
+import { OffersTableManager } from '@/components/admin/offers'
 
 interface OffersSectionProps {
   control: React.ComponentProps<any>['control']

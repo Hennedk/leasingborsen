@@ -3,6 +3,7 @@ import { type FilterOptions } from '@/lib/supabase'
 import { queryKeys, queryInvalidation } from '@/lib/queryKeys'
 import { supabase } from '@/lib/supabase'
 import type { CarListing } from '@/lib/supabase'
+import type { AdminListing } from '@/types/admin'
 
 /**
  * Admin-specific hooks for listings management
@@ -47,30 +48,30 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
       if (error) throw error
 
       // Transform the data to include admin metadata for draft detection
-      const transformedListings = listings?.map((listing: any) => {
+      const transformedListings: AdminListing[] = listings?.map((listing) => {
         const firstPricing = listing.lease_pricing?.[0]
         
         // Determine draft status based on missing required fields
-        const missingFields = []
+        const missingFields: string[] = []
         if (!firstPricing?.monthly_price) missingFields.push('Månedspris')
-        if (!listing.body_types?.name) missingFields.push('Biltype')
-        if (!listing.fuel_types?.name) missingFields.push('Brændstof')
-        if (!listing.transmissions?.name) missingFields.push('Gearkasse')
+        if (!(listing.body_types as any)?.name) missingFields.push('Biltype')
+        if (!(listing.fuel_types as any)?.name) missingFields.push('Brændstof')
+        if (!(listing.transmissions as any)?.name) missingFields.push('Gearkasse')
         
-        return {
+        const adminListing: AdminListing = {
           listing_id: listing.id,
-          make: listing.makes?.name || 'Ukendt',
-          model: listing.models?.name || 'Ukendt',
+          make: (listing.makes as any)?.name || 'Ukendt',
+          model: (listing.models as any)?.name || 'Ukendt',
           variant: listing.variant,
           year: listing.year,
           mileage: listing.mileage,
           horsepower: listing.horsepower,
           description: listing.description,
           image: listing.image,
-          body_type: listing.body_types?.name || null,
-          fuel_type: listing.fuel_types?.name || null,
-          transmission: listing.transmissions?.name || null,
-          seller_name: listing.sellers?.name || null,
+          body_type: (listing.body_types as any)?.name || null,
+          fuel_type: (listing.fuel_types as any)?.name || null,
+          transmission: (listing.transmissions as any)?.name || null,
+          seller_name: (listing.sellers as any)?.name || null,
           monthly_price: firstPricing?.monthly_price || null,
           first_payment: firstPricing?.first_payment || null,
           period_months: firstPricing?.period_months || null,
@@ -88,6 +89,8 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
           fuel_type_id: listing.fuel_type_id,
           transmission_id: listing.transmission_id
         }
+        
+        return adminListing
       }) || []
 
       console.log(`📊 Admin listings loaded: ${transformedListings.length} listings`)
@@ -247,9 +250,9 @@ export function useAdminDraftListings() {
         const missingFields = []
         
         if (!firstPricing?.monthly_price) missingFields.push('Månedspris')
-        if (!listing.body_types?.name) missingFields.push('Biltype')
-        if (!listing.fuel_types?.name) missingFields.push('Brændstof')
-        if (!listing.transmissions?.name) missingFields.push('Gearkasse')
+        if (!(listing.body_types as any)?.name) missingFields.push('Biltype')
+        if (!(listing.fuel_types as any)?.name) missingFields.push('Brændstof')
+        if (!(listing.transmissions as any)?.name) missingFields.push('Gearkasse')
         
         return {
           listing_id: listing.id,
@@ -261,10 +264,10 @@ export function useAdminDraftListings() {
           first_payment: firstPricing?.first_payment || null,
           period_months: firstPricing?.period_months || null,
           mileage_per_year: firstPricing?.mileage_per_year || null,
-          body_type: listing.body_types?.name || null,
-          fuel_type: listing.fuel_types?.name || null,
-          transmission: listing.transmissions?.name || null,
-          seller_name: listing.sellers?.name || null,
+          body_type: (listing.body_types as any)?.name || null,
+          fuel_type: (listing.fuel_types as any)?.name || null,
+          transmission: (listing.transmissions as any)?.name || null,
+          seller_name: (listing.sellers as any)?.name || null,
           created_at: listing.created_at,
           updated_at: listing.updated_at,
           offer_count: listing.lease_pricing?.length || 0,

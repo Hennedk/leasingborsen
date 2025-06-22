@@ -14,7 +14,7 @@ interface ImageUploadProps {
   className?: string
 }
 
-export const ImageUpload: React.FC<ImageUploadProps> = ({
+export const ImageUpload = React.memo<ImageUploadProps>(({
   images,
   onImagesChange,
   maxImages = 5,
@@ -236,4 +236,6 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       <FormMessage />
     </FormItem>
   )
-}
+})
+
+ImageUpload.displayName = 'ImageUpload'

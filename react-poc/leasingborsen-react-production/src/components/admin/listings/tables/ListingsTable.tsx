@@ -18,21 +18,21 @@ import {
   Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { CarListing } from '@/lib/supabase'
+import type { AdminListing } from '@/types/admin'
 import { useListingsTableState } from '@/hooks/useListingsTableState'
 import { 
   ListingsTableHeader,
   ListingExpandedRow,
   ListingRowActions
-} from './table'
+} from './'
 
 
 interface ListingsTableProps {
-  listings: CarListing[]
+  listings: AdminListing[]
   loading?: boolean
-  onDelete?: (listing: CarListing) => void
-  onView?: (listing: CarListing) => void
-  onBulkAction?: (selectedListings: CarListing[], action: string) => void
+  onDelete?: (listing: AdminListing) => void
+  onView?: (listing: AdminListing) => void
+  onBulkAction?: (selectedListings: AdminListing[], action: string) => void
 }
 
 /**
@@ -58,7 +58,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
 
   // Optimized ListingRow component with better performance
   const ListingRow = React.memo<{
-    listing: CarListing
+    listing: AdminListing
     isSelected: boolean
     isExpanded: boolean
     onToggleSelection: () => void
@@ -78,7 +78,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
       className={cn(
         "cursor-pointer hover:bg-muted/50",
         isSelected && "bg-blue-50",
-        (listing as any).is_draft && "opacity-75"
+        listing.is_draft && "opacity-75"
       )}
     >
       <TableCell>
@@ -94,10 +94,10 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
           size="sm"
           onClick={onToggleExpansion}
           className="h-6 w-6 p-0"
-          disabled={(listing as any).offer_count === 0}
+          disabled={listing.offer_count === 0}
           aria-label={isExpanded ? "Skjul prisindstillinger" : "Vis prisindstillinger"}
         >
-          {(listing as any).offer_count > 0 ? (
+          {listing.offer_count > 0 ? (
             isExpanded ? (
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             ) : (
@@ -113,9 +113,9 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
             <div className="flex items-center gap-2">
               <span className="font-medium">
                 {listing.make} {listing.model}
-                {(listing as any).variant ? ` ${(listing as any).variant}` : ''}
+                {listing.variant ? ` ${listing.variant}` : ''}
               </span>
-              {(listing as any).is_draft && (
+              {listing.is_draft && (
                 <Tooltip>
                   <TooltipTrigger>
                     <Badge variant="outline" className="admin-draft-badge">
@@ -126,7 +126,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
                   <TooltipContent>
                     <p className="font-medium mb-1">Manglende data:</p>
                     <ul className="text-xs space-y-1">
-                      {((listing as any).missing_fields || []).map((field: string) => (
+                      {(listing.missing_fields || []).map((field: string) => (
                         <li key={field}>• {field}</li>
                       ))}
                     </ul>
@@ -158,7 +158,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
       </TableCell>
       <TableCell>
         <div className="font-medium text-sm">
-          {(listing as any).seller_name || "–"}
+          {listing.seller_name || "–"}
         </div>
       </TableCell>
       <TableCell>
@@ -174,18 +174,18 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
           </div>
         ) : (
           <div className="text-muted-foreground text-sm italic">
-            {(listing as any).offer_count > 0 ? 'Ingen hovedpris' : 'Ingen tilbud'}
+            {listing.offer_count > 0 ? 'Ingen hovedpris' : 'Ingen tilbud'}
           </div>
         )}
       </TableCell>
       <TableCell>
         <Badge variant="secondary" className="text-xs">
-          {(listing as any).offer_count || 0}
+          {listing.offer_count || 0}
         </Badge>
       </TableCell>
       <TableCell>
         <div className="text-sm text-muted-foreground">
-          {(listing as any).created_at ? new Date((listing as any).created_at).toLocaleDateString('da-DK') : '–'}
+          {listing.created_at ? new Date(listing.created_at).toLocaleDateString('da-DK') : '–'}
         </div>
       </TableCell>
       <TableCell>
