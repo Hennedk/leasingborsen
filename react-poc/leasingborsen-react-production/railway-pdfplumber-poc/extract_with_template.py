@@ -188,24 +188,38 @@ class ToyotaDanishExtractor:
         return items
     
     def _detect_model_on_page(self, text: str) -> Optional[str]:
-        """Detect Toyota model from page text"""
+        """Detect Toyota model from page text with improved pattern matching"""
+        # Priority-ordered patterns for better model detection
+        model_patterns = [
+            (r'(YARIS CROSS)\s+SE UDSTYRSVARIANTER', 'YARIS CROSS'),
+            (r'(COROLLA TOURING SPORTS)\s+SE UDSTYRSVARIANTER', 'COROLLA TOURING SPORTS'),  
+            (r'(URBAN CRUISER)\s+SE UDSTYRSVARIANTER', 'URBAN CRUISER'),
+            (r'(AYGO X)\s+SE UDSTYRSVARIANTER', 'AYGO X'),
+            (r'(BZ4X)\s+SE UDSTYRSVARIANTER', 'BZ4X'),
+            (r'(YARIS)\s+SE UDSTYRSVARIANTER', 'YARIS'),  # Check after YARIS CROSS
+            # Fallback patterns without SE UDSTYRSVARIANTER
+            (r'(YARIS CROSS)', 'YARIS CROSS'),
+            (r'(COROLLA TOURING SPORTS)', 'COROLLA TOURING SPORTS'),
+            (r'(URBAN CRUISER)', 'URBAN CRUISER'),
+            (r'(AYGO X)', 'AYGO X'),
+            (r'(BZ4X)', 'BZ4X'),
+            (r'(COROLLA)', 'COROLLA'),  # COROLLA should match after COROLLA TOURING SPORTS
+            (r'(YARIS)', 'YARIS')       # YARIS should match after YARIS CROSS
+        ]
+        
+        # Try patterns in priority order
+        for pattern, model_name in model_patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                self._log_debug("extraction_stages", f"Model detected with pattern '{pattern}': {model_name}")
+                return model_name
+        
+        # Legacy fallback using configured model list
         toyota_models = self.extraction_rules["toyota_models"]
-        
-        # Check for model header pattern first
-        doc_patterns = self.extraction_rules.get("document_patterns", {})
-        if "model_header_pattern" in doc_patterns:
-            header_match = re.search(doc_patterns["model_header_pattern"], text, re.MULTILINE)
-            if header_match:
-                detected_model = header_match.group(1).strip()
-                # Verify it's a known Toyota model
-                for model in toyota_models:
-                    if model.upper() in detected_model.upper():
-                        return model
-        
-        # Fallback: look for any Toyota model mention
         text_upper = text.upper()
         for model in toyota_models:
             if model.upper() in text_upper:
+                self._log_debug("extraction_stages", f"Model detected with fallback: {model}")
                 return model
         
         return None
@@ -364,66 +378,200 @@ class ToyotaDanishExtractor:
         return items
     
     def _parse_pricing_line(self, line: str, model: str, page_num: int, line_idx: int) -> Optional[Dict[str, Any]]:
-        """Parse a pricing line like 'Active 2.699 4.999 37.387 102.163 20,83/110 15.000 590'"""
+        """Parse pricing line with comprehensive field extraction"""
         
+        # Clean the line
+        line = line.strip()
+        if not line:
+            return None
+        
+        self._log_debug("pattern_matches", f"Parsing line: {line}")
+        
+        # Try different parsing patterns based on the line format
+        result = None
+        
+        # Pattern 1: Standard format - "Active 2.699 4.999 37.387 102.163 20,83/110 15.000 590"
+        pattern1 = r'^([A-Za-z\s]+?)\s+(\d\.\d{3})\s+(\d\.\d{3})\s+(\d{2}\.\d{3})\s+(\d{2,3}\.\d{3})\s+([\d,]+/\d+)\s+(\d{2}\.\d{3})\s+(\d{3,4})$'
+        match1 = re.match(pattern1, line)
+        if match1:
+            result = self._parse_standard_format(match1, model, page_num, line_idx, line)
+        
+        # Pattern 2: Electric format - "Active 3.999 9.999 57.987 153.963 136 444 57,7/54 15.000 420"
+        pattern2 = r'^([A-Za-z\s]+?)\s+(\d\.\d{3})\s+(\d\.\d{3})\s+(\d{2}\.\d{3})\s+(\d{2,3}\.\d{3})\s+(\d{3})\s+(\d{3})\s+([\d,/\-]+)\s+(\d{2}\.\d{3})\s+(\d{3,4})$'
+        match2 = re.match(pattern2, line)
+        if not result and match2:
+            result = self._parse_electric_format(match2, model, page_num, line_idx, line)
+        
+        # Pattern 3: Compact format - "Active 3.949 0 47.388 142.164 22,2/101 15.000 580"
+        pattern3 = r'^([A-Za-z\s]+?)\s+(\d\.\d{3})\s+(\d+)\s+(\d{2}\.\d{3})\s+(\d{2,3}\.\d{3})\s+([\d,]+/\d+)\s+(\d{2}\.\d{3})\s+(\d{3,4})$'
+        match3 = re.match(pattern3, line)
+        if not result and match3:
+            result = self._parse_compact_format(match3, model, page_num, line_idx, line)
+        
+        # Pattern 4: Fallback to flexible parsing
+        if not result:
+            result = self._parse_flexible_format(line, model, page_num, line_idx)
+        
+        if result:
+            self._log_debug("extraction_stages", f"Successfully parsed variant: {result.get('variant')}")
+        
+        return result
+    
+    def _parse_standard_format(self, match, model: str, page_num: int, line_idx: int, raw_line: str) -> Dict[str, Any]:
+        """Parse standard format: variant monthly first_payment minimum total fuel_eco annual co2_tax"""
+        variant_name = match.group(1).strip()
+        monthly_price = int(match.group(2).replace('.', ''))
+        first_payment = int(match.group(3).replace('.', ''))
+        minimum_12m = int(match.group(4).replace('.', ''))
+        total_cost = int(match.group(5).replace('.', ''))
+        fuel_economy = match.group(6)  # e.g., "20,83/110"
+        annual_km = int(match.group(7).replace('.', ''))
+        co2_tax = int(match.group(8))
+        
+        # Extract CO2 emissions from fuel economy
+        co2_emissions = self._extract_co2_from_fuel_economy(fuel_economy)
+        fuel_consumption = self._extract_fuel_consumption_from_fuel_economy(fuel_economy)
+        
+        return {
+            "type": "car_model",
+            "make": "Toyota",
+            "model": model,
+            "variant": variant_name,
+            "monthly_price": monthly_price,
+            "first_payment": first_payment,
+            "minimum_price_12m": minimum_12m,
+            "total_cost": total_cost,
+            "annual_kilometers": annual_km,
+            "co2_tax_biannual": co2_tax,
+            "co2_emissions_gkm": co2_emissions,
+            "fuel_consumption_kmpl": fuel_consumption,
+            "currency": "DKK",
+            "source": {
+                "page": page_num,
+                "line": line_idx,
+                "extraction_method": "standard_format",
+                "raw_line": raw_line
+            },
+            "confidence": 0.9
+        }
+    
+    def _parse_electric_format(self, match, model: str, page_num: int, line_idx: int, raw_line: str) -> Dict[str, Any]:
+        """Parse electric format: variant monthly first_payment minimum total electric_consumption electric_range battery annual co2_tax"""
+        variant_name = match.group(1).strip()
+        monthly_price = int(match.group(2).replace('.', ''))
+        first_payment = int(match.group(3).replace('.', ''))
+        minimum_12m = int(match.group(4).replace('.', ''))
+        total_cost = int(match.group(5).replace('.', ''))
+        electric_consumption = int(match.group(6))  # Wh/km
+        electric_range = int(match.group(7))        # km
+        battery_info = match.group(8)               # "57,7/54" (gross/net kWh)
+        annual_km = int(match.group(9).replace('.', ''))
+        co2_tax = int(match.group(10))
+        
+        # Parse battery capacity
+        battery_gross, battery_net = self._parse_battery_capacity(battery_info)
+        
+        return {
+            "type": "car_model",
+            "make": "Toyota",
+            "model": model,
+            "variant": variant_name,
+            "monthly_price": monthly_price,
+            "first_payment": first_payment,
+            "minimum_price_12m": minimum_12m,
+            "total_cost": total_cost,
+            "annual_kilometers": annual_km,
+            "co2_tax_biannual": co2_tax,
+            "electric_consumption_whkm": electric_consumption,
+            "electric_range_km": electric_range,
+            "battery_capacity_gross_kwh": battery_gross,
+            "battery_capacity_net_kwh": battery_net,
+            "powertrain_type": "electric",
+            "co2_emissions_gkm": 0,  # Electric vehicles have 0 CO2 emissions
+            "currency": "DKK",
+            "source": {
+                "page": page_num,
+                "line": line_idx,
+                "extraction_method": "electric_format",
+                "raw_line": raw_line
+            },
+            "confidence": 0.9
+        }
+    
+    def _parse_compact_format(self, match, model: str, page_num: int, line_idx: int, raw_line: str) -> Dict[str, Any]:
+        """Parse compact format: variant monthly first_payment(0) minimum total fuel_eco annual co2_tax"""
+        variant_name = match.group(1).strip()
+        monthly_price = int(match.group(2).replace('.', ''))
+        first_payment = int(match.group(3))  # Often 0
+        minimum_12m = int(match.group(4).replace('.', ''))
+        total_cost = int(match.group(5).replace('.', ''))
+        fuel_economy = match.group(6)  # e.g., "22,2/101"
+        annual_km = int(match.group(7).replace('.', ''))
+        co2_tax = int(match.group(8))
+        
+        # Extract CO2 emissions from fuel economy
+        co2_emissions = self._extract_co2_from_fuel_economy(fuel_economy)
+        fuel_consumption = self._extract_fuel_consumption_from_fuel_economy(fuel_economy)
+        
+        return {
+            "type": "car_model",
+            "make": "Toyota",
+            "model": model,
+            "variant": variant_name,
+            "monthly_price": monthly_price,
+            "first_payment": first_payment if first_payment > 0 else None,
+            "minimum_price_12m": minimum_12m,
+            "total_cost": total_cost,
+            "annual_kilometers": annual_km,
+            "co2_tax_biannual": co2_tax,
+            "co2_emissions_gkm": co2_emissions,
+            "fuel_consumption_kmpl": fuel_consumption,
+            "currency": "DKK",
+            "source": {
+                "page": page_num,
+                "line": line_idx,
+                "extraction_method": "compact_format",
+                "raw_line": raw_line
+            },
+            "confidence": 0.8
+        }
+    
+    def _parse_flexible_format(self, line: str, model: str, page_num: int, line_idx: int) -> Optional[Dict[str, Any]]:
+        """Flexible parsing for lines that don't match standard patterns"""
         # Split the line into parts
         parts = line.split()
         if len(parts) < 3:
             return None
         
-        # Extract variant name (usually first word(s) before numbers)
+        # Extract variant name (first non-numeric parts)
         variant_parts = []
-        price_parts = []
+        numeric_parts = []
         
         for part in parts:
-            if re.search(r'\d', part):  # Contains digits
-                price_parts.append(part)
+            if re.search(r'\d', part):
+                numeric_parts.append(part)
             else:
                 variant_parts.append(part)
         
-        # Get variant name
         variant_name = ' '.join(variant_parts) if variant_parts else None
         if not variant_name or len(variant_name) < 2:
             return None
         
-        # Validate variant name
         if not self._looks_like_variant(variant_name):
             return None
         
-        # Extract prices from the line using patterns
+        # Extract monthly price (first price in reasonable range)
         monthly_price = None
-        first_payment = None
-        total_cost = None
-        annual_km = None
-        
-        # Look for Danish price patterns
-        for part in price_parts:
+        for part in numeric_parts:
             price = self._parse_danish_price(part)
-            if price:
-                # Determine what type of price this is based on range
-                if 1500 <= price <= 15000:  # Monthly price range
-                    if not monthly_price:
-                        monthly_price = price
-                elif 0 <= price <= 50000:  # Could be first payment
-                    if not first_payment and price != monthly_price:
-                        first_payment = price
-                elif 50000 <= price <= 500000:  # Total cost range
-                    if not total_cost:
-                        total_cost = price
-                elif 5000 <= price <= 50000:  # Annual kilometers
-                    if not annual_km:
-                        annual_km = price
+            if price and 1500 <= price <= 15000:
+                monthly_price = price
+                break
         
-        # Monthly price is required
         if not monthly_price:
             return None
         
-        # Extract additional info from the line
-        fuel_consumption = self._extract_fuel_consumption_from_line(line)
-        engine_spec = self._extract_engine_spec_from_line(line)
-        
-        # Build the item
-        item = {
+        return {
             "type": "car_model",
             "make": "Toyota",
             "model": model,
@@ -433,32 +581,56 @@ class ToyotaDanishExtractor:
             "source": {
                 "page": page_num,
                 "line": line_idx,
-                "extraction_method": "text_parsing",
+                "extraction_method": "flexible_format",
                 "raw_line": line
             },
-            "confidence": 0.7  # Lower confidence for text-based extraction
+            "confidence": 0.6
         }
-        
-        # Add optional fields
-        if first_payment:
-            item["first_payment"] = first_payment
-            item["confidence"] += 0.1
-        
-        if total_cost:
-            item["total_cost"] = total_cost
-        
-        if annual_km:
-            item["annual_kilometers"] = annual_km
-        
-        if fuel_consumption:
-            item["fuel_consumption_kmpl"] = fuel_consumption
-        
-        if engine_spec:
-            item["engine_specification"] = engine_spec["specification"]
-            item["powertrain_type"] = engine_spec["type"]
-            item["confidence"] += 0.1
-        
-        return item
+    
+    def _extract_co2_from_fuel_economy(self, fuel_economy: str) -> Optional[int]:
+        """Extract CO2 emissions from fuel economy string like '20,83/110'"""
+        if '/' in fuel_economy:
+            parts = fuel_economy.split('/')
+            if len(parts) == 2:
+                try:
+                    return int(parts[1])  # Second part is CO2 g/km
+                except ValueError:
+                    pass
+        return None
+    
+    def _extract_fuel_consumption_from_fuel_economy(self, fuel_economy: str) -> Optional[float]:
+        """Extract fuel consumption from fuel economy string like '20,83/110'"""
+        if '/' in fuel_economy:
+            parts = fuel_economy.split('/')
+            if len(parts) == 2:
+                try:
+                    return float(parts[0].replace(',', '.'))  # First part is km/l
+                except ValueError:
+                    pass
+        return None
+    
+    def _parse_battery_capacity(self, battery_info: str) -> Tuple[Optional[float], Optional[float]]:
+        """Parse battery capacity string like '57,7/54' into (gross, net) kWh"""
+        if '/' in battery_info:
+            parts = battery_info.split('/')
+            if len(parts) == 2:
+                try:
+                    gross = float(parts[0].replace(',', '.'))
+                    net = float(parts[1].replace(',', '.'))
+                    return gross, net
+                except ValueError:
+                    pass
+        elif '-' in battery_info:
+            # Handle range format like "61,1-59,8"
+            parts = battery_info.split('-')
+            if len(parts) == 2:
+                try:
+                    gross = float(parts[0].replace(',', '.'))
+                    net = float(parts[1].replace(',', '.'))
+                    return gross, net
+                except ValueError:
+                    pass
+        return None, None
     
     def _extract_fuel_consumption_from_line(self, line: str) -> Optional[float]:
         """Extract fuel consumption from a text line"""

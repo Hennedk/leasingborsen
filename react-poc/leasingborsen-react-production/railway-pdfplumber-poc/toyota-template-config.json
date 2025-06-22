@@ -36,7 +36,7 @@
     },
     "toyota_models": [
       "AYGO X", "YARIS", "YARIS CROSS", "COROLLA", "COROLLA TOURING SPORTS", 
-      "C-HR", "RAV4", "HIGHLANDER", "BZ4X", "PRIUS", "CAMRY", "LAND CRUISER"
+      "C-HR", "RAV4", "HIGHLANDER", "BZ4X", "PRIUS", "CAMRY", "LAND CRUISER", "URBAN CRUISER"
     ],
     "pricing_table_detection": {
       "header_keywords": [
