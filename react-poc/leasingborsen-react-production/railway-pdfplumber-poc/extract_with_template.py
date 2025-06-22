@@ -154,7 +154,7 @@ class ToyotaDanishExtractor:
         
         self._log_debug("extraction_stages", f"Detected model '{current_model}' on page {page_num}")
         
-        # Extract tables with enhanced settings
+        # Try table extraction first
         tables = page.extract_tables(self.pdfplumber_config["table_settings"])
         
         if self.debug.get("log_table_structure", False):
@@ -164,7 +164,7 @@ class ToyotaDanishExtractor:
                 "table_sizes": [(len(t), len(t[0]) if t and t[0] else 0) for t in tables if t]
             })
         
-        # Process each table looking for pricing data
+        # Process tables if found
         for table_idx, table in enumerate(tables):
             if not table or len(table) < 2:
                 continue
@@ -178,6 +178,12 @@ class ToyotaDanishExtractor:
                     table, current_model, page_num, table_idx
                 )
                 items.extend(table_items)
+        
+        # If no tables found, try text-based extraction
+        if not items and current_model:
+            self._log_debug("extraction_stages", f"No tables found on page {page_num}, trying text-based extraction")
+            text_items = self._extract_variants_from_text(text, current_model, page_num)
+            items.extend(text_items)
         
         return items
     
@@ -328,6 +334,184 @@ class ToyotaDanishExtractor:
             })
         
         return items
+    
+    def _extract_variants_from_text(self, text: str, model: str, page_num: int) -> List[Dict[str, Any]]:
+        """Extract car variants from structured text when tables aren't detected"""
+        items = []
+        
+        self._log_debug("extraction_stages", f"Attempting text-based extraction for model {model}")
+        
+        # Split text into lines
+        lines = text.split('\n')
+        
+        # Look for pricing lines that match the Danish format
+        for line_idx, line in enumerate(lines):
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Look for lines that contain pricing information
+            # Pattern: "Active 2.699 4.999 37.387 102.163 20,83/110 15.000 590"
+            if self._contains_price_pattern(line):
+                self._log_debug("pattern_matches", f"Found potential pricing line: {line}")
+                
+                # Extract variant data from this line
+                variant_data = self._parse_pricing_line(line, model, page_num, line_idx)
+                if variant_data:
+                    items.append(variant_data)
+                    self._log_debug("extraction_stages", f"Extracted variant from text: {variant_data['variant']}")
+        
+        return items
+    
+    def _parse_pricing_line(self, line: str, model: str, page_num: int, line_idx: int) -> Optional[Dict[str, Any]]:
+        """Parse a pricing line like 'Active 2.699 4.999 37.387 102.163 20,83/110 15.000 590'"""
+        
+        # Split the line into parts
+        parts = line.split()
+        if len(parts) < 3:
+            return None
+        
+        # Extract variant name (usually first word(s) before numbers)
+        variant_parts = []
+        price_parts = []
+        
+        for part in parts:
+            if re.search(r'\d', part):  # Contains digits
+                price_parts.append(part)
+            else:
+                variant_parts.append(part)
+        
+        # Get variant name
+        variant_name = ' '.join(variant_parts) if variant_parts else None
+        if not variant_name or len(variant_name) < 2:
+            return None
+        
+        # Validate variant name
+        if not self._looks_like_variant(variant_name):
+            return None
+        
+        # Extract prices from the line using patterns
+        monthly_price = None
+        first_payment = None
+        total_cost = None
+        annual_km = None
+        
+        # Look for Danish price patterns
+        for part in price_parts:
+            price = self._parse_danish_price(part)
+            if price:
+                # Determine what type of price this is based on range
+                if 1500 <= price <= 15000:  # Monthly price range
+                    if not monthly_price:
+                        monthly_price = price
+                elif 0 <= price <= 50000:  # Could be first payment
+                    if not first_payment and price != monthly_price:
+                        first_payment = price
+                elif 50000 <= price <= 500000:  # Total cost range
+                    if not total_cost:
+                        total_cost = price
+                elif 5000 <= price <= 50000:  # Annual kilometers
+                    if not annual_km:
+                        annual_km = price
+        
+        # Monthly price is required
+        if not monthly_price:
+            return None
+        
+        # Extract additional info from the line
+        fuel_consumption = self._extract_fuel_consumption_from_line(line)
+        engine_spec = self._extract_engine_spec_from_line(line)
+        
+        # Build the item
+        item = {
+            "type": "car_model",
+            "make": "Toyota",
+            "model": model,
+            "variant": variant_name,
+            "monthly_price": monthly_price,
+            "currency": "DKK",
+            "source": {
+                "page": page_num,
+                "line": line_idx,
+                "extraction_method": "text_parsing",
+                "raw_line": line
+            },
+            "confidence": 0.7  # Lower confidence for text-based extraction
+        }
+        
+        # Add optional fields
+        if first_payment:
+            item["first_payment"] = first_payment
+            item["confidence"] += 0.1
+        
+        if total_cost:
+            item["total_cost"] = total_cost
+        
+        if annual_km:
+            item["annual_kilometers"] = annual_km
+        
+        if fuel_consumption:
+            item["fuel_consumption_kmpl"] = fuel_consumption
+        
+        if engine_spec:
+            item["engine_specification"] = engine_spec["specification"]
+            item["powertrain_type"] = engine_spec["type"]
+            item["confidence"] += 0.1
+        
+        return item
+    
+    def _extract_fuel_consumption_from_line(self, line: str) -> Optional[float]:
+        """Extract fuel consumption from a text line"""
+        # Look for patterns like "20,83/110" or "22,2/101"
+        fuel_match = re.search(r'(\d+[,\.]?\d+)/(\d+)', line)
+        if fuel_match:
+            try:
+                return float(fuel_match.group(1).replace(',', '.'))
+            except ValueError:
+                pass
+        return None
+    
+    def _extract_engine_spec_from_line(self, line: str) -> Optional[Dict[str, Any]]:
+        """Extract engine specification from a text line"""
+        # Look for engine patterns in the line context (might be above this line)
+        
+        # Electric: "57,7 KWh 167 hk" or "73,1 kWh, 224 hk"
+        electric_match = re.search(r'(\d+[,\.]\d+)\s*[Kk][Ww][Hh][,\s]*\s*(\d+)\s*hk', line)
+        if electric_match:
+            battery = electric_match.group(1)
+            power = electric_match.group(2)
+            return {
+                "specification": f"{battery} kWh {power} hk",
+                "type": "electric",
+                "battery_capacity_kwh": float(battery.replace(",", ".")),
+                "power_hp": int(power)
+            }
+        
+        # Hybrid: "1.5 Hybrid 116 hk"
+        hybrid_match = re.search(r'(\d\.\d)\s+Hybrid\s+(\d+)\s+hk', line)
+        if hybrid_match:
+            displacement = hybrid_match.group(1)
+            power = hybrid_match.group(2)
+            return {
+                "specification": f"{displacement} Hybrid {power} hk",
+                "type": "hybrid",
+                "displacement_l": float(displacement),
+                "power_hp": int(power)
+            }
+        
+        # Gasoline: "1.0 benzin 72 hk"
+        gasoline_match = re.search(r'(\d\.\d)\s+benzin\s+(\d+)\s+hk', line)
+        if gasoline_match:
+            displacement = gasoline_match.group(1)
+            power = gasoline_match.group(2)
+            return {
+                "specification": f"{displacement} benzin {power} hk",
+                "type": "gasoline",
+                "displacement_l": float(displacement),
+                "power_hp": int(power)
+            }
+        
+        return None
     
     def _find_column_index(self, headers: List[str], keywords: List[str]) -> int:
         """Find column index by matching keywords in headers"""
