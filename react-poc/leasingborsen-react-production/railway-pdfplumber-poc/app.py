@@ -1,12 +1,14 @@
-# app.py - Minimal POC service
+# app.py - PDFPlumber POC service with template support
 from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import traceback
 import re
+import json
 from typing import List, Dict, Any
 import io
+from extract_with_template import extract_with_template
 
 app = FastAPI()
 
@@ -324,6 +326,89 @@ async def extract_debug(file: UploadFile = File(...)):
             
             return JSONResponse(content=debug_info)
             
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "traceback": traceback.format_exc()}
+        )
+
+@app.post("/extract/template")
+async def extract_with_template_endpoint(file: UploadFile = File(...)):
+    """Extract using Toyota car model template configuration"""
+    try:
+        content = await file.read()
+        
+        # Load Toyota template configuration
+        with open('toyota-template-config.json', 'r') as f:
+            template_config = json.load(f)
+        
+        # Extract using template
+        result = extract_with_template(content, template_config)
+        
+        # Enhance result with car model specific info
+        car_models = [item for item in result.get("items", []) if item.get("type") == "car_model"]
+        accessories = [item for item in result.get("items", []) if item.get("type") == "accessory"]
+        
+        enhanced_result = {
+            **result,
+            "extraction_type": "car_models_and_variants",
+            "car_models_found": len(car_models),
+            "accessories_found": len(accessories),
+            "summary": {
+                "models_by_type": {},
+                "variants_found": [],
+                "price_range": {"min": None, "max": None},
+                "lease_terms_coverage": {}
+            }
+        }
+        
+        # Analyze extracted car models
+        if car_models:
+            # Group by model
+            models_by_type = {}
+            all_variants = []
+            prices = []
+            lease_terms = {"months": [], "mileage": [], "first_payment": []}
+            
+            for car in car_models:
+                model = car.get("model", "Unknown")
+                if model not in models_by_type:
+                    models_by_type[model] = []
+                models_by_type[model].append(car)
+                
+                if car.get("variant"):
+                    all_variants.append(car["variant"])
+                
+                if car.get("monthly_price"):
+                    prices.append(car["monthly_price"])
+                
+                if car.get("lease_months"):
+                    lease_terms["months"].append(car["lease_months"])
+                if car.get("mileage_per_year"):
+                    lease_terms["mileage"].append(car["mileage_per_year"])
+                if car.get("first_payment"):
+                    lease_terms["first_payment"].append(car["first_payment"])
+            
+            enhanced_result["summary"]["models_by_type"] = {
+                model: len(variants) for model, variants in models_by_type.items()
+            }
+            enhanced_result["summary"]["variants_found"] = list(set(all_variants))
+            
+            if prices:
+                enhanced_result["summary"]["price_range"] = {
+                    "min": min(prices),
+                    "max": max(prices),
+                    "average": round(sum(prices) / len(prices))
+                }
+            
+            enhanced_result["summary"]["lease_terms_coverage"] = {
+                "months_data": f"{len(lease_terms['months'])}/{len(car_models)} items",
+                "mileage_data": f"{len(lease_terms['mileage'])}/{len(car_models)} items",
+                "first_payment_data": f"{len(lease_terms['first_payment'])}/{len(car_models)} items"
+            }
+        
+        return JSONResponse(content=enhanced_result)
+        
     except Exception as e:
         return JSONResponse(
             status_code=500,

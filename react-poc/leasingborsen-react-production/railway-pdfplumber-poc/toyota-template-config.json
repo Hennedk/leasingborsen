@@ -1,0 +1,202 @@
+{
+  "id": "toyota-cars-v1",
+  "name": "Toyota Car Models and Variants (Danish)",
+  "description": "Template for Toyota car model price lists with variants, monthly pricing, and lease terms",
+  "version": "1.0.0",
+  "status": "approved",
+  
+  "pdfplumber_config": {
+    "table_settings": {
+      "vertical_strategy": "lines",
+      "horizontal_strategy": "text",
+      "snap_tolerance": 3,
+      "join_tolerance": 3,
+      "edge_min_length": 5
+    },
+    "text_extraction": {
+      "layout": true,
+      "x_tolerance": 1,
+      "y_tolerance": 3
+    }
+  },
+  
+  "extraction_rules": {
+    "item_type": "car_models",
+    "toyota_models": [
+      "YARIS", "COROLLA", "RAV4", "C-HR", "CAMRY", "PRIUS", "AYGO", 
+      "HIGHLANDER", "bZ4X", "GR YARIS", "LAND CRUISER", "PROACE"
+    ],
+    "price_patterns": [
+      {
+        "pattern": "(\\d{1,2}\\.\\d{3})\\s*kr\\./md\\.",
+        "description": "Monthly lease price format (e.g., 2.995 kr./md.)",
+        "min_value": 1000,
+        "max_value": 15000
+      },
+      {
+        "pattern": "(\\d{3,5})\\s*kr\\./md\\.",
+        "description": "Simple monthly price format",
+        "min_value": 1000,
+        "max_value": 15000
+      }
+    ],
+    "lease_term_patterns": [
+      {
+        "pattern": "(\\d{1,2})\\s*mdr\\.",
+        "description": "Lease duration in months",
+        "min_value": 6,
+        "max_value": 60
+      },
+      {
+        "pattern": "(\\d{1,2})\\s*måneder",
+        "description": "Lease duration alternative format",
+        "min_value": 6,
+        "max_value": 60
+      }
+    ],
+    "mileage_patterns": [
+      {
+        "pattern": "(\\d{1,2}\\.\\d{3})\\s*km/år",
+        "description": "Annual mileage (e.g., 10.000 km/år)",
+        "min_value": 5000,
+        "max_value": 40000
+      },
+      {
+        "pattern": "(\\d{4,5})\\s*km",
+        "description": "Simple mileage format",
+        "min_value": 5000,
+        "max_value": 40000
+      }
+    ],
+    "first_payment_patterns": [
+      {
+        "pattern": "(\\d{1,3}\\.\\d{3})\\s*kr\\.",
+        "description": "First payment amount",
+        "min_value": 0,
+        "max_value": 200000
+      },
+      {
+        "pattern": "(\\d{4,6})\\s*kr\\.",
+        "description": "Simple first payment format",
+        "min_value": 0,
+        "max_value": 200000
+      }
+    ],
+    "variant_detection": {
+      "strategies": [
+        "same_row_after_model",
+        "next_column_after_model",
+        "sub_header_detection"
+      ],
+      "common_variants": [
+        "Active", "Style", "Style Comfort", "Active Technology", "Comfort", 
+        "Premium", "Executive", "Hybrid", "Electric", "AWD", "Manual", "Automatic"
+      ],
+      "filters": {
+        "min_length": 2,
+        "exclude_patterns": ["kr", "mdr", "km", "^\\d+$"],
+        "exclude_keywords": ["ekskl.", "inkl.", "uden", "med"]
+      }
+    },
+    "table_processing": {
+      "skip_empty_rows": true,
+      "merge_fragmented_items": true,
+      "column_association": "structured",
+      "header_detection": true
+    }
+  },
+  
+  "validation_rules": {
+    "required_fields": ["model", "monthly_price"],
+    "optional_fields": ["variant", "first_payment", "mileage_per_year", "lease_months"],
+    "price_range": {
+      "monthly_min": 1000,
+      "monthly_max": 15000,
+      "first_payment_min": 0,
+      "first_payment_max": 200000,
+      "currency": "DKK"
+    },
+    "lease_terms": {
+      "months_min": 6,
+      "months_max": 60,
+      "mileage_min": 5000,
+      "mileage_max": 40000
+    },
+    "model_validation": {
+      "must_match_toyota_models": true,
+      "pattern": "^[A-Z][A-Z0-9\\s\\-]+$"
+    },
+    "business_rules": [
+      {
+        "name": "realistic_monthly_price",
+        "condition": "monthly_price >= 1000 && monthly_price <= 15000",
+        "error_message": "Monthly price outside realistic range for Toyota models"
+      },
+      {
+        "name": "valid_lease_duration",
+        "condition": "lease_months >= 6 && lease_months <= 60",
+        "error_message": "Lease duration outside standard range"
+      }
+    ]
+  },
+  
+  "post_processing": {
+    "model_standardization": {
+      "normalize_case": "UPPER",
+      "remove_extra_spaces": true,
+      "standardize_names": {
+        "GR YARIS": "GR YARIS",
+        "LAND CRUISER": "LAND CRUISER",
+        "C-HR": "C-HR"
+      }
+    },
+    "variant_standardization": {
+      "normalize_case": "Title",
+      "common_mappings": {
+        "act": "Active",
+        "tech": "Technology",
+        "comf": "Comfort",
+        "auto": "Automatic",
+        "man": "Manual"
+      }
+    },
+    "price_normalization": {
+      "remove_dots_from_thousands": true,
+      "ensure_integer": true
+    },
+    "duplicate_removal": {
+      "match_fields": ["model", "variant", "monthly_price"],
+      "similarity_threshold": 0.9
+    },
+    "data_enrichment": {
+      "add_make": "Toyota",
+      "add_currency": "DKK",
+      "add_extraction_timestamp": true
+    }
+  },
+  
+  "quality_metrics": {
+    "target_success_rate": 0.90,
+    "max_processing_time_ms": 8000,
+    "min_models_extracted": 5,
+    "max_false_positives": 0.10,
+    "required_data_completeness": {
+      "model": 1.0,
+      "monthly_price": 1.0,
+      "variant": 0.7,
+      "lease_months": 0.5,
+      "mileage_per_year": 0.5
+    }
+  },
+  
+  "metadata": {
+    "created_for": "Toyota Denmark car model price lists",
+    "tested_with": "Privatleasing_priser.pdf",
+    "expected_models": "5-15",
+    "expected_variants_per_model": "2-5",
+    "pdf_format": "structured_tables_with_headers",
+    "language": "Danish",
+    "currency": "DKK",
+    "pricing_model": "monthly_lease_with_terms"
+  }
+}
