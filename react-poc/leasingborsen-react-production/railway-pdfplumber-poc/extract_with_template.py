@@ -1058,10 +1058,24 @@ class ToyotaDanishExtractor:
             if not (price_val["monthly_min"] <= monthly_price <= price_val["monthly_max"]):
                 errors.append(f"Monthly price {monthly_price} outside valid range")
             
-            if "first_payment" in item:
+            if "first_payment" in item and item["first_payment"] is not None:
                 first_payment = item["first_payment"]
-                if not (price_val["first_payment_min"] <= first_payment <= price_val["first_payment_max"]):
-                    errors.append(f"First payment {first_payment} outside valid range")
+                try:
+                    first_payment = int(first_payment)  # Ensure it's an integer
+                    if not (price_val["first_payment_min"] <= first_payment <= price_val["first_payment_max"]):
+                        errors.append(f"First payment {first_payment} outside valid range")
+                except (ValueError, TypeError):
+                    errors.append(f"First payment {first_payment} is not a valid number")
+            
+            if "total_cost" in item and item["total_cost"] is not None:
+                total_cost = item["total_cost"]
+                try:
+                    total_cost = int(total_cost)  # Ensure it's an integer
+                    if "total_cost_min" in price_val and "total_cost_max" in price_val:
+                        if not (price_val["total_cost_min"] <= total_cost <= price_val["total_cost_max"]):
+                            errors.append(f"Total cost {total_cost} outside valid range")
+                except (ValueError, TypeError):
+                    errors.append(f"Total cost {total_cost} is not a valid number")
         
         # Validate model
         if "model_validation" in self.validation_rules:
