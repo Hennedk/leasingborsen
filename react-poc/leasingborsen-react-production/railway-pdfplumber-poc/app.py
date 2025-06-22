@@ -81,7 +81,7 @@ async def extract_basic(file: UploadFile = File(...)):
 
 @app.post("/extract/toyota")
 async def extract_toyota(file: UploadFile = File(...)):
-    """Toyota-specific extraction with table parsing"""
+    """Toyota-specific extraction with table parsing for accessories and cars"""
     try:
         content = await file.read()
         
@@ -99,113 +99,98 @@ async def extract_toyota(file: UploadFile = File(...)):
                     "edge_min_length": 5
                 })
                 
-                all_tables.extend(tables)
-                
                 for table_idx, table in enumerate(tables):
-                    # Debug: Store table info
-                    table_info = {
-                        "page": page_num + 1,
-                        "table": table_idx + 1,
-                        "rows": len(table) if table else 0,
-                        "sample_rows": table[:3] if table else []
-                    }
-                    all_tables.append(table_info)
-                    
                     if not table or len(table) < 2:
                         continue
                     
-                    # Parse Toyota price table format with more flexible approach
+                    # Parse table looking for ANY items with prices (accessories or cars)
                     for row_idx, row in enumerate(table):
-                        if not row or all(cell is None or str(cell).strip() == "" for cell in row):
-                            continue  # Skip empty rows
+                        if not row:
+                            continue
                             
                         try:
                             # Convert all cells to strings and clean
                             row_clean = [str(cell).strip() if cell is not None else "" for cell in row]
                             
-                            # Look for any row with price indicators
-                            has_price = any("kr" in str(cell).lower() for cell in row_clean if cell)
-                            has_numbers = any(any(char.isdigit() for char in str(cell)) for cell in row_clean if cell)
-                            
-                            if not (has_price or has_numbers):
-                                continue
-                            
-                            # Extract model/variant from first non-empty cell
-                            model_text = ""
-                            for cell in row_clean:
-                                if cell and len(cell) > 1:
-                                    model_text = cell
-                                    break
-                            
-                            if not model_text:
-                                continue
-                            
-                            # Try to identify Toyota models
-                            model = "Toyota"  # Default
-                            variant = model_text
-                            
-                            toyota_models = ["Yaris", "Corolla", "RAV4", "C-HR", "Camry", "Prius", "Aygo", "Highlander", "bZ4X"]
-                            for tm in toyota_models:
-                                if tm.lower() in model_text.lower():
-                                    model = tm
-                                    variant = model_text.replace(tm, "").strip()
-                                    break
-                            
-                            item = {
-                                "model": model,
-                                "variant": variant,
-                                "source": f"page_{page_num + 1}_table_{table_idx + 1}_row_{row_idx + 1}",
-                                "raw_data": row_clean,
-                                "prices": [],
-                                "debug_info": {
-                                    "has_price": has_price,
-                                    "has_numbers": has_numbers,
-                                    "original_row": row[:10]  # First 10 cells only
-                                }
-                            }
-                            
-                            # Extract prices from ALL columns with more flexible patterns
+                            # Find prices in this row (kr./md. pattern)
+                            price_cells = []
                             for col_idx, cell in enumerate(row_clean):
-                                if not cell:
-                                    continue
-                                    
-                                # Look for various price patterns
-                                cell_lower = cell.lower()
-                                
-                                # Pattern 1: Contains "kr"
-                                if "kr" in cell_lower:
-                                    try:
-                                        # Extract numeric part
-                                        numbers = re.findall(r'\d{1,3}(?:[.,]\d{3})*', cell)
-                                        for num_str in numbers:
-                                            price = int(num_str.replace(".", "").replace(",", ""))
-                                            if 1000 <= price <= 50000:
-                                                item["prices"].append({
+                                if "kr./md." in cell.lower() or "kr/md" in cell.lower():
+                                    # Extract the price number
+                                    price_match = re.search(r'(\d{1,4})\s*kr\.?/md\.?', cell.lower())
+                                    if price_match:
+                                        try:
+                                            price = int(price_match.group(1))
+                                            if 10 <= price <= 1000:  # Accessory price range
+                                                price_cells.append({
                                                     "column": col_idx,
                                                     "value": price,
-                                                    "raw": cell,
-                                                    "pattern": "kr_pattern"
+                                                    "raw": cell
                                                 })
-                                    except:
-                                        pass
-                                
-                                # Pattern 2: Pure numbers that look like prices
-                                elif re.match(r'^\d{1,2}[.,]?\d{3}$', cell):
-                                    try:
-                                        price = int(cell.replace(".", "").replace(",", ""))
-                                        if 1000 <= price <= 50000:
-                                            item["prices"].append({
-                                                "column": col_idx,
-                                                "value": price,
-                                                "raw": cell,
-                                                "pattern": "number_pattern"
-                                            })
-                                    except:
-                                        pass
+                                        except:
+                                            pass
                             
-                            # Add item even without prices for debugging
-                            if item["prices"] or len(model_text) > 3:  # Either has prices OR meaningful text
-                                items.append(item)
+                            # If we found prices, look for the item name in the same column or nearby
+                            if price_cells:
+                                for price_info in price_cells:
+                                    col_idx = price_info["column"]
+                                    
+                                    # Look for item name in the same column, going upwards
+                                    item_name = ""
+                                    
+                                    # Check current cell and cells above in same column
+                                    for check_row in range(max(0, row_idx - 5), row_idx + 1):
+                                        if check_row < len(table) and col_idx < len(table[check_row]):
+                                            cell_content = str(table[check_row][col_idx]).strip()
+                                            # Look for meaningful text (not price, not empty)
+                                            if (cell_content and 
+                                                len(cell_content) > 2 and 
+                                                "kr" not in cell_content.lower() and
+                                                not cell_content.isdigit()):
+                                                item_name = cell_content
+                                                break
+                                    
+                                    # If no name found in same column, check first column of current row
+                                    if not item_name and len(row_clean) > 0:
+                                        first_cell = row_clean[0]
+                                        if (first_cell and 
+                                            len(first_cell) > 2 and 
+                                            "kr" not in first_cell.lower()):
+                                            item_name = first_cell
+                                    
+                                    # Create item if we have a name
+                                    if item_name:
+                                        # Determine if this is a car model or accessory
+                                        toyota_models = ["Yaris", "Corolla", "RAV4", "C-HR", "Camry", "Prius", "Aygo", "Highlander", "bZ4X"]
+                                        is_car_model = any(model.lower() in item_name.lower() for model in toyota_models)
+                                        
+                                        if is_car_model:
+                                            # It's a car model
+                                            for model in toyota_models:
+                                                if model.lower() in item_name.lower():
+                                                    item = {
+                                                        "type": "car_model",
+                                                        "model": model,
+                                                        "variant": item_name.replace(model, "").strip(),
+                                                        "monthly_price": price_info["value"],
+                                                        "source": f"page_{page_num + 1}_table_{table_idx + 1}_row_{row_idx + 1}",
+                                                        "raw_price": price_info["raw"],
+                                                        "category": "vehicle"
+                                                    }
+                                                    items.append(item)
+                                                    break
+                                        else:
+                                            # It's an accessory/option
+                                            item = {
+                                                "type": "accessory",
+                                                "model": "Toyota",
+                                                "variant": item_name,
+                                                "monthly_price": price_info["value"],
+                                                "source": f"page_{page_num + 1}_table_{table_idx + 1}_row_{row_idx + 1}",
+                                                "raw_price": price_info["raw"],
+                                                "category": "accessory"
+                                            }
+                                            items.append(item)
                                     
                         except Exception as e:
                             # Continue processing even if one row fails
@@ -235,12 +220,23 @@ async def extract_toyota(file: UploadFile = File(...)):
                                     except:
                                         pass
             
+            # Categorize items
+            car_models = [item for item in items if item.get("type") == "car_model"]
+            accessories = [item for item in items if item.get("type") == "accessory"]
+            
             return JSONResponse(content={
                 "success": True,
                 "dealer": "toyota",
+                "pdf_type": "accessories" if len(accessories) > len(car_models) else "car_models",
                 "items_extracted": len(items),
+                "car_models_found": len(car_models),
+                "accessories_found": len(accessories),
                 "tables_found": len(all_tables),
-                "items": items[:50]  # Limit to first 50 items
+                "items": items[:50],  # Limit to first 50 items
+                "summary": {
+                    "car_models": car_models[:10],
+                    "accessories": accessories[:10]
+                }
             })
             
     except Exception as e:
