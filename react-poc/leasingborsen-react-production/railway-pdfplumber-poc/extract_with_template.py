@@ -918,8 +918,12 @@ class ToyotaDanishExtractor:
             item = self._standardize_model_name(item)
             item = self._standardize_variant_name(item)
             item = self._normalize_prices(item)
-            item = self._enrich_data(item)
             
+            # Skip items that couldn't be normalized (e.g., None monthly_price)
+            if item is None:
+                continue
+                
+            item = self._enrich_data(item)
             processed_items.append(item)
         
         # Remove duplicates
@@ -978,9 +982,18 @@ class ToyotaDanishExtractor:
         price_config = post_processing.get("price_normalization", {})
         
         if price_config.get("ensure_integer"):
-            for field in ["monthly_price", "first_payment", "total_cost"]:
-                if field in item:
-                    item[field] = int(item[field])
+            for field in ["monthly_price", "first_payment", "total_cost", "minimum_price_12m", "co2_tax_biannual"]:
+                if field in item and item[field] is not None:
+                    try:
+                        item[field] = int(item[field])
+                    except (ValueError, TypeError):
+                        # Remove field if it can't be converted to int
+                        if field in item:
+                            del item[field]
+        
+        # Ensure required fields are not None
+        if "monthly_price" in item and item["monthly_price"] is None:
+            return None  # Skip this item if monthly_price is None
         
         return item
     
