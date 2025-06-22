@@ -1,141 +1,147 @@
 {
-  "id": "toyota-cars-v1",
-  "name": "Toyota Car Models and Variants (Danish)",
-  "description": "Template for Toyota car model price lists with variants, monthly pricing, and lease terms",
-  "version": "1.0.0",
+  "id": "toyota-cars-v2",
+  "name": "Toyota Car Models - Danish Leasing Format",
+  "description": "Template for Toyota Danish leasing PDFs with structured pricing tables",
+  "version": "2.0.0",
   "status": "approved",
   
   "pdfplumber_config": {
     "table_settings": {
       "vertical_strategy": "lines",
-      "horizontal_strategy": "text",
+      "horizontal_strategy": "lines",
       "snap_tolerance": 3,
       "join_tolerance": 3,
-      "edge_min_length": 5
+      "edge_min_length": 3,
+      "min_words_vertical": 1,
+      "min_words_horizontal": 1
     },
     "text_extraction": {
       "layout": true,
-      "x_tolerance": 1,
-      "y_tolerance": 3
+      "x_tolerance": 2,
+      "y_tolerance": 3,
+      "word_margin": 0.1,
+      "char_margin": 2,
+      "line_margin": 0.5,
+      "boxes_flow": 0.5
     }
   },
   
   "extraction_rules": {
     "item_type": "car_models",
+    "document_patterns": {
+      "brand_detection": "TOYOTA",
+      "date_pattern": "(\\d{1,2})\\.\\s*([A-Z]+)\\s*(\\d{4})",
+      "model_header_pattern": "^([A-Z\\s]+)(?=\\s*(?:36|48)\\s*MÅNEDER)",
+      "lease_period_pattern": "(36|48)\\s*MÅNEDER"
+    },
     "toyota_models": [
-      "YARIS", "COROLLA", "RAV4", "C-HR", "CAMRY", "PRIUS", "AYGO", 
-      "HIGHLANDER", "bZ4X", "GR YARIS", "LAND CRUISER", "PROACE"
+      "AYGO X", "YARIS", "YARIS CROSS", "COROLLA", "COROLLA TOURING SPORTS", 
+      "C-HR", "RAV4", "HIGHLANDER", "BZ4X", "PRIUS", "CAMRY", "LAND CRUISER"
     ],
+    "pricing_table_detection": {
+      "header_keywords": [
+        "Ydelse pr. md.", "månedlig", "monthly", "variant",
+        "Førstegangsydelse", "first payment", "første", 
+        "Totalpris", "total", "Km/l", "kilometer"
+      ],
+      "required_columns": ["variant", "monthly_payment", "first_payment"],
+      "min_data_rows": 1
+    },
     "price_patterns": [
       {
-        "pattern": "(\\d{1,2}\\.\\d{3})\\s*kr\\./md\\.",
-        "description": "Monthly lease price format (e.g., 2.995 kr./md.)",
+        "pattern": "(\\d{1,2})[\\.\\,](\\d{3})",
+        "description": "Danish price format with thousands separator",
         "min_value": 1000,
-        "max_value": 15000
+        "max_value": 15000,
+        "format": "danish_thousands"
       },
       {
-        "pattern": "(\\d{3,5})\\s*kr\\./md\\.",
-        "description": "Simple monthly price format",
+        "pattern": "(\\d{3,5})",
+        "description": "Simple price format",
         "min_value": 1000,
-        "max_value": 15000
+        "max_value": 15000,
+        "format": "simple"
       }
     ],
-    "lease_term_patterns": [
+    "variant_patterns": [
       {
-        "pattern": "(\\d{1,2})\\s*mdr\\.",
-        "description": "Lease duration in months",
-        "min_value": 6,
-        "max_value": 60
+        "pattern": "^([A-Za-z\\s]+)(?=\\s+\\d{1,2}[\\.\\,]\\d{3})",
+        "description": "Variant name before price"
       },
       {
-        "pattern": "(\\d{1,2})\\s*måneder",
-        "description": "Lease duration alternative format",
-        "min_value": 6,
-        "max_value": 60
+        "pattern": "^(Active|Style|Comfort|Executive|Premium|Hybrid|Electric)(?:\\s+([A-Za-z\\s]+))?",
+        "description": "Common variant names"
       }
     ],
-    "mileage_patterns": [
+    "engine_patterns": [
       {
-        "pattern": "(\\d{1,2}\\.\\d{3})\\s*km/år",
-        "description": "Annual mileage (e.g., 10.000 km/år)",
-        "min_value": 5000,
-        "max_value": 40000
+        "pattern": "(\\d\\.\\d)\\s+benzin\\s+(\\d+)\\s+hk",
+        "description": "Gasoline engine specification",
+        "type": "gasoline"
       },
       {
-        "pattern": "(\\d{4,5})\\s*km",
-        "description": "Simple mileage format",
-        "min_value": 5000,
-        "max_value": 40000
-      }
-    ],
-    "first_payment_patterns": [
-      {
-        "pattern": "(\\d{1,3}\\.\\d{3})\\s*kr\\.",
-        "description": "First payment amount",
-        "min_value": 0,
-        "max_value": 200000
+        "pattern": "(\\d\\.\\d)\\s+Hybrid\\s+(\\d+)\\s+hk",
+        "description": "Hybrid engine specification", 
+        "type": "hybrid"
       },
       {
-        "pattern": "(\\d{4,6})\\s*kr\\.",
-        "description": "Simple first payment format",
-        "min_value": 0,
-        "max_value": 200000
+        "pattern": "(\\d+[\\,\\.]?\\d*)\\s+[Kk][Ww][Hh][\\,\\s]*\\s*(\\d+)\\s+hk",
+        "description": "Electric motor specification",
+        "type": "electric"
       }
     ],
-    "variant_detection": {
-      "strategies": [
-        "same_row_after_model",
-        "next_column_after_model",
-        "sub_header_detection"
-      ],
-      "common_variants": [
-        "Active", "Style", "Style Comfort", "Active Technology", "Comfort", 
-        "Premium", "Executive", "Hybrid", "Electric", "AWD", "Manual", "Automatic"
-      ],
-      "filters": {
-        "min_length": 2,
-        "exclude_patterns": ["kr", "mdr", "km", "^\\d+$"],
-        "exclude_keywords": ["ekskl.", "inkl.", "uden", "med"]
-      }
+    "specification_patterns": {
+      "fuel_consumption": "(\\d+[\\.\\,]\\d+)\\s*km/l",
+      "co2_emissions": "(\\d+)\\s*g/km",
+      "electric_consumption": "(\\d+)\\s*Wh/km",
+      "electric_range": "(\\d+)\\s*km",
+      "annual_kilometers": "(\\d{1,2}[\\.\\,]?\\d{3})\\s*(?:km|kilometer)",
+      "co2_tax": "(\\d+)\\s*kr"
     },
     "table_processing": {
       "skip_empty_rows": true,
       "merge_fragmented_items": true,
-      "column_association": "structured",
-      "header_detection": true
+      "column_association": "header_based",
+      "header_detection": true,
+      "detect_merged_cells": true
     }
   },
   
   "validation_rules": {
     "required_fields": ["model", "monthly_price"],
-    "optional_fields": ["variant", "first_payment", "mileage_per_year", "lease_months"],
-    "price_range": {
-      "monthly_min": 1000,
-      "monthly_max": 15000,
+    "optional_fields": ["variant", "first_payment", "total_cost", "annual_kilometers", "engine_specification"],
+    "price_validation": {
+      "monthly_min": 1500,
+      "monthly_max": 12000,
       "first_payment_min": 0,
-      "first_payment_max": 200000,
+      "first_payment_max": 100000,
+      "total_cost_min": 50000,
+      "total_cost_max": 500000,
       "currency": "DKK"
-    },
-    "lease_terms": {
-      "months_min": 6,
-      "months_max": 60,
-      "mileage_min": 5000,
-      "mileage_max": 40000
     },
     "model_validation": {
       "must_match_toyota_models": true,
-      "pattern": "^[A-Z][A-Z0-9\\s\\-]+$"
+      "allow_partial_match": true,
+      "case_insensitive": true
+    },
+    "variant_validation": {
+      "common_variants": [
+        "Active", "Style", "Style Comfort", "Executive", "Premium", 
+        "Comfort", "Technology", "Panorama", "Hybrid", "Electric"
+      ],
+      "min_length": 2,
+      "max_length": 50
     },
     "business_rules": [
       {
-        "name": "realistic_monthly_price",
-        "condition": "monthly_price >= 1000 && monthly_price <= 15000",
-        "error_message": "Monthly price outside realistic range for Toyota models"
+        "name": "realistic_toyota_pricing",
+        "condition": "monthly_price >= 1500 && monthly_price <= 12000",
+        "error_message": "Monthly price outside realistic Toyota range"
       },
       {
-        "name": "valid_lease_duration",
-        "condition": "lease_months >= 6 && lease_months <= 60",
-        "error_message": "Lease duration outside standard range"
+        "name": "first_payment_logic",
+        "condition": "!first_payment || first_payment >= monthly_price",
+        "error_message": "First payment should be at least monthly payment amount"
       }
     ]
   },
@@ -145,9 +151,9 @@
       "normalize_case": "UPPER",
       "remove_extra_spaces": true,
       "standardize_names": {
-        "GR YARIS": "GR YARIS",
-        "LAND CRUISER": "LAND CRUISER",
-        "C-HR": "C-HR"
+        "AYGO X": "AYGO X",
+        "YARIS CROSS": "YARIS CROSS",
+        "COROLLA TOURING SPORTS": "COROLLA TOURING SPORTS"
       }
     },
     "variant_standardization": {
@@ -156,47 +162,65 @@
         "act": "Active",
         "tech": "Technology",
         "comf": "Comfort",
-        "auto": "Automatic",
-        "man": "Manual"
+        "exec": "Executive",
+        "prem": "Premium"
       }
     },
     "price_normalization": {
-      "remove_dots_from_thousands": true,
+      "danish_format_conversion": true,
+      "remove_thousands_separators": true,
       "ensure_integer": true
-    },
-    "duplicate_removal": {
-      "match_fields": ["model", "variant", "monthly_price"],
-      "similarity_threshold": 0.9
     },
     "data_enrichment": {
       "add_make": "Toyota",
       "add_currency": "DKK",
-      "add_extraction_timestamp": true
+      "add_market": "Denmark",
+      "add_extraction_timestamp": true,
+      "categorize_powertrain": true
+    },
+    "duplicate_removal": {
+      "match_fields": ["model", "variant", "monthly_price"],
+      "similarity_threshold": 0.9,
+      "keep_highest_confidence": true
     }
   },
   
   "quality_metrics": {
-    "target_success_rate": 0.90,
-    "max_processing_time_ms": 8000,
-    "min_models_extracted": 5,
-    "max_false_positives": 0.10,
+    "target_success_rate": 0.85,
+    "max_processing_time_ms": 10000,
+    "min_models_extracted": 3,
+    "min_variants_per_model": 1,
+    "max_false_positives": 0.15,
     "required_data_completeness": {
       "model": 1.0,
       "monthly_price": 1.0,
-      "variant": 0.7,
-      "lease_months": 0.5,
-      "mileage_per_year": 0.5
+      "variant": 0.8,
+      "first_payment": 0.6,
+      "engine_specification": 0.5
     }
   },
   
+  "debugging": {
+    "log_table_structure": true,
+    "log_text_extraction": true,
+    "log_pattern_matches": true,
+    "save_intermediate_results": true
+  },
+  
   "metadata": {
-    "created_for": "Toyota Denmark car model price lists",
+    "created_for": "Toyota Denmark private leasing price lists",
+    "document_format": "Multi-page structured tables with Danish formatting",
     "tested_with": "Privatleasing_priser.pdf",
-    "expected_models": "5-15",
-    "expected_variants_per_model": "2-5",
-    "pdf_format": "structured_tables_with_headers",
+    "expected_structure": {
+      "models": "6-8 Toyota models",
+      "variants_per_model": "2-5 variants each",
+      "pricing_format": "Danish thousands separator (2.699)",
+      "lease_periods": "36 or 48 months",
+      "currency": "DKK"
+    },
     "language": "Danish",
     "currency": "DKK",
-    "pricing_model": "monthly_lease_with_terms"
+    "pricing_model": "monthly_lease_with_terms",
+    "last_updated": "2025-06-22"
   }
 }
