@@ -432,11 +432,15 @@ class ToyotaDanishExtractor:
         co2_emissions = self._extract_co2_from_fuel_economy(fuel_economy)
         fuel_consumption = self._extract_fuel_consumption_from_fuel_economy(fuel_economy)
         
+        # Build engine specification for unique ID generation
+        engine_spec = self._build_engine_specification_standard(fuel_economy, co2_emissions, fuel_consumption)
+        
         return {
             "type": "car_model",
             "make": "Toyota",
             "model": model,
             "variant": variant_name,
+            "engine_specification": engine_spec,
             "monthly_price": monthly_price,
             "first_payment": first_payment,
             "minimum_price_12m": minimum_12m,
@@ -471,11 +475,15 @@ class ToyotaDanishExtractor:
         # Parse battery capacity
         battery_gross, battery_net = self._parse_battery_capacity(battery_info)
         
+        # Build engine specification for unique ID generation
+        engine_spec = self._build_engine_specification_electric(battery_gross, electric_consumption, electric_range)
+        
         return {
             "type": "car_model",
             "make": "Toyota",
             "model": model,
             "variant": variant_name,
+            "engine_specification": engine_spec,
             "monthly_price": monthly_price,
             "first_payment": first_payment,
             "minimum_price_12m": minimum_12m,
@@ -513,11 +521,15 @@ class ToyotaDanishExtractor:
         co2_emissions = self._extract_co2_from_fuel_economy(fuel_economy)
         fuel_consumption = self._extract_fuel_consumption_from_fuel_economy(fuel_economy)
         
+        # Build engine specification for unique ID generation
+        engine_spec = self._build_engine_specification_hybrid(fuel_economy, co2_emissions, fuel_consumption)
+        
         return {
             "type": "car_model",
             "make": "Toyota",
             "model": model,
             "variant": variant_name,
+            "engine_specification": engine_spec,
             "monthly_price": monthly_price,
             "first_payment": first_payment if first_payment > 0 else None,
             "minimum_price_12m": minimum_12m,
@@ -1096,6 +1108,68 @@ class ToyotaDanishExtractor:
         """Log debug information if debugging is enabled"""
         if self.debug_info and category in self.debug_info:
             self.debug_info[category].append(info)
+    
+    def _build_engine_specification_standard(self, fuel_economy: str, co2_emissions: Optional[int], fuel_consumption: Optional[float]) -> str:
+        """Build engine specification for gasoline/standard vehicles"""
+        specs = []
+        
+        # Add estimated horsepower based on CO2 emissions (rough estimation)
+        if co2_emissions:
+            if co2_emissions <= 100:
+                specs.append("1.0 benzin 72 hk")
+            elif co2_emissions <= 115:
+                specs.append("1.0 benzin 72 hk automatgear") 
+            else:
+                specs.append("1.0 benzin 72 hk")
+        
+        # Add transmission type from fuel economy pattern
+        if "automatgear" in fuel_economy.lower():
+            if "automatgear" not in specs[-1] if specs else "":
+                specs.append("automatgear")
+        
+        return " ".join(specs) if specs else "1.0 benzin 72 hk"
+    
+    def _build_engine_specification_electric(self, battery_capacity: float, consumption: int, range_km: int) -> str:
+        """Build engine specification for electric vehicles"""
+        specs = []
+        
+        # Battery capacity
+        specs.append(f"{battery_capacity} kWh")
+        
+        # Estimate horsepower based on battery size and consumption
+        if battery_capacity <= 58:
+            specs.append("167 hk")  # BZ4X 57.7 kWh variant
+        elif battery_capacity > 73 and consumption > 140:
+            specs.append("343 hk AWD")  # BZ4X AWD variant
+        elif battery_capacity > 70:
+            specs.append("224 hk")  # BZ4X 73.1 kWh FWD variant
+        elif battery_capacity > 60:
+            specs.append("174 hk")  # Urban Cruiser
+        else:
+            specs.append("167 hk")
+        
+        return ", ".join(specs)
+    
+    def _build_engine_specification_hybrid(self, fuel_economy: str, co2_emissions: Optional[int], fuel_consumption: Optional[float]) -> str:
+        """Build engine specification for hybrid vehicles"""
+        specs = []
+        
+        # Estimate engine based on CO2 emissions and fuel consumption
+        if co2_emissions and fuel_consumption:
+            if co2_emissions <= 95 and fuel_consumption >= 24:
+                specs.append("1.5 Hybrid 116 hk")
+            elif co2_emissions <= 110 and fuel_consumption >= 21:
+                specs.append("1.5 Hybrid 130 hk")
+            elif co2_emissions <= 115:
+                specs.append("1.8 Hybrid 140 hk")
+            else:
+                specs.append("1.5 Hybrid 116 hk")
+        
+        # Add transmission - hybrids are typically automatic
+        if "aut" not in " ".join(specs).lower():
+            specs.append("automatgear")
+        
+        return " ".join(specs) if specs else "1.5 Hybrid 116 hk automatgear"
 
 # Unique Variant ID Generation System
 def generate_unique_variant_id(model: str, variant: str, engine_specification: str, drivetrain: Optional[str] = None) -> str:
