@@ -1257,6 +1257,16 @@ def generate_unique_variant_id(model: str, variant: str, engine_specification: s
     if 'executive_panorama' in variant_clean:
         variant_clean = 'executive_panorama'
     
+    # CRITICAL FIX: If variant already contains transmission info, use it directly
+    # This handles variants like "Active Auto", "Style Manual" that already have transmission
+    if variant_clean.endswith('_auto') or variant_clean.endswith('_manual'):
+        # Variant already has transmission info, use as-is for base
+        base_id = f"{model_clean}_{variant_clean}"
+        # Add power but skip duplicate transmission logic
+        if power_hp:
+            base_id += f"_{power_hp}hp"
+        return base_id
+    
     base_id = f"{model_clean}_{variant_clean}"
     
     # Add power differentiator
