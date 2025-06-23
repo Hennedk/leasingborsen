@@ -1026,10 +1026,13 @@ class ToyotaDanishExtractor:
         return item
     
     def _remove_duplicates(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Remove duplicate items"""
+        """Remove duplicate items with enhanced Toyota-specific logic"""
         post_processing = self.config.get("post_processing", {})
         duplicate_config = post_processing.get("duplicate_removal", {})
-        match_fields = duplicate_config.get("match_fields", ["model", "variant", "monthly_price"])
+        
+        # Enhanced match fields for Toyota extraction to prevent legitimate variant removal
+        # Include all key differentiators: model, variant, engine, price, and source page
+        match_fields = ["model", "variant", "engine_specification", "monthly_price", "source_page"]
         
         seen = set()
         unique_items = []
@@ -1043,14 +1046,42 @@ class ToyotaDanishExtractor:
                     if isinstance(value, str):
                         value = value.lower().strip()
                     key_parts.append(str(value))
+                elif field == "source_page" and "source" in item and "page" in item["source"]:
+                    # Include source page to differentiate same items from different pages
+                    key_parts.append(str(item["source"]["page"]))
+                else:
+                    key_parts.append("")  # Empty string for missing fields
             
             key = tuple(key_parts)
             
             if key not in seen:
                 seen.add(key)
                 unique_items.append(item)
+            else:
+                # Log duplicate detection for debugging
+                if self.debug.get("log_duplicate_removal", True):
+                    print(f"🔍 DUPLICATE REMOVED: {item.get('model', '')} {item.get('variant', '')} - {item.get('engine_specification', '')} - {item.get('monthly_price', '')} DKK")
         
-        return unique_items
+        # Additional Toyota-specific duplicate detection for items with identical unique IDs
+        final_items = []
+        seen_ids = set()
+        
+        for item in unique_items:
+            # Use the generated unique ID as final deduplication key
+            unique_id = item.get('id', '')
+            if unique_id and unique_id not in seen_ids:
+                seen_ids.add(unique_id)
+                final_items.append(item)
+            elif not unique_id:
+                # Keep items without IDs (shouldn't happen, but safety check)
+                final_items.append(item)
+            else:
+                if self.debug.get("log_duplicate_removal", True):
+                    print(f"🔍 DUPLICATE ID REMOVED: {unique_id} - {item.get('model', '')} {item.get('variant', '')}")
+        
+        print(f"📊 Deduplication: {len(items)} → {len(unique_items)} → {len(final_items)} final unique Toyota variants")
+        
+        return final_items
     
     def _validate_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Validate extracted item"""
