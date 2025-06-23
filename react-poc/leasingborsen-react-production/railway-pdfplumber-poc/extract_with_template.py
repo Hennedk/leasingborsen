@@ -967,10 +967,29 @@ class ToyotaDanishExtractor:
         return item
     
     def _standardize_variant_name(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """Standardize variant names"""
+        """Standardize variant names with transmission differentiation"""
         post_processing = self.config.get("post_processing", {})
         variant_config = post_processing.get("variant_standardization", {})
         
+        # CRITICAL FIX: Add transmission to variant name to distinguish variants
+        if "variant" in item and "engine_specification" in item:
+            variant = item["variant"]
+            engine_spec = item["engine_specification"].lower()
+            
+            # Add transmission suffix to variant name for gasoline engines
+            if "benzin" in engine_spec:
+                if "automatgear" in engine_spec:
+                    # Only add "Auto" if not already in variant name
+                    if "auto" not in variant.lower():
+                        variant = f"{variant} Auto"
+                else:
+                    # Manual transmission (no automatgear mentioned)
+                    if "manual" not in variant.lower():
+                        variant = f"{variant} Manual"
+            
+            item["variant"] = variant
+        
+        # Continue with standard variant processing
         if "variant" in item:
             variant = item["variant"]
             
