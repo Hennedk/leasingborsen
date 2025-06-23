@@ -984,16 +984,23 @@ class ToyotaDanishExtractor:
             
             # Gasoline vehicles (AYGO X, YARIS, etc.)
             elif "benzin" in engine_spec:
-                if "automatgear" in engine_spec:
-                    # Only add "Auto" if not already in variant name
+                # CRITICAL FIX: Preserve original variant names that already contain transmission info
+                if "automatgear" in variant.lower() or "automatic" in variant.lower():
+                    # Original variant already specifies automatic - keep as-is
+                    print(f"⛽ GASOLINE PRESERVED: {variant} (original contains transmission info)")
+                    item["variant"] = variant
+                elif "automatgear" in engine_spec:
+                    # Engine spec indicates automatic, but variant doesn't - add suffix
                     if "auto" not in variant.lower():
                         variant = f"{variant} Auto"
+                    item["variant"] = variant
+                    print(f"⛽ GASOLINE ENHANCED: {variant} (added Auto suffix)")
                 else:
                     # Manual transmission (no automatgear mentioned)
                     if "manual" not in variant.lower():
                         variant = f"{variant} Manual"
-                item["variant"] = variant
-                print(f"⛽ GASOLINE ENHANCED: {item['variant']} | Spec: {engine_spec}")
+                    item["variant"] = variant
+                    print(f"⛽ GASOLINE ENHANCED: {variant} (added Manual suffix)")
             
             # Hybrid vehicles (Phase 2: YARIS CROSS, etc.)
             elif "hybrid" in engine_spec:
