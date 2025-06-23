@@ -484,8 +484,13 @@ class ToyotaDanishExtractor:
         # Parse battery capacity
         battery_gross, battery_net = self._parse_battery_capacity(battery_info)
         
-        # Build engine specification for unique ID generation
-        engine_spec = self._build_engine_specification_electric(battery_gross, electric_consumption, electric_range)
+        # Try to extract real engine specification from page context (for BZ4X)
+        real_engine_spec = self._extract_engine_from_page_context(page_num, model, variant_name)
+        if real_engine_spec:
+            engine_spec = real_engine_spec
+        else:
+            # Fallback: Build engine specification for unique ID generation
+            engine_spec = self._build_engine_specification_electric(battery_gross, electric_consumption, electric_range)
         
         return {
             "type": "car_model",
