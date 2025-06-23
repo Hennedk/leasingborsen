@@ -179,7 +179,7 @@
       "categorize_powertrain": true
     },
     "duplicate_removal": {
-      "match_fields": ["model", "variant", "monthly_price"],
+      "match_fields": ["model", "variant", "engine_specification"],
       "similarity_threshold": 0.9,
       "keep_highest_confidence": true
     }
