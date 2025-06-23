@@ -146,6 +146,10 @@ class ToyotaDanishExtractor:
         # Extract text for model detection
         text = page.extract_text() or ""
         
+        # Store page context for engine extraction
+        self.current_page_text = text
+        self.current_page = page
+        
         # Find model headers
         current_model = self._detect_model_on_page(text)
         if not current_model:
@@ -1317,13 +1321,13 @@ class ToyotaDanishExtractor:
     def _extract_engine_from_page_context(self, page_num: int, model: str, variant: str) -> Optional[str]:
         """Extract real engine specification from page text context - context-aware for BZ4X sections"""
         try:
-            # Get the page text to search for engine specifications
-            if hasattr(self, 'pages') and page_num <= len(self.pages):
-                page = self.pages[page_num - 1]
-                page_text = page.extract_text()
+            # Use the stored page text from current page processing
+            if hasattr(self, 'current_page_text') and self.current_page_text:
+                page_text = self.current_page_text
                 
                 # For BZ4X, use context-aware extraction to find the correct engine section
                 if model == "BZ4X":
+                    print(f"🔋 BZ4X: Extracting engine for variant '{variant}' using context-aware method")
                     return self._extract_bz4x_engine_from_context(page_text, variant)
                 
                 # Look for common Toyota engine patterns for other models
@@ -1340,6 +1344,7 @@ class ToyotaDanishExtractor:
                         # Return the full matched text as the real engine specification
                         return match.group(0)
             
+            print(f"⚠️ No page text available for context extraction")
             return None
         except Exception as e:
             print(f"Error extracting engine from context: {e}")
