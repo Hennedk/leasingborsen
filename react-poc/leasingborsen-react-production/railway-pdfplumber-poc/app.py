@@ -23,7 +23,41 @@ app.add_middleware(
 
 @app.get("/")
 def health_check():
-    return {"status": "healthy", "service": "pdfplumber-poc", "version": "1.0.0"}
+    # Add version check to verify which code is running
+    import inspect
+    import importlib
+    import extract_with_template
+    importlib.reload(extract_with_template)
+    from extract_with_template import generate_unique_variant_id
+    
+    try:
+        # Check if our fix is present by looking at the function source
+        source_lines = inspect.getsource(generate_unique_variant_id)
+        has_early_return_fix = "EARLY RETURN" in source_lines
+        has_variant_clean_fix = "variant_clean.endswith" in source_lines
+        has_debug_print = "print(f" in source_lines
+        
+        return {
+            "status": "healthy", 
+            "service": "pdfplumber-poc", 
+            "version": "1.0.0",
+            "code_version": {
+                "has_early_return_fix": has_early_return_fix,
+                "has_variant_clean_fix": has_variant_clean_fix,
+                "has_debug_print": has_debug_print,
+                "extract_with_template_loaded": True
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "healthy", 
+            "service": "pdfplumber-poc", 
+            "version": "1.0.0",
+            "code_version": {
+                "error": str(e),
+                "extract_with_template_loaded": False
+            }
+        }
 
 @app.post("/extract/basic")
 async def extract_basic(file: UploadFile = File(...)):

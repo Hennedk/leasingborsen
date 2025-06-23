@@ -1265,6 +1265,7 @@ def generate_unique_variant_id(model: str, variant: str, engine_specification: s
         # Add power but skip duplicate transmission logic
         if power_hp:
             base_id += f"_{power_hp}hp"
+        print(f"🔧 EARLY RETURN: {variant} -> {base_id}")
         return base_id
     
     base_id = f"{model_clean}_{variant_clean}"
@@ -1526,4 +1527,4 @@ def extract_with_template(pdf_content: bytes, template_config: Dict[str, Any]) -
         "template_id": template_config.get("id"),
         "template_version": template_config.get("version"),
         "debug_info": result.debug_info
-    }
+    }# Updated Mon Jun 23 13:56:25 CEST 2025

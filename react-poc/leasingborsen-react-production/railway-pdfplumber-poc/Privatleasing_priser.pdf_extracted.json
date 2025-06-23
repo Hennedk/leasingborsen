@@ -1,0 +1,450 @@
+{
+  "document_info": {
+    "brand": "Toyota",
+    "document_date": "2025-05-27",
+    "currency": "DKK",
+    "language": "da",
+    "document_type": "private_leasing"
+  },
+  "vehicles": [
+    {
+      "model": "AYGO X",
+      "category": "Crossover",
+      "lease_period_months": 36,
+      "powertrain_type": "gasoline",
+      "variants": [
+        {
+          "variant_name": "Active",
+          "engine_specification": "5-dørs, 1.0 benzin 72 hk",
+          "transmission": "manual",
+          "pricing": {
+            "monthly_payment": 2699,
+            "first_payment": 4999,
+            "total_cost": 102163,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 590
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 20.83,
+            "co2_emissions_gkm": 110,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Pulse",
+          "engine_specification": "5-dørs, 1.0 benzin 72 hk",
+          "transmission": "manual",
+          "pricing": {
+            "monthly_payment": 3049,
+            "first_payment": 4999,
+            "total_cost": 114763,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 500
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 20.83,
+            "co2_emissions_gkm": 110,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Active",
+          "engine_specification": "5-dørs, 1.0 benzin 72 hk automatgear",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 2999,
+            "first_payment": 4999,
+            "total_cost": 112963,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 590
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 20,
+            "co2_emissions_gkm": 113,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Pulse",
+          "engine_specification": "5-dørs, 1.0 benzin 72 hk automatgear",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3449,
+            "first_payment": 4999,
+            "total_cost": 129163,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 590
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 20,
+            "co2_emissions_gkm": 113,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        }
+      ]
+    },
+    {
+      "model": "YARIS",
+      "category": "Hatchback",
+      "lease_period_months": 36,
+      "powertrain_type": "hybrid",
+      "variants": [
+        {
+          "variant_name": "Acitve",
+          "engine_specification": "5-dørs, 1.5 Hybrid 116hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3499,
+            "first_payment": 4999,
+            "total_cost": 130963,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 540
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 25,
+            "co2_emissions_gkm": 91,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style",
+          "engine_specification": "5-dørs, 1.5 Hybrid 116hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3599,
+            "first_payment": 4999,
+            "total_cost": 134563,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 540
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 25,
+            "co2_emissions_gkm": 91,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style Comfort",
+          "engine_specification": "5-dørs, 1.5 Hybrid 116hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3799,
+            "first_payment": 4999,
+            "total_cost": 141763,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 540
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 25,
+            "co2_emissions_gkm": 91,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style Technology",
+          "engine_specification": "5-dørs, 1.5 Hybrid 116hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3849,
+            "first_payment": 4999,
+            "total_cost": 143563,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 540
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 25,
+            "co2_emissions_gkm": 91,
+            "energy_label": "ED",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        }
+      ]
+    },
+    {
+      "model": "YARIS CROSS",
+      "category": "SUV, 5-dørs",
+      "lease_period_months": 36,
+      "powertrain_type": "hybrid",
+      "variants": [
+        {
+          "variant_name": "Active",
+          "engine_specification": "1.5 Hybrid 116 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 3949,
+            "first_payment": 0,
+            "total_cost": 142164,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 580
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 101,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Active Safety",
+          "engine_specification": "1.5 Hybrid 116 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 4049,
+            "first_payment": 0,
+            "total_cost": 145764,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 101,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style Comfort",
+          "engine_specification": "1.5 Hybrid 116 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 4199,
+            "first_payment": 0,
+            "total_cost": 151164,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 103,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style Safety",
+          "engine_specification": "1.5 Hybrid 116 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 4349,
+            "first_payment": 0,
+            "total_cost": 156564,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 103,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Elegant",
+          "engine_specification": "5-dgrs 1.5 Hybrid 130 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 4849,
+            "first_payment": 0,
+            "total_cost": 174564,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 21.7,
+            "co2_emissions_gkm": 112,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "GR Sport",
+          "engine_specification": "5-dgrs 1.5 Hybrid 130 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 5399,
+            "first_payment": 0,
+            "total_cost": 174364,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 21.3,
+            "co2_emissions_gkm": 106,
+            "energy_label": "AY",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        }
+      ]
+    },
+    {
+      "model": "COROLLA TOURING SPORTS",
+      "category": "SUV, 5-dørs",
+      "lease_period_months": 36,
+      "powertrain_type": "hybrid",
+      "variants": [
+        {
+          "variant_name": "Active Comfort",
+          "engine_specification": "1.8 Hybrid 140 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 5149,
+            "first_payment": 4999,
+            "total_cost": 190363,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 580
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 101,
+            "energy_label": "LD",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Active Comfort Plus",
+          "engine_specification": "1.8 Hybrid 140 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 5299,
+            "first_payment": 4999,
+            "total_cost": 195763,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 580
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 22.2,
+            "co2_emissions_gkm": 101,
+            "energy_label": "LA",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style",
+          "engine_specification": "1.8 Hybrid 140 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 5599,
+            "first_payment": 4999,
+            "total_cost": 206563,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 21.3,
+            "co2_emissions_gkm": 106,
+            "energy_label": "LD",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        },
+        {
+          "variant_name": "Style Safety",
+          "engine_specification": "1.8 Hybrid 140 hk aut.",
+          "transmission": "automatic",
+          "pricing": {
+            "monthly_payment": 5749,
+            "first_payment": 4999,
+            "total_cost": 211963,
+            "annual_kilometers": 15000,
+            "co2_tax_biannual": 630
+          },
+          "specifications": {
+            "fuel_consumption_kmpl": 21.3,
+            "co2_emissions_gkm": 106,
+            "energy_label": "LD",
+            "electric_range_km": null,
+            "battery_capacity_kwh": null
+          }
+        }
+      ]
+    }
+  ],
+  "accessories": [
+    {
+      "package_name": "Cykelholder",
+      "description": "Basissaet inkl. 13-polet stik, uden cykelholder.",
+      "monthly_cost": 435,
+      "category": "transport",
+      "package_code": null
+    },
+    {
+      "package_name": "Beskyttelsespakke",
+      "description": "Tekstilmatter, bagagerumsbakke, beskyttelsesfolie til kofanger, staenklapper, sidebeskyttelseslister.",
+      "monthly_cost": 285,
+      "category": "protection",
+      "package_code": null
+    },
+    {
+      "package_name": "Krompakke",
+      "description": "Kromliste pa forkofanger, sidelister i krom og kromliste pa bagklap.",
+      "monthly_cost": 320,
+      "category": "styling",
+      "package_code": null
+    },
+    {
+      "package_name": "Stylingpakke, rod",
+      "description": "Stylingliste pa front, sidelister, stylingliste til bag og hjuldaeksler.",
+      "monthly_cost": 180,
+      "category": "styling",
+      "package_code": null
+    },
+    {
+      "package_name": "Interigrpakke",
+      "description": "Mattesaet med rade detaljer, indfarvet gearknop, styling ved instrumentpanel, gearskifte og luftdyser.",
+      "monthly_cost": 205,
+      "category": "interior",
+      "package_code": null
+    },
+    {
+      "package_name": "Stickerszet",
+      "description": "Dekoration til sider og bag, i farven Super Rød 3P0.",
+      "monthly_cost": 160,
+      "category": "styling",
+      "package_code": null
+    },
+    {
+      "package_name": "Vinterhjulszet (V1)",
+      "description": "17\" stålfælge med Falkendæk uden montering.",
+      "monthly_cost": 265,
+      "category": "wheels",
+      "package_code": "V1"
+    },
+    {
+      "package_name": "Vinterhjulszet (V2 & V5)",
+      "description": "17\" alufælge med Falkendæk uden montering.",
+      "monthly_cost": 380,
+      "category": "wheels",
+      "package_code": "V2 & V5"
+    },
+    {
+      "package_name": "Vinterhjulszet (V6)",
+      "description": "18\" alufælge med Falkendæk uden montering.",
+      "monthly_cost": 380,
+      "category": "wheels",
+      "package_code": "V6"
+    }
+  ]
+}
