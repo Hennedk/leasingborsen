@@ -983,15 +983,15 @@ class ToyotaDanishExtractor:
             engine_spec_lower = engine_spec.lower()  # Lowercase for comparison
             model = item["model"]
             
-            # AYGO X - Variant = Trimline + Engine spec
+            # AYGO X - Variant = Trimline + Engine spec (preserve original case)
             if model == "AYGO X":
                 # Extract trimline (Active/Pulse) and add full engine specification
                 trimline = original_variant  # Active or Pulse
-                full_engine_spec = engine_spec  # e.g., "1.0 benzin 72 hk automatgear"
+                original_engine_spec = item["engine_specification"]  # Preserve original case
                 
-                # Create variant as Trimline + Engine spec
-                item["variant"] = f"{trimline} {full_engine_spec}"
-                print(f"⛽ AYGO X: {trimline} + {full_engine_spec} → {item['variant']}")
+                # Create variant as Trimline + Engine spec with proper case
+                item["variant"] = f"{trimline} {original_engine_spec}"
+                print(f"⛽ AYGO X: {trimline} + {original_engine_spec} → {item['variant']}")
             
             # YARIS - Keep original (already clean)
             elif model == "YARIS" and "cross" not in model.lower():
@@ -1015,15 +1015,15 @@ class ToyotaDanishExtractor:
                 item["variant"] = clean_variant
                 print(f"⛽ COROLLA TS: {item['variant']} (cleaned)")
             
-            # BZ4X - Variant = Trimline + Engine spec
+            # BZ4X - Variant = Trimline + Engine spec (preserve original case)
             elif model == "BZ4X":
                 # Extract trimline (Active/Executive/Executive Panorama) and add engine specification
                 trimline = original_variant  # Active, Executive, or Executive Panorama
-                full_engine_spec = engine_spec  # e.g., "73.1 kwh, 343 hk awd"
+                original_engine_spec = item["engine_specification"]  # Preserve original case
                 
-                # Create variant as Trimline + Engine spec
-                item["variant"] = f"{trimline} {full_engine_spec}"
-                print(f"🔋 BZ4X: {trimline} + {full_engine_spec} → {item['variant']}")
+                # Create variant as Trimline + Engine spec with proper case
+                item["variant"] = f"{trimline} {original_engine_spec}"
+                print(f"🔋 BZ4X: {trimline} + {original_engine_spec} → {item['variant']}")
             
             # URBAN CRUISER - Keep simple
             elif model == "URBAN CRUISER":
