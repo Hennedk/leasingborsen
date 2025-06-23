@@ -1357,16 +1357,8 @@ class ToyotaDanishExtractor:
         for i, line in enumerate(lines):
             line = line.strip()
             
-            # Detect BZ4X engine section headers
-            if re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk', line):
-                # Found an engine specification header like "57,7 KWh 167 hk" or "73,1 kWh, 224 hk"
-                current_section = {
-                    'engine_spec': line,
-                    'start_line': i,
-                    'variants': []
-                }
-                engine_sections.append(current_section)
-            elif re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk\s*AWD', line):
+            # Detect BZ4X engine section headers (check AWD first for specificity)
+            if re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk\s*AWD', line):
                 # Found AWD engine specification like "73,1 kWh, 343 hk AWD"
                 current_section = {
                     'engine_spec': line,
@@ -1374,9 +1366,25 @@ class ToyotaDanishExtractor:
                     'variants': []
                 }
                 engine_sections.append(current_section)
+                print(f"🔋 Found AWD section: {line}")
+            elif re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk(?!\s*AWD)', line):
+                # Found non-AWD engine specification like "57,7 KWh 167 hk" or "73,1 kWh, 224 hk"
+                current_section = {
+                    'engine_spec': line,
+                    'start_line': i,
+                    'variants': []
+                }
+                engine_sections.append(current_section)
+                print(f"🔋 Found non-AWD section: {line}")
             elif current_section and (line.startswith('Active') or line.startswith('Executive')):
                 # Found a variant under this engine section
                 current_section['variants'].append(line)
+                print(f"🔋 Added variant '{line}' to section '{current_section['engine_spec']}'")
+        
+        # Debug: show all sections found
+        print(f"🔋 BZ4X: Found {len(engine_sections)} engine sections:")
+        for i, section in enumerate(engine_sections):
+            print(f"   Section {i+1}: '{section['engine_spec']}' with variants: {section['variants']}")
         
         # Find which section contains our variant
         for section in engine_sections:
