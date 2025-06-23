@@ -967,17 +967,23 @@ class ToyotaDanishExtractor:
         return item
     
     def _standardize_variant_name(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        """Standardize variant names with transmission differentiation"""
+        """Standardize variant names with powertrain differentiation (Phase 1: Electric + Gasoline)"""
         post_processing = self.config.get("post_processing", {})
         variant_config = post_processing.get("variant_standardization", {})
         
-        # CRITICAL FIX: Add transmission to variant name to distinguish variants
+        # PHASE 1: Enhanced variant naming for all powertrain types
         if "variant" in item and "engine_specification" in item:
             variant = item["variant"]
             engine_spec = item["engine_specification"].lower()
             
-            # Add transmission suffix to variant name for gasoline engines
-            if "benzin" in engine_spec:
+            # Electric vehicles (BZ4X, etc.)
+            if self._is_electric_vehicle(engine_spec):
+                enhanced_variant = self._enhance_electric_variant(variant, engine_spec)
+                item["variant"] = enhanced_variant
+                print(f"🔋 ELECTRIC ENHANCED: {variant} → {enhanced_variant} | Spec: {engine_spec}")
+            
+            # Gasoline vehicles (AYGO X, YARIS, etc.)
+            elif "benzin" in engine_spec:
                 if "automatgear" in engine_spec:
                     # Only add "Auto" if not already in variant name
                     if "auto" not in variant.lower():
@@ -986,8 +992,17 @@ class ToyotaDanishExtractor:
                     # Manual transmission (no automatgear mentioned)
                     if "manual" not in variant.lower():
                         variant = f"{variant} Manual"
+                item["variant"] = variant
+                print(f"⛽ GASOLINE ENHANCED: {item['variant']} | Spec: {engine_spec}")
             
-            item["variant"] = variant
+            # Hybrid vehicles (future enhancement)
+            elif "hybrid" in engine_spec:
+                # For now, keep original logic - Phase 2 will enhance this
+                item["variant"] = variant
+                print(f"🔋⛽ HYBRID (no enhancement yet): {variant} | Spec: {engine_spec}")
+            
+            else:
+                print(f"❓ UNKNOWN POWERTRAIN: {variant} | Spec: {engine_spec}")
         
         # Continue with standard variant processing
         if "variant" in item:
@@ -1006,6 +1021,37 @@ class ToyotaDanishExtractor:
             item["variant"] = variant
         
         return item
+    
+    def _is_electric_vehicle(self, engine_spec: str) -> bool:
+        """Detect if vehicle is electric based on engine specification"""
+        electric_indicators = ["kwh", "kw", "electric", "battery", "ev"]
+        return any(indicator in engine_spec.lower() for indicator in electric_indicators)
+    
+    def _enhance_electric_variant(self, variant: str, engine_spec: str) -> str:
+        """Enhance electric vehicle variant names with battery and drivetrain info"""
+        enhanced_name = variant
+        
+        # Extract battery capacity: "57.7 kWh" → "57.7kWh"
+        battery_match = re.search(r'(\d+\.?\d*)\s*kwh', engine_spec, re.IGNORECASE)
+        if battery_match:
+            battery_capacity = battery_match.group(1)
+            enhanced_name = f"{enhanced_name} {battery_capacity}kWh"
+        
+        # Add AWD suffix if present
+        if "awd" in engine_spec.lower():
+            enhanced_name = f"{enhanced_name} AWD"
+        
+        # Add power if it helps differentiate (when battery is same)
+        power_match = re.search(r'(\d+)\s*hk', engine_spec, re.IGNORECASE)
+        if power_match:
+            power_hp = power_match.group(1)
+            # Only add power if we don't already have enough differentiation
+            if enhanced_name == variant:  # No battery info found
+                enhanced_name = f"{enhanced_name} {power_hp}hp"
+            elif "343" in power_hp:  # Specific case for high-power variants
+                enhanced_name = f"{enhanced_name} {power_hp}hp"
+        
+        return enhanced_name.strip()
     
     def _normalize_prices(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize price values"""
