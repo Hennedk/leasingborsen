@@ -997,9 +997,14 @@ class ToyotaDanishExtractor:
             
             # Hybrid vehicles (Phase 2: YARIS CROSS, etc.)
             elif "hybrid" in engine_spec:
+                print(f"🔋⛽ HYBRID DETECTED: {variant} | Spec: {engine_spec}")
                 enhanced_variant = self._enhance_hybrid_variant(variant, engine_spec)
-                item["variant"] = enhanced_variant
-                print(f"🔋⛽ HYBRID ENHANCED: {variant} → {enhanced_variant} | Spec: {engine_spec}")
+                if enhanced_variant != variant:
+                    print(f"🔋⛽ HYBRID ENHANCED: {variant} → {enhanced_variant}")
+                    item["variant"] = enhanced_variant
+                else:
+                    print(f"🔋⛽ HYBRID NO CHANGE: {variant} (standard variant)")
+                    item["variant"] = variant
             
             else:
                 print(f"❓ UNKNOWN POWERTRAIN: {variant} | Spec: {engine_spec}")
@@ -1115,9 +1120,9 @@ class ToyotaDanishExtractor:
         post_processing = self.config.get("post_processing", {})
         duplicate_config = post_processing.get("duplicate_removal", {})
         
-        # Enhanced match fields for Toyota extraction to prevent legitimate variant removal
-        # Include all key differentiators: model, variant, engine, price, and source page
-        match_fields = ["model", "variant", "engine_specification", "monthly_price", "source_page"]
+        # FIXED: Simplified match fields to catch true duplicates across pages
+        # Focus on core differentiators: model, variant, engine (ignore source page and small price differences)
+        match_fields = ["model", "variant", "engine_specification"]
         
         seen = set()
         unique_items = []
