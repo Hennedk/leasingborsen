@@ -18,11 +18,16 @@ interface SpecificationsSectionProps {
 }
 
 export const SpecificationsSection = React.memo<SpecificationsSectionProps>(({ control, fuelType }) => {
-  // Determine if the fuel type is electric/hybrid
+  // Determine if the fuel type is electric only (not hybrid)
   const isElectric = useMemo(() => {
     if (!fuelType) return false
     const fuelTypeLower = fuelType.toLowerCase()
-    return fuelTypeLower.includes('el') || fuelTypeLower.includes('hybrid') || fuelTypeLower.includes('elektrisk')
+    // Only show electric fields for pure electric vehicles, not hybrids
+    const isElectricVehicle = (fuelTypeLower.includes('electric') || fuelTypeLower.includes('elektrisk')) && 
+           !fuelTypeLower.includes('hybrid')
+    
+    console.log(`🔋 Electric field visibility for fuel type "${fuelType}":`, isElectricVehicle)
+    return isElectricVehicle
   }, [fuelType])
   return (
     <TooltipProvider>
@@ -196,7 +201,7 @@ export const SpecificationsSection = React.memo<SpecificationsSectionProps>(({ c
           />
         )}
 
-        {/* Consumption kWh/100km - Only for electric/hybrid vehicles */}
+        {/* Consumption kWh/100km - Only for electric vehicles */}
         {isElectric && (
           <FormField
             control={control as any}
@@ -230,7 +235,7 @@ export const SpecificationsSection = React.memo<SpecificationsSectionProps>(({ c
           />
         )}
 
-        {/* WLTP Range - Only for electric/hybrid vehicles */}
+        {/* WLTP Range - Only for electric vehicles */}
         {isElectric && (
           <FormField
             control={control as any}

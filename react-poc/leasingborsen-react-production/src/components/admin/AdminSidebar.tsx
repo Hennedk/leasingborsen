@@ -8,7 +8,8 @@ import {
   Car, 
   Users, 
   Plus,
-  X 
+  X,
+  FileText
 } from 'lucide-react'
 
 interface AdminSidebarProps {
@@ -56,6 +57,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) => {
           icon: Plus,
         },
       ],
+    },
+    {
+      name: 'Toyota PDF',
+      href: '/admin/toyota-pdf',
+      icon: FileText,
     },
   ]
 

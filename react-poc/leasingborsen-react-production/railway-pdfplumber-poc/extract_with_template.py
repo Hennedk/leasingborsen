@@ -971,50 +971,58 @@ class ToyotaDanishExtractor:
         post_processing = self.config.get("post_processing", {})
         variant_config = post_processing.get("variant_standardization", {})
         
-        # PHASE 1: Enhanced variant naming for all powertrain types
-        if "variant" in item and "engine_specification" in item:
-            variant = item["variant"]
+        # FINAL SOLUTION: Implement exact variant naming as requested
+        if "variant" in item and "engine_specification" in item and "model" in item:
+            original_variant = item["variant"]
             engine_spec = item["engine_specification"].lower()
+            model = item["model"]
             
-            # Electric vehicles (BZ4X, etc.)
-            if self._is_electric_vehicle(engine_spec):
-                enhanced_variant = self._enhance_electric_variant(variant, engine_spec)
+            # AYGO X - Add Manual/Auto suffix based on engine spec
+            if model == "AYGO X":
+                # For AYGO X, add transmission suffix
+                if "automatgear" in engine_spec:
+                    item["variant"] = f"{original_variant} Auto"
+                else:
+                    item["variant"] = f"{original_variant} Manual"
+                print(f"⛽ AYGO X: {original_variant} → {item['variant']}")
+            
+            # YARIS - Keep original (already clean)
+            elif model == "YARIS" and "cross" not in model.lower():
+                # Remove any accidental suffixes, keep original
+                item["variant"] = original_variant.replace(" Manual", "").replace(" Auto", "")
+                print(f"⛽ YARIS: {item['variant']} (cleaned)")
+            
+            # YARIS CROSS - Keep original (no power suffix needed)
+            elif model == "YARIS CROSS":
+                # Keep elegant clean, no power suffix
+                item["variant"] = original_variant.replace(" 1.8L 140Hp", "").replace(" 140hp", "")
+                # Fix GR Sport capitalization
+                if "gr sport" in item["variant"].lower():
+                    item["variant"] = "GR Sport"
+                print(f"🔋⛽ YARIS CROSS: {item['variant']} (cleaned)")
+            
+            # COROLLA TOURING SPORTS - Shorten and clean
+            elif "COROLLA" in model:
+                # Remove Auto suffix and shorten model name in display
+                clean_variant = original_variant.replace(" Auto", "")
+                item["variant"] = clean_variant
+                print(f"⛽ COROLLA TS: {item['variant']} (cleaned)")
+            
+            # BZ4X - Simplify battery and AWD notation
+            elif model == "BZ4X":
+                enhanced_variant = self._simplify_bz4x_variant(original_variant, engine_spec)
                 item["variant"] = enhanced_variant
-                print(f"🔋 ELECTRIC ENHANCED: {variant} → {enhanced_variant} | Spec: {engine_spec}")
+                print(f"🔋 BZ4X: {original_variant} → {enhanced_variant}")
             
-            # Gasoline vehicles (AYGO X, YARIS, etc.)
-            elif "benzin" in engine_spec:
-                # CRITICAL FIX: Preserve original variant names that already contain transmission info
-                if "automatgear" in variant.lower() or "automatic" in variant.lower():
-                    # Original variant already specifies automatic - keep as-is
-                    print(f"⛽ GASOLINE PRESERVED: {variant} (original contains transmission info)")
-                    item["variant"] = variant
-                elif "automatgear" in engine_spec:
-                    # Engine spec indicates automatic, but variant doesn't - add suffix
-                    if "auto" not in variant.lower():
-                        variant = f"{variant} Auto"
-                    item["variant"] = variant
-                    print(f"⛽ GASOLINE ENHANCED: {variant} (added Auto suffix)")
-                else:
-                    # Manual transmission (no automatgear mentioned)
-                    if "manual" not in variant.lower():
-                        variant = f"{variant} Manual"
-                    item["variant"] = variant
-                    print(f"⛽ GASOLINE ENHANCED: {variant} (added Manual suffix)")
-            
-            # Hybrid vehicles (Phase 2: YARIS CROSS, etc.)
-            elif "hybrid" in engine_spec:
-                print(f"🔋⛽ HYBRID DETECTED: {variant} | Spec: {engine_spec}")
-                enhanced_variant = self._enhance_hybrid_variant(variant, engine_spec)
-                if enhanced_variant != variant:
-                    print(f"🔋⛽ HYBRID ENHANCED: {variant} → {enhanced_variant}")
-                    item["variant"] = enhanced_variant
-                else:
-                    print(f"🔋⛽ HYBRID NO CHANGE: {variant} (standard variant)")
-                    item["variant"] = variant
+            # URBAN CRUISER - Keep simple
+            elif model == "URBAN CRUISER":
+                # Remove battery suffix
+                item["variant"] = original_variant.replace(" 61.1Kwh", "").replace(" 61.1kWh", "")
+                print(f"🔋 URBAN CRUISER: {item['variant']} (cleaned)")
             
             else:
-                print(f"❓ UNKNOWN POWERTRAIN: {variant} | Spec: {engine_spec}")
+                print(f"❓ UNKNOWN MODEL: {model} - {original_variant}")
+                item["variant"] = original_variant
         
         # Continue with standard variant processing
         if "variant" in item:
@@ -1084,6 +1092,34 @@ class ToyotaDanishExtractor:
                 enhanced_name = f"{enhanced_name} {power_hp}hp"
         
         return enhanced_name.strip()
+    
+    def _simplify_bz4x_variant(self, variant: str, engine_spec: str) -> str:
+        """Simplify BZ4X variant names to match requested format"""
+        # Remove complex notation, keep essential info
+        simplified = variant.replace("73.1Kwh", "73kWh").replace("57.7Kwh", "58kWh")
+        simplified = simplified.replace(" Awd ", " AWD ").replace(" 343Hp", "")
+        
+        # Specific mappings for requested format
+        if "Executive Panorama" in simplified:
+            if "AWD" in simplified:
+                return "Executive Panorama AWD"
+            else:
+                return "Executive Panorama"
+        elif "Executive" in simplified:
+            if "AWD" in simplified:
+                return "Executive AWD"
+            elif "73kWh" in simplified:
+                return "Executive 73kWh"
+        elif "Active" in simplified:
+            if "AWD" in simplified:
+                return "Active AWD"
+            elif "58kWh" in simplified:
+                return "Active 58kWh"
+            elif "73kWh" in simplified:
+                return "Active 73kWh"
+        
+        # Fallback
+        return simplified.strip()
     
     def _normalize_prices(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize price values"""

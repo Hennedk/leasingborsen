@@ -104,12 +104,16 @@ export function useUpdateListingWithOffers() {
       // Update the specific listing in cache with fresh data
       queryClient.setQueryData(queryKeys.listingDetail(listingId), { data: data.updatedListing, error: null })
       
+      // Invalidate admin listings to show updates in admin views
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin })
+      
       // Only invalidate listing lists (not individual listing details) to prevent form reset
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.listings,
         predicate: (query) => {
-          // Only invalidate listing collections, not individual listing details
-          return query.queryKey.length > 1 && query.queryKey[1] !== listingId
+          const key = query.queryKey[0]
+          // Invalidate listings and admin queries, but not individual listing details
+          return (key === 'listings' || key === 'admin') && 
+                 !(query.queryKey.length === 2 && query.queryKey[1] === listingId)
         }
       })
       queryClient.invalidateQueries({ queryKey: ['offers', listingId] })
@@ -166,6 +170,17 @@ export function useCreateListingWithOffers() {
       
       // Invalidate all listings queries when a new listing is created
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
+      
+      // Also invalidate admin listings queries to show new listings in admin views
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin })
+      
+      // Invalidate customer-facing listings with all possible filter combinations
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey[0]
+          return key === 'listings' || key === 'admin'
+        }
+      })
     },
     onError: (error) => {
       console.error('❌ Failed to create listing with offers:', error)

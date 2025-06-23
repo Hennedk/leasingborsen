@@ -1,0 +1,107 @@
+{
+  "id": "toyota-accessories-v1",
+  "name": "Toyota Accessories Price List (Danish)",
+  "description": "Template for Toyota accessory price lists in Danish format with kr./md. pricing",
+  "version": "1.0.0",
+  "status": "approved",
+  
+  "pdfplumber_config": {
+    "table_settings": {
+      "vertical_strategy": "lines",
+      "horizontal_strategy": "text",
+      "snap_tolerance": 3,
+      "join_tolerance": 3,
+      "edge_min_length": 5
+    },
+    "text_extraction": {
+      "layout": true,
+      "x_tolerance": 1,
+      "y_tolerance": 3
+    }
+  },
+  
+  "extraction_rules": {
+    "item_type": "accessories",
+    "price_patterns": [
+      {
+        "pattern": "(\\d{1,4})\\s*kr\\./md\\.",
+        "description": "Standard Danish accessory pricing format",
+        "min_value": 10,
+        "max_value": 1000
+      }
+    ],
+    "item_name_detection": {
+      "strategies": [
+        "same_column_above",
+        "first_column_same_row",
+        "nearest_non_price_text"
+      ],
+      "filters": {
+        "min_length": 3,
+        "exclude_patterns": ["kr", "^\\d+$", "^\\s*$"],
+        "exclude_keywords": ["ekskl.", "montering", "uden"]
+      }
+    },
+    "table_processing": {
+      "skip_empty_rows": true,
+      "merge_fragmented_items": true,
+      "column_association": "flexible"
+    }
+  },
+  
+  "validation_rules": {
+    "required_fields": ["item_name", "monthly_price"],
+    "price_range": {
+      "min": 10,
+      "max": 1000,
+      "currency": "DKK"
+    },
+    "item_name": {
+      "min_length": 3,
+      "max_length": 100,
+      "pattern": "^[A-Za-zÆØÅæøå0-9\\s\\-\\(\\)]+$"
+    },
+    "business_rules": [
+      {
+        "name": "realistic_accessory_price",
+        "condition": "monthly_price >= 10 && monthly_price <= 1000",
+        "error_message": "Accessory price outside reasonable range"
+      }
+    ]
+  },
+  
+  "post_processing": {
+    "item_categorization": {
+      "wheel_accessories": ["hjul", "fælg", "dæk", "vinter"],
+      "protection_packages": ["beskyttelse", "pakke", "måtter"],
+      "styling_packages": ["styling", "krom", "liste"],
+      "trailer_accessories": ["anhænger", "træk", "kugle"],
+      "interior_accessories": ["interiør", "måtte", "gearknop"]
+    },
+    "price_normalization": {
+      "remove_decimals": true,
+      "round_to_nearest": 5
+    },
+    "duplicate_removal": {
+      "match_fields": ["item_name", "monthly_price"],
+      "similarity_threshold": 0.8
+    }
+  },
+  
+  "quality_metrics": {
+    "target_success_rate": 0.95,
+    "max_processing_time_ms": 5000,
+    "min_items_extracted": 30,
+    "max_false_positives": 0.05
+  },
+  
+  "metadata": {
+    "created_for": "Toyota Denmark accessory price lists",
+    "tested_with": "Privatleasing_priser.pdf",
+    "expected_items": 40-50,
+    "pdf_format": "multi_column_tables",
+    "language": "Danish",
+    "currency": "DKK",
+    "pricing_model": "monthly_lease"
+  }
+}

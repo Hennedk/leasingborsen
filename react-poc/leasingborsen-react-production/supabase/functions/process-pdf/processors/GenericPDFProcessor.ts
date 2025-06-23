@@ -1,4 +1,5 @@
-import { getDocument } from 'https://esm.sh/pdfjs-serverless@1.0.1'
+// Note: PDF text extraction will be done client-side, server receives extracted text
+// import { getDocument } from 'https://esm.sh/pdfjs-serverless@1.0.1'
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { DealerConfig, ExtractedVehicle, ExtractionResult, PricingOption, RegexPattern, DealerType } from '../types/DealerConfig.ts'
 import { ProgressTracker } from '../utils/ProgressTracker.ts'
@@ -51,7 +52,191 @@ export class GenericPDFProcessor {
   }
 
   /**
-   * Main entry point for processing PDF files
+   * Set intelligence integration for enhanced extraction
+   */
+  setIntelligenceIntegration(intelligence: IntelligenceIntegration): void {
+    this.intelligence = intelligence
+  }
+
+  /**
+   * Process pre-extracted text (client-side PDF extraction)
+   */
+  async processText(
+    extractedText: string,
+    batchId: string,
+    progressTracker: ProgressTracker
+  ): Promise<ProcessingResult> {
+    const startTime = Date.now()
+    const errors: string[] = []
+    const warnings: string[] = []
+
+    console.log(`🚀 Starting text processing with ${this.config.name} configuration`)
+    console.log(`📄 Text length: ${extractedText.length} characters`)
+
+    try {
+      // 1. Check cache first (using text hash instead of PDF buffer)
+      await progressTracker.updateProgress(30, 'Checking extraction cache...')
+      const textEncoder = new TextEncoder()
+      const textData = textEncoder.encode(extractedText)
+      const cachedResult = await this.checkCache(textData, batchId)
+      
+      if (cachedResult && cachedResult.confidence >= this.config.extraction.confidence.cacheResults) {
+        console.log(`✅ Using cached extraction result (confidence: ${cachedResult.confidence})`)
+        
+        // Apply cross-dealer validation to cached results
+        await progressTracker.updateProgress(95, 'Applying cross-dealer validation to cached results...')
+        const validationResult = await this.crossDealerValidator.validateAndStandardize(cachedResult.vehicles)
+        
+        return {
+          ...cachedResult,
+          method: 'cache',
+          processingTimeMs: Date.now() - startTime,
+          standardizedVehicles: validationResult.standardizedVehicles,
+          validationSummary: validationResult.validationSummary,
+          overallQualityScore: validationResult.overallQualityScore
+        }
+      }
+
+      // 2. Text is already extracted, start pattern processing
+      await progressTracker.updateProgress(50, 'Starting pattern extraction...')
+      console.log(`📄 Processing ${extractedText.length} characters of text`)
+
+      // 3. Try pattern-based extraction first
+      await progressTracker.updateExtractionProgress(50, 'pattern', 0)
+      const patternResult = await this.extractWithPatterns(extractedText)
+      
+      // 4. Evaluate pattern confidence
+      const patternConfidence = this.calculateConfidence(patternResult)
+      console.log(`🎯 Pattern extraction confidence: ${patternConfidence.toFixed(2)}`)
+
+      // 5. Decide if AI extraction is needed
+      if (patternConfidence >= this.config.extraction.confidence.usePatternOnly) {
+        // High confidence - use pattern results only
+        console.log(`✅ Using pattern-only extraction (high confidence)`)
+        await progressTracker.updateExtractionProgress(90, 'pattern', patternResult.vehicles.length)
+        
+        // Store in cache for future use
+        if (patternConfidence >= this.config.extraction.confidence.cacheResults) {
+          await this.cacheResult(textData, patternResult, patternConfidence)
+        }
+
+        // Apply cross-dealer validation and standardization
+        await progressTracker.updateProgress(95, 'Applying cross-dealer validation...')
+        const validationResult = await this.crossDealerValidator.validateAndStandardize(patternResult.vehicles)
+
+        return {
+          method: 'pattern',
+          itemsProcessed: patternResult.vehicles.length,
+          averageConfidence: patternConfidence,
+          processingTimeMs: Date.now() - startTime,
+          vehicles: patternResult.vehicles,
+          standardizedVehicles: validationResult.standardizedVehicles,
+          validationSummary: validationResult.validationSummary,
+          overallQualityScore: validationResult.overallQualityScore,
+          errors,
+          warnings
+        }
+      }
+
+      // 6. Use AI extraction for low confidence or hybrid approach
+      if (patternConfidence < this.config.extraction.confidence.minimumAcceptable) {
+        // Very low confidence - rely primarily on AI
+        console.log(`🤖 Using AI extraction (low pattern confidence)`)
+        await progressTracker.updateExtractionProgress(60, 'ai', 0)
+        
+        const aiResult = await this.extractWithAI(extractedText, progressTracker)
+        const aiConfidence = aiResult.confidence // Use AI engine's confidence
+        
+        await progressTracker.updateExtractionProgress(90, 'ai', aiResult.vehicles.length)
+
+        // Cache if confidence is high enough
+        if (aiConfidence >= this.config.extraction.confidence.cacheResults) {
+          await this.cacheResult(textData, aiResult, aiConfidence)
+        }
+
+        // Apply cross-dealer validation and standardization
+        await progressTracker.updateProgress(95, 'Applying cross-dealer validation...')
+        const validationResult = await this.crossDealerValidator.validateAndStandardize(aiResult.vehicles)
+
+        return {
+          method: 'ai',
+          itemsProcessed: aiResult.vehicles.length,
+          averageConfidence: aiConfidence,
+          aiCost: aiResult.aiCost,
+          aiTokens: aiResult.aiTokens,
+          processingTimeMs: Date.now() - startTime,
+          vehicles: aiResult.vehicles,
+          standardizedVehicles: validationResult.standardizedVehicles,
+          validationSummary: validationResult.validationSummary,
+          overallQualityScore: validationResult.overallQualityScore,
+          errors,
+          warnings
+        }
+      }
+
+      // 7. Hybrid approach - combine pattern and AI results
+      console.log(`🔄 Using hybrid extraction (medium pattern confidence)`)
+      await progressTracker.updateExtractionProgress(60, 'hybrid', patternResult.vehicles.length)
+      
+      const hybridResult = await this.hybridExtraction(
+        extractedText,
+        patternResult,
+        progressTracker
+      )
+      
+      const hybridConfidence = hybridResult.confidence // Use confidence from hybrid method
+      await progressTracker.updateExtractionProgress(90, 'hybrid', hybridResult.vehicles.length)
+
+      // Cache if confidence is high enough
+      if (hybridConfidence >= this.config.extraction.confidence.cacheResults) {
+        await this.cacheResult(textData, hybridResult, hybridConfidence)
+      }
+
+      // Apply cross-dealer validation and standardization
+      await progressTracker.updateProgress(95, 'Applying cross-dealer validation...')
+      const validationResult = await this.crossDealerValidator.validateAndStandardize(hybridResult.vehicles)
+
+      return {
+        method: 'hybrid',
+        itemsProcessed: hybridResult.vehicles.length,
+        averageConfidence: hybridConfidence,
+        aiCost: hybridResult.aiCost,
+        aiTokens: hybridResult.aiTokens,
+        processingTimeMs: Date.now() - startTime,
+        vehicles: hybridResult.vehicles,
+        standardizedVehicles: validationResult.standardizedVehicles,
+        validationSummary: validationResult.validationSummary,
+        overallQualityScore: validationResult.overallQualityScore,
+        errors,
+        warnings
+      }
+
+    } catch (error) {
+      console.error('❌ Text processing failed:', error)
+      errors.push(`Text processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      
+      return {
+        method: 'error',
+        itemsProcessed: 0,
+        averageConfidence: 0,
+        processingTimeMs: Date.now() - startTime,
+        vehicles: [],
+        standardizedVehicles: [],
+        validationSummary: {
+          totalVehicles: 0,
+          validVehicles: 0,
+          errors: errors.length,
+          warnings: warnings.length
+        },
+        overallQualityScore: 0,
+        errors,
+        warnings
+      }
+    }
+  }
+
+  /**
+   * Legacy PDF processing method (for compatibility)
    */
   async processPDF(
     pdfData: Uint8Array,

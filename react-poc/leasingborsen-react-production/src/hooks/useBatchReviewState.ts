@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import type { BatchDetails, BatchReviewState, BulkAction } from '@/types/admin'
+import { supabase } from '@/lib/supabase'
+import { VWPDFProcessor } from '@/lib/processors/vwPDFProcessor'
+import type { BatchReviewState, BulkAction } from '@/types/admin'
 
 /**
  * Centralized state management for VW Batch Review Dashboard
@@ -25,69 +27,64 @@ export const useBatchReviewState = (batchId: string) => {
     processingItems: new Set()
   })
 
-  // Mock data loading - replace with actual API call
+  // Load batch details from server-side processing results
   const loadBatchDetails = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log(`📋 Fetching batch details for: ${batchId}`)
       
-      const mockBatchDetails: BatchDetails = {
+      // Fetch batch and items from database
+      const { data: batchData, error: batchError } = await supabase
+        .from('batch_imports')
+        .select(`
+          *,
+          sellers!inner(name)
+        `)
+        .eq('id', batchId)
+        .single()
+      
+      if (batchError) {
+        console.error('❌ Batch fetch failed:', batchError)
+        throw new Error(`Batch not found: ${batchError.message}`)
+      }
+      
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('batch_import_items')
+        .select('*')
+        .eq('batch_id', batchId)
+        .order('created_at', { ascending: true })
+      
+      if (itemsError) {
+        console.error('❌ Batch items fetch failed:', itemsError)
+        throw new Error(`Batch items not found: ${itemsError.message}`)
+      }
+      
+      console.log(`✅ Fetched batch with ${itemsData.length} items`)
+      
+      const batchDetails: any = {
         batch: {
-          id: batchId,
-          status: 'pending_review',
-          created_at: new Date().toISOString(),
-          seller: { name: 'Volkswagen Privatleasing' }
-        },
-        items: [
-          {
-            id: '1',
-            action: 'new',
-            confidence_score: 0.95,
-            parsed_data: {
-              model: 'ID.3',
-              variant: 'Pro Performance',
-              horsepower: 204,
-              is_electric: true,
-              pricing_options: [
-                {
-                  monthly_price: 4299,
-                  mileage_per_year: 15000,
-                  period_months: 36,
-                  deposit: 0
-                }
-              ]
-            }
-          },
-          {
-            id: '2',
-            action: 'update',
-            confidence_score: 0.87,
-            parsed_data: {
-              model: 'Golf',
-              variant: 'GTI',
-              horsepower: 245,
-              pricing_options: [
-                {
-                  monthly_price: 5199,
-                  mileage_per_year: 20000,
-                  period_months: 36,
-                  deposit: 50000
-                }
-              ]
-            },
-            changes: {
-              horsepower: { old: 230, new: 245 },
-              monthly_price: { old: 4999, new: 5199 }
-            }
+          id: batchData.id,
+          status: batchData.status,
+          created_at: batchData.created_at,
+          seller: { 
+            id: batchData.seller_id,
+            name: batchData.sellers.name 
           }
-        ]
+        },
+        items: itemsData.map(item => ({
+          id: item.id,
+          action: item.action,
+          confidence_score: item.confidence_score,
+          parsed_data: item.parsed_data,
+          existing_data: item.existing_data,
+          changes: item.changes
+        }))
       }
       
       setState(prev => ({
         ...prev,
-        batchDetails: mockBatchDetails,
+        batchDetails,
         loading: false
       }))
       
@@ -148,10 +145,15 @@ export const useBatchReviewState = (batchId: string) => {
     })
   }, [])
 
-  // Bulk operations
+  // Bulk operations - Apply approved changes via server-side processor
   const executeBulkAction = useCallback(async (action: BulkAction) => {
     if (state.selectedItems.length === 0) {
       toast.error('Vælg mindst en annonce')
+      return
+    }
+
+    if (action !== 'approve') {
+      toast.error('Kun godkendelse er tilgængelig i denne version')
       return
     }
 
@@ -161,10 +163,23 @@ export const useBatchReviewState = (batchId: string) => {
         processingItems: new Set(prev.selectedItems)
       }))
 
-      // Simulate API call with progress
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      console.log(`📝 Applying ${state.selectedItems.length} approved changes to batch ${batchId}`)
+      
+      // Use VWPDFProcessor to apply approved changes
+      const processor = new VWPDFProcessor()
+      const result = await processor.applyApprovedChanges(batchId, state.selectedItems)
 
-      toast.success(`${state.selectedItems.length} annoncer ${action === 'approve' ? 'godkendt' : 'afvist'}`)
+      toast.success(`${result.applied || state.selectedItems.length} ændringer anvendt succesfuldt`)
+      
+      if (result.created > 0) {
+        toast.success(`${result.created} nye listings oprettet`)
+      }
+      if (result.updated > 0) {
+        toast.success(`${result.updated} listings opdateret`)
+      }
+      if (result.deleted > 0) {
+        toast.success(`${result.deleted} listings slettet`)
+      }
       
       // Clear selection and processing state
       setState(prev => ({
@@ -173,19 +188,19 @@ export const useBatchReviewState = (batchId: string) => {
         processingItems: new Set()
       }))
 
-      // Refresh data
+      // Refresh data to show applied changes
       await loadBatchDetails()
       
     } catch (error) {
       console.error(`Bulk ${action} failed:`, error)
-      toast.error(`Kunne ikke ${action === 'approve' ? 'godkende' : 'afvise'} annoncer`)
+      toast.error(`Kunne ikke anvende ændringerne: ${error instanceof Error ? error.message : 'Ukendt fejl'}`)
       
       setState(prev => ({
         ...prev,
         processingItems: new Set()
       }))
     }
-  }, [state.selectedItems, loadBatchDetails])
+  }, [state.selectedItems, batchId, loadBatchDetails])
 
   // Computed values
   const statistics = useMemo(() => {

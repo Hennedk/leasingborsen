@@ -5,17 +5,29 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react'
-import { VWPDFProcessor, type BatchProcessingResult } from '@/lib/processors/vwPDFProcessor'
 import { PDFTextExtractor } from '@/lib/services/pdfTextExtractor'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
+import { useJobProgress } from '@/hooks/useJobProgress'
+
+interface ProcessingJobResult {
+  batchId: string
+  jobId: string
+  itemsCreated: number
+  stats: {
+    new: number
+    updated: number
+    removed: number
+    total_processed: number
+  }
+}
 
 interface VWBatchUploadDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   sellerId: string
   sellerName: string
-  onUploadComplete?: (result: BatchProcessingResult) => void
+  onUploadComplete?: (result: ProcessingJobResult) => void
 }
 
 interface UploadState {
@@ -24,9 +36,11 @@ interface UploadState {
   progress: number
   progressMessage: string
   error: string | null
-  result: BatchProcessingResult | null
+  result: ProcessingJobResult | null
   file: File | null
   aiSpending: number
+  jobId: string | null
+  currentStep: string
 }
 
 export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
@@ -44,11 +58,80 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
     error: null,
     result: null,
     file: null,
-    aiSpending: 0
+    aiSpending: 0,
+    jobId: null,
+    currentStep: ''
   })
 
-  const processor = new VWPDFProcessor()
   const navigate = useNavigate()
+  
+  // Use job progress hook for real-time tracking
+  const { startPolling } = useJobProgress(undefined, {
+    autoStart: false,
+    onProgress: (job) => {
+      setState(prev => ({
+        ...prev,
+        progress: job.progress,
+        progressMessage: job.currentStep || 'Processing...',
+        currentStep: job.currentStep || ''
+      }))
+    },
+    onCompleted: async (job) => {
+      // Fetch final batch statistics
+      const { data: batchData } = await supabase
+        .from('batch_imports')
+        .select('stats')
+        .eq('id', job.batchId)
+        .single()
+      
+      const stats = batchData?.stats || {
+        new: 0,
+        updated: 0,
+        removed: 0,
+        total_processed: 0
+      }
+      
+      // Count batch items for itemsCreated
+      const { count } = await supabase
+        .from('batch_import_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('batch_id', job.batchId)
+      
+      const result: ProcessingJobResult = {
+        batchId: job.batchId,
+        jobId: job.id,
+        itemsCreated: count || 0,
+        stats
+      }
+      
+      setState(prev => ({
+        ...prev,
+        isProcessing: false,
+        progress: 100,
+        progressMessage: 'Fuldført!',
+        result
+      }))
+      
+      // Update AI spending after successful upload
+      fetchAISpending()
+      
+      onUploadComplete?.(result)
+      
+      // Auto-navigate to review page after successful upload
+      setTimeout(() => {
+        navigate(`/admin/batch/${job.batchId}/review`)
+        handleClose() // Close the modal after navigation
+      }, 1000)
+    },
+    onFailed: (job) => {
+      setState(prev => ({
+        ...prev,
+        isProcessing: false,
+        progress: 0,
+        error: job.errorMessage || 'Server processing failed'
+      }))
+    }
+  })
 
   // Fetch current AI spending when dialog opens
   React.useEffect(() => {
@@ -76,7 +159,9 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
       error: null,
       result: null,
       file: null,
-      aiSpending: 0
+      aiSpending: 0,
+      jobId: null,
+      currentStep: ''
     })
   }, [])
 
@@ -124,49 +209,99 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
       file,
       error: null,
       isProcessing: true,
-      progress: 10,
+      progress: 5,
       progressMessage: 'Validerer PDF fil...'
     }))
 
     try {
-      // Progress tracking with realistic stages
-      const updateProgress = (progress: number, message: string) => {
-        setState(prev => ({ ...prev, progress, progressMessage: message }))
+      // 1. Create batch record and upload file to storage
+      setState(prev => ({ ...prev, progress: 10, progressMessage: 'Opretter batch record...' }))
+      
+      const batch = {
+        seller_id: sellerId,
+        file_name: file.name,
+        file_size: file.size,
+        status: 'pending',
+        created_by: 'admin',
+        file_url: ''
       }
-
-      updateProgress(20, 'Uploader fil til storage...')
       
-      // Small delay to show progress
-      await new Promise(resolve => setTimeout(resolve, 500))
+      const { data: batchData, error: batchError } = await supabase
+        .from('batch_imports')
+        .insert(batch)
+        .select()
+        .single()
       
-      updateProgress(40, 'Ekstraherer tekst fra PDF...')
+      if (batchError) {
+        throw new Error(`Batch creation failed: ${batchError.message}`)
+      }
       
-      const result = await processor.processPDF(sellerId, file, 'admin')
+      const batchId = batchData.id
       
-      updateProgress(90, 'Færdiggør batch processing...')
+      // 2. Upload file to Supabase Storage
+      setState(prev => ({ ...prev, progress: 20, progressMessage: 'Uploader fil til storage...' }))
       
-      // Final completion
-      setState(prev => ({ 
-        ...prev, 
-        isProcessing: false,
-        progress: 100,
-        progressMessage: 'Fuldført!',
-        result
-      }))
-
-      // Update AI spending after successful upload
-      fetchAISpending()
+      const fileName = `${batchId}/${file.name}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('batch-imports')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
       
-      onUploadComplete?.(result)
+      if (uploadError) {
+        throw new Error(`File upload failed: ${uploadError.message}`)
+      }
       
-      // Auto-navigate to review page after successful upload
-      setTimeout(() => {
-        if (result.batchId) {
-          navigate(`/admin/batch/${result.batchId}/review`)
-          handleClose() // Close the modal after navigation
-        }
-      }, 1000) // Small delay to show the success state briefly
-
+      const fileUrl = uploadData.path
+      
+      // 3. Update batch with file URL
+      const { error: fileUpdateError } = await supabase
+        .from('batch_imports')
+        .update({ 
+          file_url: fileUrl,
+          status: 'processing' 
+        })
+        .eq('id', batchId)
+      
+      if (fileUpdateError) {
+        console.error('❌ Batch file URL update failed:', fileUpdateError)
+      }
+      
+      // 4. Call server-side processing Edge Function
+      setState(prev => ({ ...prev, progress: 30, progressMessage: 'Starter server-side processing...' }))
+      
+      const processingResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          batchId,
+          fileUrl,
+          dealerId: 'volkswagen',
+          configVersion: 'v1.0'
+        })
+      })
+      
+      if (!processingResponse.ok) {
+        const errorData = await processingResponse.text()
+        throw new Error(`Server processing failed: ${errorData}`)
+      }
+      
+      const processingResult = await processingResponse.json()
+      
+      if (!processingResult.success) {
+        throw new Error(processingResult.error || 'Server processing failed')
+      }
+      
+      const jobId = processingResult.jobId
+      setState(prev => ({ ...prev, jobId, progress: 40, progressMessage: 'Følger processing fremskridt...' }))
+      
+      // 5. Start real-time job progress tracking
+      startPolling(jobId)
+      
     } catch (error) {
       setState(prev => ({ 
         ...prev, 
@@ -175,7 +310,7 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
         error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling af filen'
       }))
     }
-  }, [sellerId, onUploadComplete])
+  }, [sellerId, onUploadComplete, startPolling])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -247,7 +382,7 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
             Upload VW Prisliste
           </DialogTitle>
           <DialogDescription>
-            {sellerName} - Batch import af Volkswagen modeller
+            {sellerName} - Batch import af Volkswagen modeller (Server-side processing)
           </DialogDescription>
         </DialogHeader>
 
@@ -320,8 +455,16 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
                   <p className="text-xs text-muted-foreground">
                     {state.progressMessage}
                   </p>
+                  {state.currentStep && (
+                    <p className="text-xs text-muted-foreground/70">
+                      {state.currentStep}
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground/70">
                     {state.progress}% fuldført
+                    {state.jobId && (
+                      <span className="ml-2">• Job: {state.jobId.substring(0, 8)}</span>
+                    )}
                   </p>
                 </div>
               )}
@@ -343,6 +486,9 @@ export const VWBatchUploadDialog = React.memo<VWBatchUploadDialogProps>(({
                   <div className="font-medium">PDF behandlet succesfuldt!</div>
                   <p className="text-sm mt-1">
                     Batch ID: <code className="text-xs bg-muted px-1 rounded">{state.result.batchId}</code>
+                  </p>
+                  <p className="text-sm mt-1">
+                    Job ID: <code className="text-xs bg-muted px-1 rounded">{state.result.jobId}</code>
                   </p>
                 </AlertDescription>
               </Alert>

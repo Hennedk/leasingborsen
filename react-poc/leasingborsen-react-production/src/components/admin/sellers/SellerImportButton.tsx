@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Upload, FileText, Clock, CheckCircle } from 'lucide-react'
-import { VWBatchUploadDialog } from './VWBatchUploadDialog'
+import { GenericBatchUploadDialog } from './GenericBatchUploadDialog'
 import { BatchUploadErrorBoundary } from '@/components/ErrorBoundaries'
 import type { BatchProcessingResult } from '@/lib/processors/vwPDFProcessor'
 
@@ -26,7 +26,22 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
   isProcessing = false
 }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
-  const isVWDealer = seller.name.toLowerCase().includes('volkswagen')
+  
+  // Detect dealer type with expanded support
+  const sellerNameLower = seller.name.toLowerCase()
+  const isVWDealer = sellerNameLower.includes('volkswagen') || 
+                     sellerNameLower.includes('audi') || 
+                     sellerNameLower.includes('seat') || 
+                     sellerNameLower.includes('škoda') || 
+                     sellerNameLower.includes('skoda') ||
+                     sellerNameLower.includes('vw') ||
+                     sellerNameLower.includes('cupra')
+  const isToyotaDealer = sellerNameLower.includes('toyota') || 
+                         sellerNameLower.includes('lexus')
+  
+  // Enable import for all dealers - use auto-detection for unknown brands
+  const isSupportedDealer = true // Allow all dealers to use auto-detection
+  
   const hasListings = (seller.total_listings || 0) > 0
   
   const getImportButtonText = () => {
@@ -61,7 +76,7 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
   }
   
   const getImportStatus = () => {
-    if (!isVWDealer) {
+    if (!isSupportedDealer) {
       return (
         <Badge variant="secondary" className="text-xs">
           Not Configured
@@ -86,11 +101,18 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
   }
   
   const handleImportClick = () => {
-    if (isVWDealer) {
+    if (isSupportedDealer) {
       setShowUploadDialog(true)
     } else {
       onImportClick(seller.id)
     }
+  }
+  
+  // Determine suggested dealer type
+  const getSuggestedDealer = (): 'volkswagen' | 'toyota' | 'auto-detect' => {
+    if (isVWDealer) return 'volkswagen'
+    if (isToyotaDealer) return 'toyota'
+    return 'auto-detect'
   }
 
   const handleUploadComplete = (result: BatchProcessingResult) => {
@@ -107,7 +129,7 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
           variant={hasListings ? "outline" : "default"}
           size="sm"
           onClick={handleImportClick}
-          disabled={!isVWDealer || isProcessing}
+          disabled={!isSupportedDealer || isProcessing}
           className="w-full"
         >
         {getImportIcon()}
@@ -128,7 +150,7 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
         </div>
       )}
       
-      {!isVWDealer && (
+      {!isSupportedDealer && (
         <div className="text-xs text-orange-600">
           Batch import not yet configured for this dealer
         </div>
@@ -139,11 +161,12 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
         onRetry={() => setShowUploadDialog(true)}
         onCancel={() => setShowUploadDialog(false)}
       >
-        <VWBatchUploadDialog
+        <GenericBatchUploadDialog
           open={showUploadDialog}
           onOpenChange={setShowUploadDialog}
           sellerId={seller.id}
           sellerName={seller.name}
+          suggestedDealer={getSuggestedDealer()}
           onUploadComplete={handleUploadComplete}
         />
       </BatchUploadErrorBoundary>

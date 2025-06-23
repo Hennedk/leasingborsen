@@ -27,6 +27,7 @@ const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
 const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
 const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
 const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
+const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProcessingPage'))
 
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
@@ -120,7 +121,8 @@ function App() {
                       <Route path="sellers" element={<AdminSellers />} />
                       <Route path="sellers/create" element={<AdminSellerForm />} />
                       <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
-                      <Route path="batch/:batchId/review" element={<BatchReviewPage />} />
+                      <Route path="batches/:batchId/review" element={<BatchReviewPage />} />
+                      <Route path="toyota-pdf" element={<ToyotaPDFProcessingPage />} />
                     </Routes>
                   </AdminErrorBoundary>
                 } />
