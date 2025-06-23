@@ -1120,9 +1120,9 @@ class ToyotaDanishExtractor:
         post_processing = self.config.get("post_processing", {})
         duplicate_config = post_processing.get("duplicate_removal", {})
         
-        # FIXED: Simplified match fields to catch true duplicates across pages
-        # Focus on core differentiators: model, variant, engine (ignore source page and small price differences)
-        match_fields = ["model", "variant", "engine_specification"]
+        # PRECISE FIX: Include monthly_price to differentiate legitimate variants
+        # Same model+variant+engine but different prices = different configurations
+        match_fields = ["model", "variant", "engine_specification", "monthly_price"]
         
         seen = set()
         unique_items = []
