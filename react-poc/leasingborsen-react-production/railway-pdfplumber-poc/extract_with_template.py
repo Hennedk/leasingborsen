@@ -977,22 +977,20 @@ class ToyotaDanishExtractor:
             engine_spec = item["engine_specification"].lower()
             model = item["model"]
             
-            # AYGO X - Detect transmission from original variant name or engine spec
+            # AYGO X - Detect transmission from CO2 emissions and fuel consumption
             if model == "AYGO X":
-                # Check if original variant already contains transmission info
-                if "automatgear" in original_variant.lower() or "automatic" in original_variant.lower():
-                    # Original variant already specifies automatic - keep as "Auto" 
-                    clean_variant = original_variant.replace("automatgear", "").replace("automatic", "").strip()
-                    item["variant"] = f"{clean_variant} Auto"
-                    print(f"⛽ AYGO X AUTO DETECTED: {original_variant} → {item['variant']}")
-                elif "automatgear" in engine_spec:
-                    # Engine spec indicates automatic but variant name doesn't mention it
-                    item["variant"] = f"{original_variant} Auto"
-                    print(f"⛽ AYGO X AUTO FROM ENGINE: {original_variant} → {item['variant']}")
-                else:
-                    # No automatgear in variant or engine - this is manual
+                # Use CO2 emissions and fuel consumption to differentiate transmission
+                co2_emissions = item.get("co2_emissions_gkm", 0)
+                fuel_consumption = item.get("fuel_consumption_kmpl", 0)
+                
+                # Manual: 110 CO2, 20.83 fuel consumption
+                # Auto: 113 CO2, 20.0 fuel consumption  
+                if co2_emissions == 110 and fuel_consumption > 20.8:
                     item["variant"] = f"{original_variant} Manual"
-                    print(f"⛽ AYGO X MANUAL: {original_variant} → {item['variant']}")
+                    print(f"⛽ AYGO X MANUAL: {original_variant} → {item['variant']} (110 CO2, {fuel_consumption} km/l)")
+                else:
+                    item["variant"] = f"{original_variant} Auto"  
+                    print(f"⛽ AYGO X AUTO: {original_variant} → {item['variant']} (113 CO2, {fuel_consumption} km/l)")
             
             # YARIS - Keep original (already clean)
             elif model == "YARIS" and "cross" not in model.lower():
