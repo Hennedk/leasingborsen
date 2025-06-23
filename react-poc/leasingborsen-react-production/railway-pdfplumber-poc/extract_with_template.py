@@ -1315,14 +1315,18 @@ class ToyotaDanishExtractor:
         return " ".join(specs) if specs else "1.0 benzin 72 hk"
     
     def _extract_engine_from_page_context(self, page_num: int, model: str, variant: str) -> Optional[str]:
-        """Extract real engine specification from page text context"""
+        """Extract real engine specification from page text context - context-aware for BZ4X sections"""
         try:
             # Get the page text to search for engine specifications
             if hasattr(self, 'pages') and page_num <= len(self.pages):
                 page = self.pages[page_num - 1]
                 page_text = page.extract_text()
                 
-                # Look for common Toyota engine patterns in the page text
+                # For BZ4X, use context-aware extraction to find the correct engine section
+                if model == "BZ4X":
+                    return self._extract_bz4x_engine_from_context(page_text, variant)
+                
+                # Look for common Toyota engine patterns for other models
                 engine_patterns = [
                     r'(\d+\.?\d*)\s+[Bb]enzin\s+(\d+)\s+hk\s+automatgear',  # "1.0 benzin 72 hk automatgear"
                     r'(\d+\.?\d*)\s+[Bb]enzin\s+(\d+)\s+hk(?!\s+automatgear)',  # "1.0 benzin 72 hk" (manual)
@@ -1340,6 +1344,57 @@ class ToyotaDanishExtractor:
         except Exception as e:
             print(f"Error extracting engine from context: {e}")
             return None
+    
+    def _extract_bz4x_engine_from_context(self, page_text: str, variant: str) -> Optional[str]:
+        """Extract BZ4X engine specification by finding which section the variant belongs to"""
+        # Split page text into lines for analysis
+        lines = page_text.split('\n')
+        
+        # Find engine section headers for BZ4X
+        engine_sections = []
+        current_section = None
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            
+            # Detect BZ4X engine section headers
+            if re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk', line):
+                # Found an engine specification header like "57,7 KWh 167 hk" or "73,1 kWh, 224 hk"
+                current_section = {
+                    'engine_spec': line,
+                    'start_line': i,
+                    'variants': []
+                }
+                engine_sections.append(current_section)
+            elif re.match(r'^\d+[,\.]\d+\s*[Kk][Ww][Hh][,\s]*\s*\d+\s*hk\s*AWD', line):
+                # Found AWD engine specification like "73,1 kWh, 343 hk AWD"
+                current_section = {
+                    'engine_spec': line,
+                    'start_line': i,
+                    'variants': []
+                }
+                engine_sections.append(current_section)
+            elif current_section and (line.startswith('Active') or line.startswith('Executive')):
+                # Found a variant under this engine section
+                current_section['variants'].append(line)
+        
+        # Find which section contains our variant
+        for section in engine_sections:
+            for section_variant in section['variants']:
+                if variant.strip() in section_variant or section_variant.strip().startswith(variant.strip()):
+                    # Normalize the engine specification format
+                    engine_spec = section['engine_spec']
+                    # Convert to standard format: "73.1 kWh, 224 hk" or "73.1 kWh, 343 hk AWD"
+                    engine_spec = re.sub(r'[,\s]+', ' ', engine_spec)  # Normalize spacing
+                    engine_spec = re.sub(r'(\d+)[,\.](\d+)', r'\1.\2', engine_spec)  # Normalize decimal
+                    engine_spec = re.sub(r'[Kk][Ww][Hh]', 'kWh', engine_spec)  # Normalize kWh
+                    engine_spec = re.sub(r'\s*([,\s])\s*', r'\1 ', engine_spec)  # Fix spacing around commas
+                    
+                    print(f"🔋 BZ4X CONTEXT: {variant} found in section '{section['engine_spec']}' → normalized: '{engine_spec}'")
+                    return engine_spec
+        
+        print(f"🔋 BZ4X CONTEXT: No section found for variant '{variant}'")
+        return None
     
     def _build_real_engine_specification(self, co2_emissions: Optional[int], fuel_consumption: Optional[float]) -> str:
         """Build accurate engine specification using actual emissions data"""
