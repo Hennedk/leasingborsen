@@ -121,4 +121,4 @@ If POC is successful:
 ### Wrong data extracted
 - Adjust table detection settings
 - Add more specific parsing rules
-- Check PDF structure in debug mode
+- Check PDF structure in debug modeMon Jun 23 12:21:57 CEST 2025
