@@ -1174,45 +1174,84 @@ class ToyotaDanishExtractor:
 # Unique Variant ID Generation System
 def generate_unique_variant_id(model: str, variant: str, engine_specification: str, drivetrain: Optional[str] = None) -> str:
     """
-    Generate unique identifier for each variant configuration
+    FIXED: Generate unique identifier for each variant configuration
+    
+    Fixes duplicate IDs for:
+    - AYGO X manual vs automatic variants
+    - BZ4X Executive Panorama power variants
     
     Args:
-        model: str - "BZ4X", "YARIS", etc.
-        variant: str - "Active", "Executive", etc.
-        engine_specification: str - "73.1 kWh, 343 hk AWD"
+        model: str - "BZ4X", "YARIS", "AYGO X", etc.
+        variant: str - "Active", "Executive", "Executive Panorama", etc.
+        engine_specification: str - "73.1 kWh, 343 hk AWD", "1.0 benzin 72 hk automatgear"
         drivetrain: str - "FWD", "AWD", "manual", "automatic"
     
     Returns:
-        str - unique identifier like "bz4x_active_343hp_awd"
+        str - unique identifier like "bz4x_executive_panorama_343hp_awd"
     """
     
     # Extract power from engine specification
     power_hp = extract_power_from_specification(engine_specification)
     
-    # Extract drivetrain info
+    # Extract battery capacity for electric vehicles
+    battery_kwh = extract_battery_capacity(engine_specification)
+    
+    # Enhanced drivetrain detection
     drivetrain_code = normalize_drivetrain(engine_specification, drivetrain)
     
-    # Create base ID
-    base_id = f"{model.lower().replace(' ', '').replace('-', '')}_{variant.lower().replace(' ', '_')}"
+    # Create base ID with enhanced variant handling
+    model_clean = model.lower().replace(' ', '').replace('-', '')
+    variant_clean = variant.lower().replace(' ', '_')
     
-    # Add differentiators
+    # Handle special variant names
+    if 'executive_panorama' in variant_clean:
+        variant_clean = 'executive_panorama'
+    
+    base_id = f"{model_clean}_{variant_clean}"
+    
+    # Add power differentiator
     if power_hp:
         base_id += f"_{power_hp}hp"
     
-    # Add drivetrain/transmission - prioritize specific info over generic
-    if 'awd' in drivetrain_code:
-        base_id += "_awd"
-    elif drivetrain_code in ['auto', 'manual']:
-        base_id += f"_{drivetrain_code}"
-    elif drivetrain_code in ['electric', 'hybrid']:
-        # For electric/hybrid, only add if it's not the default
-        base_id += f"_{drivetrain_code}"
-    # For gasoline with manual transmission, check if we need to add manual
-    elif categorize_powertrain(engine_specification) == 'gasoline':
-        transmission_code = extract_transmission_code(engine_specification)
-        if transmission_code:
-            base_id += f"_{transmission_code}"
-    # Skip adding 'fwd' as it's the default for most cars
+    # Enhanced drivetrain/transmission logic
+    powertrain_category = categorize_powertrain(engine_specification)
+    
+    if powertrain_category == 'electric':
+        # For electric vehicles, prioritize AWD detection
+        if 'awd' in drivetrain_code.lower():
+            base_id += "_awd"
+        else:
+            # For same-power electric variants, add battery differentiation
+            if battery_kwh:
+                # Only add battery if there might be confusion
+                if power_hp in [224, 343]:  # BZ4X power levels that might have variants
+                    battery_clean = str(battery_kwh).replace('.', '_')
+                    base_id += f"_{battery_clean}kwh"
+            base_id += "_electric"
+    
+    elif powertrain_category == 'gasoline':
+        # CRITICAL FIX: Proper gasoline transmission detection
+        transmission = detect_gasoline_transmission(engine_specification)
+        if transmission:
+            base_id += f"_{transmission}"
+        else:
+            # Default to manual for gasoline without explicit automatgear
+            base_id += "_manual"
+    
+    elif powertrain_category == 'hybrid':
+        if 'awd' in drivetrain_code.lower():
+            base_id += "_awd"
+        elif 'automatgear' in engine_specification.lower():
+            base_id += "_auto"
+        else:
+            base_id += "_hybrid"
+    
+    else:
+        # Fallback to original logic
+        if 'awd' in drivetrain_code.lower():
+            base_id += "_awd"
+        elif drivetrain_code in ['auto', 'manual']:
+            base_id += f"_{drivetrain_code}"
     
     return base_id
 
@@ -1228,7 +1267,10 @@ def extract_power_from_specification(engine_spec: str) -> Optional[int]:
     return int(match.group(1)) if match else None
 
 def normalize_drivetrain(engine_spec: str, drivetrain_field: Optional[str]) -> str:
-    """Normalize drivetrain information"""
+    """
+    FIXED: Enhanced drivetrain normalization
+    Better handling of gasoline manual vs automatic
+    """
     
     if drivetrain_field:
         return drivetrain_field.lower()
@@ -1236,21 +1278,44 @@ def normalize_drivetrain(engine_spec: str, drivetrain_field: Optional[str]) -> s
     if not engine_spec:
         return 'fwd'
     
-    # Extract from engine specification
     engine_lower = engine_spec.lower()
     
+    # Priority order detection
     if 'awd' in engine_lower:
         return 'awd'
     elif 'automatgear' in engine_lower:
         return 'auto'
-    elif 'manual' in engine_lower:
-        return 'manual'
+    elif 'benzin' in engine_lower and 'automatgear' not in engine_lower:
+        return 'manual'  # FIXED: Gasoline without automatgear = manual
     elif 'hybrid' in engine_lower:
         return 'hybrid'
     elif 'elbil' in engine_lower or 'kwh' in engine_lower:
         return 'electric'
     
-    return 'fwd'  # Default for most cars
+    return 'fwd'  # Default
+
+def detect_gasoline_transmission(engine_spec: str) -> Optional[str]:
+    """
+    FIXED: Properly detect gasoline transmission type
+    
+    Critical fix for AYGO X variants:
+    - "1.0 benzin 72 hk" = manual
+    - "1.0 benzin 72 hk automatgear" = auto
+    """
+    if not engine_spec:
+        return None
+    
+    engine_lower = engine_spec.lower()
+    
+    # Explicit automatic detection
+    if 'automatgear' in engine_lower:
+        return 'auto'
+    
+    # If it's gasoline but no explicit automatic, it's manual
+    if 'benzin' in engine_lower and 'automatgear' not in engine_lower:
+        return 'manual'
+    
+    return None
 
 def extract_transmission_code(engine_spec: str) -> Optional[str]:
     """Extract transmission type for non-electric vehicles"""
