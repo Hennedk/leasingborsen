@@ -977,14 +977,22 @@ class ToyotaDanishExtractor:
             engine_spec = item["engine_specification"].lower()
             model = item["model"]
             
-            # AYGO X - Add Manual/Auto suffix based on engine spec
+            # AYGO X - Detect transmission from original variant name or engine spec
             if model == "AYGO X":
-                # For AYGO X, add transmission suffix
-                if "automatgear" in engine_spec:
+                # Check if original variant already contains transmission info
+                if "automatgear" in original_variant.lower() or "automatic" in original_variant.lower():
+                    # Original variant already specifies automatic - keep as "Auto" 
+                    clean_variant = original_variant.replace("automatgear", "").replace("automatic", "").strip()
+                    item["variant"] = f"{clean_variant} Auto"
+                    print(f"⛽ AYGO X AUTO DETECTED: {original_variant} → {item['variant']}")
+                elif "automatgear" in engine_spec:
+                    # Engine spec indicates automatic but variant name doesn't mention it
                     item["variant"] = f"{original_variant} Auto"
+                    print(f"⛽ AYGO X AUTO FROM ENGINE: {original_variant} → {item['variant']}")
                 else:
+                    # No automatgear in variant or engine - this is manual
                     item["variant"] = f"{original_variant} Manual"
-                print(f"⛽ AYGO X: {original_variant} → {item['variant']}")
+                    print(f"⛽ AYGO X MANUAL: {original_variant} → {item['variant']}")
             
             # YARIS - Keep original (already clean)
             elif model == "YARIS" and "cross" not in model.lower():
@@ -1095,31 +1103,39 @@ class ToyotaDanishExtractor:
     
     def _simplify_bz4x_variant(self, variant: str, engine_spec: str) -> str:
         """Simplify BZ4X variant names to match requested format"""
-        # Remove complex notation, keep essential info
-        simplified = variant.replace("73.1Kwh", "73kWh").replace("57.7Kwh", "58kWh")
-        simplified = simplified.replace(" Awd ", " AWD ").replace(" 343Hp", "")
+        # Extract base variant name (Active, Executive, Executive Panorama)
+        base_variant = variant.replace(" 57.7Kwh", "").replace(" 73.1Kwh", "").replace(" Awd", "").replace(" 343Hp", "").strip()
         
-        # Specific mappings for requested format
-        if "Executive Panorama" in simplified:
-            if "AWD" in simplified:
+        # Determine battery size and drivetrain from engine spec
+        is_57kwh = "57.7" in engine_spec
+        is_73kwh = "73.1" in engine_spec  
+        is_awd = "awd" in engine_spec.lower()
+        
+        # Build the correct variant name
+        if "Executive Panorama" in base_variant:
+            if is_awd:
                 return "Executive Panorama AWD"
             else:
                 return "Executive Panorama"
-        elif "Executive" in simplified:
-            if "AWD" in simplified:
-                return "Executive AWD"
-            elif "73kWh" in simplified:
+        elif "Executive" in base_variant:
+            if is_awd:
+                return "Executive AWD"  
+            elif is_73kwh:
                 return "Executive 73kWh"
-        elif "Active" in simplified:
-            if "AWD" in simplified:
+            else:
+                return "Executive"
+        elif "Active" in base_variant:
+            if is_awd:
                 return "Active AWD"
-            elif "58kWh" in simplified:
+            elif is_57kwh:
                 return "Active 58kWh"
-            elif "73kWh" in simplified:
+            elif is_73kwh:
                 return "Active 73kWh"
+            else:
+                return "Active"
         
         # Fallback
-        return simplified.strip()
+        return base_variant
     
     def _normalize_prices(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Normalize price values"""
