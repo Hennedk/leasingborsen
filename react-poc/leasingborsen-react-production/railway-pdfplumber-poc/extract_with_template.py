@@ -1152,7 +1152,8 @@ class ToyotaDanishExtractor:
                 if self.debug.get("log_duplicate_removal", True):
                     print(f"🔍 DUPLICATE REMOVED: {item.get('model', '')} {item.get('variant', '')} - {item.get('engine_specification', '')} - {item.get('monthly_price', '')} DKK")
         
-        # Additional Toyota-specific duplicate detection for items with identical unique IDs
+        # FINAL FIX: Use unique ID as the definitive duplicate detection method
+        # This is the most reliable approach since IDs are designed to be unique
         final_items = []
         seen_ids = set()
         
@@ -1162,14 +1163,15 @@ class ToyotaDanishExtractor:
             if unique_id and unique_id not in seen_ids:
                 seen_ids.add(unique_id)
                 final_items.append(item)
-            elif not unique_id:
+                print(f"✅ UNIQUE: {unique_id} - {item.get('model', '')} {item.get('variant', '')}")
+            elif unique_id in seen_ids:
+                print(f"🔍 DUPLICATE ID REMOVED: {unique_id} - {item.get('model', '')} {item.get('variant', '')}")
+            else:
                 # Keep items without IDs (shouldn't happen, but safety check)
                 final_items.append(item)
-            else:
-                if self.debug.get("log_duplicate_removal", True):
-                    print(f"🔍 DUPLICATE ID REMOVED: {unique_id} - {item.get('model', '')} {item.get('variant', '')}")
+                print(f"⚠️ NO ID: {item.get('model', '')} {item.get('variant', '')}")
         
-        print(f"📊 Deduplication: {len(items)} → {len(unique_items)} → {len(final_items)} final unique Toyota variants")
+        print(f"📊 Final Deduplication: {len(items)} raw → {len(unique_items)} filtered → {len(final_items)} unique Toyota variants")
         
         return final_items
     
