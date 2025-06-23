@@ -979,23 +979,19 @@ class ToyotaDanishExtractor:
         # FINAL SOLUTION: Implement exact variant naming as requested
         if "variant" in item and "engine_specification" in item and "model" in item:
             original_variant = item["variant"]
-            engine_spec = item["engine_specification"].lower()
+            engine_spec = item["engine_specification"]  # Keep original case for display
+            engine_spec_lower = engine_spec.lower()  # Lowercase for comparison
             model = item["model"]
             
-            # AYGO X - Detect transmission from CO2 emissions and fuel consumption
+            # AYGO X - Variant = Trimline + Engine spec
             if model == "AYGO X":
-                # Use CO2 emissions and fuel consumption to differentiate transmission
-                co2_emissions = item.get("co2_emissions_gkm", 0)
-                fuel_consumption = item.get("fuel_consumption_kmpl", 0)
+                # Extract trimline (Active/Pulse) and add full engine specification
+                trimline = original_variant  # Active or Pulse
+                full_engine_spec = engine_spec  # e.g., "1.0 benzin 72 hk automatgear"
                 
-                # Manual: 110 CO2, 20.83 fuel consumption
-                # Auto: 113 CO2, 20.0 fuel consumption  
-                if co2_emissions == 110 and fuel_consumption > 20.8:
-                    item["variant"] = f"{original_variant} Manual"
-                    print(f"⛽ AYGO X MANUAL: {original_variant} → {item['variant']} (110 CO2, {fuel_consumption} km/l)")
-                else:
-                    item["variant"] = f"{original_variant} Auto"  
-                    print(f"⛽ AYGO X AUTO: {original_variant} → {item['variant']} (113 CO2, {fuel_consumption} km/l)")
+                # Create variant as Trimline + Engine spec
+                item["variant"] = f"{trimline} {full_engine_spec}"
+                print(f"⛽ AYGO X: {trimline} + {full_engine_spec} → {item['variant']}")
             
             # YARIS - Keep original (already clean)
             elif model == "YARIS" and "cross" not in model.lower():
@@ -1019,11 +1015,15 @@ class ToyotaDanishExtractor:
                 item["variant"] = clean_variant
                 print(f"⛽ COROLLA TS: {item['variant']} (cleaned)")
             
-            # BZ4X - Simplify battery and AWD notation
+            # BZ4X - Variant = Trimline + Engine spec
             elif model == "BZ4X":
-                enhanced_variant = self._simplify_bz4x_variant(original_variant, engine_spec)
-                item["variant"] = enhanced_variant
-                print(f"🔋 BZ4X: {original_variant} → {enhanced_variant}")
+                # Extract trimline (Active/Executive/Executive Panorama) and add engine specification
+                trimline = original_variant  # Active, Executive, or Executive Panorama
+                full_engine_spec = engine_spec  # e.g., "73.1 kwh, 343 hk awd"
+                
+                # Create variant as Trimline + Engine spec
+                item["variant"] = f"{trimline} {full_engine_spec}"
+                print(f"🔋 BZ4X: {trimline} + {full_engine_spec} → {item['variant']}")
             
             # URBAN CRUISER - Keep simple
             elif model == "URBAN CRUISER":
