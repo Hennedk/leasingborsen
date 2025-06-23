@@ -995,11 +995,11 @@ class ToyotaDanishExtractor:
                 item["variant"] = variant
                 print(f"⛽ GASOLINE ENHANCED: {item['variant']} | Spec: {engine_spec}")
             
-            # Hybrid vehicles (future enhancement)
+            # Hybrid vehicles (Phase 2: YARIS CROSS, etc.)
             elif "hybrid" in engine_spec:
-                # For now, keep original logic - Phase 2 will enhance this
-                item["variant"] = variant
-                print(f"🔋⛽ HYBRID (no enhancement yet): {variant} | Spec: {engine_spec}")
+                enhanced_variant = self._enhance_hybrid_variant(variant, engine_spec)
+                item["variant"] = enhanced_variant
+                print(f"🔋⛽ HYBRID ENHANCED: {variant} → {enhanced_variant} | Spec: {engine_spec}")
             
             else:
                 print(f"❓ UNKNOWN POWERTRAIN: {variant} | Spec: {engine_spec}")
@@ -1028,7 +1028,7 @@ class ToyotaDanishExtractor:
         return any(indicator in engine_spec.lower() for indicator in electric_indicators)
     
     def _enhance_electric_variant(self, variant: str, engine_spec: str) -> str:
-        """Enhance electric vehicle variant names with battery and drivetrain info"""
+        """Enhance electric vehicle variant names with battery and drivetrain info (Option A: Clean ID generation)"""
         enhanced_name = variant
         
         # Extract battery capacity: "57.7 kWh" → "57.7kWh"
@@ -1037,18 +1037,38 @@ class ToyotaDanishExtractor:
             battery_capacity = battery_match.group(1)
             enhanced_name = f"{enhanced_name} {battery_capacity}kWh"
         
-        # Add AWD suffix if present
+        # Add AWD suffix if present (this provides primary differentiation)
         if "awd" in engine_spec.lower():
             enhanced_name = f"{enhanced_name} AWD"
         
-        # Add power if it helps differentiate (when battery is same)
+        # Add power only for high-power AWD variants to distinguish them
         power_match = re.search(r'(\d+)\s*hk', engine_spec, re.IGNORECASE)
         if power_match:
             power_hp = power_match.group(1)
-            # Only add power if we don't already have enough differentiation
-            if enhanced_name == variant:  # No battery info found
+            # Only add power for 343hp variants to distinguish from 224hp AWD
+            if "343" in power_hp and "awd" in engine_spec.lower():
                 enhanced_name = f"{enhanced_name} {power_hp}hp"
-            elif "343" in power_hp:  # Specific case for high-power variants
+        
+        return enhanced_name.strip()
+    
+    def _enhance_hybrid_variant(self, variant: str, engine_spec: str) -> str:
+        """Phase 2: Enhance hybrid vehicle variant names with displacement and power info"""
+        enhanced_name = variant
+        
+        # Extract displacement: "1.5 Hybrid" → "1.5L"
+        displacement_match = re.search(r'(\d+\.?\d*)\s*hybrid', engine_spec, re.IGNORECASE)
+        if displacement_match:
+            displacement = displacement_match.group(1)
+            # Only add displacement if it's different from standard (1.5L)
+            if displacement != "1.5":
+                enhanced_name = f"{enhanced_name} {displacement}L"
+        
+        # Extract power for differentiation: "140 hk" → "140hp"
+        power_match = re.search(r'(\d+)\s*hk', engine_spec, re.IGNORECASE)
+        if power_match:
+            power_hp = power_match.group(1)
+            # Add power for variants that need differentiation (140hp vs 130hp vs 116hp)
+            if power_hp in ["140", "116"]:  # Non-standard power levels
                 enhanced_name = f"{enhanced_name} {power_hp}hp"
         
         return enhanced_name.strip()
@@ -1303,15 +1323,28 @@ def generate_unique_variant_id(model: str, variant: str, engine_specification: s
     if 'executive_panorama' in variant_clean:
         variant_clean = 'executive_panorama'
     
-    # CRITICAL FIX: If variant already contains transmission info, use it directly
-    # This handles variants like "Active Auto", "Style Manual" that already have transmission
-    if variant_clean.endswith('_auto') or variant_clean.endswith('_manual'):
-        # Variant already has transmission info, use as-is for base
-        base_id = f"{model_clean}_{variant_clean}"
-        # Add power but skip duplicate transmission logic
-        if power_hp:
+    # OPTION A FIX: Enhanced variant names already contain differentiating info
+    # This handles variants like "Active Auto", "Executive 73.1kWh AWD", "Style 140hp"
+    if (variant_clean.endswith('_auto') or variant_clean.endswith('_manual') or 
+        'kwh' in variant_clean or '_awd' in variant_clean or 
+        any(f'_{hp}hp' in variant_clean for hp in ['116', '140', '343'])):
+        
+        # Clean variant name for ID (remove redundant info that's already in variant)
+        id_variant = variant_clean.replace('kwh', '').replace('_awd', '').replace('hp', '')
+        id_variant = re.sub(r'_\d+\.?\d*', '', id_variant)  # Remove battery numbers
+        id_variant = re.sub(r'_+', '_', id_variant).strip('_')  # Clean up multiple underscores
+        
+        base_id = f"{model_clean}_{id_variant}"
+        
+        # Add power only if not already in variant name
+        if power_hp and not any(f'{hp}' in variant for hp in ['116', '140', '343']):
             base_id += f"_{power_hp}hp"
-        print(f"🔧 EARLY RETURN: {variant} -> {base_id}")
+        
+        # Add AWD only if not already in variant name
+        if 'awd' in drivetrain_code.lower() and '_awd' not in variant_clean:
+            base_id += "_awd"
+            
+        print(f"🔧 ENHANCED EARLY RETURN: {variant} -> {base_id}")
         return base_id
     
     base_id = f"{model_clean}_{variant_clean}"
