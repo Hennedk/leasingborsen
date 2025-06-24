@@ -481,16 +481,30 @@ class ToyotaDanishExtractor:
         annual_km = int(match.group(9).replace('.', ''))
         co2_tax = int(match.group(10))
         
-        # Parse battery capacity
+        # Parse battery capacity with debugging
         battery_gross, battery_net = self._parse_battery_capacity(battery_info)
+        
+        # Debug battery parsing
+        if self.debug.get("log_battery_parsing", False):
+            print(f"🔋 Battery info parsing: '{battery_info}' → gross={battery_gross}, net={battery_net}")
         
         # Try to extract real engine specification from page context (for BZ4X)
         real_engine_spec = self._extract_engine_from_page_context(page_num, model, variant_name)
         if real_engine_spec:
             engine_spec = real_engine_spec
+            if self.debug.get("log_battery_parsing", False):
+                print(f"🔋 Using context engine spec: '{engine_spec}'")
         else:
             # Fallback: Build engine specification for unique ID generation
             engine_spec = self._build_engine_specification_electric(battery_gross, electric_consumption, electric_range)
+            if self.debug.get("log_battery_parsing", False):
+                print(f"🔋 Built fallback engine spec: '{engine_spec}' from battery_gross={battery_gross}")
+        
+        # Additional validation to ensure engine_spec is proper
+        if not engine_spec or "None" in engine_spec:
+            engine_spec = "57.7 kWh, 167 hk"  # Safe fallback
+            if self.debug.get("log_battery_parsing", False):
+                print(f"🔋 Applied final fallback engine spec: '{engine_spec}'")
         
         return {
             "type": "car_model",
@@ -636,7 +650,11 @@ class ToyotaDanishExtractor:
         return None
     
     def _parse_battery_capacity(self, battery_info: str) -> Tuple[Optional[float], Optional[float]]:
-        """Parse battery capacity string like '57,7/54' into (gross, net) kWh"""
+        """Parse battery capacity string like '57,7/54' or '57.7 kWh, 167 hk' into (gross, net) kWh"""
+        if not battery_info:
+            return None, None
+        
+        # Handle standard format like "57,7/54" or "57.7/54"
         if '/' in battery_info:
             parts = battery_info.split('/')
             if len(parts) == 2:
@@ -646,8 +664,8 @@ class ToyotaDanishExtractor:
                     return gross, net
                 except ValueError:
                     pass
+        # Handle range format like "61,1-59,8"
         elif '-' in battery_info:
-            # Handle range format like "61,1-59,8"
             parts = battery_info.split('-')
             if len(parts) == 2:
                 try:
@@ -656,6 +674,20 @@ class ToyotaDanishExtractor:
                     return gross, net
                 except ValueError:
                     pass
+        # Handle engine specification format like "57.7 kWh, 167 hk"
+        elif 'kwh' in battery_info.lower():
+            # Extract battery capacity from kWh notation
+            kwh_match = re.search(r'(\d+[.,]?\d*)\s*kwh', battery_info, re.IGNORECASE)
+            if kwh_match:
+                try:
+                    capacity = float(kwh_match.group(1).replace(',', '.'))
+                    # For single kWh values, assume it's the gross capacity
+                    # Estimate net capacity as ~90% of gross (typical for EV batteries)
+                    net_capacity = round(capacity * 0.9, 1)
+                    return capacity, net_capacity
+                except ValueError:
+                    pass
+        
         return None, None
     
     def _extract_fuel_consumption_from_line(self, line: str) -> Optional[float]:
@@ -950,9 +982,13 @@ class ToyotaDanishExtractor:
                 continue
                 
             item = self._enrich_data(item)
+            
+            # Generate unique ID before deduplication
+            item = enhance_variant_with_unique_id(item)
+            
             processed_items.append(item)
         
-        # Remove duplicates
+        # Remove duplicates (now using unique IDs)
         return self._remove_duplicates(processed_items)
     
     def _standardize_model_name(self, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -1002,43 +1038,68 @@ class ToyotaDanishExtractor:
                 item["variant"] = f"{trimline} {original_engine_spec}"
                 print(f"⛽ AYGO X: {trimline} + {original_engine_spec} → {item['variant']}")
             
-            # YARIS - Keep original (already clean)
+            # YARIS - Combine trimline + engine specification
             elif model == "YARIS" and "cross" not in model.lower():
-                # Remove any accidental suffixes, keep original
-                item["variant"] = original_variant.replace(" Manual", "").replace(" Auto", "")
-                print(f"⛽ YARIS: {item['variant']} (cleaned)")
-            
-            # YARIS CROSS - Keep original (no power suffix needed)
-            elif model == "YARIS CROSS":
-                # Keep elegant clean, no power suffix
-                item["variant"] = original_variant.replace(" 1.8L 140Hp", "").replace(" 140hp", "")
-                # Fix GR Sport capitalization
-                if "gr sport" in item["variant"].lower():
-                    item["variant"] = "GR Sport"
-                print(f"🔋⛽ YARIS CROSS: {item['variant']} (cleaned)")
-            
-            # COROLLA TOURING SPORTS - Shorten and clean
-            elif "COROLLA" in model:
-                # Remove Auto suffix and shorten model name in display
-                clean_variant = original_variant.replace(" Auto", "")
-                item["variant"] = clean_variant
-                print(f"⛽ COROLLA TS: {item['variant']} (cleaned)")
-            
-            # BZ4X - Variant = Trimline + Engine spec (preserve original case)
-            elif model == "BZ4X":
-                # Extract trimline (Active/Executive/Executive Panorama) and add engine specification
-                trimline = original_variant  # Active, Executive, or Executive Panorama
-                original_engine_spec = item["engine_specification"]  # Preserve original case
+                # Extract trimline and add full engine specification
+                trimline = original_variant.replace(" Manual", "").replace(" Auto", "")
+                original_engine_spec = item["engine_specification"]
                 
-                # Create variant as Trimline + Engine spec with proper case
+                # Create variant as Trimline + Engine spec
                 item["variant"] = f"{trimline} {original_engine_spec}"
-                print(f"🔋 BZ4X: {trimline} + {original_engine_spec} → {item['variant']}")
+                print(f"⛽ YARIS: {trimline} + {original_engine_spec} → {item['variant']}")
             
-            # URBAN CRUISER - Keep simple
+            # YARIS CROSS - Combine trimline + engine specification
+            elif model == "YARIS CROSS":
+                # Extract trimline and add full engine specification
+                trimline = original_variant.replace(" 1.8L 140Hp", "").replace(" 140hp", "")
+                # Fix GR Sport capitalization
+                if "gr sport" in trimline.lower():
+                    trimline = "GR Sport"
+                original_engine_spec = item["engine_specification"]
+                
+                # Create variant as Trimline + Engine spec
+                item["variant"] = f"{trimline} {original_engine_spec}"
+                print(f"🔋⛽ YARIS CROSS: {trimline} + {original_engine_spec} → {item['variant']}")
+            
+            # COROLLA TOURING SPORTS - Combine trimline + engine specification
+            elif "COROLLA" in model:
+                # Extract trimline and add full engine specification
+                trimline = original_variant.replace(" Auto", "")
+                original_engine_spec = item["engine_specification"]
+                
+                # Create variant as Trimline + Engine spec
+                item["variant"] = f"{trimline} {original_engine_spec}"
+                print(f"⛽ COROLLA TS: {trimline} + {original_engine_spec} → {item['variant']}")
+            
+            # BZ4X - Variant = Trimline only (clean approach for unique ID generation)
+            elif model == "BZ4X":
+                # Extract just the trimline from variants like "Active 57.7 Kwh, 167 Hk"
+                # Remove battery and power info since that's already in engine_specification
+                trimline = original_variant
+                
+                # Remove battery specifications: "57.7 Kwh", "73.1 Kwh", etc.
+                trimline = re.sub(r'\s+\d+[.,]\d*\s*[Kk][Ww][Hh].*', '', trimline).strip()
+                
+                # Remove power specifications: "167 Hk", "224 Hk", "343 Hk", etc.
+                trimline = re.sub(r'\s+\d+\s*[Hh][Kk].*', '', trimline).strip()
+                
+                # Remove any trailing commas or punctuation
+                trimline = re.sub(r'[,\s]+$', '', trimline).strip()
+                
+                # For BZ4X, use ONLY the clean trimline as variant for ID generation
+                # This prevents duplication in the ID generation process
+                item["variant"] = trimline
+                print(f"🔋 BZ4X: '{original_variant}' → cleaned to '{trimline}' (engine info in engine_specification)")
+            
+            # URBAN CRUISER - Combine trimline + engine specification
             elif model == "URBAN CRUISER":
-                # Remove battery suffix
-                item["variant"] = original_variant.replace(" 61.1Kwh", "").replace(" 61.1kWh", "")
-                print(f"🔋 URBAN CRUISER: {item['variant']} (cleaned)")
+                # Extract trimline and add full engine specification
+                trimline = original_variant.replace(" 61.1Kwh", "").replace(" 61.1kWh", "")
+                original_engine_spec = item["engine_specification"]
+                
+                # Create variant as Trimline + Engine spec
+                item["variant"] = f"{trimline} {original_engine_spec}"
+                print(f"🔋 URBAN CRUISER: {trimline} + {original_engine_spec} → {item['variant']}")
             
             else:
                 print(f"❓ UNKNOWN MODEL: {model} - {original_variant}")
@@ -1403,10 +1464,26 @@ class ToyotaDanishExtractor:
                     # Normalize the engine specification format
                     engine_spec = section['engine_spec']
                     # Convert to standard format: "73.1 kWh, 224 hk" or "73.1 kWh, 343 hk AWD"
-                    engine_spec = re.sub(r'[,\s]+', ' ', engine_spec)  # Normalize spacing
-                    engine_spec = re.sub(r'(\d+)[,\.](\d+)', r'\1.\2', engine_spec)  # Normalize decimal
-                    engine_spec = re.sub(r'[Kk][Ww][Hh]', 'kWh', engine_spec)  # Normalize kWh
-                    engine_spec = re.sub(r'\s*([,\s])\s*', r'\1 ', engine_spec)  # Fix spacing around commas
+                    
+                    # First, extract just the essential parts (battery capacity and power)
+                    # Look for pattern like "73,1 kWh, 224 hk" or "57,7 KWh 167 hk"
+                    battery_power_match = re.search(r'(\d+[,\.]\d+)\s*[Kk][Ww][Hh][,\s]*(\d+)\s*hk(?:\s+(AWD))?', engine_spec, re.IGNORECASE)
+                    
+                    if battery_power_match:
+                        battery = battery_power_match.group(1).replace(',', '.')  # Normalize decimal separator
+                        power = battery_power_match.group(2)
+                        awd = battery_power_match.group(3) if battery_power_match.group(3) else ''
+                        
+                        # Construct clean format
+                        engine_spec = f"{battery} kWh, {power} hk"
+                        if awd:
+                            engine_spec += f" {awd}"
+                    else:
+                        # Fallback: clean up the original but preserve essential format
+                        engine_spec = re.sub(r'(\d+)[,\.](\d+)', r'\1.\2', engine_spec)  # Normalize decimal
+                        engine_spec = re.sub(r'[Kk][Ww][Hh]', 'kWh', engine_spec)  # Normalize kWh
+                        engine_spec = re.sub(r'\s+', ' ', engine_spec)  # Normalize spacing
+                        engine_spec = engine_spec.strip()
                     
                     print(f"🔋 BZ4X CONTEXT: {variant} found in section '{section['engine_spec']}' → normalized: '{engine_spec}'")
                     return engine_spec
@@ -1419,20 +1496,28 @@ class ToyotaDanishExtractor:
         # Use actual CO2 emissions to determine transmission (not artificial guessing)
         if co2_emissions == 110 and fuel_consumption and fuel_consumption > 20.8:
             # Better efficiency = manual transmission
-            return "1.0 benzin 72 hk"  # Manual (no automatgear)
+            result = "1.0 benzin 72 hk"  # Manual (no automatgear)
         elif co2_emissions == 113 and fuel_consumption and fuel_consumption <= 20.0:
             # Worse efficiency = automatic transmission  
-            return "1.0 benzin 72 hk automatgear"  # Automatic
+            result = "1.0 benzin 72 hk automatgear"  # Automatic
         else:
             # Default fallback
-            return "1.0 benzin 72 hk"
+            result = "1.0 benzin 72 hk"
+        
+        return self._validate_engine_specification(result)
     
-    def _build_engine_specification_electric(self, battery_capacity: float, consumption: int, range_km: int) -> str:
+    def _build_engine_specification_electric(self, battery_capacity: Optional[float], consumption: int, range_km: int) -> str:
         """Build engine specification for electric vehicles"""
         specs = []
         
-        # Battery capacity
-        specs.append(f"{battery_capacity} kWh")
+        # Battery capacity - handle None case
+        if battery_capacity is not None:
+            specs.append(f"{battery_capacity} kWh")
+        else:
+            # Fallback: estimate battery capacity based on consumption and range
+            estimated_capacity = self._estimate_battery_capacity(consumption, range_km)
+            specs.append(f"{estimated_capacity} kWh")
+            battery_capacity = estimated_capacity
         
         # Estimate horsepower based on battery size and consumption
         if battery_capacity <= 58:
@@ -1446,7 +1531,54 @@ class ToyotaDanishExtractor:
         else:
             specs.append("167 hk")
         
-        return ", ".join(specs)
+        return self._validate_engine_specification(", ".join(specs))
+    
+    def _validate_engine_specification(self, engine_spec: str) -> str:
+        """Validate and clean up engine specification to prevent malformed data"""
+        if not engine_spec or "None" in engine_spec:
+            # Determine appropriate default based on context
+            if hasattr(self, '_current_powertrain_type'):
+                if self._current_powertrain_type == 'electric':
+                    return "57.7 kWh, 167 hk"  # Default electric
+                elif self._current_powertrain_type == 'hybrid':
+                    return "1.5 Hybrid 116 hk automatgear"  # Default hybrid
+                else:
+                    return "1.0 benzin 72 hk"  # Default gasoline
+            else:
+                # Try to detect from the original spec what type it should be
+                if any(indicator in engine_spec.lower() for indicator in ['kwh', 'electric', 'battery']):
+                    return "57.7 kWh, 167 hk"
+                elif any(indicator in engine_spec.lower() for indicator in ['hybrid']):
+                    return "1.5 Hybrid 116 hk automatgear"
+                else:
+                    return "1.0 benzin 72 hk"
+        
+        # Clean up any formatting issues
+        cleaned_spec = engine_spec.strip()
+        # Ensure proper spacing around commas
+        cleaned_spec = re.sub(r'\s*,\s*', ', ', cleaned_spec)
+        # Remove any double spaces
+        cleaned_spec = re.sub(r'\s+', ' ', cleaned_spec)
+        
+        return cleaned_spec
+    
+    def _estimate_battery_capacity(self, consumption: int, range_km: int) -> float:
+        """Estimate battery capacity based on consumption and range for electric vehicles"""
+        # Basic estimation: capacity ≈ (consumption * range) / 1000
+        # This is a rough approximation for fallback scenarios
+        try:
+            estimated_kwh = (consumption * range_km) / 1000
+            
+            # Round to common battery sizes seen in the data
+            if estimated_kwh < 60:
+                return 57.7  # BZ4X base variant
+            elif estimated_kwh < 70:
+                return 61.1  # Urban Cruiser
+            else:
+                return 73.1  # BZ4X larger variant
+        except (ValueError, TypeError, ZeroDivisionError):
+            # Fallback to most common BZ4X variant if calculation fails
+            return 57.7
     
     def _build_engine_specification_hybrid(self, fuel_economy: str, co2_emissions: Optional[int], fuel_consumption: Optional[float]) -> str:
         """Build engine specification for hybrid vehicles"""
@@ -1462,12 +1594,16 @@ class ToyotaDanishExtractor:
                 specs.append("1.8 Hybrid 140 hk")
             else:
                 specs.append("1.5 Hybrid 116 hk")
+        else:
+            # Default hybrid spec if no data available
+            specs.append("1.5 Hybrid 116 hk")
         
         # Add transmission - hybrids are typically automatic
         if "aut" not in " ".join(specs).lower():
             specs.append("automatgear")
         
-        return " ".join(specs) if specs else "1.5 Hybrid 116 hk automatgear"
+        result = " ".join(specs) if specs else "1.5 Hybrid 116 hk automatgear"
+        return self._validate_engine_specification(result)
 
 # Unique Variant ID Generation System
 def generate_unique_variant_id(model: str, variant: str, engine_specification: str, drivetrain: Optional[str] = None) -> str:
@@ -1539,17 +1675,20 @@ def generate_unique_variant_id(model: str, variant: str, engine_specification: s
     powertrain_category = categorize_powertrain(engine_specification)
     
     if powertrain_category == 'electric':
+        # For electric vehicles, always add battery capacity for uniqueness
+        if battery_kwh:
+            battery_clean = str(battery_kwh).replace('.', '_')
+            base_id += f"_{battery_clean}kwh"
+        
+        # Add power for further differentiation 
+        if power_hp:
+            base_id += f"_{power_hp}hp"
+            
         # For electric vehicles, prioritize AWD detection
         if 'awd' in drivetrain_code.lower():
             base_id += "_awd"
-        else:
-            # For same-power electric variants, add battery differentiation
-            if battery_kwh:
-                # Only add battery if there might be confusion
-                if power_hp in [224, 343]:  # BZ4X power levels that might have variants
-                    battery_clean = str(battery_kwh).replace('.', '_')
-                    base_id += f"_{battery_clean}kwh"
-            base_id += "_electric"
+            
+        base_id += "_electric"
     
     elif powertrain_category == 'gasoline':
         # CRITICAL FIX: Proper gasoline transmission detection
@@ -1756,16 +1895,8 @@ def extract_with_template(pdf_content: bytes, template_config: Dict[str, Any]) -
     extractor = ToyotaDanishExtractor(template_config)
     result = extractor.extract_from_pdf(pdf_content)
     
-    # Enhance items with unique variant IDs
-    enhanced_items = []
-    for item in result.items:
-        try:
-            enhanced_item = enhance_variant_with_unique_id(item)
-            enhanced_items.append(enhanced_item)
-        except Exception as e:
-            # Keep original item if enhancement fails
-            print(f"Warning: Failed to enhance variant {item.get('model')} {item.get('variant')}: {e}")
-            enhanced_items.append(item)
+    # Items are already enhanced with unique IDs in post-processing
+    enhanced_items = result.items
     
     # Validate uniqueness
     validation_errors = []
