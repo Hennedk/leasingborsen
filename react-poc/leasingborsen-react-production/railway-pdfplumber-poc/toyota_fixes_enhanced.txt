@@ -1,0 +1,187 @@
+Toyota Enhanced Variant Extraction Fixes - Implementation Notes
+================================================================
+
+This document outlines the specific fixes implemented in the enhanced Toyota variant extraction system to address the three critical issues with variant detection and deduplication.
+
+PROBLEM SUMMARY
+===============
+
+1. AYGO X Manual Transmission Variants Lost
+   - Manual transmission variants were being lost because "automatgear" appears after price columns
+   - Difficult to distinguish manual from automatic variants in extraction
+   - Expected: 4 AYGO X variants (2 manual + 2 automatic), Getting: 2 variants
+
+2. BZ4X AWD Variants Incorrectly Deduplicated  
+   - All-wheel drive variants being removed as duplicates
+   - AWD suffix not properly preserved in engine specifications
+   - Expected: 6 BZ4X variants (3 FWD + 3 AWD), Getting: 3 variants
+
+3. YARIS CROSS High-Power Variants Missing
+   - Elegant and GR Sport variants (130+ hp) not being extracted
+   - Standard power detection not capturing high-performance variants
+   - Expected: 6 YARIS CROSS variants (4 standard + 2 high-power), Getting: 4 variants
+
+IMPLEMENTATION STRATEGY
+=======================
+
+Enhanced Extraction Module (toyota_variant_extraction_fixes_enhanced.py)
+------------------------------------------------------------------------
+
+1. Robust Error Handling and Logging
+   - Try-catch blocks around all parsing operations
+   - Structured logging with appropriate levels (DEBUG, INFO, WARNING, ERROR)
+   - Statistics tracking for monitoring extraction success rates
+
+2. Configurable Regex Patterns via JSON
+   - External configuration file (toyota_patterns_config.json)
+   - Pre-compiled patterns for performance optimization
+   - Easy pattern maintenance without code changes
+
+3. Type Safety with Enums and Dataclasses
+   - TransmissionType, DrivetrainType, VariantType enums
+   - ExtractionStats and VariantCandidate dataclasses
+   - Strong typing for better maintainability
+
+4. Statistics Tracking for Monitoring
+   - Real-time counters for each variant type found
+   - Pattern match tracking for optimization
+   - Error rate monitoring
+
+SPECIFIC FIXES IMPLEMENTED
+==========================
+
+Fix 1: AYGO X Transmission Detection
+------------------------------------
+
+Problem: Manual variants lost due to ambiguous "automatgear" detection
+Solution: Context-aware transmission detection
+
+Key Implementation:
+```python
+def _detect_aygo_x_transmission(self, item: Dict[str, Any]) -> TransmissionType:
+    """Detect transmission type for AYGO X variants"""
+    engine_spec = item.get("engine_specification", "").lower()
+    raw_line = item.get("source", {}).get("raw_line", "").lower()
+    
+    # Check for automatic indicators in engine specification
+    if self.patterns["aygo_automatic"].search(engine_spec):
+        return TransmissionType.AUTOMATIC
+    
+    # Check raw line for context (automatgear after price columns)
+    if self.patterns["aygo_automatic"].search(raw_line):
+        return TransmissionType.AUTOMATIC
+    
+    # If no automatic indicators found, assume manual
+    return TransmissionType.MANUAL
+```
+
+Pattern Configuration:
+```json
+"aygo_x": {
+  "manual_detection": "(?<!automatgear)(?:\\s|$)",
+  "automatic_detection": "automatgear",
+  "expected_variants": ["Active", "Active X-Clusiv", "Pulse", "Pulse X-Clusiv"]
+}
+```
+
+Expected Results:
+- Active manual 1.0 benzin 72 hk
+- Active 1.0 benzin 72 hk automatgear
+- Pulse manual 1.0 benzin 72 hk  
+- Pulse 1.0 benzin 72 hk automatgear
+
+Fix 2: BZ4X AWD Preservation
+-----------------------------
+
+Problem: AWD variants being deduplicated incorrectly
+Solution: Enhanced drivetrain detection and signature-based deduplication
+
+Key Implementation:
+```python
+def _detect_bz4x_drivetrain(self, item: Dict[str, Any]) -> DrivetrainType:
+    """Detect drivetrain type for BZ4X variants"""
+    engine_spec = item.get("engine_specification", "")
+    
+    # Check engine specification for AWD indicator
+    if self.patterns["drivetrain_awd"].search(engine_spec):
+        return DrivetrainType.AWD
+    
+    # Extract power to identify high-power AWD variants (343 hp = AWD)
+    power_hp = self._extract_power_from_spec(engine_spec)
+    if power_hp and power_hp >= 340:
+        return DrivetrainType.AWD
+    
+    return DrivetrainType.FWD
+
+def _create_variant_signature(self, item: Dict[str, Any]) -> str:
+    """Create unique signature including transmission/drivetrain"""
+    signature_parts = [
+        item.get("model", "").lower().strip(),
+        item.get("variant", "").lower().strip(), 
+        item.get("engine_specification", "").lower().strip(),
+        item.get("transmission_type", "").lower().strip(),
+        item.get("drivetrain_type", "").lower().strip()
+    ]
+    return "|".join(signature_parts)
+```
+
+Pattern Configuration:
+```json
+"bz4x": {
+  "awd_detection": "AWD",
+  "power_patterns": [
+    "(\\d+\\.?\\d*)\\s*kWh,?\\s*(\\d+)\\s*hk(?:\\s+(AWD))?",
+    "(\\d+\\.?\\d*)\\s*Kwh,?\\s*(\\d+)\\s*Hk(?:\\s+(AWD))?"
+  ],
+  "power_levels": {
+    "167": "FWD",
+    "224": "FWD",
+    "343": "AWD"
+  }
+}
+```
+
+Expected Results:
+- Active 57.7 kWh, 167 hk (FWD)
+- Executive 73.1 kWh, 224 hk (FWD)
+- Executive Panorama 73.1 kWh, 224 hk (FWD)
+- Active 57.7 kWh, 167 hk AWD
+- Executive 73.1 kWh, 343 hk AWD
+- Executive Panorama 73.1 kWh, 343 hk AWD
+
+Fix 3: YARIS CROSS High-Power Detection
+---------------------------------------
+
+Problem: Elegant and GR Sport high-power variants not being extracted
+Solution: Multi-pattern power detection with variant-specific thresholds
+
+Key Implementation:
+```python
+def extract_yaris_cross_variants(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Extract YARIS CROSS variants with proper power detection"""
+    for item in items:
+        if item.get("model") != "YARIS CROSS":
+            continue
+            
+        # Detect power level from engine specification
+        power_hp = self._extract_power_from_spec(item.get("engine_specification", ""))
+        is_high_power = power_hp and power_hp >= 130
+        
+        # Enhance item with power metadata
+        item["power_hp"] = power_hp
+        item["is_high_power_variant"] = is_high_power
+        item["extraction_enhanced"] = True
+```
+
+Expected Results:
+- Active 1.5 Hybrid 116 hk automatgear (standard power)
+- Active Safety 1.5 Hybrid 116 hk automatgear (standard power)
+- Style Comfort 1.5 Hybrid 116 hk automatgear (standard power)
+- Style Safety 1.5 Hybrid 116 hk automatgear (standard power)
+- Elegant 1.8 Hybrid 140 hk automatgear (high power)
+- GR Sport 1.5 Hybrid 130 hk automatgear (high power)
+
+SUCCESS CRITERIA
+================
+
+After implementation, the extraction should produce exactly 27 unique Toyota variants with proper differentiation between transmission types, drivetrains, and power specifications.
