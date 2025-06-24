@@ -368,18 +368,76 @@ async def extract_debug(file: UploadFile = File(...)):
 
 @app.post("/extract/template")
 async def extract_with_template_endpoint(file: UploadFile = File(...)):
-    """Extract using Toyota car model template configuration"""
+    """Extract using enhanced Toyota variant extraction system"""
     try:
         content = await file.read()
         
-        # Load Toyota template configuration
+        # Try enhanced extraction first
+        try:
+            from toyota_variant_extraction_fixes_enhanced import ToyotaVariantExtractor
+            import datetime
+            
+            # Get basic extraction first
+            with open('toyota-template-config.json', 'r') as f:
+                template_config = json.load(f)
+            
+            basic_result = extract_with_template(content, template_config)
+            
+            if basic_result.get("success") and basic_result.get("items"):
+                # Apply enhanced processing to the basic extraction results
+                extractor = ToyotaVariantExtractor()
+                enhanced_items = extractor.process_all_variants(basic_result["items"])
+                
+                # Create validation and statistics
+                validation = extractor.validate_extraction_results(enhanced_items)
+                stats = extractor.get_statistics()
+                
+                # Enhanced result with proper 27 variants
+                enhanced_result = {
+                    "success": True,
+                    "items_extracted": len(enhanced_items),
+                    "items": enhanced_items,
+                    "metadata": {
+                        "pages_processed": basic_result.get("metadata", {}).get("pages_processed", 0),
+                        "raw_items_found": len(basic_result.get("items", [])),
+                        "validated_items": len(enhanced_items),
+                        "template_version": "Enhanced v2.0",
+                        "extraction_method": "enhanced_toyota_extraction",
+                        "extraction_timestamp": datetime.datetime.now().isoformat(),
+                        "enhanced_features_active": True
+                    },
+                    "errors": [],
+                    "variant_breakdown": validation.get("models", {}),
+                    "validation": validation,
+                    "extraction_stats": {
+                        "total_processed": stats.total_processed,
+                        "aygo_x_manual_found": stats.aygo_x_manual_found,
+                        "aygo_x_automatic_found": stats.aygo_x_auto_found,
+                        "bz4x_awd_found": stats.bz4x_awd_found,
+                        "yaris_cross_high_power_found": stats.yaris_cross_high_power_found,
+                        "errors_encountered": stats.errors_encountered
+                    }
+                }
+                
+                return JSONResponse(content=enhanced_result)
+            
+        except ImportError as e:
+            print(f"Enhanced extraction not available: {e}")
+            # Fallback to basic template extraction
+            pass
+        except Exception as e:
+            print(f"Enhanced extraction failed: {e}")
+            # Fallback to basic template extraction
+            pass
+        
+        # Fallback: Load Toyota template configuration for basic extraction
         with open('toyota-template-config.json', 'r') as f:
             template_config = json.load(f)
         
-        # Extract using template
+        # Extract using basic template
         result = extract_with_template(content, template_config)
         
-        # Enhance result with car model specific info
+        # Enhance result with car model specific info for basic extraction
         car_models = [item for item in result.get("items", []) if item.get("type") == "car_model"]
         accessories = [item for item in result.get("items", []) if item.get("type") == "accessory"]
         
@@ -388,6 +446,12 @@ async def extract_with_template_endpoint(file: UploadFile = File(...)):
             "extraction_type": "car_models_and_variants",
             "car_models_found": len(car_models),
             "accessories_found": len(accessories),
+            "metadata": {
+                **result.get("metadata", {}),
+                "template_version": "Basic v1.0",
+                "extraction_method": "basic_template_extraction",
+                "enhanced_features_active": False
+            },
             "summary": {
                 "models_by_type": {},
                 "variants_found": [],

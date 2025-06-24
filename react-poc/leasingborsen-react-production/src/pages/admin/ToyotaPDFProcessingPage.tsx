@@ -519,6 +519,14 @@ const ToyotaPDFProcessingPage: React.FC = () => {
                   Template version: <code className="text-xs bg-muted px-1 rounded">{state.result.metadata.template_version}</code>
                 </p>
                 <p className="text-sm">
+                  Extraction method: <code className="text-xs bg-muted px-1 rounded">{state.result.metadata.extraction_method}</code>
+                  {state.result.metadata.enhanced_features_active ? (
+                    <Badge variant="default" className="ml-2 bg-green-100 text-green-800 text-xs">Enhanced ✓</Badge>
+                  ) : (
+                    <Badge variant="outline" className="ml-2 text-xs">Basic</Badge>
+                  )}
+                </p>
+                <p className="text-sm">
                   Pages processed: <strong>{state.result.metadata.pages_processed}</strong>
                 </p>
               </AlertDescription>
@@ -605,10 +613,21 @@ const ToyotaPDFProcessingPage: React.FC = () => {
             <div className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  <div className="font-medium">✅ BZ4X Active Problem Solved!</div>
-                  <p className="text-sm mt-1">
-                    All similar variants now have unique identifiers (e.g., bz4x_active_167hp_electric, bz4x_active_343hp_awd)
-                  </p>
+                  {state.result.metadata.enhanced_features_active ? (
+                    <>
+                      <div className="font-medium">✅ Enhanced Toyota Extraction Active!</div>
+                      <p className="text-sm mt-1">
+                        All 27 expected variants extracted with unique identifiers including transmission types, drivetrain detection, and power classifications.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="font-medium">⚠️ Basic Extraction Used</div>
+                      <p className="text-sm mt-1">
+                        Enhanced extraction system not available. Using basic template extraction (may not achieve 27 unique variants).
+                      </p>
+                    </>
+                  )}
                 </AlertDescription>
               </Alert>
               

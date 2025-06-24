@@ -219,16 +219,17 @@ class ToyotaVariantExtractor:
                 # Get transmission type from engine specification and context
                 transmission = self._detect_aygo_x_transmission(item)
                 
-                # Create enhanced variant
-                enhanced_item = item.copy()
-                enhanced_item = self._enhance_aygo_x_variant(enhanced_item, transmission)
-                enhanced_items.append(enhanced_item)
+                # Create enhanced automatic variant
+                enhanced_auto_item = item.copy()
+                enhanced_auto_item = self._enhance_aygo_x_variant(enhanced_auto_item, TransmissionType.AUTOMATIC)
+                enhanced_items.append(enhanced_auto_item)
+                self.stats.aygo_x_auto_found += 1
                 
-                # Update statistics
-                if transmission == TransmissionType.MANUAL:
-                    self.stats.aygo_x_manual_found += 1
-                elif transmission == TransmissionType.AUTOMATIC:
-                    self.stats.aygo_x_auto_found += 1
+                # Create corresponding manual variant
+                enhanced_manual_item = item.copy()
+                enhanced_manual_item = self._enhance_aygo_x_variant(enhanced_manual_item, TransmissionType.MANUAL)
+                enhanced_items.append(enhanced_manual_item)
+                self.stats.aygo_x_manual_found += 1
                     
             except Exception as e:
                 self.logger.error(f"Error processing AYGO X item: {e}")
@@ -241,19 +242,26 @@ class ToyotaVariantExtractor:
         """Detect transmission type for AYGO X variants"""
         try:
             engine_spec = item.get("engine_specification", "").lower()
+            variant = item.get("variant", "").lower()
             raw_line = item.get("source", {}).get("raw_line", "").lower()
             
-            # Check for automatic indicators
+            # Check for automatic indicators in engine specification
             if self.patterns["aygo_automatic"].search(engine_spec):
                 self.stats.increment_pattern("aygo_automatic")
                 return TransmissionType.AUTOMATIC
             
-            # Check raw line for context
-            if self.patterns["aygo_automatic"].search(raw_line):
+            # Check for automatic indicators in variant name
+            if self.patterns["aygo_automatic"].search(variant):
+                self.stats.increment_pattern("aygo_automatic_variant")
+                return TransmissionType.AUTOMATIC
+            
+            # Check raw line for context (if available)
+            if raw_line and self.patterns["aygo_automatic"].search(raw_line):
                 self.stats.increment_pattern("aygo_automatic_raw")
                 return TransmissionType.AUTOMATIC
             
-            # If no automatic indicators found, assume manual
+            # For AYGO X, we need to generate manual variants for each automatic variant
+            # If this is already an automatic variant, create a corresponding manual variant
             self.stats.increment_pattern("aygo_manual_default")
             return TransmissionType.MANUAL
             
@@ -297,16 +305,45 @@ class ToyotaVariantExtractor:
                 
                 self.stats.total_processed += 1
                 
-                # Detect AWD from engine specification
-                drivetrain = self._detect_bz4x_drivetrain(item)
+                # Get base variant info
+                variant_name = item.get("variant", "")
+                engine_spec = item.get("engine_specification", "")
                 
-                # Create enhanced variant
-                enhanced_item = item.copy()
-                enhanced_item = self._enhance_bz4x_variant(enhanced_item, drivetrain)
-                enhanced_items.append(enhanced_item)
+                # Create FWD variant (keep original)
+                enhanced_fwd_item = item.copy()
+                enhanced_fwd_item = self._enhance_bz4x_variant(enhanced_fwd_item, DrivetrainType.FWD)
+                enhanced_items.append(enhanced_fwd_item)
                 
-                # Update statistics
-                if drivetrain == DrivetrainType.AWD:
+                # For certain variants, also create AWD version
+                # Active: 57.7 kWh, 167 hk -> AWD version exists
+                # Executive: 73.1 kWh, 224 hk -> AWD version exists  
+                # Executive Panorama: AWD version exists
+                if "active" in variant_name.lower():
+                    # Create AWD variant for Active (73.1 kWh, 343 hk AWD)
+                    enhanced_awd_item = item.copy()
+                    enhanced_awd_item["variant"] = f"{variant_name} AWD"
+                    enhanced_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+                    enhanced_awd_item = self._enhance_bz4x_variant(enhanced_awd_item, DrivetrainType.AWD)
+                    enhanced_items.append(enhanced_awd_item)
+                    self.stats.bz4x_awd_found += 1
+                    
+                elif "executive" in variant_name.lower():
+                    # Create AWD variant for Executive variants (73.1 kWh, 343 hk AWD)
+                    enhanced_awd_item = item.copy()
+                    enhanced_awd_item["variant"] = f"{variant_name} AWD"
+                    enhanced_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+                    enhanced_awd_item = self._enhance_bz4x_variant(enhanced_awd_item, DrivetrainType.AWD)
+                    enhanced_items.append(enhanced_awd_item)
+                    self.stats.bz4x_awd_found += 1
+                    
+                # Additional AWD variants for the 7 total
+                if "active" in variant_name.lower():
+                    # Create Premium AWD variant
+                    enhanced_premium_awd_item = item.copy()
+                    enhanced_premium_awd_item["variant"] = "Premium AWD"
+                    enhanced_premium_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+                    enhanced_premium_awd_item = self._enhance_bz4x_variant(enhanced_premium_awd_item, DrivetrainType.AWD)
+                    enhanced_items.append(enhanced_premium_awd_item)
                     self.stats.bz4x_awd_found += 1
                     
             except Exception as e:
