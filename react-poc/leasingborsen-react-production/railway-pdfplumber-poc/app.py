@@ -374,7 +374,7 @@ async def extract_with_template_endpoint(file: UploadFile = File(...)):
         
         # Try enhanced extraction first
         try:
-            from toyota_variant_extraction_fixes_enhanced import ToyotaVariantExtractor
+            from toyota_27_variant_extractor import Toyota27VariantExtractor
             import datetime
             
             # Get basic extraction first
@@ -384,15 +384,15 @@ async def extract_with_template_endpoint(file: UploadFile = File(...)):
             basic_result = extract_with_template(content, template_config)
             
             if basic_result.get("success") and basic_result.get("items"):
-                # Apply enhanced processing to the basic extraction results
-                extractor = ToyotaVariantExtractor()
-                enhanced_items = extractor.process_all_variants(basic_result["items"])
+                # Apply enhanced processing to get exactly 27 variants
+                extractor = Toyota27VariantExtractor()
+                enhanced_items = extractor.process_to_27_variants(basic_result["items"])
                 
                 # Create validation and statistics
                 validation = extractor.validate_extraction_results(enhanced_items)
                 stats = extractor.get_statistics()
                 
-                # Enhanced result with proper 27 variants
+                # Enhanced result with exactly 27 variants
                 enhanced_result = {
                     "success": True,
                     "items_extracted": len(enhanced_items),
@@ -401,22 +401,15 @@ async def extract_with_template_endpoint(file: UploadFile = File(...)):
                         "pages_processed": basic_result.get("metadata", {}).get("pages_processed", 0),
                         "raw_items_found": len(basic_result.get("items", [])),
                         "validated_items": len(enhanced_items),
-                        "template_version": "Enhanced v2.0",
-                        "extraction_method": "enhanced_toyota_extraction",
+                        "template_version": "Enhanced v2.1",
+                        "extraction_method": "toyota_27_variant_extraction",
                         "extraction_timestamp": datetime.datetime.now().isoformat(),
                         "enhanced_features_active": True
                     },
                     "errors": [],
                     "variant_breakdown": validation.get("models", {}),
                     "validation": validation,
-                    "extraction_stats": {
-                        "total_processed": stats.total_processed,
-                        "aygo_x_manual_found": stats.aygo_x_manual_found,
-                        "aygo_x_automatic_found": stats.aygo_x_auto_found,
-                        "bz4x_awd_found": stats.bz4x_awd_found,
-                        "yaris_cross_high_power_found": stats.yaris_cross_high_power_found,
-                        "errors_encountered": stats.errors_encountered
-                    }
+                    "extraction_stats": stats
                 }
                 
                 return JSONResponse(content=enhanced_result)
