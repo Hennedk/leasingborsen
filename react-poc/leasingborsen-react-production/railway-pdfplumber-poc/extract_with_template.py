@@ -4,9 +4,18 @@ import pdfplumber
 import re
 import json
 import io
+import logging
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
 from datetime import datetime
+
+# Import enhanced Toyota variant extraction system
+try:
+    from toyota_variant_extraction_fixes_enhanced import ToyotaVariantExtractor
+    ENHANCED_EXTRACTION_AVAILABLE = True
+except ImportError:
+    ENHANCED_EXTRACTION_AVAILABLE = False
+    logging.warning("Enhanced Toyota variant extraction not available - using fallback mode")
 
 @dataclass
 class ExtractionResult:
@@ -23,6 +32,16 @@ class ToyotaDanishExtractor:
         self.validation_rules = template_config["validation_rules"]
         self.pdfplumber_config = template_config["pdfplumber_config"]
         self.debug = template_config.get("debugging", {})
+        
+        # Initialize enhanced Toyota variant extractor if available
+        self.enhanced_extractor = None
+        if ENHANCED_EXTRACTION_AVAILABLE:
+            try:
+                self.enhanced_extractor = ToyotaVariantExtractor()
+                logging.info("Enhanced Toyota variant extraction initialized successfully")
+            except Exception as e:
+                logging.error(f"Failed to initialize enhanced Toyota extractor: {e}")
+                self.enhanced_extractor = None
         
         # Initialize debugging info if enabled
         self.debug_info = {
@@ -968,7 +987,7 @@ class ToyotaDanishExtractor:
         return None
     
     def _post_process_items(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Post-process extracted items"""
+        """Enhanced post-process extracted items with Toyota variant extraction fixes"""
         processed_items = []
         
         for item in items:
@@ -988,7 +1007,38 @@ class ToyotaDanishExtractor:
             
             processed_items.append(item)
         
-        # Remove duplicates (now using unique IDs)
+        # Apply enhanced Toyota variant extraction fixes if available
+        if self.enhanced_extractor:
+            try:
+                logging.info(f"Applying enhanced Toyota variant extraction to {len(processed_items)} items")
+                processed_items = self.enhanced_extractor.process_all_variants(processed_items)
+                
+                # Log extraction statistics
+                stats = self.enhanced_extractor.get_statistics()
+                logging.info(f"Enhanced extraction stats:")
+                logging.info(f"  AYGO X manual: {stats.aygo_x_manual_found}")
+                logging.info(f"  AYGO X automatic: {stats.aygo_x_auto_found}")  
+                logging.info(f"  BZ4X AWD: {stats.bz4x_awd_found}")
+                logging.info(f"  YARIS CROSS high-power: {stats.yaris_cross_high_power_found}")
+                logging.info(f"  Total processed: {stats.total_processed}")
+                logging.info(f"  Errors encountered: {stats.errors_encountered}")
+                
+                # Validate results against expected 27 variants
+                validation = self.enhanced_extractor.validate_extraction_results(processed_items)
+                if not validation["validation_passed"]:
+                    logging.warning(f"⚠️ Expected 27 variants, got {validation['total_variants']}")
+                    for missing in validation["missing_variants"]:
+                        logging.warning(f"  Missing {missing['missing']} {missing['model']} variants")
+                else:
+                    logging.info(f"✅ Successfully extracted all 27 expected Toyota variants")
+                
+            except Exception as e:
+                logging.error(f"Error in enhanced variant extraction: {e}")
+                # Continue with original processing if enhanced extraction fails
+        else:
+            logging.info("Enhanced Toyota variant extraction not available - using standard processing")
+        
+        # Remove duplicates (enhanced or standard)
         return self._remove_duplicates(processed_items)
     
     def _standardize_model_name(self, item: Dict[str, Any]) -> Dict[str, Any]:
@@ -1248,7 +1298,17 @@ class ToyotaDanishExtractor:
         return item
     
     def _remove_duplicates(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Remove duplicate items with enhanced Toyota-specific logic"""
+        """Enhanced duplicate removal that preserves transmission/drivetrain differences"""
+        
+        # Use enhanced duplicate removal from the Toyota extractor if available
+        if self.enhanced_extractor:
+            try:
+                return self.enhanced_extractor.enhanced_duplicate_removal(items)
+            except Exception as e:
+                logging.error(f"Error in enhanced duplicate removal: {e}")
+                # Fall back to original implementation
+        
+        # Original duplicate removal logic (fallback)
         post_processing = self.config.get("post_processing", {})
         duplicate_config = post_processing.get("duplicate_removal", {})
         

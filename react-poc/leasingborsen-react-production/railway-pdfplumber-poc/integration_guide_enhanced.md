@@ -132,14 +132,82 @@ After successful integration, the extraction should produce exactly **27 unique 
 - Executive 61.1 kWh, 174 hk
 - Executive Comfort 61.1 kWh, 174 hk
 
+## Admin/Toyota Upload Feature Integration
+
+### Step 6: Integrate with Admin Upload Feature
+
+The enhanced extraction system includes a simplified API for admin upload integration:
+
+```python
+from toyota_extraction_api import create_extraction_api
+
+# Initialize API
+api = create_extraction_api()
+
+# Process uploaded PDF
+result = api.extract_from_pdf_bytes(pdf_bytes, filename)
+```
+
+### Example Admin Endpoint Integration
+
+```python
+from admin_toyota_integration_example import process_toyota_upload, validate_toyota_extraction_result
+
+@app.route('/admin/toyota/upload', methods=['POST'])
+def admin_toyota_upload():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    pdf_bytes = file.read()
+    
+    # Process with enhanced extraction
+    result = process_toyota_upload(pdf_bytes, file.filename)
+    
+    # Validate extraction (expect 27 variants)
+    validation = validate_toyota_extraction_result(result)
+    result['validation_details'] = validation
+    
+    return jsonify(result)
+```
+
+### Admin Interface Response Format
+
+```json
+{
+  "status": "success",
+  "message": "✅ Successfully extracted all 27 expected Toyota variants",
+  "data": {
+    "total_variants": 27,
+    "expected_variants": 27,
+    "validation_passed": true,
+    "variant_breakdown": {
+      "AYGO X": {"count": 4, "variants": [...]},
+      "BZ4X": {"count": 7, "variants": [...]},
+      "YARIS CROSS": {"count": 6, "variants": [...]}
+    },
+    "extraction_stats": {
+      "aygo_x_manual_found": 2,
+      "aygo_x_automatic_found": 2,
+      "bz4x_awd_found": 3,
+      "yaris_cross_high_power_found": 2
+    },
+    "enhanced_features_active": true
+  }
+}
+```
+
 ## Deployment Checklist
 
 - [ ] Enhanced extractor module deployed
 - [ ] Configuration file in correct location
 - [ ] Main extraction code updated with integration
+- [ ] Admin API wrapper deployed (`toyota_extraction_api.py`)
+- [ ] Admin integration example provided
 - [ ] Tests passing (unit + integration)
 - [ ] Logging configured and working
 - [ ] Statistics monitoring enabled
 - [ ] Performance benchmarks acceptable
 - [ ] Validation rules checking correctly
 - [ ] Error handling tested with malformed data
+- [ ] Admin upload feature integrated and tested
