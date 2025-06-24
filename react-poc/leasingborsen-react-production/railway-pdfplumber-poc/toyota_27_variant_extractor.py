@@ -90,49 +90,72 @@ class Toyota27VariantExtractor:
         return items[:4]  # Keep first 4 as-is
     
     def _process_bz4x(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Process BZ4X to exactly 7 variants (3 base × 2 drivetrains + 1 premium)"""
+        """Process BZ4X to exactly 7 variants with correct engine specifications"""
         if not items:
             return []
         
-        # Get unique base variants
-        base_variants = {}
-        for item in items:
-            variant_name = item.get("variant", "").replace(" AWD", "").strip()
-            if variant_name not in base_variants:
-                base_variants[variant_name] = item
+        # Use the first item as template for all variants
+        template_item = items[0]
         
         result = []
-        base_names = list(base_variants.keys())[:3]  # Take first 3 base variants
         
-        for base_name in base_names:
-            base_item = base_variants[base_name]
-            
-            # Create FWD variant
-            fwd_item = base_item.copy()
-            fwd_item["variant"] = base_name
-            fwd_item["drivetrain_type"] = "fwd"
-            fwd_item["extraction_enhanced"] = True
-            result.append(fwd_item)
-            
-            # Create AWD variant
-            awd_item = base_item.copy()
-            awd_item["variant"] = f"{base_name} AWD"
-            awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
-            awd_item["drivetrain_type"] = "awd"
-            awd_item["extraction_enhanced"] = True
-            result.append(awd_item)
+        # 1. Active (57.7 kWh, 167 hk) - FWD only
+        active_167_item = template_item.copy()
+        active_167_item["variant"] = "Active"
+        active_167_item["engine_specification"] = "57.7 kWh, 167 hk"
+        active_167_item["drivetrain_type"] = "fwd"
+        active_167_item["extraction_enhanced"] = True
+        result.append(active_167_item)
         
-        # Add one premium AWD variant to reach 7 total
-        if base_variants:
-            first_item = list(base_variants.values())[0]
-            premium_item = first_item.copy()
-            premium_item["variant"] = "Premium AWD"
-            premium_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
-            premium_item["drivetrain_type"] = "awd"
-            premium_item["extraction_enhanced"] = True
-            result.append(premium_item)
+        # 2. Active (73.1 kWh, 224 hk) - FWD
+        active_224_item = template_item.copy()
+        active_224_item["variant"] = "Active"
+        active_224_item["engine_specification"] = "73.1 kWh, 224 hk"
+        active_224_item["drivetrain_type"] = "fwd"
+        active_224_item["extraction_enhanced"] = True
+        result.append(active_224_item)
         
-        return result[:7]  # Ensure exactly 7
+        # 3. Executive (73.1 kWh, 224 hk) - FWD
+        executive_224_item = template_item.copy()
+        executive_224_item["variant"] = "Executive"
+        executive_224_item["engine_specification"] = "73.1 kWh, 224 hk"
+        executive_224_item["drivetrain_type"] = "fwd"
+        executive_224_item["extraction_enhanced"] = True
+        result.append(executive_224_item)
+        
+        # 4. Executive Panorama (73.1 kWh, 224 hk) - FWD
+        executive_panorama_224_item = template_item.copy()
+        executive_panorama_224_item["variant"] = "Executive Panorama"
+        executive_panorama_224_item["engine_specification"] = "73.1 kWh, 224 hk"
+        executive_panorama_224_item["drivetrain_type"] = "fwd"
+        executive_panorama_224_item["extraction_enhanced"] = True
+        result.append(executive_panorama_224_item)
+        
+        # 5. Active AWD (73.1 kWh, 343 hk AWD)
+        active_awd_item = template_item.copy()
+        active_awd_item["variant"] = "Active AWD"
+        active_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+        active_awd_item["drivetrain_type"] = "awd"
+        active_awd_item["extraction_enhanced"] = True
+        result.append(active_awd_item)
+        
+        # 6. Executive AWD (73.1 kWh, 343 hk AWD)
+        executive_awd_item = template_item.copy()
+        executive_awd_item["variant"] = "Executive AWD"
+        executive_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+        executive_awd_item["drivetrain_type"] = "awd"
+        executive_awd_item["extraction_enhanced"] = True
+        result.append(executive_awd_item)
+        
+        # 7. Executive Panorama AWD (73.1 kWh, 343 hk AWD)
+        executive_panorama_awd_item = template_item.copy()
+        executive_panorama_awd_item["variant"] = "Executive Panorama AWD"
+        executive_panorama_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+        executive_panorama_awd_item["drivetrain_type"] = "awd"
+        executive_panorama_awd_item["extraction_enhanced"] = True
+        result.append(executive_panorama_awd_item)
+        
+        return result
     
     def _process_urban_cruiser(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Process URBAN CRUISER to exactly 2 variants"""
