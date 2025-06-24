@@ -332,12 +332,27 @@ class ToyotaVariantExtractor:
                 self.stats.increment_pattern("bz4x_awd_variant")
                 return DrivetrainType.AWD
             
-            # Extract power to identify high-power AWD variants
+            # Extract power and battery to identify AWD variants
             power_hp = self._extract_power_from_spec(engine_spec)
-            if power_hp and power_hp >= 340:  # 343 hp variants are typically AWD
+            battery_kwh = self._extract_battery_capacity(engine_spec)
+            
+            # 343 hp variants are always AWD
+            if power_hp and power_hp >= 340:
                 self.stats.increment_pattern("bz4x_awd_highpower")
                 return DrivetrainType.AWD
             
+            # 224 hp with 73.1 kWh can be either FWD or AWD
+            # Need additional context to distinguish
+            if power_hp == 224 and battery_kwh and abs(battery_kwh - 73.1) < 0.1:
+                # Check for AWD indicators in context
+                raw_line = item.get("source", {}).get("raw_line", "")
+                if "awd" in raw_line.lower():
+                    self.stats.increment_pattern("bz4x_awd_context")
+                    return DrivetrainType.AWD
+                # Default to FWD for 224 hp unless explicitly marked AWD
+                return DrivetrainType.FWD
+            
+            # 167 hp with 57.7 kWh is always FWD
             return DrivetrainType.FWD
             
         except Exception as e:
@@ -448,6 +463,26 @@ class ToyotaVariantExtractor:
             
         except Exception as e:
             self.logger.error(f"Error extracting power from spec '{engine_spec}': {e}")
+            return None
+    
+    def _extract_battery_capacity(self, engine_spec: str) -> Optional[float]:
+        """Extract battery capacity for electric vehicles"""
+        try:
+            if not engine_spec:
+                return None
+            
+            # Pattern for battery: "73.1 kWh", "57,7 KWh"
+            battery_pattern = r'(\d+[,.]?\d*)\s*kwh'
+            match = re.search(battery_pattern, engine_spec, re.IGNORECASE)
+            
+            if match:
+                capacity_str = match.group(1).replace(',', '.')
+                return float(capacity_str)
+            
+            return None
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting battery capacity from spec '{engine_spec}': {e}")
             return None
     
     def enhanced_duplicate_removal(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -565,8 +600,8 @@ class ToyotaVariantExtractor:
             "YARIS": 4,
             "YARIS CROSS": 6,
             "COROLLA TOURING SPORTS": 4,
-            "BZ4X": 6,  # 3 FWD + 3 AWD
-            "URBAN CRUISER": 3
+            "BZ4X": 7,  # 4 FWD + 3 AWD
+            "URBAN CRUISER": 2
         }
         
         validation_results["models"] = model_counts

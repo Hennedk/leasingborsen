@@ -22,14 +22,22 @@
         "(\\d+[,.]\\d*)\\s*[Kk][Ww][Hh].*?(\\d+)\\s*[Hh][Kk].*?(AWD)?"
       ],
       "expected_variants": [
-        "Active",
-        "Executive", 
-        "Executive Panorama"
+        "Active (57.7 kWh, 167 hk)",
+        "Active (73.1 kWh, 224 hk)", 
+        "Executive (73.1 kWh, 224 hk)",
+        "Executive Panorama (73.1 kWh, 224 hk)",
+        "Active (73.1 kWh, 343 hk AWD)",
+        "Executive (73.1 kWh, 343 hk AWD)",
+        "Executive Panorama (73.1 kWh, 343 hk AWD)"
       ],
       "power_levels": {
         "167": "FWD",
-        "224": "FWD", 
+        "224": "FWD_OR_AWD", 
         "343": "AWD"
+      },
+      "battery_levels": {
+        "57.7": "FWD_ONLY",
+        "73.1": "FWD_OR_AWD"
       }
     },
     "yaris_cross": {
@@ -62,7 +70,11 @@
     },
     "urban_cruiser": {
       "variant_patterns": [
-        "(Active|Executive|Executive Comfort)"
+        "(Active|Executive)"
+      ],
+      "expected_variants": [
+        "Active (61 kWh, 174 hk)",
+        "Executive (61 kWh, 174 hk)"
       ]
     },
     "transmission": {
@@ -123,8 +135,8 @@
     "yaris": 4,
     "yaris_cross": 6,
     "corolla": 4,
-    "bz4x": 6,
-    "urban_cruiser": 3,
+    "bz4x": 7,
+    "urban_cruiser": 2,
     "total": 27
   },
   "extraction_methods": {

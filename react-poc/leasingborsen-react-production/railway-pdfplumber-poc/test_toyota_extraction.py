@@ -339,12 +339,13 @@ class TestToyotaVariantExtractor(unittest.TestCase):
                 "engine_specification": "1.8 Hybrid 140 hk"
             })
         
-        # BZ4X - 6 variants (3 FWD + 3 AWD)
+        # BZ4X - 7 variants (4 FWD + 3 AWD)
         bz4x_variants = [
             ("Active", "57.7 kWh, 167 hk", "fwd"),
+            ("Active", "73.1 kWh, 224 hk", "fwd"),
             ("Executive", "73.1 kWh, 224 hk", "fwd"),
             ("Executive Panorama", "73.1 kWh, 224 hk", "fwd"),
-            ("Active", "57.7 kWh, 167 hk AWD", "awd"),
+            ("Active", "73.1 kWh, 343 hk AWD", "awd"),
             ("Executive", "73.1 kWh, 343 hk AWD", "awd"),
             ("Executive Panorama", "73.1 kWh, 343 hk AWD", "awd")
         ]
@@ -356,13 +357,13 @@ class TestToyotaVariantExtractor(unittest.TestCase):
                 "drivetrain_type": drivetrain
             })
         
-        # URBAN CRUISER - 3 variants
-        urban_cruiser_variants = ["Active", "Executive", "Executive Comfort"]
+        # URBAN CRUISER - 2 variants
+        urban_cruiser_variants = ["Active", "Executive"]
         for variant in urban_cruiser_variants:
             variants.append({
                 "model": "URBAN CRUISER",
-                "variant": f"{variant} 61.1 kWh, 174 hk",
-                "engine_specification": "61.1 kWh, 174 hk"
+                "variant": f"{variant} 61 kWh, 174 hk",
+                "engine_specification": "61 kWh, 174 hk"
             })
         
         return variants

@@ -133,18 +133,18 @@ The enhanced system will produce exactly **27 unique Toyota variants**:
 - Style 1.8 Hybrid 140 hk
 - Style Safety 1.8 Hybrid 140 hk
 
-### BZ4X (6 variants)
+### BZ4X (7 variants)
 - Active 57.7 kWh, 167 hk (FWD)
+- Active 73.1 kWh, 224 hk (FWD) ⭐ (new variant)
 - Executive 73.1 kWh, 224 hk (FWD)
 - Executive Panorama 73.1 kWh, 224 hk (FWD)
-- Active 57.7 kWh, 167 hk AWD ⭐ (AWD)
+- Active 73.1 kWh, 343 hk AWD ⭐ (AWD)
 - Executive 73.1 kWh, 343 hk AWD ⭐ (AWD)
 - Executive Panorama 73.1 kWh, 343 hk AWD ⭐ (AWD)
 
-### URBAN CRUISER (3 variants)
-- Active 61.1 kWh, 174 hk
-- Executive 61.1 kWh, 174 hk
-- Executive Comfort 61.1 kWh, 174 hk
+### URBAN CRUISER (2 variants)
+- Active 61 kWh, 174 hk
+- Executive 61 kWh, 174 hk
 
 ## 🛠 Integration Steps
 
@@ -233,7 +233,7 @@ Enhanced extraction stats:
 ### After Enhancement
 - **Total variants**: 27 ✅ (target achieved)
 - **AYGO X**: 4 variants ✅ (manual/automatic properly detected)
-- **BZ4X**: 6 variants ✅ (FWD/AWD properly preserved)
+- **BZ4X**: 7 variants ✅ (FWD/AWD properly preserved)
 - **YARIS CROSS**: 6 variants ✅ (high-power variants detected)
 
 ## 🔄 Next Steps
