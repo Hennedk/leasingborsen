@@ -32,6 +32,7 @@ interface ListingsTableProps {
   loading?: boolean
   onDelete?: (listing: AdminListing) => void
   onView?: (listing: AdminListing) => void
+  onDuplicate?: (listing: AdminListing) => void
   onBulkAction?: (selectedListings: AdminListing[], action: string) => void
 }
 
@@ -50,6 +51,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
   loading = false,
   onDelete,
   onView,
+  onDuplicate,
   onBulkAction
 }) => {
   // All table state management is now handled by the custom hook
@@ -65,6 +67,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
     onToggleExpansion: () => void
     onDelete: () => void
     onView: () => void
+    onDuplicate?: () => void
   }>(({ 
     listing, 
     isSelected, 
@@ -72,7 +75,8 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
     onToggleSelection, 
     onToggleExpansion, 
     onDelete, 
-    onView 
+    onView,
+    onDuplicate
   }) => (
     <TableRow
       className={cn(
@@ -193,6 +197,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
           listing={listing}
           onView={onView}
           onDelete={onDelete}
+          onDuplicate={onDuplicate}
         />
       </TableCell>
     </TableRow>
@@ -240,6 +245,7 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
                     onToggleExpansion={() => tableState.toggleRowExpansion(listing.listing_id!)}
                     onDelete={() => onDelete?.(listing)}
                     onView={() => onView?.(listing)}
+                    onDuplicate={() => onDuplicate?.(listing)}
                   />
 
                   {/* Expanded row content */}

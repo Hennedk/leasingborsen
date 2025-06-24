@@ -11,7 +11,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Edit, Trash2, Eye } from 'lucide-react'
+import { Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CarListing } from '@/lib/supabase'
 
@@ -19,6 +19,7 @@ interface ListingRowActionsProps {
   listing: CarListing
   onView: () => void
   onDelete: () => void
+  onDuplicate?: () => void
 }
 
 /**
@@ -28,7 +29,8 @@ interface ListingRowActionsProps {
 export const ListingRowActions = React.memo<ListingRowActionsProps>(({
   listing,
   onView,
-  onDelete
+  onDelete,
+  onDuplicate
 }) => {
   return (
     <div className="admin-table-actions">
@@ -55,6 +57,19 @@ export const ListingRowActions = React.memo<ListingRowActionsProps>(({
           <Edit className="h-4 w-4" aria-hidden="true" />
         </Link>
       </Button>
+      
+      {/* Duplicate button */}
+      {onDuplicate && (
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="admin-icon-button"
+          onClick={onDuplicate}
+          aria-label={`Dupliker ${listing.make} ${listing.model} annonce`}
+        >
+          <Copy className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      )}
       
       {/* Delete button with confirmation dialog */}
       <AlertDialog>

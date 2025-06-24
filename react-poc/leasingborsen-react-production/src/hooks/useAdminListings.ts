@@ -550,3 +550,105 @@ export function useAdminDeleteListing() {
     }
   })
 }
+
+export function useAdminDuplicateListing() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // First, fetch the original listing with all its data
+      const { data: originalListing, error: fetchError } = await supabase
+        .from('listings')
+        .select(`
+          variant,
+          year,
+          mileage,
+          horsepower,
+          description,
+          image,
+          make_id,
+          model_id,
+          seller_id,
+          body_type_id,
+          fuel_type_id,
+          transmission_id,
+          seats,
+          co2_emission,
+          co2_tax_half_year,
+          wltp,
+          drive_type
+        `)
+        .eq('id', id)
+        .single()
+
+      if (fetchError) throw fetchError
+      if (!originalListing) throw new Error('Original listing not found')
+
+      // Create the new listing without the ID
+      const { variant, year, mileage, horsepower, description, image, ...restListing } = originalListing
+      const duplicatedListing = {
+        ...restListing,
+        variant: variant ? `${variant} (Kopi)` : 'Kopi',
+        year,
+        mileage,
+        horsepower,
+        description: description ? `${description}\n\n[Kopieret fra original annonce]` : '[Kopieret fra original annonce]',
+        image,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      // Insert the new listing
+      const { data: newListing, error: insertError } = await supabase
+        .from('listings')
+        .insert(duplicatedListing)
+        .select()
+        .single()
+
+      if (insertError) throw insertError
+
+      // Fetch and duplicate lease pricing separately
+      const { data: originalPricing } = await supabase
+        .from('lease_pricing')
+        .select('*')
+        .eq('listing_id', id)
+
+      if (originalPricing && originalPricing.length > 0) {
+        const pricingData = originalPricing.map((pricing: any) => ({
+          listing_id: newListing.id,
+          monthly_price: pricing.monthly_price,
+          first_payment: pricing.first_payment,
+          period_months: pricing.period_months,
+          mileage_per_year: pricing.mileage_per_year,
+          ownership_fee: pricing.ownership_fee,
+          administrative_fee: pricing.administrative_fee,
+          overage_fee_per_km: pricing.overage_fee_per_km,
+          large_maintenance_included: pricing.large_maintenance_included,
+          small_maintenance_included: pricing.small_maintenance_included,
+          replacement_car_included: pricing.replacement_car_included,
+          insurance_included: pricing.insurance_included,
+          tire_included: pricing.tire_included
+        }))
+
+        const { error: pricingError } = await supabase
+          .from('lease_pricing')
+          .insert(pricingData)
+
+        if (pricingError) {
+          console.warn('Failed to duplicate lease pricing:', pricingError)
+          // Don't throw here as the main listing was created successfully
+        }
+      }
+
+      return newListing
+    },
+    onSuccess: () => {
+      // Invalidate all listings queries to show the new duplicate
+      queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
+      queryClient.invalidateQueries({ queryKey: ['admin'] })
+    },
+    onError: (error) => {
+      console.error('Failed to duplicate listing:', error)
+    }
+  })
+}

@@ -14,7 +14,8 @@ import {
 import { 
   useAdminListings, 
   useBulkDeleteListings,
-  useAdminDeleteListing 
+  useAdminDeleteListing,
+  useAdminDuplicateListing
 } from '@/hooks/useAdminListings'
 import { 
   DataErrorBoundary, 
@@ -56,6 +57,7 @@ const AdminListings: React.FC = () => {
   // Mutations
   const bulkDeleteMutation = useBulkDeleteListings()
   const deleteMutation = useAdminDeleteListing()
+  const duplicateMutation = useAdminDuplicateListing()
 
   // Available sellers for filtering - TODO: Move to reference data hook
   const sellers: SellerReference[] = useMemo(() => [
@@ -157,6 +159,22 @@ const AdminListings: React.FC = () => {
 
   const handleView = (listing: AdminListing) => {
     window.open(`/listing/${listing.listing_id}`, '_blank')
+  }
+
+  const handleDuplicate = (listing: AdminListing) => {
+    if (!listing.listing_id) {
+      toast.error('Kan ikke duplikere annonce uden ID')
+      return
+    }
+    
+    duplicateMutation.mutate(listing.listing_id, {
+      onSuccess: () => {
+        toast.success(`Annonce "${listing.make} ${listing.model}" duplikeret`)
+      },
+      onError: () => {
+        toast.error('Kunne ikke duplikere annonce')
+      }
+    })
   }
 
   const handleBulkAction = (selectedListings: AdminListing[], action: string) => {
@@ -309,6 +327,7 @@ const AdminListings: React.FC = () => {
                 loading={listingsLoading}
                 onDelete={handleDelete}
                 onView={handleView}
+                onDuplicate={handleDuplicate}
                 onBulkAction={handleBulkAction}
               />
             </DataErrorBoundary>
