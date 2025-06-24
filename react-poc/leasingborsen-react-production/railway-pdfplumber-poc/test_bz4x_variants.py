@@ -50,13 +50,13 @@ def test_bz4x_variants():
     ]
     
     expected_variants = [
-        "Active",
-        "Active", 
-        "Executive",
-        "Executive Panorama",
-        "Active AWD",
-        "Executive AWD",
-        "Executive Panorama AWD"
+        "Active 57.7 kWh 167 hk",
+        "Active 73.1 kWh 224 hk", 
+        "Executive 73.1 kWh 224 hk",
+        "Executive Panorama 73.1 kWh 224 hk",
+        "Active AWD 73.1 kWh 343 hk",
+        "Executive AWD 73.1 kWh 343 hk",
+        "Executive Panorama AWD 73.1 kWh 343 hk"
     ]
     
     expected_drivetrains = [
