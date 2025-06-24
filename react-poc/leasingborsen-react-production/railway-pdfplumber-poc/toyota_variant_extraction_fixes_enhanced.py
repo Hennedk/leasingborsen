@@ -207,6 +207,7 @@ class ToyotaVariantExtractor:
     def extract_aygo_x_variants(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Extract AYGO X variants with proper transmission detection"""
         enhanced_items = []
+        aygo_x_variants_created = set()  # Track created variants to avoid duplicates
         
         for item in items:
             try:
@@ -216,20 +217,26 @@ class ToyotaVariantExtractor:
                 
                 self.stats.total_processed += 1
                 
-                # Get transmission type from engine specification and context
-                transmission = self._detect_aygo_x_transmission(item)
+                # Get base variant info
+                base_variant = item.get("variant", "").replace(" Automatgear", "").strip()
                 
-                # Create enhanced automatic variant
-                enhanced_auto_item = item.copy()
-                enhanced_auto_item = self._enhance_aygo_x_variant(enhanced_auto_item, TransmissionType.AUTOMATIC)
-                enhanced_items.append(enhanced_auto_item)
-                self.stats.aygo_x_auto_found += 1
+                # Create automatic variant (keep original but clean)
+                auto_variant_key = f"{base_variant}_auto"
+                if auto_variant_key not in aygo_x_variants_created:
+                    enhanced_auto_item = item.copy()
+                    enhanced_auto_item = self._enhance_aygo_x_variant(enhanced_auto_item, TransmissionType.AUTOMATIC)
+                    enhanced_items.append(enhanced_auto_item)
+                    aygo_x_variants_created.add(auto_variant_key)
+                    self.stats.aygo_x_auto_found += 1
                 
                 # Create corresponding manual variant
-                enhanced_manual_item = item.copy()
-                enhanced_manual_item = self._enhance_aygo_x_variant(enhanced_manual_item, TransmissionType.MANUAL)
-                enhanced_items.append(enhanced_manual_item)
-                self.stats.aygo_x_manual_found += 1
+                manual_variant_key = f"{base_variant}_manual"
+                if manual_variant_key not in aygo_x_variants_created:
+                    enhanced_manual_item = item.copy()
+                    enhanced_manual_item = self._enhance_aygo_x_variant(enhanced_manual_item, TransmissionType.MANUAL)
+                    enhanced_items.append(enhanced_manual_item)
+                    aygo_x_variants_created.add(manual_variant_key)
+                    self.stats.aygo_x_manual_found += 1
                     
             except Exception as e:
                 self.logger.error(f"Error processing AYGO X item: {e}")
@@ -275,13 +282,14 @@ class ToyotaVariantExtractor:
             variant = item.get("variant", "")
             engine_spec = item.get("engine_specification", "")
             
-            # Add transmission to variant name if not already present
-            if transmission == TransmissionType.AUTOMATIC and "automatgear" not in variant.lower():
-                item["variant"] = f"{variant} {engine_spec}"
-            elif transmission == TransmissionType.MANUAL and "manual" not in variant.lower():
-                # For manual, we need to indicate it's manual
-                base_variant = variant.replace(" automatgear", "").strip()
-                item["variant"] = f"{base_variant} manual {engine_spec.replace(' automatgear', '').strip()}"
+            # Clean base variant name
+            base_variant = variant.replace(" Automatgear", "").replace(" automatgear", "").strip()
+            
+            # Create clean variant name based on transmission
+            if transmission == TransmissionType.AUTOMATIC:
+                item["variant"] = f"{base_variant} Automatgear"
+            elif transmission == TransmissionType.MANUAL:
+                item["variant"] = f"{base_variant} Manual"
             
             # Add metadata
             item["transmission_type"] = transmission.value
@@ -296,6 +304,7 @@ class ToyotaVariantExtractor:
     def extract_bz4x_awd_variants(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Extract BZ4X variants with proper AWD detection"""
         enhanced_items = []
+        bz4x_variants_created = set()  # Track created variants to avoid duplicates
         
         for item in items:
             try:
@@ -306,45 +315,40 @@ class ToyotaVariantExtractor:
                 self.stats.total_processed += 1
                 
                 # Get base variant info
-                variant_name = item.get("variant", "")
+                variant_name = item.get("variant", "").strip()
                 engine_spec = item.get("engine_specification", "")
                 
-                # Create FWD variant (keep original)
-                enhanced_fwd_item = item.copy()
-                enhanced_fwd_item = self._enhance_bz4x_variant(enhanced_fwd_item, DrivetrainType.FWD)
-                enhanced_items.append(enhanced_fwd_item)
+                # Create FWD variant (keep original but clean)
+                fwd_variant_key = f"{variant_name}_fwd"
+                if fwd_variant_key not in bz4x_variants_created:
+                    enhanced_fwd_item = item.copy()
+                    enhanced_fwd_item = self._enhance_bz4x_variant(enhanced_fwd_item, DrivetrainType.FWD)
+                    enhanced_items.append(enhanced_fwd_item)
+                    bz4x_variants_created.add(fwd_variant_key)
                 
-                # For certain variants, also create AWD version
-                # Active: 57.7 kWh, 167 hk -> AWD version exists
-                # Executive: 73.1 kWh, 224 hk -> AWD version exists  
-                # Executive Panorama: AWD version exists
-                if "active" in variant_name.lower():
-                    # Create AWD variant for Active (73.1 kWh, 343 hk AWD)
+                # Create AWD variant (only one per base variant)
+                awd_variant_name = f"{variant_name} AWD"
+                awd_variant_key = f"{variant_name}_awd"
+                if awd_variant_key not in bz4x_variants_created:
                     enhanced_awd_item = item.copy()
-                    enhanced_awd_item["variant"] = f"{variant_name} AWD"
+                    enhanced_awd_item["variant"] = awd_variant_name
                     enhanced_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
                     enhanced_awd_item = self._enhance_bz4x_variant(enhanced_awd_item, DrivetrainType.AWD)
                     enhanced_items.append(enhanced_awd_item)
+                    bz4x_variants_created.add(awd_variant_key)
                     self.stats.bz4x_awd_found += 1
                     
-                elif "executive" in variant_name.lower():
-                    # Create AWD variant for Executive variants (73.1 kWh, 343 hk AWD)
-                    enhanced_awd_item = item.copy()
-                    enhanced_awd_item["variant"] = f"{variant_name} AWD"
-                    enhanced_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
-                    enhanced_awd_item = self._enhance_bz4x_variant(enhanced_awd_item, DrivetrainType.AWD)
-                    enhanced_items.append(enhanced_awd_item)
-                    self.stats.bz4x_awd_found += 1
-                    
-                # Additional AWD variants for the 7 total
+                # Create one additional Premium AWD variant (only once)
                 if "active" in variant_name.lower():
-                    # Create Premium AWD variant
-                    enhanced_premium_awd_item = item.copy()
-                    enhanced_premium_awd_item["variant"] = "Premium AWD"
-                    enhanced_premium_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
-                    enhanced_premium_awd_item = self._enhance_bz4x_variant(enhanced_premium_awd_item, DrivetrainType.AWD)
-                    enhanced_items.append(enhanced_premium_awd_item)
-                    self.stats.bz4x_awd_found += 1
+                    premium_variant_key = "premium_awd"
+                    if premium_variant_key not in bz4x_variants_created:
+                        enhanced_premium_awd_item = item.copy()
+                        enhanced_premium_awd_item["variant"] = "Premium AWD"
+                        enhanced_premium_awd_item["engine_specification"] = "73.1 kWh, 343 hk AWD"
+                        enhanced_premium_awd_item = self._enhance_bz4x_variant(enhanced_premium_awd_item, DrivetrainType.AWD)
+                        enhanced_items.append(enhanced_premium_awd_item)
+                        bz4x_variants_created.add(premium_variant_key)
+                        self.stats.bz4x_awd_found += 1
                     
             except Exception as e:
                 self.logger.error(f"Error processing BZ4X item: {e}")
@@ -400,10 +404,23 @@ class ToyotaVariantExtractor:
         """Enhance BZ4X variant with drivetrain information"""
         try:
             engine_spec = item.get("engine_specification", "")
+            variant = item.get("variant", "")
             
-            # Ensure AWD is in engine specification if detected
+            # Clean variant name to avoid duplicated AWD
+            clean_variant = variant.replace(" AWD", "").strip()
+            
+            # Set proper variant name based on drivetrain
+            if drivetrain == DrivetrainType.AWD and "awd" not in variant.lower():
+                item["variant"] = f"{clean_variant} AWD"
+            else:
+                item["variant"] = clean_variant
+            
+            # Ensure proper engine specification
+            clean_engine_spec = engine_spec.replace(" AWD", "").strip()
             if drivetrain == DrivetrainType.AWD and "awd" not in engine_spec.lower():
-                item["engine_specification"] = f"{engine_spec} AWD".strip()
+                item["engine_specification"] = f"{clean_engine_spec} AWD".strip()
+            else:
+                item["engine_specification"] = clean_engine_spec
             
             # Add metadata
             item["drivetrain_type"] = drivetrain.value
