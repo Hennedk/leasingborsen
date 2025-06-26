@@ -26,6 +26,7 @@ const AdminListings = lazy(() => import('@/pages/admin/AdminListings'))
 const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
 const AdminBatchListings = lazy(() => import('@/pages/admin/AdminBatchListings'))
 const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
+const AdminSellerListings = lazy(() => import('@/pages/admin/AdminSellerListings'))
 const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
 const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
 const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProcessingPage'))
@@ -121,7 +122,8 @@ function App() {
                       <Route path="listings/create" element={<AdminListingForm />} />
                       <Route path="listings/batch" element={<AdminBatchListings />} />
                       <Route path="listings/edit/:id" element={<AdminListingForm />} />
-                      <Route path="sellers" element={<AdminSellers />} />
+                      <Route path="sellers" element={<AdminSellerListings />} />
+                      <Route path="sellers/manage" element={<AdminSellers />} />
                       <Route path="sellers/create" element={<AdminSellerForm />} />
                       <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
                       <Route path="batches/:batchId/review" element={<BatchReviewPage />} />
