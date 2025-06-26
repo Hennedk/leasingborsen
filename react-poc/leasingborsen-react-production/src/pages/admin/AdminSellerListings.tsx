@@ -97,9 +97,10 @@ const AdminSellerListings: React.FC = () => {
   }, [allListings, filters.sellerId])
 
   const handleSellerChange = (sellerId: string) => {
-    setFilters(prev => ({ ...prev, sellerId }))
-    if (sellerId) {
-      setSearchParams({ seller: sellerId })
+    const actualSellerId = sellerId === 'all' ? '' : sellerId
+    setFilters(prev => ({ ...prev, sellerId: actualSellerId }))
+    if (actualSellerId) {
+      setSearchParams({ seller: actualSellerId })
     } else {
       setSearchParams({})
     }
@@ -155,12 +156,12 @@ const AdminSellerListings: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="seller">Sælger</Label>
-                <Select value={filters.sellerId} onValueChange={handleSellerChange}>
+                <Select value={filters.sellerId || 'all'} onValueChange={handleSellerChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Vælg en sælger..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Alle sælgere</SelectItem>
+                    <SelectItem value="all">Alle sælgere</SelectItem>
                     {sellers.map(seller => (
                       <SelectItem key={seller.id} value={seller.id}>
                         {seller.name} {seller.email && `(${seller.email})`}
@@ -235,12 +236,12 @@ const AdminSellerListings: React.FC = () => {
                     className="pl-8"
                   />
                 </div>
-                <Select value={filters.make} onValueChange={(value) => setFilters(prev => ({ ...prev, make: value }))}>
+                <Select value={filters.make || 'all'} onValueChange={(value) => setFilters(prev => ({ ...prev, make: value === 'all' ? '' : value }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Alle mærker" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Alle mærker</SelectItem>
+                    <SelectItem value="all">Alle mærker</SelectItem>
                     {availableMakes.map(make => (
                       <SelectItem key={make} value={make}>{make}</SelectItem>
                     ))}
