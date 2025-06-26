@@ -238,10 +238,18 @@ serve(async (req) => {
     const cleanApiKey = openaiApiKey.trim()
 
     // Use Toyota-specific cleaner for better structure
-    const processedText = cleanToyotaText(textContent)
+    let processedText = cleanToyotaText(textContent)
     console.log(`Toyota cleaner processed text: ${processedText.length} characters (from ${textContent.length})`)
     
+    // Limit text size to prevent timeouts (max ~10,000 characters = ~2,500 tokens)
+    const maxChars = 10000
+    if (processedText.length > maxChars) {
+      processedText = processedText.substring(0, maxChars) + '\n\n[Text truncated for processing...]'
+      console.log(`Text truncated to ${maxChars} characters to prevent timeout`)
+    }
+    
     // Log a sample to see what we're sending
+    console.log(`Final text being sent to OpenAI: ${processedText.length} characters`)
     console.log(`First 500 chars being sent to OpenAI:`)
     console.log(processedText.substring(0, 500))
     
@@ -267,7 +275,7 @@ serve(async (req) => {
     try {
       // Call OpenAI API with timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
