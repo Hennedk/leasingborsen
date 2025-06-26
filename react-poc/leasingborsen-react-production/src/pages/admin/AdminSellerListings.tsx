@@ -125,10 +125,13 @@ const AdminSellerListings: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <Breadcrumb className="mb-2">
-              <span>Admin</span>
-              <span>Sælger Annoncer</span>
-            </Breadcrumb>
+            <Breadcrumb 
+              className="mb-2"
+              items={[
+                { label: 'Admin', href: '/admin' },
+                { label: 'Sælger Annoncer' }
+              ]}
+            />
             <h1 className="text-3xl font-bold tracking-tight">Sælger Annoncer</h1>
             <p className="text-muted-foreground">
               Se alle annoncer for en specifik sælger
