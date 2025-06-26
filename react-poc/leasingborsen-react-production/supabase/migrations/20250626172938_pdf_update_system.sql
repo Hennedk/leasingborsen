@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS extraction_sessions (
 );
 
 -- 2. Create listing changes table to track individual changes
-CREATE TABLE IF NOT EXISTS listing_changes (
+CREATE TABLE IF NOT EXISTS extraction_listing_changes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   session_id UUID NOT NULL REFERENCES extraction_sessions(id) ON DELETE CASCADE,
   existing_listing_id UUID REFERENCES listings(id),
@@ -73,10 +73,10 @@ CREATE INDEX IF NOT EXISTS idx_extraction_sessions_seller ON extraction_sessions
 CREATE INDEX IF NOT EXISTS idx_extraction_sessions_status ON extraction_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_extraction_sessions_created ON extraction_sessions(created_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_listing_changes_session ON listing_changes(session_id);
-CREATE INDEX IF NOT EXISTS idx_listing_changes_listing ON listing_changes(existing_listing_id);
-CREATE INDEX IF NOT EXISTS idx_listing_changes_type ON listing_changes(change_type);
-CREATE INDEX IF NOT EXISTS idx_listing_changes_status ON listing_changes(change_status);
+CREATE INDEX IF NOT EXISTS idx_extraction_listing_changes_session ON extraction_listing_changes(session_id);
+CREATE INDEX IF NOT EXISTS idx_extraction_listing_changes_listing ON extraction_listing_changes(existing_listing_id);
+CREATE INDEX IF NOT EXISTS idx_extraction_listing_changes_type ON extraction_listing_changes(change_type);
+CREATE INDEX IF NOT EXISTS idx_extraction_listing_changes_status ON extraction_listing_changes(change_status);
 
 -- 4. Create view for session summary with detailed stats
 CREATE OR REPLACE VIEW extraction_session_summary AS
@@ -90,7 +90,7 @@ SELECT
   COUNT(DISTINCT CASE WHEN lc.change_status = 'rejected' THEN lc.id END) as rejected_count,
   COUNT(DISTINCT CASE WHEN lc.change_status = 'applied' THEN lc.id END) as applied_count
 FROM extraction_sessions es
-LEFT JOIN listing_changes lc ON es.id = lc.session_id
+LEFT JOIN extraction_listing_changes lc ON es.id = lc.session_id
 GROUP BY es.id;
 
 -- 5. Function to apply approved changes from a session
@@ -113,7 +113,7 @@ BEGIN
   BEGIN
     -- Process each approved change
     FOR v_change IN 
-      SELECT * FROM listing_changes 
+      SELECT * FROM extraction_listing_changes 
       WHERE session_id = p_session_id 
         AND change_status = 'approved'
         AND change_type IN ('create', 'update', 'delete')
@@ -237,7 +237,7 @@ BEGIN
         END CASE;
         
         -- Mark change as applied
-        UPDATE listing_changes 
+        UPDATE extraction_listing_changes 
         SET 
           change_status = 'applied',
           applied_at = NOW()
@@ -272,20 +272,20 @@ $$ LANGUAGE plpgsql;
 
 -- 6. RLS policies
 ALTER TABLE extraction_sessions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE listing_changes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE extraction_listing_changes ENABLE ROW LEVEL SECURITY;
 
 -- Admin only policies
 CREATE POLICY extraction_sessions_admin_all ON extraction_sessions
   FOR ALL
   USING (auth.role() = 'admin' OR auth.role() = 'service_role');
 
-CREATE POLICY listing_changes_admin_all ON listing_changes
+CREATE POLICY extraction_listing_changes_admin_all ON extraction_listing_changes
   FOR ALL
   USING (auth.role() = 'admin' OR auth.role() = 'service_role');
 
 -- 7. Add helpful comments
 COMMENT ON TABLE extraction_sessions IS 'Tracks PDF extraction sessions for creating or updating listings';
-COMMENT ON TABLE listing_changes IS 'Individual listing changes detected during extraction sessions';
-COMMENT ON COLUMN listing_changes.confidence_score IS 'AI confidence score for fuzzy matches (0.00-1.00)';
-COMMENT ON COLUMN listing_changes.field_changes IS 'JSON object showing old vs new values for each changed field';
+COMMENT ON TABLE extraction_listing_changes IS 'Individual listing changes detected during extraction sessions';
+COMMENT ON COLUMN extraction_listing_changes.confidence_score IS 'AI confidence score for fuzzy matches (0.00-1.00)';
+COMMENT ON COLUMN extraction_listing_changes.field_changes IS 'JSON object showing old vs new values for each changed field';
 COMMENT ON FUNCTION apply_extraction_session_changes IS 'Applies all approved changes from an extraction session';

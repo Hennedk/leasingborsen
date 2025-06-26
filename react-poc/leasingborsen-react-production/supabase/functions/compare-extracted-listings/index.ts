@@ -62,6 +62,90 @@ interface MatchResult {
   changes?: Record<string, { old: any; new: any }>
 }
 
+interface OfferComparison {
+  hasChanges: boolean
+  changes: Record<string, { old: any; new: any }>
+}
+
+// Compare offers between existing and extracted listings
+function compareOffers(
+  existingOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>,
+  extractedOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>
+): OfferComparison {
+  const changes: Record<string, { old: any; new: any }> = {}
+  let hasChanges = false
+
+  // If different number of offers, that's a change
+  if (existingOffers.length !== extractedOffers.length) {
+    hasChanges = true
+    changes['offer_count'] = { 
+      old: existingOffers.length, 
+      new: extractedOffers.length 
+    }
+  }
+
+  // Compare each offer position (sorted by monthly price)
+  const sortedExisting = [...existingOffers].sort((a, b) => a.monthly_price - b.monthly_price)
+  const sortedExtracted = [...extractedOffers].sort((a, b) => a.monthly_price - b.monthly_price)
+
+  const maxOffers = Math.max(sortedExisting.length, sortedExtracted.length)
+  
+  for (let i = 0; i < maxOffers; i++) {
+    const existing = sortedExisting[i]
+    const extracted = sortedExtracted[i]
+    
+    if (!existing && extracted) {
+      // New offer added
+      hasChanges = true
+      changes[`offer_${i + 1}_new`] = {
+        old: null,
+        new: `${extracted.monthly_price} kr/md (${extracted.period_months || '?'} mdr, ${extracted.mileage_per_year || '?'} km/år)`
+      }
+    } else if (existing && !extracted) {
+      // Offer removed
+      hasChanges = true
+      changes[`offer_${i + 1}_removed`] = {
+        old: `${existing.monthly_price} kr/md (${existing.period_months || '?'} mdr, ${existing.mileage_per_year || '?'} km/år)`,
+        new: null
+      }
+    } else if (existing && extracted) {
+      // Compare offer details
+      const fieldsToCompare: Array<{ field: keyof typeof existing; label: string }> = [
+        { field: 'monthly_price', label: 'monthly_price' },
+        { field: 'first_payment', label: 'first_payment' },
+        { field: 'period_months', label: 'period_months' },
+        { field: 'mileage_per_year', label: 'mileage_per_year' }
+      ]
+
+      for (const { field, label } of fieldsToCompare) {
+        if (existing[field] !== extracted[field]) {
+          hasChanges = true
+          changes[`offer_${i + 1}_${label}`] = {
+            old: existing[field] || '–',
+            new: extracted[field] || '–'
+          }
+        }
+      }
+    }
+  }
+
+  // Add summary of most significant changes
+  if (hasChanges) {
+    const priceChanges = Object.entries(changes)
+      .filter(([key]) => key.includes('monthly_price'))
+      .map(([key, change]) => `${change.old} → ${change.new}`)
+    
+    if (priceChanges.length > 0) {
+      changes['pricing_summary'] = {
+        old: `${existingOffers.length} tilbud`,
+        new: `${extractedOffers.length} tilbud (ændringer: ${priceChanges.slice(0, 3).join(', ')}${priceChanges.length > 3 ? '...' : ''})`
+      }
+    }
+  }
+
+  return { hasChanges, changes }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -87,10 +171,18 @@ serve(async (req) => {
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
 
-    // Fetch existing listings for the seller
+    // Fetch existing listings for the seller with all offers
     const { data: existingListings, error: fetchError } = await supabase
       .from('full_listing_view')
-      .select('*')
+      .select(`
+        *,
+        lease_pricing (
+          monthly_price,
+          first_payment,
+          period_months,
+          mileage_per_year
+        )
+      `)
       .eq('seller_id', sellerId)
 
     if (fetchError) {
@@ -115,7 +207,7 @@ serve(async (req) => {
           wltp: listing.wltp,
           co2_emission: listing.co2_emission,
           monthly_price: listing.monthly_price,
-          offers: [] // Would need separate query for all offers
+          offers: listing.lease_pricing || []
         })
       }
     })
@@ -168,13 +260,11 @@ serve(async (req) => {
           }
         }
 
-        // Compare pricing
-        if (extracted.offers && extracted.offers.length > 0) {
-          const newPrice = extracted.offers[0].monthly_price
-          if (match.monthly_price !== newPrice) {
-            hasChanges = true
-            changes['monthly_price'] = { old: match.monthly_price, new: newPrice }
-          }
+        // Compare offers comprehensively
+        const offerChanges = compareOffers(match.offers || [], extracted.offers || [])
+        if (offerChanges.hasChanges) {
+          hasChanges = true
+          Object.assign(changes, offerChanges.changes)
         }
 
         changeType = hasChanges ? 'update' : 'unchanged'

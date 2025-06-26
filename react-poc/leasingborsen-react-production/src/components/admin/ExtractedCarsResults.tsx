@@ -137,7 +137,6 @@ export const ExtractedCarsResults: React.FC<ExtractedCarsResultsProps> = ({
           <StandaloneSellerSelect
             value={selectedSellerId}
             onValueChange={setSelectedSellerId}
-            placeholder="Vælg sælger..."
             className="w-48"
           />
           <Button

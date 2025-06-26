@@ -6,11 +6,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { 
-  GitCompare, Calendar, User, Eye, Trash, Plus, Edit, 
+  GitCompare, Eye, Trash, Plus, Edit, 
   Clock, CheckCircle, XCircle, GitCommit, AlertTriangle
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useListingComparison, type ExtractionSession } from '@/hooks/useListingComparison'
+import { useListingComparison } from '@/hooks/useListingComparison'
 import { useNavigate } from 'react-router-dom'
 import { ExtractionSessionReview } from '@/components/admin/ExtractionSessionReview'
 
@@ -21,7 +20,7 @@ export const AdminExtractionSessions: React.FC = () => {
   const navigate = useNavigate()
 
   const { useExtractionSessions } = useListingComparison()
-  const { data: sessions = [], isLoading, refetch } = useExtractionSessions(selectedSellerId || undefined)
+  const { data: sessions = [] } = useExtractionSessions(selectedSellerId || undefined)
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '–'
@@ -279,15 +278,10 @@ export const AdminExtractionSessions: React.FC = () => {
                         <TableCell>
                           <div className="text-sm">
                             <div>{formatDate(session.created_at)}</div>
-                            {session.created_by && (
-                              <div className="text-muted-foreground">
-                                by {session.created_by}
-                              </div>
-                            )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {formatDuration(session.created_at, session.completed_at)}
+                          {formatDuration(session.created_at, session.created_at)}
                         </TableCell>
                         <TableCell>
                           {session.applied_at ? (

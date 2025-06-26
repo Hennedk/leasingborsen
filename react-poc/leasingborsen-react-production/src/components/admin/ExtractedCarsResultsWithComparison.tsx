@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { 
   ArrowLeft, ChevronDown, ChevronRight, Car, Settings, Save, Clock, 
-  Zap, Users, GitCompare, Plus, Edit, Trash, CheckCircle
+  Zap, Users, GitCompare, Plus, Edit, Trash, CheckCircle, Eye
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect'

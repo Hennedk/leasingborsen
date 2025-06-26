@@ -7,10 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, Car, Loader2, CheckCircle, AlertCircle, Link, Settings, Save, Users } from 'lucide-react';
+import { Upload, FileText, Car, Loader2, CheckCircle, AlertCircle, Link, Settings } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { pdfExtractor, validatePDFFile, getDanishCarPatterns, type ExtractionProfile, type PDFExtractionResult } from '@/services/pdfExtractorService';
-import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect';
 import { useBatchListingCreation } from '@/hooks/useBatchListingCreation';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -102,7 +101,7 @@ interface TextExtractionResult {
 
 export default function AdminPDFExtraction() {
   const navigate = useNavigate();
-  const { createBatchListings, progress: batchProgress } = useBatchListingCreation();
+  const { createBatchListings } = useBatchListingCreation();
   
   // Reference data hooks
   const { data: referenceData } = useReferenceData();
@@ -111,7 +110,7 @@ export default function AdminPDFExtraction() {
   const [pdfText, setPdfText] = useState('');
   const [dealerName, setDealerName] = useState('');
   const [selectedMakeId, setSelectedMakeId] = useState<string>('');
-  const [useGenericExtraction, setUseGenericExtraction] = useState(true);
+  const [useGenericExtraction] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -130,7 +129,7 @@ export default function AdminPDFExtraction() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
   // Batch creation state
-  const [selectedSellerId, setSelectedSellerId] = useState<string>('');
+  const [selectedSellerId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   
   // View state
@@ -913,7 +912,6 @@ export default function AdminPDFExtraction() {
                             <div>Processing tid: {result.metadata.processingTime}ms</div>
                             {result.metadata.tokensUsed && <div>Tokens brugt: {result.metadata.tokensUsed}</div>}
                             {result.metadata.cost && <div>Estimeret omkostning: ${result.metadata.cost.toFixed(4)}</div>}
-                            {result.metadata.extractionType && <div>Type: {result.metadata.extractionType}</div>}
                           </div>
                         )}
                         <div className="mt-3">

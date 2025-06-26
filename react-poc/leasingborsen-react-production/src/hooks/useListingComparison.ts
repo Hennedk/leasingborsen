@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -20,7 +20,7 @@ export interface ExtractedCar {
   consumption_l_100km?: number
   consumption_kwh_100km?: number
   co2_tax_half_year?: number
-  offers: Array<{
+  offers?: Array<{
     monthly_price: number
     first_payment?: number
     period_months?: number
