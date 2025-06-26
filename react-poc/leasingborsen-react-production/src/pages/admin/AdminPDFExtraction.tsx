@@ -7,19 +7,44 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, FileText, Car, Loader2, CheckCircle, AlertCircle, Link, Settings } from 'lucide-react';
+import { Upload, FileText, Car, Loader2, CheckCircle, AlertCircle, Link, Settings, Save, Users } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { pdfExtractor, validatePDFFile, getDanishCarPatterns, type ExtractionProfile, type PDFExtractionResult } from '@/services/pdfExtractorService';
+import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect';
+import { useBatchListingCreation } from '@/hooks/useBatchListingCreation';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+
+interface LeaseOffer {
+  monthly_price: number;
+  first_payment?: number;
+  period_months?: number;
+  mileage_per_year?: number;
+  total_price?: number;
+}
 
 interface ExtractedCar {
   make: string;
   model: string;
   variant: string;
-  monthlyPrice: string;
-  priceNum: number;
+  horsepower?: number;
   engineInfo?: string;
-  fuelType?: string;
+  engine_info?: string; // New field
+  fuelType?: string; // Legacy field
+  fuel_type?: string; // New field
   transmission?: string;
+  body_type?: string;
+  doors?: number;
+  year?: number;
+  offers?: LeaseOffer[]; // Multiple offers per car
+  // Legacy fields for backward compatibility
+  monthlyPrice?: string; // Legacy field
+  priceNum?: number; // Legacy field
+  monthly_price?: number; // New field
+  first_payment?: number; // Extracted from PDF
+  period_months?: number; // Extracted from PDF
+  mileage_per_year?: number; // Extracted from PDF
+  total_price?: number; // Extracted from PDF
 }
 
 interface ExtractionResult {
@@ -68,6 +93,9 @@ interface TextExtractionResult {
 }
 
 export default function AdminPDFExtraction() {
+  const navigate = useNavigate();
+  const { createBatchListings, progress: batchProgress } = useBatchListingCreation();
+  
   const [pdfText, setPdfText] = useState('');
   const [dealerName, setDealerName] = useState('Toyota Danmark');
   const [isUploading, setIsUploading] = useState(false);
@@ -86,6 +114,10 @@ export default function AdminPDFExtraction() {
   const [railwayResult, setRailwayResult] = useState<PDFExtractionResult | null>(null);
   const [isRailwayExtracting, setIsRailwayExtracting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Batch creation state
+  const [selectedSellerId, setSelectedSellerId] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -342,77 +374,6 @@ export default function AdminPDFExtraction() {
     }
   };
 
-  const monitorExtractionJob = async (jobId: string) => {
-    const maxAttempts = 60; // 1 minute timeout
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      try {
-        const { data: jobData, error } = await supabase
-          .from('processing_jobs')
-          .select('*')
-          .eq('id', jobId)
-          .single();
-
-        if (error) {
-          throw new Error(`Job monitoring fejl: ${error.message}`);
-        }
-
-        setExtractProgress(Math.min(60 + (jobData.progress || 0) * 0.4, 100));
-        setCurrentStep(jobData.current_step || 'Behandler...');
-
-        if (jobData.status === 'completed') {
-          setCurrentStep('Extraction færdig!');
-          setExtractProgress(100);
-
-          // Try to get extracted data
-          let extractedCars: ExtractedCar[] = [];
-          
-          if (jobData.result && jobData.result.vehicles) {
-            extractedCars = jobData.result.vehicles;
-          } else if (jobData.processed_items && jobData.processed_items > 0) {
-            // Fallback: create mock data showing we found vehicles
-            extractedCars = Array.from({ length: jobData.processed_items }, (_, i) => ({
-              make: 'Toyota',
-              model: `Model ${i + 1}`,
-              variant: 'Variant',
-              monthlyPrice: '0.000 kr/md',
-              priceNum: 0
-            }));
-          }
-
-          setResult({
-            success: true,
-            jobId: jobId,
-            totalCars: jobData.processed_items || extractedCars.length,
-            cars: extractedCars
-          });
-          break;
-
-        } else if (jobData.status === 'failed') {
-          throw new Error(jobData.error_message || 'Job failed');
-        }
-
-        attempts++;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-      } catch (error) {
-        console.error('Job monitoring error:', error);
-        setResult({
-          success: false,
-          error: error instanceof Error ? error.message : 'Monitoring fejl'
-        });
-        break;
-      }
-    }
-
-    if (attempts >= maxAttempts) {
-      setResult({
-        success: false,
-        error: 'Timeout - check database for results'
-      });
-    }
-  };
 
   const resetExtraction = () => {
     setResult(null);
@@ -426,6 +387,100 @@ export default function AdminPDFExtraction() {
     setUploadProgress(0);
     setTextResult(null);
     setPdfText('');
+  };
+
+  const handleSaveToDatabase = async () => {
+    if (!result?.cars || result.cars.length === 0) {
+      toast.error('Ingen biler at gemme');
+      return;
+    }
+
+    if (!selectedSellerId) {
+      toast.error('Vælg venligst en sælger først');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      // Model name mapping from uppercase to database format
+      const modelNameMapping: Record<string, string> = {
+        'AYGO X': 'Aygo X',
+        'YARIS': 'Yaris',
+        'YARIS CROSS': 'Yaris Cross',
+        'URBAN CRUISER': 'Urban Cruiser',
+        'COROLLA': 'Corolla',
+        'C-HR': 'C-HR',
+        'RAV4': 'RAV4',
+        'HIGHLANDER': 'Highlander',
+        'BZ4X': 'bZ4X',
+        'PROACE': 'Proace'
+      };
+
+      // Transform extracted cars to match batch creation format
+      const transformedCars = result.cars.map(car => {
+        // Use new offers array format or create from legacy fields
+        let offers = [];
+        
+        if (car.offers && Array.isArray(car.offers) && car.offers.length > 0) {
+          // Use extracted multiple offers from OpenAI
+          offers = car.offers.map(offer => ({
+            monthly_price: offer.monthly_price,
+            first_payment: offer.first_payment || (offer.monthly_price * 3),
+            period_months: offer.period_months || 36,
+            mileage_per_year: offer.mileage_per_year || 15000
+          }));
+        } else {
+          // Fallback to legacy single offer format
+          const monthlyPrice = car.monthly_price || car.priceNum || 0;
+          offers = [{
+            monthly_price: monthlyPrice,
+            first_payment: car.first_payment || (monthlyPrice * 3),
+            period_months: car.period_months || 36,
+            mileage_per_year: car.mileage_per_year || 15000
+          }];
+        }
+        
+        return {
+          make: car.make,
+          model: modelNameMapping[car.model] || car.model, // Map to correct case
+          variant: car.variant || '',
+          horsepower: car.horsepower,
+          fuel_type: car.fuel_type || car.fuelType || 'Petrol',
+          transmission: car.transmission || 'Automatic',
+          body_type: car.body_type || 'SUV',
+          doors: car.doors,
+          // Use processed offers array (can be multiple offers per car)
+          offers: offers
+        };
+      });
+
+      const batchResult = await createBatchListings(selectedSellerId, transformedCars);
+      
+      if (batchResult.successfulCars > 0) {
+        // Show success message
+        toast.success(
+          `✅ ${batchResult.successfulCars} bil${batchResult.successfulCars > 1 ? 'er' : ''} oprettet succesfuldt!`,
+          {
+            duration: 4000,
+            description: 'Videresendes til bil oversigt...'
+          }
+        );
+        
+        // Navigate to admin listings overview after a short delay
+        setTimeout(() => {
+          navigate('/admin/listings');
+        }, 1500);
+      } else if (batchResult.errors.length > 0) {
+        // Only show error if no cars were created
+        const errorMessages = batchResult.errors.join(', ');
+        toast.error(`Fejl ved oprettelse: ${errorMessages}`);
+      }
+    } catch (error) {
+      console.error('Save to database error:', error);
+      toast.error('Der opstod en fejl ved gemning til database');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -791,21 +846,25 @@ export default function AdminPDFExtraction() {
                                 <div className="text-sm text-muted-foreground">
                                   {car.variant}
                                 </div>
-                                {(car.engineInfo || car.fuelType || car.transmission) && (
+                                {(car.horsepower || car.fuel_type || car.fuelType || car.transmission || car.body_type) && (
                                   <div className="text-xs text-muted-foreground mt-1 space-x-2">
-                                    {car.engineInfo && <span>🔧 {car.engineInfo}</span>}
-                                    {car.fuelType && <span>⛽ {car.fuelType}</span>}
+                                    {car.horsepower && <span>🏎️ {car.horsepower} HK</span>}
+                                    {(car.fuel_type || car.fuelType) && <span>⛽ {car.fuel_type || car.fuelType}</span>}
                                     {car.transmission && <span>⚙️ {car.transmission}</span>}
+                                    {car.body_type && <span>🚗 {car.body_type}</span>}
                                   </div>
                                 )}
                               </div>
                               <div className="text-right">
                                 <div className="text-primary font-bold text-lg">
-                                  {car.monthlyPrice}
+                                  {car.monthly_price ? 
+                                    `${car.monthly_price.toLocaleString('da-DK')} kr/md` : 
+                                    car.monthlyPrice || 'N/A'
+                                  }
                                 </div>
-                                {car.priceNum > 0 && (
+                                {car.year && (
                                   <div className="text-xs text-muted-foreground">
-                                    {car.priceNum.toLocaleString('da-DK')} kr
+                                    Årgang {car.year}
                                   </div>
                                 )}
                               </div>
@@ -816,13 +875,53 @@ export default function AdminPDFExtraction() {
                     </div>
                   )}
 
+                  {/* Seller Selection for Batch Save */}
+                  {result.success && result.cars && result.cars.length > 0 && (
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          Vælg Sælger for Batch Import
+                        </Label>
+                        <StandaloneSellerSelect
+                          value={selectedSellerId}
+                          onValueChange={setSelectedSellerId}
+                        />
+                      </div>
+                      
+                      {batchProgress.isProcessing && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Opretter bil {batchProgress.currentCar} af {batchProgress.totalCars}</span>
+                            <span>{Math.round((batchProgress.currentCar / batchProgress.totalCars) * 100)}%</span>
+                          </div>
+                          <Progress value={(batchProgress.currentCar / batchProgress.totalCars) * 100} />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex gap-2">
                     <Button onClick={resetExtraction} variant="outline" size="sm">
                       Ny Extraction
                     </Button>
                     {result.success && (
-                      <Button size="sm">
-                        Gem til Database
+                      <Button 
+                        size="sm"
+                        onClick={handleSaveToDatabase}
+                        disabled={!selectedSellerId || isSaving || batchProgress.isProcessing}
+                      >
+                        {isSaving || batchProgress.isProcessing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Gemmer...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="mr-2 h-4 w-4" />
+                            Gem til Database
+                          </>
+                        )}
                       </Button>
                     )}
                   </div>
