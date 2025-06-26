@@ -612,8 +612,20 @@ async def extract_structured(
         
         # Profile-specific processing
         if profile == "automotive":
-            # Use existing Toyota extraction logic
-            return await extract_toyota(file)
+            # Automotive-specific options (use generic extractor, not old Toyota function)
+            options = {
+                "clean_text": True,
+                "extract_tables": True,
+                "normalize_whitespace": True,
+                "custom_patterns": custom_pattern_list + [
+                    r"TOYOTA PRISLISTE.*?PRIVATLEASING.*?\d+",
+                    r"Forbrugstal er beregnet efter WLTP-metode.*?KLIK HER",
+                    r"Ønsker du flere kilometer.*?Toyota-forhandler",
+                    r"SE UDSTYRSVARIANTER HER",
+                    r"Alle ydelser er inkl\..*?ekskl\..*?",
+                    r"Positiv kreditgodk\..*?Financial Services"
+                ]
+            }
             
         elif profile == "invoice":
             # Invoice-specific options
