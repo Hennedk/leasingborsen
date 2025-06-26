@@ -1,12 +1,12 @@
-# app.py - PDFPlumber POC service with template support
-from fastapi import FastAPI, UploadFile, File
+# app.py - PDFPlumber POC service with enhanced generic extraction
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import traceback
 import re
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import io
 from extract_with_template import extract_with_template
 
@@ -581,6 +581,222 @@ async def extract_table_content(file: UploadFile = File(...)):
             status_code=500,
             content={"error": str(e), "traceback": traceback.format_exc()}
         )
+
+@app.post("/extract/structured")
+async def extract_structured(
+    file: UploadFile = File(...),
+    profile: str = Form("generic"),
+    custom_patterns: Optional[str] = Form(None)  # JSON string of patterns
+):
+    """
+    Generic PDF extraction with profile-based processing
+    
+    Profiles:
+    - generic: Basic text extraction with minimal cleaning
+    - automotive: Toyota-specific extraction for car pricing
+    - invoice: Invoice-specific extraction patterns
+    """
+    try:
+        content = await file.read()
+        
+        # Parse custom patterns if provided
+        custom_pattern_list = []
+        if custom_patterns:
+            try:
+                custom_pattern_list = json.loads(custom_patterns)
+            except:
+                pass
+        
+        # Initialize generic extractor
+        extractor = GenericPDFExtractor()
+        
+        # Profile-specific processing
+        if profile == "automotive":
+            # Use existing Toyota extraction logic
+            return await extract_toyota(file)
+            
+        elif profile == "invoice":
+            # Invoice-specific options
+            options = {
+                "clean_text": True,
+                "extract_tables": True,
+                "remove_headers_footers": True,
+                "normalize_whitespace": True,
+                "custom_patterns": custom_pattern_list + [
+                    r"Invoice|Faktura|Rechnung",  # Invoice headers
+                    r"VAT|MVA|Moms",  # Tax identifiers
+                ]
+            }
+        else:
+            # Generic options
+            options = {
+                "clean_text": True,
+                "extract_tables": False,
+                "remove_headers_footers": False,
+                "normalize_whitespace": True,
+                "custom_patterns": custom_pattern_list
+            }
+        
+        # Extract with profile options
+        result = extractor.extract_text(content, options)
+        
+        # Add structure detection
+        if result["text"]:
+            structure = detect_document_structure(result["text"])
+            result["structure"] = structure
+        
+        # Standardized response format
+        response = {
+            "success": True,
+            "data": result,
+            "profile": profile,
+            "filename": file.filename
+        }
+        
+        return JSONResponse(content=response)
+        
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e),
+                "profile": profile,
+                "filename": file.filename if file else None
+            }
+        )
+
+# Generic PDF Extraction Classes
+class GenericPDFExtractor:
+    """Generic PDF text extractor with configurable cleaning"""
+    
+    def __init__(self):
+        # Generic noise patterns that apply to most business PDFs
+        self.noise_patterns = [
+            r'Page \d+ of \d+|Side \d+ af \d+',  # Page numbers
+            r'\[PAGE \d+\]',  # Page markers
+            r'©.*?\d{4}',  # Copyright notices
+            r'www\.\S+|https?://\S+',  # URLs
+            r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b',  # Emails
+        ]
+    
+    def extract_text(self, pdf_bytes: bytes, options: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Extract text from PDF with various options"""
+        options = options or {}
+        
+        with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
+            result = {
+                "text": "",
+                "pages": [],
+                "tables": [],
+                "metadata": {
+                    "page_count": len(pdf.pages),
+                    "has_tables": False,
+                    "extraction_method": "pdfplumber"
+                }
+            }
+            
+            for i, page in enumerate(pdf.pages):
+                page_data = {"page_number": i + 1}
+                
+                # Extract text
+                text = page.extract_text()
+                if text:
+                    # Apply cleaning if requested
+                    if options.get("clean_text", True):
+                        text = self._clean_text(text, options.get("custom_patterns", []))
+                    
+                    page_data["text"] = text
+                    result["text"] += text + "\n\n"
+                
+                # Extract tables if requested
+                if options.get("extract_tables", False):
+                    tables = page.extract_tables()
+                    if tables:
+                        page_data["tables"] = tables
+                        result["tables"].extend(tables)
+                        result["metadata"]["has_tables"] = True
+                
+                result["pages"].append(page_data)
+            
+            # Additional processing
+            if options.get("remove_headers_footers", False):
+                result["text"] = self._remove_headers_footers(result["text"])
+            
+            if options.get("normalize_whitespace", True):
+                result["text"] = self._normalize_whitespace(result["text"])
+            
+            return result
+    
+    def _clean_text(self, text: str, custom_patterns: List[str] = None) -> str:
+        """Apply generic cleaning patterns"""
+        # Apply built-in noise patterns
+        for pattern in self.noise_patterns:
+            text = re.sub(pattern, '', text, flags=re.IGNORECASE)
+        
+        # Apply custom patterns if provided
+        if custom_patterns:
+            for pattern in custom_patterns:
+                text = re.sub(pattern, '', text, flags=re.IGNORECASE | re.MULTILINE)
+        
+        return text
+    
+    def _remove_headers_footers(self, text: str) -> str:
+        """Remove common header/footer patterns"""
+        lines = text.split('\n')
+        cleaned_lines = []
+        
+        for line in lines:
+            # Skip lines that look like headers/footers
+            if not any([
+                re.match(r'^\d+$', line.strip()),  # Just page numbers
+                len(line.strip()) < 5,  # Very short lines
+                re.match(r'^(CONFIDENTIAL|INTERNAL|DRAFT)', line, re.I),
+            ]):
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
+    
+    def _normalize_whitespace(self, text: str) -> str:
+        """Normalize whitespace"""
+        # Remove excessive newlines
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        # Remove excessive spaces
+        text = re.sub(r' {2,}', ' ', text)
+        # Remove trailing whitespace
+        text = '\n'.join(line.rstrip() for line in text.split('\n'))
+        return text.strip()
+
+def detect_document_structure(text: str) -> Dict[str, Any]:
+    """Detect common document structures"""
+    structure = {
+        "has_tables": bool(re.search(r'\d+\s+\d+\s+\d+', text)),
+        "has_prices": bool(re.search(r'\d{1,3}[.,]\d{3}', text)),
+        "has_dates": bool(re.search(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text)),
+        "sections": [],
+        "document_type": "unknown"
+    }
+    
+    # Detect document type
+    if re.search(r'(invoice|faktura|rechnung)', text, re.I):
+        structure["document_type"] = "invoice"
+    elif re.search(r'(price list|prisliste|prijslijst)', text, re.I):
+        structure["document_type"] = "price_list"
+    elif re.search(r'(contract|kontrakt|aftale)', text, re.I):
+        structure["document_type"] = "contract"
+    elif re.search(r'(toyota|volkswagen|bmw|audi|mercedes)', text, re.I):
+        structure["document_type"] = "automotive"
+    
+    # Find section headers (lines in all caps or followed by many dashes/equals)
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        if line.isupper() and len(line) > 5 and len(line) < 50:
+            structure["sections"].append({
+                "title": line.strip(),
+                "line_number": i
+            })
+    
+    return structure
 
 # Helper functions
 def clean_text(text: str) -> str:
