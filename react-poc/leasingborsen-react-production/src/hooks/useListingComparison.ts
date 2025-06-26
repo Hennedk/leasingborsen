@@ -188,7 +188,7 @@ export const useListingComparison = () => {
       }))
 
       const { error: changesError } = await supabase
-        .from('listing_changes')
+        .from('extraction_listing_changes')
         .insert(changes)
 
       if (changesError) throw changesError
@@ -249,7 +249,7 @@ export const useListingComparison = () => {
         if (!sessionId) return []
 
         const { data, error } = await supabase
-          .from('listing_changes')
+          .from('extraction_listing_changes')
           .select('*')
           .eq('session_id', sessionId)
           .order('change_type')
@@ -273,7 +273,7 @@ export const useListingComparison = () => {
       reviewNotes?: string
     }) => {
       const { error } = await supabase
-        .from('listing_changes')
+        .from('extraction_listing_changes')
         .update({
           change_status: status,
           reviewed_at: new Date().toISOString(),
@@ -299,7 +299,7 @@ export const useListingComparison = () => {
       status: 'approved' | 'rejected'
     }) => {
       const { error } = await supabase
-        .from('listing_changes')
+        .from('extraction_listing_changes')
         .update({
           change_status: status,
           reviewed_at: new Date().toISOString()
