@@ -17,9 +17,19 @@
     "pdf:test": "node scripts/test-pdf-processing.js",
     "pdf:test-toyota": "node scripts/test-toyota-pdf.js",
     "pdf:load-configs": "node scripts/load-dealer-configs.js",
-    "pdf:deploy": "supabase functions deploy process-pdf"
+    "pdf:deploy": "supabase functions deploy process-pdf",
+    "staging:deploy": "./deploy/staging/deploy-staging.sh",
+    "staging:deploy:db": "./deploy/staging/deploy-database.sh",
+    "staging:test": "npx tsx test-staging-deployment.ts",
+    "staging:validate": "npm run staging:test",
+    "phase2:test:staging": "VITE_AI_EXTRACTION_ENABLED=true npx tsx test-phase2-complete.ts",
+    "staging:monitor": "echo 'Opening staging monitoring dashboard...'",
+    "staging:logs": "echo 'Viewing staging logs in deploy/staging/logs/'",
+    "staging:backup": "echo 'Creating staging backup...'",
+    "staging:rollback": "echo 'Rolling back staging deployment...'"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",

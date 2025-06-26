@@ -31,6 +31,11 @@ interface ExtractedCar {
   seats?: number
   doors?: number
   year?: number
+  wltp?: number
+  co2_emission?: number
+  consumption_l_100km?: number
+  consumption_kwh_100km?: number
+  co2_tax_half_year?: number
   offers: LeaseOffer[]
   // Legacy fields for backward compatibility
   monthly_price?: number
@@ -233,8 +238,13 @@ OUTPUT FORMAT (JSON):
       "fuel_type": "Petrol",
       "transmission": "Manual",
       "body_type": "Hatchback",
+      "seats": 4,
       "doors": 5,
       "year": 2025,
+      "wltp": 245,
+      "co2_emission": 108,
+      "consumption_l_100km": 4.7,
+      "co2_tax_half_year": 1580,
       "offers": [
         {
           "monthly_price": 2699,
@@ -315,6 +325,15 @@ LEASE TERMER AT LEDE EFTER:
 - "Totalpris" → total_price
 - Tabeller med kolonner som "Ydelse", "Førstegangs", "Totalpris"
 - Led efter FLERE rækker med forskellige kombinationer af km/år og periode
+
+TEKNISKE DATA AT LEDE EFTER (VALGFRIT):
+- "WLTP" eller "rækkevidde" → wltp (km, kun for elbiler som bZ4X)
+- "CO2" eller "g/km" → co2_emission (gram per kilometer)
+- "km/l" eller "l/100km" → consumption_l_100km (liter per 100 km)
+- "kWh/100km" → consumption_kwh_100km (kun for el/hybrid)
+- "Halvårsafgift" eller "afgift" → co2_tax_half_year (kroner per halvår)
+- "sæder" eller "personer" → seats (antal siddepladser)
+- "døre" → doors (antal døre)
 
 DØRE/ÅR:
 - AYGO X, YARIS, COROLLA: doors: 5

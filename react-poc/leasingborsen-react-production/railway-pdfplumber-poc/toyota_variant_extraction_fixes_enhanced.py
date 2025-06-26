@@ -555,11 +555,49 @@ class ToyotaVariantExtractor:
                 else:
                     self.logger.debug(f"Removing duplicate with signature: {signature}")
             
-            self.logger.info(f"Duplicate removal: {len(items)} -> {len(unique_items)} items")
-            return unique_items
+            # Additional cleanup for malformed variants
+            cleaned_items = self._clean_malformed_variants(unique_items)
+            
+            self.logger.info(f"Duplicate removal: {len(items)} -> {len(cleaned_items)} items")
+            return cleaned_items
             
         except Exception as e:
             self.logger.error(f"Error in duplicate removal: {e}")
+            return items
+    
+    def _clean_malformed_variants(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Clean up malformed variant names and remove obvious duplicates"""
+        try:
+            cleaned_items = []
+            
+            for item in items:
+                # Clean AYGO X variant names
+                if item.get("model") == "AYGO X":
+                    variant = item.get("variant", "")
+                    # Fix malformed names like "Manual Manual" or "Manual Automatgear"
+                    if "Manual Manual" in variant:
+                        item["variant"] = variant.replace("Manual Manual", "Manual")
+                    elif "Manual Automatgear" in variant:
+                        item["variant"] = variant.replace("Manual Automatgear", "Manual")
+                    elif "Automatgear Automatgear" in variant:
+                        item["variant"] = variant.replace("Automatgear Automatgear", "Automatgear")
+                
+                # Clean BZ4X variant names
+                if item.get("model") == "BZ4X":
+                    variant = item.get("variant", "")
+                    engine_spec = item.get("engine_specification", "")
+                    # Fix malformed names like "AWD AWD"
+                    if "AWD AWD" in variant:
+                        item["variant"] = variant.replace("AWD AWD", "AWD")
+                    if "AWD AWD" in engine_spec:
+                        item["engine_specification"] = engine_spec.replace("AWD AWD", "AWD")
+                
+                cleaned_items.append(item)
+            
+            return cleaned_items
+            
+        except Exception as e:
+            self.logger.error(f"Error cleaning malformed variants: {e}")
             return items
     
     def _create_variant_signature(self, item: Dict[str, Any]) -> str:

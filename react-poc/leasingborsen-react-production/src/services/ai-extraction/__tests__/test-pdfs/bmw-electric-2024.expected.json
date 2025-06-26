@@ -1,0 +1,158 @@
+{
+  "documentInfo": {
+    "brand": "BMW",
+    "documentDate": "2024-05-15",
+    "currency": "DKK",
+    "language": "da",
+    "documentType": "business_leasing"
+  },
+  "vehicles": [
+    {
+      "model": "iX3",
+      "category": "SUV",
+      "leasePeriodMonths": 36,
+      "powertrainType": "electric",
+      "variants": [
+        {
+          "variantName": "xDrive30",
+          "engineSpecification": "Electric - 286 hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthlyPayment": 8500,
+            "firstPayment": 85000,
+            "annualKilometers": 20000
+          },
+          "specifications": {
+            "co2EmissionsGkm": 0,
+            "energyLabel": "A++",
+            "electricRangeKm": 458,
+            "batteryCapacityKwh": 74,
+            "horsePower": 286,
+            "acceleration0to100": 6.8
+          }
+        }
+      ]
+    },
+    {
+      "model": "X3",
+      "category": "SUV",
+      "leasePeriodMonths": 36,
+      "powertrainType": "plugin_hybrid",
+      "variants": [
+        {
+          "variantName": "xDrive30e M Sport Steptronic",
+          "engineSpecification": "2.0 TwinPower Turbo + Electric - 292 hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthlyPayment": 9200,
+            "firstPayment": 92000,
+            "annualKilometers": 20000
+          },
+          "specifications": {
+            "fuelConsumptionKmpl": 45.5,
+            "co2EmissionsGkm": 36,
+            "energyLabel": "A+",
+            "electricRangeKm": 46,
+            "batteryCapacityKwh": 12,
+            "horsePower": 292,
+            "acceleration0to100": 6.0
+          }
+        }
+      ]
+    },
+    {
+      "model": "3-Serie",
+      "category": "Sedan",
+      "leasePeriodMonths": 36,
+      "powertrainType": "gasoline",
+      "variants": [
+        {
+          "variantName": "320i Advantage Steptronic",
+          "engineSpecification": "2.0 TwinPower Turbo - 184 hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthlyPayment": 6200,
+            "firstPayment": 62000,
+            "annualKilometers": 20000
+          },
+          "specifications": {
+            "fuelConsumptionKmpl": 17.2,
+            "co2EmissionsGkm": 134,
+            "energyLabel": "C",
+            "horsePower": 184,
+            "acceleration0to100": 7.1
+          }
+        },
+        {
+          "variantName": "320d Advantage Steptronic",
+          "engineSpecification": "2.0 TwinPower Turbo Diesel - 190 hk",
+          "transmission": "automatic",
+          "pricing": {
+            "monthlyPayment": 6800,
+            "firstPayment": 68000,
+            "annualKilometers": 20000
+          },
+          "specifications": {
+            "fuelConsumptionKmpl": 20.4,
+            "co2EmissionsGkm": 127,
+            "energyLabel": "B",
+            "horsePower": 190,
+            "acceleration0to100": 6.8
+          }
+        }
+      ]
+    }
+  ],
+  "accessories": [
+    {
+      "packageName": "BMW Live Cockpit Professional",
+      "monthlyCost": 650,
+      "category": "other"
+    },
+    {
+      "packageName": "Driving Assistant Professional",
+      "monthlyCost": 450,
+      "category": "other"
+    },
+    {
+      "packageName": "Parking Assistant Plus",
+      "monthlyCost": 350,
+      "category": "other"
+    },
+    {
+      "packageName": "M Sportspakke",
+      "monthlyCost": 750,
+      "category": "other"
+    },
+    {
+      "packageName": "Comfort Access",
+      "monthlyCost": 250,
+      "category": "other"
+    },
+    {
+      "packageName": "Panoramatag",
+      "monthlyCost": 450,
+      "category": "other"
+    },
+    {
+      "packageName": "M Alufælge 19\"",
+      "monthlyCost": 400,
+      "category": "wheels"
+    },
+    {
+      "packageName": "Vinterhjulssæt 18\"",
+      "monthlyCost": 350,
+      "category": "wheels"
+    },
+    {
+      "packageName": "Runflat dæk",
+      "monthlyCost": 200,
+      "category": "wheels"
+    }
+  ],
+  "metadata": {
+    "extractionTimestamp": "2024-06-24T12:00:00.000Z",
+    "documentPages": 1,
+    "extractionWarnings": []
+  }
+}

@@ -2,6 +2,7 @@ import React from 'react'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { VWBatchReviewDashboard } from '@/components/admin/batch/VWBatchReviewDashboard'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
+import CacheInvalidator from '@/components/dev/CacheInvalidator'
 
 const BatchReviewPage: React.FC = () => {
   return (
@@ -17,6 +18,9 @@ const BatchReviewPage: React.FC = () => {
             ]}
           />
         </div>
+
+        {/* Development Cache Invalidator */}
+        <CacheInvalidator />
 
         {/* Batch Review Dashboard */}
         <VWBatchReviewDashboard />

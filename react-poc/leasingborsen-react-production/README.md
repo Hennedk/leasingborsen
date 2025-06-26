@@ -27,6 +27,41 @@ Leasingbørsen is a production-ready car leasing marketplace built with modern R
 
 ---
 
+## 🚡 Serena Integration
+
+This project includes **[Serena](https://github.com/oraios/serena)** integration for enhanced AI-powered development with semantic code understanding.
+
+### What is Serena?
+
+Serena is an open-source coding agent toolkit that provides semantic code analysis and editing capabilities through the Model Context Protocol (MCP). It enables:
+- **Semantic code navigation** - Find components, hooks, and types by meaning, not just text
+- **Intelligent refactoring** - Update code with full understanding of TypeScript/React patterns
+- **Codebase analysis** - Understand component relationships and dependencies
+- **AI-enhanced development** - Work more efficiently with Claude and other AI assistants
+
+### Quick Start with Serena
+
+```bash
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Start Serena for this project
+cd leasingborsen-react-production
+uvx --from git+https://github.com/oraios/serena serena-mcp-server --project $(pwd)
+```
+
+### Benefits for Development
+
+- **🔍 Faster Navigation**: Find React components by purpose, not just name
+- **🧩 Smart Refactoring**: Update all component usages automatically
+- **📊 Architecture Analysis**: Visualize component hierarchies and dependencies
+- **🤖 AI Integration**: Enhanced Claude/Cursor capabilities with semantic understanding
+- **⚡ Performance**: Indexed codebase for instant semantic searches
+
+See [SERENA_SETUP.md](./SERENA_SETUP.md) for detailed configuration and usage.
+
+---
+
 ## 🛠️ Technology Stack
 
 ### **Frontend**

@@ -24,10 +24,12 @@ const Advertising = lazy(() => import('@/pages/Advertising'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminListings = lazy(() => import('@/pages/admin/AdminListings'))
 const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
+const AdminBatchListings = lazy(() => import('@/pages/admin/AdminBatchListings'))
 const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
 const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
 const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
 const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProcessingPage'))
+const AdminPDFExtraction = lazy(() => import('@/pages/admin/AdminPDFExtraction'))
 
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
@@ -117,12 +119,14 @@ function App() {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="listings" element={<AdminListings />} />
                       <Route path="listings/create" element={<AdminListingForm />} />
+                      <Route path="listings/batch" element={<AdminBatchListings />} />
                       <Route path="listings/edit/:id" element={<AdminListingForm />} />
                       <Route path="sellers" element={<AdminSellers />} />
                       <Route path="sellers/create" element={<AdminSellerForm />} />
                       <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
                       <Route path="batches/:batchId/review" element={<BatchReviewPage />} />
                       <Route path="toyota-pdf" element={<ToyotaPDFProcessingPage />} />
+                      <Route path="pdf-extraction" element={<AdminPDFExtraction />} />
                     </Routes>
                   </AdminErrorBoundary>
                 } />

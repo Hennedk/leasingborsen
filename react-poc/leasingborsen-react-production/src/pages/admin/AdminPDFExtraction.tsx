@@ -14,6 +14,8 @@ import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelec
 import { useBatchListingCreation } from '@/hooks/useBatchListingCreation';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useReferenceData, useMakes, useModels } from '@/hooks/useReferenceData';
+import { ExtractedCarsResultsWithComparison } from '@/components/admin/ExtractedCarsResultsWithComparison';
 
 interface LeaseOffer {
   monthly_price: number;
@@ -34,8 +36,14 @@ interface ExtractedCar {
   fuel_type?: string; // New field
   transmission?: string;
   body_type?: string;
+  seats?: number;
   doors?: number;
   year?: number;
+  wltp?: number;
+  co2_emission?: number;
+  consumption_l_100km?: number;
+  consumption_kwh_100km?: number;
+  co2_tax_half_year?: number;
   offers?: LeaseOffer[]; // Multiple offers per car
   // Legacy fields for backward compatibility
   monthlyPrice?: string; // Legacy field
@@ -96,8 +104,14 @@ export default function AdminPDFExtraction() {
   const navigate = useNavigate();
   const { createBatchListings, progress: batchProgress } = useBatchListingCreation();
   
+  // Reference data hooks
+  const { data: referenceData } = useReferenceData();
+  const { data: makes } = useMakes();
+  
   const [pdfText, setPdfText] = useState('');
-  const [dealerName, setDealerName] = useState('Toyota Danmark');
+  const [dealerName, setDealerName] = useState('');
+  const [selectedMakeId, setSelectedMakeId] = useState<string>('');
+  const [useGenericExtraction, setUseGenericExtraction] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -118,6 +132,22 @@ export default function AdminPDFExtraction() {
   // Batch creation state
   const [selectedSellerId, setSelectedSellerId] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  
+  // View state
+  const [showResults, setShowResults] = useState(false);
+
+  // Get models for selected make
+  const { data: availableModels } = useModels(selectedMakeId);
+  
+  // Auto-set dealer name when make is selected
+  React.useEffect(() => {
+    if (selectedMakeId && makes) {
+      const selectedMake = makes.find(m => m.id === selectedMakeId);
+      if (selectedMake) {
+        setDealerName(`${selectedMake.name} Danmark`);
+      }
+    }
+  }, [selectedMakeId, makes]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -318,18 +348,36 @@ export default function AdminPDFExtraction() {
       setCurrentStep('Sender til OpenAI GPT-4o...');
       setExtractProgress(20);
 
-      // Send to OpenAI Edge Function
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-cars-openai`, {
+      // Determine which extraction endpoint to use
+      const useGeneric = selectedMakeId || useGenericExtraction;
+      const endpoint = useGeneric ? 'extract-cars-generic' : 'extract-cars-openai';
+      const extractionType = useGeneric ? 
+        (selectedMakeId ? `generisk (${makes?.find(m => m.id === selectedMakeId)?.name})` : 'generisk') : 
+        'Toyota-specifik';
+
+      setCurrentStep(`Bruger ${extractionType} extraction...`);
+
+      // Prepare request body
+      const requestBody: any = {
+        textContent: textToProcess,
+        dealerName: dealerName,
+        fileName: uploadResult?.fileName || textResult?.metadata?.fileName || 'manual-input'
+      };
+
+      // Add reference data for generic extraction
+      if (useGeneric) {
+        requestBody.makeId = selectedMakeId || undefined;
+        requestBody.referenceData = referenceData || undefined;
+      }
+
+      // Send to appropriate OpenAI Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${endpoint}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          textContent: textToProcess,
-          dealerName: dealerName,
-          fileName: uploadResult?.fileName || textResult?.metadata?.fileName || 'manual-input'
-        })
+        body: JSON.stringify(requestBody)
       });
 
       setCurrentStep('Behandler med OpenAI GPT-4o...');
@@ -352,9 +400,13 @@ export default function AdminPDFExtraction() {
           metadata: {
             ...extractionResult.metadata,
             textSource: textSource,
-            textLength: textToProcess.length
+            textLength: textToProcess.length,
+            extractionType: extractionType
           }
         });
+        
+        // Show results page
+        setShowResults(true);
       } else {
         throw new Error(extractionResult.error || 'AI extraction failed');
       }
@@ -380,6 +432,11 @@ export default function AdminPDFExtraction() {
     setExtractProgress(0);
     setCurrentStep('');
     setJobId(null);
+    setShowResults(false);
+  };
+
+  const handleBackToExtraction = () => {
+    setShowResults(false);
   };
 
   const resetUpload = () => {
@@ -389,13 +446,14 @@ export default function AdminPDFExtraction() {
     setPdfText('');
   };
 
-  const handleSaveToDatabase = async () => {
+  const handleSaveToDatabase = async (sellerId?: string) => {
+    const sellerToUse = sellerId || selectedSellerId;
     if (!result?.cars || result.cars.length === 0) {
       toast.error('Ingen biler at gemme');
       return;
     }
 
-    if (!selectedSellerId) {
+    if (!sellerToUse) {
       toast.error('Vælg venligst en sælger først');
       return;
     }
@@ -448,13 +506,20 @@ export default function AdminPDFExtraction() {
           fuel_type: car.fuel_type || car.fuelType || 'Petrol',
           transmission: car.transmission || 'Automatic',
           body_type: car.body_type || 'SUV',
+          seats: car.seats,
           doors: car.doors,
+          year: car.year,
+          wltp: car.wltp,
+          co2_emission: car.co2_emission,
+          consumption_l_100km: car.consumption_l_100km,
+          consumption_kwh_100km: car.consumption_kwh_100km,
+          co2_tax_half_year: car.co2_tax_half_year,
           // Use processed offers array (can be multiple offers per car)
           offers: offers
         };
       });
 
-      const batchResult = await createBatchListings(selectedSellerId, transformedCars);
+      const batchResult = await createBatchListings(sellerToUse, transformedCars);
       
       if (batchResult.successfulCars > 0) {
         // Show success message
@@ -483,6 +548,25 @@ export default function AdminPDFExtraction() {
     }
   };
 
+  // Show results page if extraction is complete and successful
+  if (showResults && result?.success && result.cars) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <ExtractedCarsResultsWithComparison
+            cars={result.cars}
+            totalCars={result.totalCars || result.cars.length}
+            metadata={result.metadata}
+            pdfUrl={uploadResult?.fileUrl || ''}
+            onBack={handleBackToExtraction}
+            onSaveToDatabase={handleSaveToDatabase}
+            isSaving={isSaving}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -503,6 +587,28 @@ export default function AdminPDFExtraction() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="make-selector">Bilmærke (for generisk extraction)</Label>
+                <Select value={selectedMakeId || "__generic__"} onValueChange={(value) => setSelectedMakeId(value === "__generic__" ? "" : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Vælg bilmærke for optimal extraction..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__generic__">Generisk (alle mærker)</SelectItem>
+                    {makes?.map((make) => (
+                      <SelectItem key={make.id} value={make.id}>
+                        {make.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedMakeId && availableModels && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    📋 {availableModels.length} modeller tilgængelige: {availableModels.slice(0, 3).map(m => m.name).join(', ')}{availableModels.length > 3 && `, +${availableModels.length - 3} flere`}
+                  </div>
+                )}
+              </div>
+
               <div>
                 <Label htmlFor="dealer-name">Dealer Navn</Label>
                 <Input
@@ -794,7 +900,7 @@ export default function AdminPDFExtraction() {
                 </div>
               )}
 
-              {result && (
+              {result && !showResults && (
                 <div className="space-y-4">
                   {result.success ? (
                     <Alert>
@@ -804,23 +910,22 @@ export default function AdminPDFExtraction() {
                         {result.metadata && (
                           <div className="mt-2 space-y-1 text-xs">
                             {result.metadata.textSource && <div>Kilde: {result.metadata.textSource}</div>}
-                            {result.metadata.originalTextLength && result.metadata.processedTextLength && (
-                              <>
-                                <div>Original tekst: {result.metadata.originalTextLength.toLocaleString()} tegn</div>
-                                <div>Processed tekst: {result.metadata.processedTextLength.toLocaleString()} tegn</div>
-                                {result.metadata.compressionRatio !== undefined && (
-                                  <div>Kompression: {result.metadata.compressionRatio}% reduceret</div>
-                                )}
-                              </>
-                            )}
                             <div>Processing tid: {result.metadata.processingTime}ms</div>
                             {result.metadata.tokensUsed && <div>Tokens brugt: {result.metadata.tokensUsed}</div>}
                             {result.metadata.cost && <div>Estimeret omkostning: ${result.metadata.cost.toFixed(4)}</div>}
-                            {result.metadata.wasLimited && (
-                              <div className="text-amber-600">{result.metadata.limitReason}</div>
-                            )}
+                            {result.metadata.extractionType && <div>Type: {result.metadata.extractionType}</div>}
                           </div>
                         )}
+                        <div className="mt-3">
+                          <Button 
+                            size="sm"
+                            onClick={() => setShowResults(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Car className="h-4 w-4" />
+                            Vis Detaljeret Resultat
+                          </Button>
+                        </div>
                       </AlertDescription>
                     </Alert>
                   ) : (
@@ -832,98 +937,10 @@ export default function AdminPDFExtraction() {
                     </Alert>
                   )}
 
-                  {result.cars && result.cars.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold">Extractede Biler:</h3>
-                      <div className="max-h-96 overflow-y-auto border rounded-lg p-3">
-                        {result.cars.map((car, index) => (
-                          <div key={index} className="py-3 border-b last:border-b-0">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="font-bold text-lg">
-                                  {car.make} {car.model}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {car.variant}
-                                </div>
-                                {(car.horsepower || car.fuel_type || car.fuelType || car.transmission || car.body_type) && (
-                                  <div className="text-xs text-muted-foreground mt-1 space-x-2">
-                                    {car.horsepower && <span>🏎️ {car.horsepower} HK</span>}
-                                    {(car.fuel_type || car.fuelType) && <span>⛽ {car.fuel_type || car.fuelType}</span>}
-                                    {car.transmission && <span>⚙️ {car.transmission}</span>}
-                                    {car.body_type && <span>🚗 {car.body_type}</span>}
-                                  </div>
-                                )}
-                              </div>
-                              <div className="text-right">
-                                <div className="text-primary font-bold text-lg">
-                                  {car.monthly_price ? 
-                                    `${car.monthly_price.toLocaleString('da-DK')} kr/md` : 
-                                    car.monthlyPrice || 'N/A'
-                                  }
-                                </div>
-                                {car.year && (
-                                  <div className="text-xs text-muted-foreground">
-                                    Årgang {car.year}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Seller Selection for Batch Save */}
-                  {result.success && result.cars && result.cars.length > 0 && (
-                    <div className="space-y-4 border-t pt-4">
-                      <div className="space-y-2">
-                        <Label className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          Vælg Sælger for Batch Import
-                        </Label>
-                        <StandaloneSellerSelect
-                          value={selectedSellerId}
-                          onValueChange={setSelectedSellerId}
-                        />
-                      </div>
-                      
-                      {batchProgress.isProcessing && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Opretter bil {batchProgress.currentCar} af {batchProgress.totalCars}</span>
-                            <span>{Math.round((batchProgress.currentCar / batchProgress.totalCars) * 100)}%</span>
-                          </div>
-                          <Progress value={(batchProgress.currentCar / batchProgress.totalCars) * 100} />
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   <div className="flex gap-2">
                     <Button onClick={resetExtraction} variant="outline" size="sm">
                       Ny Extraction
                     </Button>
-                    {result.success && (
-                      <Button 
-                        size="sm"
-                        onClick={handleSaveToDatabase}
-                        disabled={!selectedSellerId || isSaving || batchProgress.isProcessing}
-                      >
-                        {isSaving || batchProgress.isProcessing ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Gemmer...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-4 w-4" />
-                            Gem til Database
-                          </>
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </div>
               )}

@@ -26,6 +26,7 @@ export interface Transmission {
 }
 
 export interface Colour {
+  id: string
   name: string
 }
 

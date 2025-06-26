@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena-mcp-server",
+        "--project",
+        ".",
+        "--context",
+        "ide-assistant"
+      ],
+      "env": {
+        "SERENA_LOG_LEVEL": "INFO"
+      }
+    }
+  },
+  "settings": {
+    "autoStart": true,
+    "restartOnFailure": true,
+    "maxRestartAttempts": 3
+  }
+}

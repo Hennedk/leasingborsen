@@ -10,6 +10,7 @@ import {
   OffersSection,
   SellerSection
 } from './form-sections'
+import { JsonPasteSection } from './JsonPasteSection'
 
 interface AdminFormSectionsProps {
   control: Control<CarListingFormData>
@@ -21,6 +22,7 @@ interface AdminFormSectionsProps {
   onMakeChange: (makeId: string) => void
   onModelChange: (modelId: string) => void
   onImagesChange: (images: string[]) => void
+  onJsonDataParsed?: (data: any) => void
 }
 
 /**
@@ -36,10 +38,22 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
   currentListingId,
   onMakeChange,
   onModelChange,
-  onImagesChange
+  onImagesChange,
+  onJsonDataParsed
 }) => {
   return (
     <>
+      {/* JSON Import Section - Full Width Top */}
+      <div className="mb-6">
+        <JsonPasteSection 
+          setValue={setValue}
+          onDataParsed={(data) => {
+            // Pass the parsed data (including offers) to parent
+            onJsonDataParsed?.(data)
+          }}
+        />
+      </div>
+
       {/* 2/1 Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column - 2/3 width */}

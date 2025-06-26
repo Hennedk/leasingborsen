@@ -1,0 +1,60 @@
+# Serena Project Configuration for Leasingbørsen React
+# This configuration enables semantic code analysis and editing capabilities
+
+project_name: "leasingborsen-react"
+language: "typescript"
+
+# Language servers for TypeScript/JavaScript support
+language_servers:
+  - typescript
+  - javascript
+
+# Available tools for code operations
+tools:
+  - code_analysis      # Semantic code navigation and understanding
+  - code_editing       # Direct code modifications
+  - file_operations    # File management
+  - terminal_access    # Command execution
+
+# TypeScript/React specific settings
+settings:
+  jsx_support: true                    # Enable JSX/TSX support
+  typescript_config: "./tsconfig.json" # Use project's TypeScript config
+  
+  # Source directories for analysis
+  source_paths:
+    - src/
+    - public/
+  
+  # Exclude paths from analysis
+  exclude_paths:
+    - node_modules/
+    - dist/
+    - build/
+    - .git/
+    - coverage/
+  
+  # React-specific configurations
+  react:
+    version: "18"
+    strict_mode: true
+    
+  # Code analysis preferences
+  analysis:
+    include_tests: true
+    include_stories: true  # For Storybook files if added later
+    
+# Performance optimizations
+performance:
+  index_on_startup: true    # Build semantic index when server starts
+  cache_enabled: true       # Cache analysis results
+  max_file_size_mb: 10      # Skip files larger than this
+
+# Security settings
+security:
+  read_only: false          # Set to true to prevent code modifications
+  allowed_operations:
+    - read
+    - write
+    - analyze
+    - refactor

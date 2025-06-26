@@ -2,6 +2,71 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with the React migration of the Vue leasingborsen application.
 
+## 🚡 Serena Integration for Enhanced Development
+
+This project is configured with **Serena**, an advanced semantic code analysis toolkit that significantly enhances Claude's capabilities when working with this codebase.
+
+### Starting Serena
+
+Before beginning work on this project, start the Serena server:
+
+```bash
+# Ensure uv is installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Start Serena
+cd /home/hennedk/projects/leasingborsen/react-poc/leasingborsen-react-production
+uvx --from git+https://github.com/oraios/serena serena-mcp-server --project $(pwd)
+```
+
+### Enhanced Capabilities with Serena
+
+With Serena running, Claude can perform advanced operations:
+
+#### 1. **Semantic Code Navigation**
+```
+"Find all components that handle car filtering"
+"Show me where useListings hook is used"
+"Find all TypeScript interfaces for pricing data"
+```
+
+#### 2. **Intelligent Code Analysis**
+```
+"Analyze the component hierarchy for the admin section"
+"Show me all Supabase queries in the codebase"
+"Find components that might have performance issues"
+```
+
+#### 3. **Smart Refactoring**
+```
+"Rename the CarListing interface to VehicleListing everywhere"
+"Update all Button components to use the new variant prop"
+"Add React.memo to all expensive list components"
+```
+
+#### 4. **Architecture Understanding**
+```
+"Map out the data flow from Supabase to UI components"
+"Show the relationship between filter store and listings"
+"Analyze the routing structure and lazy loading"
+```
+
+### Efficiency Benefits
+
+- **⚡ 10x faster code navigation** - Semantic search vs text search
+- **🎯 Precise refactoring** - Updates all references automatically
+- **🧠 Context awareness** - Understands TypeScript types and React patterns
+- **🔍 Deep insights** - Analyzes component relationships and dependencies
+- **✨ Proactive suggestions** - Identifies optimization opportunities
+
+### Best Practices with Serena
+
+1. **Always start Serena** before beginning development work
+2. **Use semantic queries** instead of file path navigation when possible
+3. **Leverage refactoring tools** for consistent codebase updates
+4. **Request architecture analysis** before major changes
+5. **Use symbol search** for finding type definitions and implementations
+
 ## 🧠 Context Awareness & Session Continuity
 
 ### Quick Context Pickup
@@ -68,6 +133,66 @@ refactor(admin): split MobileFilterOverlay into focused components
 - Related to CODEBASE_IMPROVEMENTS_ADMIN.md Critical Issue #1
 
 Claude Change Summary: Component decomposition for maintainability
+```
+
+### Serena-Powered Development Workflow
+
+When working with Serena active, follow this efficient workflow:
+
+1. **Start with Analysis**
+   ```
+   "Analyze the current implementation of [feature]"
+   "Show me all components related to [functionality]"
+   ```
+
+2. **Make Informed Changes**
+   ```
+   "Update all instances of [old pattern] to [new pattern]"
+   "Refactor [component] to use [new approach]"
+   ```
+
+3. **Verify Impact**
+   ```
+   "Show me all components affected by this change"
+   "Find any TypeScript errors after the refactoring"
+   ```
+
+### Real-World Serena Examples for Leasingbørsen
+
+#### Finding Code Patterns
+```
+# Instead of: "Check files in src/components/filters/"
+Use: "Find all components that modify the filter store"
+
+# Instead of: "Look for Supabase queries"
+Use: "Show me all database queries for car listings"
+
+# Instead of: "Search for price formatting"
+Use: "Find all places where prices are displayed to users"
+```
+
+#### Refactoring Examples
+```
+# Update all shadcn/ui imports
+"Replace all imports from '@/components/ui/button' with '@/components/ui/Button'"
+
+# Add error boundaries
+"Find all page components and suggest where to add error boundaries"
+
+# Optimize performance
+"Identify all list components that could benefit from React.memo"
+```
+
+#### Architecture Analysis
+```
+# Component relationships
+"Show the component tree for the admin interface"
+
+# Data flow
+"Trace the data flow from Supabase queries to UI rendering"
+
+# Dependencies
+"Analyze which components depend on the filterStore"
 ```
 
 ## 🔁 Maintaining Consistency Across Sessions

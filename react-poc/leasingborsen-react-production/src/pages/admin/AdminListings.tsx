@@ -21,7 +21,7 @@ import {
   DataErrorBoundary, 
   ComponentErrorBoundary 
 } from '@/components/ErrorBoundaries'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Users } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -236,6 +236,12 @@ const AdminListings: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2">
+              <Button variant="outline" asChild>
+                <Link to="/admin/listings/batch">
+                  <Users className="h-4 w-4 mr-2" />
+                  Batch Oprettelse
+                </Link>
+              </Button>
               <Button asChild>
                 <Link to="/admin/listings/create">
                   <Plus className="h-4 w-4 mr-2" />

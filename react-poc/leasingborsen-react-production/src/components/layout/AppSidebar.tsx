@@ -9,7 +9,8 @@ import {
   Users,
   Settings,
   LogOut,
-  X
+  X,
+  FileText
 } from 'lucide-react'
 
 interface AppSidebarProps {
@@ -39,6 +40,11 @@ const navigation: NavItem[] = [
     title: 'Sælgere',
     href: '/admin/sellers',
     icon: Users,
+  },
+  {
+    title: 'PDF Extraction',
+    href: '/admin/pdf-extraction',
+    icon: FileText,
   },
   {
     title: 'Indstillinger',
