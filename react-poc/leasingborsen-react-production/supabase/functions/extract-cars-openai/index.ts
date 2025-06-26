@@ -309,7 +309,10 @@ serve(async (req) => {
       // Parse the extracted cars
       let extractedCars: ExtractedCar[] = []
       try {
-        const aiResponse = JSON.parse(openaiResult.choices[0].message.content)
+        const messageContent = openaiResult.choices[0].message.content
+        console.log(`Raw OpenAI response: ${messageContent.substring(0, 500)}...`)
+        
+        const aiResponse = JSON.parse(messageContent)
         extractedCars = aiResponse.cars || []
         
         // Validate and clean the extracted data
