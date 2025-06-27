@@ -342,7 +342,7 @@ export const BatchJsonImportSection: React.FC<BatchJsonImportSectionProps> = ({
                       {car.horsepower && ` • ${car.horsepower} hk`}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {car.offers.length} tilbud • Fra {Math.min(...car.offers.map(o => o.monthly_price)).toLocaleString('da-DK')} kr/md
+                      {car.offers.length} tilbud • Fra {Math.min(...car.offers.map((o: any) => o.monthly_price)).toLocaleString('da-DK')} kr/md
                     </div>
                   </div>
                   <Button

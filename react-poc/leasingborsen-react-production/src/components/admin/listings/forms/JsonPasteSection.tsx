@@ -296,3 +296,5 @@ export const JsonPasteSection: React.FC<JsonPasteSectionProps> = ({
     </Card>
   )
 }
+
+export default JsonPasteSection

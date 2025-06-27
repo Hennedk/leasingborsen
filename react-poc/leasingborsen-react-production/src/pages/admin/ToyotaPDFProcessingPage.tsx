@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { 
-  Upload, 
   FileText, 
   CheckCircle, 
   AlertCircle, 
@@ -520,11 +519,7 @@ const ToyotaPDFProcessingPage: React.FC = () => {
                 </p>
                 <p className="text-sm">
                   Extraction method: <code className="text-xs bg-muted px-1 rounded">{state.result.metadata.extraction_method}</code>
-                  {state.result.metadata.enhanced_features_active ? (
-                    <Badge variant="default" className="ml-2 bg-green-100 text-green-800 text-xs">Enhanced ✓</Badge>
-                  ) : (
-                    <Badge variant="outline" className="ml-2 text-xs">Basic</Badge>
-                  )}
+                  <Badge variant="outline" className="ml-2 text-xs">AI Extraction</Badge>
                 </p>
                 <p className="text-sm">
                   Pages processed: <strong>{state.result.metadata.pages_processed}</strong>
@@ -613,21 +608,12 @@ const ToyotaPDFProcessingPage: React.FC = () => {
             <div className="space-y-4">
               <Alert>
                 <AlertDescription>
-                  {state.result.metadata.enhanced_features_active ? (
-                    <>
-                      <div className="font-medium">✅ Enhanced Toyota Extraction Active!</div>
-                      <p className="text-sm mt-1">
-                        All 27 expected variants extracted with unique identifiers including transmission types, drivetrain detection, and power classifications.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="font-medium">⚠️ Basic Extraction Used</div>
-                      <p className="text-sm mt-1">
-                        Enhanced extraction system not available. Using basic template extraction (may not achieve 27 unique variants).
-                      </p>
-                    </>
-                  )}
+                  <>
+                    <div className="font-medium">✅ Toyota AI Extraction Completed!</div>
+                    <p className="text-sm mt-1">
+                      Extraction completed using {state.result.metadata.extraction_method} with {state.result.metadata.pages_processed} pages processed.
+                    </p>
+                  </>
                 </AlertDescription>
               </Alert>
               

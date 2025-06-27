@@ -75,7 +75,7 @@ export const GenericBatchUploadDialog = React.memo<GenericBatchUploadDialogProps
   })
 
   // Monitor job progress
-  const { job: jobProgress, error: jobError, startPolling } = useJobProgress(state.jobId || '', {
+  const { startPolling } = useJobProgress(state.jobId || '', {
     autoStart: false, // We'll start manually when jobId is set
     onCompleted: (job) => {
       setState(prev => ({
@@ -90,8 +90,7 @@ export const GenericBatchUploadDialog = React.memo<GenericBatchUploadDialogProps
           stats: { 
             new: job.itemsProcessed || 0, 
             updated: 0, 
-            skipped: 0, 
-            errors: 0,
+            removed: 0,
             total_processed: job.itemsProcessed || 0 
           }
         }
