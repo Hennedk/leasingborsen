@@ -13,8 +13,8 @@ import { validatePhase1, runComprehensiveTests } from './test-runner'
 import { createTestService } from '../extraction/extractor'
 import { 
   TOYOTA_SAMPLE_CONTENT,
-  BMW_SAMPLE_CONTENT,
-  MERCEDES_SAMPLE_CONTENT,
+  // BMW_SAMPLE_CONTENT,
+  // MERCEDES_SAMPLE_CONTENT,
   TEST_CASES,
   COST_TEST_SCENARIOS
 } from './sample-data'

@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { createTestService } from '../extraction/extractor'
 import { validatePhase1, runComprehensiveTests } from './test-runner'
-import { compareProviders, testProvider } from './provider-harness.test'
+// import { compareProviders, testProvider } from './provider-harness.test'
 import { 
   TOYOTA_SAMPLE_CONTENT,
   BMW_SAMPLE_CONTENT,
@@ -24,7 +24,7 @@ import {
   TEST_CASES,
   COST_TEST_SCENARIOS
 } from './sample-data'
-import type { ExtractionResult, ExtractionOptions } from '../types'
+import type { ExtractionResult, ExtractOptions } from '../types'
 
 interface TestResult {
   id: string
@@ -88,10 +88,10 @@ export const AdminTestingInterface: React.FC = () => {
       // Update stats
       setServiceStats(prev => ({
         ...prev,
-        totalTests: status.totalExtractions,
-        successfulTests: status.successfulExtractions,
-        failedTests: status.totalExtractions - status.successfulExtractions,
-        avgProcessingTime: status.avgProcessingTimeMs
+        totalTests: status.extractionStats?.totalExtractions || 0,
+        successfulTests: status.extractionStats?.successfulExtractions || 0,
+        failedTests: (status.extractionStats?.totalExtractions || 0) - (status.extractionStats?.successfulExtractions || 0),
+        avgProcessingTime: status.extractionStats?.avgProcessingTimeMs || 0
       }))
     } catch (error) {
       console.error('Failed to update service status:', error)
@@ -113,12 +113,12 @@ export const AdminTestingInterface: React.FC = () => {
     const startTime = Date.now()
 
     try {
-      const options: ExtractionOptions = {
+      const options: ExtractOptions = {
         dealer: selectedDealer,
-        language: 'da',
-        strategy: selectedStrategy,
-        enableValidation,
-        enableCostChecking
+        language: 'da'
+        // strategy: selectedStrategy,
+        // enableValidation,
+        // enableCostChecking
       }
 
       const result = await service.extract(testContent, options)
@@ -341,7 +341,7 @@ export const AdminTestingInterface: React.FC = () => {
                           {result.result.success && result.result.data && (
                             <div className="text-sm text-muted-foreground mt-2">
                               {result.result.data.vehicles.length} vehicles • 
-                              Confidence: {Math.round((result.result.validationResult?.confidence || 0) * 100)}%
+                              {/* Confidence: {Math.round((result.result.validationResult?.confidence || 0) * 100)}% */}
                             </div>
                           )}
                         </div>
