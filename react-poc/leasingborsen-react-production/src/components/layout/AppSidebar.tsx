@@ -10,7 +10,8 @@ import {
   Settings,
   LogOut,
   X,
-  FileText
+  FileText,
+  GitMerge
 } from 'lucide-react'
 
 interface AppSidebarProps {
@@ -45,6 +46,11 @@ const navigation: NavItem[] = [
     title: 'PDF Extraction',
     href: '/admin/pdf-extraction',
     icon: FileText,
+  },
+  {
+    title: 'Extraction Sessions',
+    href: '/admin/extraction-sessions',
+    icon: GitMerge,
   },
   {
     title: 'Indstillinger',

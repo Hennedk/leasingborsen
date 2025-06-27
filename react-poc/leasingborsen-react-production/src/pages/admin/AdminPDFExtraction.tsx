@@ -11,7 +11,7 @@ import { Upload, FileText, Car, Loader2, CheckCircle, AlertCircle, Link, Setting
 import { supabase } from '@/lib/supabase';
 import { pdfExtractor, validatePDFFile, getDanishCarPatterns, type ExtractionProfile, type PDFExtractionResult } from '@/services/pdfExtractorService';
 import { useBatchListingCreation } from '@/hooks/useBatchListingCreation';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useReferenceData, useMakes, useModels } from '@/hooks/useReferenceData';
 import { ExtractedCarsResultsWithComparison } from '@/components/admin/ExtractedCarsResultsWithComparison';
@@ -101,6 +101,7 @@ interface TextExtractionResult {
 
 export default function AdminPDFExtraction() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { createBatchListings } = useBatchListingCreation();
   
   // Reference data hooks
@@ -128,8 +129,8 @@ export default function AdminPDFExtraction() {
   const [isRailwayExtracting, setIsRailwayExtracting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
-  // Batch creation state
-  const [selectedSellerId] = useState<string>('');
+  // Batch creation state - Initialize from URL params
+  const [selectedSellerId] = useState<string>(searchParams.get('seller') || '');
   const [isSaving, setIsSaving] = useState(false);
   
   // View state
@@ -560,6 +561,7 @@ export default function AdminPDFExtraction() {
             onBack={handleBackToExtraction}
             onSaveToDatabase={handleSaveToDatabase}
             isSaving={isSaving}
+            initialSellerId={selectedSellerId}
           />
         </div>
       </div>

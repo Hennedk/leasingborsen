@@ -17,6 +17,7 @@ import {
 import { 
   Edit, 
   Trash2, 
+  Eye,
   Building2,
   Mail,
   Phone,
@@ -191,6 +192,17 @@ const SellersTable = React.memo<SellersTableProps>(({
 
         return (
           <div className="flex items-center gap-1">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-8 w-8 p-0"
+              asChild
+              title="Se annoncer"
+            >
+              <Link to={`/admin/sellers/listings?seller=${seller.id}`}>
+                <Eye className="h-4 w-4" />
+              </Link>
+            </Button>
             <Button 
               variant="ghost" 
               size="sm"

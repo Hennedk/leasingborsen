@@ -89,6 +89,52 @@ export interface ListingChange {
 }
 
 /**
+ * Hook for getting extraction sessions
+ */
+export const useExtractionSessions = (sellerId?: string) => {
+  return useQuery({
+    queryKey: ['extraction-sessions', sellerId],
+    queryFn: async () => {
+      let query = supabase
+        .from('extraction_session_summary')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (sellerId) {
+        query = query.eq('seller_id', sellerId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+      return data as ExtractionSession[]
+    }
+  })
+}
+
+/**
+ * Hook for getting changes for a session
+ */
+export const useSessionChanges = (sessionId: string | null) => {
+  return useQuery({
+    queryKey: ['session-changes', sessionId],
+    queryFn: async () => {
+      if (!sessionId) return []
+
+      const { data, error } = await supabase
+        .from('extraction_listing_changes')
+        .select('*')
+        .eq('session_id', sessionId)
+        .order('change_type')
+
+      if (error) throw error
+      return data as ListingChange[]
+    },
+    enabled: !!sessionId
+  })
+}
+
+/**
  * Hook for comparing extracted listings with existing ones
  */
 export const useListingComparison = () => {
@@ -219,47 +265,6 @@ export const useListingComparison = () => {
     }
   })
 
-  // Get extraction sessions
-  const useExtractionSessions = (sellerId?: string) => {
-    return useQuery({
-      queryKey: ['extraction-sessions', sellerId],
-      queryFn: async () => {
-        let query = supabase
-          .from('extraction_session_summary')
-          .select('*')
-          .order('created_at', { ascending: false })
-
-        if (sellerId) {
-          query = query.eq('seller_id', sellerId)
-        }
-
-        const { data, error } = await query
-
-        if (error) throw error
-        return data as ExtractionSession[]
-      }
-    })
-  }
-
-  // Get changes for a session
-  const useSessionChanges = (sessionId: string | null) => {
-    return useQuery({
-      queryKey: ['session-changes', sessionId],
-      queryFn: async () => {
-        if (!sessionId) return []
-
-        const { data, error } = await supabase
-          .from('extraction_listing_changes')
-          .select('*')
-          .eq('session_id', sessionId)
-          .order('change_type')
-
-        if (error) throw error
-        return data as ListingChange[]
-      },
-      enabled: !!sessionId
-    })
-  }
 
   // Update change status
   const updateChangeStatusMutation = useMutation({
@@ -329,11 +334,41 @@ export const useListingComparison = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['extraction-sessions'] })
       queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['listing'] }) // Invalidate individual listing caches
+      queryClient.invalidateQueries({ queryKey: ['admin', 'listing'], type: 'all' }) // Invalidate all admin listing caches
+      queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] }) // Invalidate admin listings list
       
-      const result = data[0]
-      toast.success('Ændringer anvendt', {
-        description: `${result.applied_creates} oprettet, ${result.applied_updates} opdateret, ${result.applied_deletes} slettet`
-      })
+      console.log('Apply changes response:', data)
+      
+      // Handle the response structure from the PostgreSQL function
+      let result
+      if (Array.isArray(data) && data.length > 0) {
+        result = data[0]
+      } else if (data && typeof data === 'object') {
+        result = data
+      } else {
+        console.warn('Unexpected response format:', data)
+        toast.success('Ændringer anvendt')
+        return
+      }
+      
+      // Check if result has summary property (our function returns this structure)
+      if (result.summary) {
+        const summary = result.summary
+        toast.success('Ændringer anvendt', {
+          description: `${summary.creates_applied || 0} oprettet, ${summary.updates_applied || 0} opdateret, ${summary.deletes_applied || 0} slettet`
+        })
+      } else if (result.applied_creates !== undefined) {
+        // Legacy format
+        toast.success('Ændringer anvendt', {
+          description: `${result.applied_creates} oprettet, ${result.applied_updates} opdateret, ${result.applied_deletes} slettet`
+        })
+      } else {
+        // Fallback
+        toast.success('Ændringer anvendt', {
+          description: 'Session changes har been successfully applied'
+        })
+      }
     },
     onError: (error) => {
       console.error('Apply changes error:', error)
@@ -348,10 +383,6 @@ export const useListingComparison = () => {
     updateChangeStatus: updateChangeStatusMutation.mutate,
     bulkUpdateChanges: bulkUpdateChangesMutation.mutate,
     applyChanges: applyChangesMutation.mutate,
-    
-    // Queries
-    useExtractionSessions,
-    useSessionChanges,
     
     // State
     currentSessionId,

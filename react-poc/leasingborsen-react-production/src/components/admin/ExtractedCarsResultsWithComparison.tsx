@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils'
 import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect'
 import { useListingComparison, type ExtractedCar, type ListingMatch } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
 
 interface ExtractedCarsResultsWithComparisonProps {
   cars: ExtractedCar[]
@@ -23,6 +24,7 @@ interface ExtractedCarsResultsWithComparisonProps {
   onSaveToDatabase: (selectedSellerId: string) => void
   isSaving?: boolean
   className?: string
+  initialSellerId?: string
 }
 
 export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWithComparisonProps> = ({
@@ -33,10 +35,12 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
   onBack,
   onSaveToDatabase,
   isSaving = false,
-  className
+  className,
+  initialSellerId = ''
 }) => {
+  const navigate = useNavigate()
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
-  const [selectedSellerId, setSelectedSellerId] = useState<string>('')
+  const [selectedSellerId, setSelectedSellerId] = useState<string>(initialSellerId)
   const [mode, setMode] = useState<'create' | 'compare'>('create')
   const [comparisonResult, setComparisonResult] = useState<{
     matches: ListingMatch[]
@@ -118,10 +122,13 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
         description: 'Du kan nu gennemgå og godkende ændringerne'
       })
 
-      // Optionally navigate to review page
-      // navigate(`/admin/extraction-sessions/${session.id}`)
+      // Navigate to extraction sessions page to review changes
+      navigate('/admin/extraction-sessions')
     } catch (error) {
       console.error('Save error:', error)
+      toast.error('Fejl ved gemning', {
+        description: error instanceof Error ? error.message : 'Der opstod en uventet fejl'
+      })
     }
   }
 
@@ -332,9 +339,11 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
               {filteredMatches.map((match, idx) => {
                 const isSelected = selectedChanges.has(`${idx}`)
                 const car = match.extracted || match.existing
+                // Create a more unique key using car details
+                const uniqueKey = match.existing?.id || `${car?.make}-${car?.model}-${car?.variant}-${idx}`
                 
                 return (
-                  <TableRow key={idx} className={cn(
+                  <TableRow key={uniqueKey} className={cn(
                     "hover:bg-muted/50",
                     isSelected && "bg-muted/30"
                   )}>
@@ -597,9 +606,11 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
                         period_months: undefined,
                         mileage_per_year: undefined
                       }
+                      // Create a unique key for each car
+                      const carKey = `${car.make}-${car.model}-${car.variant}-${index}`
 
                       return (
-                        <React.Fragment key={index}>
+                        <React.Fragment key={carKey}>
                           {/* Main Row */}
                           <TableRow
                             className={cn(

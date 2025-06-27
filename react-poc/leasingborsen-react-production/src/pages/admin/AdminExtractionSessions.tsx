@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -9,18 +9,27 @@ import {
   GitCompare, Eye, Trash, Plus, Edit, 
   Clock, CheckCircle, XCircle, GitCommit, AlertTriangle
 } from 'lucide-react'
-import { useListingComparison } from '@/hooks/useListingComparison'
+import { useExtractionSessions } from '@/hooks/useListingComparison'
 import { useNavigate } from 'react-router-dom'
 import { ExtractionSessionReview } from '@/components/admin/ExtractionSessionReview'
 
 export const AdminExtractionSessions: React.FC = () => {
-  const [selectedSellerId, setSelectedSellerId] = useState<string>('')
+  const [selectedSellerId, setSelectedSellerId] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const navigate = useNavigate()
 
-  const { useExtractionSessions } = useListingComparison()
-  const { data: sessions = [] } = useExtractionSessions(selectedSellerId || undefined)
+  const { data: sessions = [], isLoading, error } = useExtractionSessions(
+    selectedSellerId === 'all' ? undefined : selectedSellerId
+  )
+
+  // Debug logging
+  useEffect(() => {
+    console.log('AdminExtractionSessions mounted')
+    console.log('Sessions data:', sessions)
+    console.log('Loading:', isLoading)
+    console.log('Error:', error)
+  }, [sessions, isLoading, error])
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '–'
@@ -82,6 +91,48 @@ export const AdminExtractionSessions: React.FC = () => {
     )
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 animate-spin" />
+                <span>Loading extraction sessions...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error if there's an issue loading sessions
+  if (error) {
+    return (
+      <div className="container mx-auto py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+          <Card className="border-destructive">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-2 text-destructive mb-2">
+                <AlertTriangle className="h-4 w-4" />
+                <h3 className="font-semibold">Fejl ved indlæsning af extraction sessions</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                {error instanceof Error ? error.message : 'Der opstod en uventet fejl'}
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Prøv igen
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -119,7 +170,7 @@ export const AdminExtractionSessions: React.FC = () => {
                   <SelectValue placeholder="All sellers" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All sellers</SelectItem>
+                  <SelectItem value="all">All sellers</SelectItem>
                   {/* TODO: Add seller options from useReferenceData */}
                 </SelectContent>
               </Select>
@@ -349,3 +400,5 @@ export const AdminExtractionSessions: React.FC = () => {
     </div>
   )
 }
+
+export default AdminExtractionSessions

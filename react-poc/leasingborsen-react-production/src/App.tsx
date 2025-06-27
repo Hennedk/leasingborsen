@@ -31,6 +31,7 @@ const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
 const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
 const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProcessingPage'))
 const AdminPDFExtraction = lazy(() => import('@/pages/admin/AdminPDFExtraction'))
+const AdminExtractionSessions = lazy(() => import('@/pages/admin/AdminExtractionSessions'))
 
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
@@ -122,13 +123,14 @@ function App() {
                       <Route path="listings/create" element={<AdminListingForm />} />
                       <Route path="listings/batch" element={<AdminBatchListings />} />
                       <Route path="listings/edit/:id" element={<AdminListingForm />} />
-                      <Route path="sellers" element={<AdminSellerListings />} />
-                      <Route path="sellers/manage" element={<AdminSellers />} />
+                      <Route path="sellers" element={<AdminSellers />} />
+                      <Route path="sellers/listings" element={<AdminSellerListings />} />
                       <Route path="sellers/create" element={<AdminSellerForm />} />
                       <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
                       <Route path="batches/:batchId/review" element={<BatchReviewPage />} />
                       <Route path="toyota-pdf" element={<ToyotaPDFProcessingPage />} />
                       <Route path="pdf-extraction" element={<AdminPDFExtraction />} />
+                      <Route path="extraction-sessions" element={<AdminExtractionSessions />} />
                     </Routes>
                   </AdminErrorBoundary>
                 } />

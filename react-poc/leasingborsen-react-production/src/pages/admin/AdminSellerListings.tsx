@@ -8,12 +8,11 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
-import { Search, Car, Eye, Edit, Trash2, RefreshCw, Filter, Download } from 'lucide-react'
+import { Search, Car, Eye, Edit, RefreshCw, Download, Upload } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useSellers } from '@/hooks/useSellers'
 import { useAdminListings } from '@/hooks/useAdminListings'
-import { AdminErrorBoundary } from '@/components/ErrorBoundaries'
 
 interface SellerListingsFilters {
   sellerId: string
@@ -277,6 +276,17 @@ const AdminSellerListings: React.FC = () => {
               </span>
               {filters.sellerId && (
                 <div className="flex gap-2">
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                    asChild
+                  >
+                    <Link to={`/admin/pdf-extraction?seller=${filters.sellerId}`}>
+                      <Upload className="h-4 w-4" />
+                      Opdater annoncer
+                    </Link>
+                  </Button>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
                     Eksporter
@@ -314,7 +324,7 @@ const AdminSellerListings: React.FC = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredListings.map((listing) => (
-                      <TableRow key={listing.id}>
+                      <TableRow key={listing.listing_id}>
                         <TableCell>
                           <div>
                             <div className="font-medium">
@@ -359,7 +369,7 @@ const AdminSellerListings: React.FC = () => {
                               size="sm"
                               asChild
                             >
-                              <Link to={`/listing/${listing.id}`}>
+                              <Link to={`/listing/${listing.listing_id}`}>
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -368,7 +378,7 @@ const AdminSellerListings: React.FC = () => {
                               size="sm"
                               asChild
                             >
-                              <Link to={`/admin/listings/edit/${listing.id}`}>
+                              <Link to={`/admin/listings/edit/${listing.listing_id}`}>
                                 <Edit className="h-4 w-4" />
                               </Link>
                             </Button>

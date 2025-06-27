@@ -34,6 +34,13 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
           body_type_id,
           fuel_type_id,
           transmission_id,
+          seats,
+          doors,
+          co2_emission,
+          co2_tax_half_year,
+          wltp,
+          consumption_l_100km,
+          consumption_kwh_100km,
           makes!inner(name),
           models!inner(name),
           sellers!inner(name),
@@ -81,6 +88,14 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
           offer_count: listing.lease_pricing?.length || 0,
           is_draft: missingFields.length > 0,
           missing_fields: missingFields,
+          // Car specifications
+          seats: listing.seats,
+          doors: listing.doors,
+          co2_emission: listing.co2_emission,
+          co2_tax_half_year: listing.co2_tax_half_year,
+          wltp: listing.wltp,
+          consumption_l_100km: listing.consumption_l_100km,
+          consumption_kwh_100km: listing.consumption_kwh_100km,
           // Raw IDs for editing
           make_id: listing.make_id,
           model_id: listing.model_id,
@@ -131,6 +146,13 @@ export function useAdminListing(id: string) {
           body_type_id,
           fuel_type_id,
           transmission_id,
+          seats,
+          doors,
+          co2_emission,
+          co2_tax_half_year,
+          wltp,
+          consumption_l_100km,
+          consumption_kwh_100km,
           makes!left(name),
           models!left(name),
           sellers!left(name),
@@ -177,6 +199,14 @@ export function useAdminListing(id: string) {
           mileage_per_year: firstPricing?.mileage_per_year || null,
           created_at: listingAny.created_at,
           updated_at: listingAny.created_at,
+          // Car specifications
+          seats: listingAny.seats,
+          doors: listingAny.doors,
+          co2_emission: listingAny.co2_emission,
+          co2_tax_half_year: listingAny.co2_tax_half_year,
+          wltp: listingAny.wltp,
+          consumption_l_100km: listingAny.consumption_l_100km,
+          consumption_kwh_100km: listingAny.consumption_kwh_100km,
           // Raw IDs for form editing
           make_id: listingAny.make_id,
           model_id: listingAny.model_id,
@@ -221,6 +251,16 @@ export function useAdminDraftListings() {
           created_at,
           updated_at,
           variant,
+          year,
+          mileage,
+          horsepower,
+          seats,
+          doors,
+          co2_emission,
+          co2_tax_half_year,
+          wltp,
+          consumption_l_100km,
+          consumption_kwh_100km,
           makes!left(name),
           models!left(name),
           sellers!left(name),
@@ -259,7 +299,9 @@ export function useAdminDraftListings() {
           make: listing.makes?.name || 'Ukendt',
           model: listing.models?.name || 'Ukendt',
           variant: listing.variant,
-          year: null,
+          year: listing.year,
+          mileage: listing.mileage,
+          horsepower: listing.horsepower,
           monthly_price: firstPricing?.monthly_price || null,
           first_payment: firstPricing?.first_payment || null,
           period_months: firstPricing?.period_months || null,
@@ -272,7 +314,15 @@ export function useAdminDraftListings() {
           updated_at: listing.updated_at,
           offer_count: listing.lease_pricing?.length || 0,
           is_draft: true, // All results from this query are drafts
-          missing_fields: missingFields
+          missing_fields: missingFields,
+          // Car specifications
+          seats: listing.seats,
+          doors: listing.doors,
+          co2_emission: listing.co2_emission,
+          co2_tax_half_year: listing.co2_tax_half_year,
+          wltp: listing.wltp,
+          consumption_l_100km: listing.consumption_l_100km,
+          consumption_kwh_100km: listing.consumption_kwh_100km
         }
       }) || []
       
@@ -467,9 +517,12 @@ const getValidListingFields = (listing: Partial<CarListing>) => {
   if (listing.mileage !== undefined) validFields.mileage = listing.mileage
   if (listing.horsepower !== undefined) validFields.horsepower = listing.horsepower
   if (listing.seats !== undefined) validFields.seats = listing.seats
+  if (listing.doors !== undefined) validFields.doors = listing.doors
   if (listing.co2_emission !== undefined) validFields.co2_emission = listing.co2_emission
   if (listing.co2_tax_half_year !== undefined) validFields.co2_tax_half_year = listing.co2_tax_half_year
   if (listing.wltp !== undefined) validFields.wltp = listing.wltp
+  if (listing.consumption_l_100km !== undefined) validFields.consumption_l_100km = listing.consumption_l_100km
+  if (listing.consumption_kwh_100km !== undefined) validFields.consumption_kwh_100km = listing.consumption_kwh_100km
   if (listing.drive_type !== undefined) validFields.drive_type = listing.drive_type
 
   // Note: make, model, body_type, fuel_type, transmission require ID lookups
@@ -573,9 +626,12 @@ export function useAdminDuplicateListing() {
           fuel_type_id,
           transmission_id,
           seats,
+          doors,
           co2_emission,
           co2_tax_half_year,
           wltp,
+          consumption_l_100km,
+          consumption_kwh_100km,
           drive_type
         `)
         .eq('id', id)

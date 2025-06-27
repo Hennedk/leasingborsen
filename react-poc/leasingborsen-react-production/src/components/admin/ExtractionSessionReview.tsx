@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import { 
   useListingComparison, 
+  useSessionChanges,
   type ListingChange 
 } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
@@ -32,7 +33,6 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const [activeTab, setActiveTab] = useState('pending')
 
   const {
-    useSessionChanges,
     updateChangeStatus,
     bulkUpdateChanges,
     applyChanges,
@@ -152,18 +152,49 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           <div>
             <h5 className="font-medium text-sm mb-2">Ændringer:</h5>
             <div className="space-y-2">
-              {Object.entries(change.field_changes).map(([field, fieldChange]) => (
-                <div key={field} className="flex items-center gap-2 text-sm">
-                  <span className="font-medium min-w-[100px]">{field}:</span>
-                  <span className="text-red-600 line-through">
-                    {String(fieldChange.old) || '–'}
-                  </span>
-                  <span>→</span>
-                  <span className="text-green-600">
-                    {String(fieldChange.new) || '–'}
-                  </span>
-                </div>
-              ))}
+              {Object.entries(change.field_changes).map(([field, fieldChange]) => {
+                // Special handling for offers_replacement
+                if (field === 'offers_replacement') {
+                  return (
+                    <div key={field} className="border-l-4 border-orange-400 pl-3 py-2 bg-orange-50 rounded-r">
+                      <div className="font-medium text-sm text-orange-800 mb-1">
+                        🔄 Alle tilbud erstattes
+                      </div>
+                      <div className="text-xs text-orange-700">
+                        <div className="mb-1">
+                          <span className="font-medium">Før:</span> {String(fieldChange.old)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Efter:</span> {String(fieldChange.new)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                // Special handling for offers_summary
+                if (field === 'offers_summary') {
+                  return (
+                    <div key={field} className="text-xs text-muted-foreground italic">
+                      {String(fieldChange.old)} → {String(fieldChange.new)}
+                    </div>
+                  )
+                }
+
+                // Default field change display
+                return (
+                  <div key={field} className="flex items-center gap-2 text-sm">
+                    <span className="font-medium min-w-[100px]">{field}:</span>
+                    <span className="text-red-600 line-through">
+                      {String(fieldChange.old) || '–'}
+                    </span>
+                    <span>→</span>
+                    <span className="text-green-600">
+                      {String(fieldChange.new) || '–'}
+                    </span>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}

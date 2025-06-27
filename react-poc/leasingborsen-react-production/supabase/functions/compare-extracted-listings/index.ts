@@ -16,6 +16,12 @@ interface ExtractedCar {
   fuel_type?: string
   transmission?: string
   body_type?: string
+  // UUID fields for database updates
+  make_id?: string
+  model_id?: string  
+  fuel_type_id?: string
+  transmission_id?: string
+  body_type_id?: string
   seats?: number
   doors?: number
   year?: number
@@ -44,6 +50,9 @@ interface ExistingListing {
   year?: number
   wltp?: number
   co2_emission?: number
+  co2_tax_half_year?: number
+  consumption_l_100km?: number
+  consumption_kwh_100km?: number
   monthly_price?: number
   offers?: Array<{
     monthly_price: number
@@ -68,82 +77,65 @@ interface OfferComparison {
 }
 
 // Compare offers between existing and extracted listings
+// Strategy: If ANY difference exists, suggest replacing ALL offers
 function compareOffers(
   existingOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>,
   extractedOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>
 ): OfferComparison {
   const changes: Record<string, { old: any; new: any }> = {}
-  let hasChanges = false
-
-  // If different number of offers, that's a change
-  if (existingOffers.length !== extractedOffers.length) {
-    hasChanges = true
-    changes['offer_count'] = { 
-      old: existingOffers.length, 
-      new: extractedOffers.length 
-    }
-  }
-
-  // Compare each offer position (sorted by monthly price)
-  const sortedExisting = [...existingOffers].sort((a, b) => a.monthly_price - b.monthly_price)
-  const sortedExtracted = [...extractedOffers].sort((a, b) => a.monthly_price - b.monthly_price)
-
-  const maxOffers = Math.max(sortedExisting.length, sortedExtracted.length)
   
-  for (let i = 0; i < maxOffers; i++) {
-    const existing = sortedExisting[i]
-    const extracted = sortedExtracted[i]
+  // Deep equality check for offers arrays
+  const offersEqual = JSON.stringify(sortOffersForComparison(existingOffers)) === 
+                      JSON.stringify(sortOffersForComparison(extractedOffers))
+  
+  if (!offersEqual) {
+    // ANY difference in offers = replace ALL offers
+    changes['offers_replacement'] = {
+      old: formatOffersForDisplay(existingOffers),
+      new: formatOffersForDisplay(extractedOffers)
+    }
     
-    if (!existing && extracted) {
-      // New offer added
-      hasChanges = true
-      changes[`offer_${i + 1}_new`] = {
-        old: null,
-        new: `${extracted.monthly_price} kr/md (${extracted.period_months || '?'} mdr, ${extracted.mileage_per_year || '?'} km/år)`
-      }
-    } else if (existing && !extracted) {
-      // Offer removed
-      hasChanges = true
-      changes[`offer_${i + 1}_removed`] = {
-        old: `${existing.monthly_price} kr/md (${existing.period_months || '?'} mdr, ${existing.mileage_per_year || '?'} km/år)`,
-        new: null
-      }
-    } else if (existing && extracted) {
-      // Compare offer details
-      const fieldsToCompare: Array<{ field: keyof typeof existing; label: string }> = [
-        { field: 'monthly_price', label: 'monthly_price' },
-        { field: 'first_payment', label: 'first_payment' },
-        { field: 'period_months', label: 'period_months' },
-        { field: 'mileage_per_year', label: 'mileage_per_year' }
-      ]
-
-      for (const { field, label } of fieldsToCompare) {
-        if (existing[field] !== extracted[field]) {
-          hasChanges = true
-          changes[`offer_${i + 1}_${label}`] = {
-            old: existing[field] || '–',
-            new: extracted[field] || '–'
-          }
-        }
-      }
+    // Add detailed summary for review
+    changes['offers_summary'] = {
+      old: `${existingOffers.length} eksisterende tilbud`,
+      new: `${extractedOffers.length} nye tilbud (alle tilbud erstattes)`
     }
   }
 
-  // Add summary of most significant changes
-  if (hasChanges) {
-    const priceChanges = Object.entries(changes)
-      .filter(([key]) => key.includes('monthly_price'))
-      .map(([key, change]) => `${change.old} → ${change.new}`)
-    
-    if (priceChanges.length > 0) {
-      changes['pricing_summary'] = {
-        old: `${existingOffers.length} tilbud`,
-        new: `${extractedOffers.length} tilbud (ændringer: ${priceChanges.slice(0, 3).join(', ')}${priceChanges.length > 3 ? '...' : ''})`
-      }
-    }
-  }
+  return { hasChanges: !offersEqual, changes }
+}
 
-  return { hasChanges, changes }
+// Helper function to sort offers for consistent comparison
+function sortOffersForComparison(offers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>) {
+  return offers
+    .map(offer => ({
+      monthly_price: offer.monthly_price,
+      first_payment: offer.first_payment || 0,
+      period_months: offer.period_months || 36,
+      mileage_per_year: offer.mileage_per_year || 15000
+    }))
+    .sort((a, b) => {
+      // Sort by monthly_price first, then by other fields for consistent ordering
+      if (a.monthly_price !== b.monthly_price) return a.monthly_price - b.monthly_price
+      if (a.first_payment !== b.first_payment) return a.first_payment - b.first_payment
+      if (a.period_months !== b.period_months) return a.period_months - b.period_months
+      return a.mileage_per_year - b.mileage_per_year
+    })
+}
+
+// Helper function to format offers for display in UI
+function formatOffersForDisplay(offers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>) {
+  if (!offers || offers.length === 0) return 'Ingen tilbud'
+  
+  return offers
+    .map(offer => {
+      const price = `${offer.monthly_price.toLocaleString('da-DK')} kr/md`
+      const period = offer.period_months ? `${offer.period_months} mdr` : '36 mdr'
+      const mileage = offer.mileage_per_year ? `${offer.mileage_per_year.toLocaleString('da-DK')} km/år` : '15.000 km/år'
+      const firstPayment = offer.first_payment ? ` (${offer.first_payment.toLocaleString('da-DK')} kr udbetaling)` : ''
+      return `${price}, ${period}, ${mileage}${firstPayment}`
+    })
+    .join(' | ')
 }
 
 serve(async (req) => {
@@ -170,6 +162,27 @@ serve(async (req) => {
     // Initialize OpenAI for fuzzy matching
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
+
+    // Fetch reference data for UUID mapping
+    const [makesResult, modelsResult, fuelTypesResult, transmissionsResult, bodyTypesResult] = await Promise.all([
+      supabase.from('makes').select('id, name'),
+      supabase.from('models').select('id, name, make_id'),
+      supabase.from('fuel_types').select('id, name'),
+      supabase.from('transmissions').select('id, name'),
+      supabase.from('body_types').select('id, name')
+    ])
+
+    if (makesResult.error || modelsResult.error || fuelTypesResult.error || 
+        transmissionsResult.error || bodyTypesResult.error) {
+      throw new Error('Failed to fetch reference data for UUID mapping')
+    }
+
+    // Create lookup maps for name -> UUID conversion
+    const makesMap = new Map(makesResult.data.map(m => [m.name.toLowerCase(), m.id]))
+    const modelsMap = new Map(modelsResult.data.map(m => [`${m.name.toLowerCase()}|${m.make_id}`, m.id]))
+    const fuelTypesMap = new Map(fuelTypesResult.data.map(f => [f.name.toLowerCase(), f.id]))
+    const transmissionsMap = new Map(transmissionsResult.data.map(t => [t.name.toLowerCase(), t.id]))
+    const bodyTypesMap = new Map(bodyTypesResult.data.map(b => [b.name.toLowerCase(), b.id]))
 
     // Fetch existing listings for the seller with all offers
     const { data: existingListings, error: fetchError } = await supabase
@@ -206,16 +219,35 @@ serve(async (req) => {
           year: listing.year,
           wltp: listing.wltp,
           co2_emission: listing.co2_emission,
+          co2_tax_half_year: listing.co2_tax_half_year,
+          consumption_l_100km: listing.consumption_l_100km,
+          consumption_kwh_100km: listing.consumption_kwh_100km,
           monthly_price: listing.monthly_price,
           offers: listing.lease_pricing || []
         })
       }
     })
 
+    // Enrich extracted cars with UUID mappings
+    const enrichedExtractedCars = extractedCars.map(car => {
+      const makeId = makesMap.get(car.make?.toLowerCase() || '')
+      const modelKey = `${car.model?.toLowerCase() || ''}|${makeId}`
+      const modelId = modelsMap.get(modelKey)
+      
+      return {
+        ...car,
+        make_id: makeId,
+        model_id: modelId,
+        fuel_type_id: fuelTypesMap.get(car.fuel_type?.toLowerCase() || ''),
+        transmission_id: transmissionsMap.get(car.transmission?.toLowerCase() || ''),
+        body_type_id: bodyTypesMap.get(car.body_type?.toLowerCase() || '')
+      }
+    })
+
     // Process each extracted car
     const matches: MatchResult[] = []
     
-    for (const extracted of extractedCars) {
+    for (const extracted of enrichedExtractedCars) {
       // Try exact match first
       const exactKey = `${extracted.make}|${extracted.model}|${extracted.variant}`.toLowerCase()
       let match = existingByKey.get(exactKey)
@@ -282,7 +314,7 @@ serve(async (req) => {
 
     // Find deleted listings (existing but not in extracted)
     const extractedKeys = new Set(
-      extractedCars.map(car => 
+      enrichedExtractedCars.map(car => 
         `${car.make}|${car.model}|${car.variant}`.toLowerCase()
       )
     )
@@ -301,7 +333,7 @@ serve(async (req) => {
 
     // Calculate summary statistics
     const summary = {
-      totalExtracted: extractedCars.length,
+      totalExtracted: enrichedExtractedCars.length,
       totalExisting: existingByKey.size,
       totalMatched: matches.filter(m => m.existing).length,
       totalNew: matches.filter(m => m.changeType === 'create').length,

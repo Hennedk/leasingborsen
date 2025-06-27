@@ -341,7 +341,7 @@ serve(async (req) => {
     try {
       // Call OpenAI API with timeout
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000) // 120 second timeout for longer PDFs
+      const timeoutId = setTimeout(() => controller.abort(), 180000) // 180 second timeout for longer PDFs
       
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -468,7 +468,7 @@ serve(async (req) => {
     } catch (apiError) {
       console.error('OpenAI API error:', apiError)
       if (apiError.name === 'AbortError') {
-        throw new Error('Request timed out after 120 seconds')
+        throw new Error('Request timed out after 180 seconds')
       }
       throw apiError
     }
