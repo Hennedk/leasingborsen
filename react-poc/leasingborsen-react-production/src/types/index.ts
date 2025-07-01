@@ -199,8 +199,8 @@ export interface LeaseOption {
   monthly_price: number
 }
 
-// Seller interface
-export interface Seller {
+// Basic seller info interface (renamed to avoid conflict with database Seller entity)
+export interface SellerContact {
   name: string
   website: string
   phone: string

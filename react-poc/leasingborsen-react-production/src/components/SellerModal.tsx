@@ -9,12 +9,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ExternalLink, Phone, Mail, Globe } from 'lucide-react'
-import type { Seller, CarListing } from '@/types'
+import type { SellerContact, CarListing } from '@/types'
 
 interface SellerModalProps {
   isOpen: boolean
   onClose: () => void
-  seller: Seller
+  seller: SellerContact
   car: CarListing
 }
 

@@ -2,11 +2,11 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Edit3, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { LeaseOption, CarListing, Seller } from '@/types'
+import type { LeaseOption, CarListing, SellerContact } from '@/types'
 
 interface MobilePriceBarProps {
   car: CarListing
-  seller: Seller
+  seller: SellerContact
   selectedLease: LeaseOption | undefined
   onEditPrice: () => void
   onShowSeller: () => void
