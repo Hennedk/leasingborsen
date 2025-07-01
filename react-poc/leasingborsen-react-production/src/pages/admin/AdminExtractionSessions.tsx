@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import AdminLayout from '@/components/admin/AdminLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,7 +11,7 @@ import {
   Clock, CheckCircle, XCircle, GitCommit, AlertTriangle
 } from 'lucide-react'
 import { useExtractionSessions } from '@/hooks/useListingComparison'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ExtractionSessionReview } from '@/components/admin/ExtractionSessionReview'
 
 export const AdminExtractionSessions: React.FC = () => {
@@ -18,6 +19,7 @@ export const AdminExtractionSessions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { sessionId } = useParams<{ sessionId?: string }>()
 
   const { data: sessions = [], isLoading, error } = useExtractionSessions(
     selectedSellerId === 'all' ? undefined : selectedSellerId
@@ -77,24 +79,33 @@ export const AdminExtractionSessions: React.FC = () => {
     }
   }
 
-  // If a session is selected, show the review component
-  if (selectedSessionId) {
+  // If a session is selected via URL or state, show the review component
+  const reviewSessionId = sessionId || selectedSessionId
+  if (reviewSessionId) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <AdminLayout title="Review Extraction Session">
         <div className="max-w-7xl mx-auto">
           <ExtractionSessionReview 
-            sessionId={selectedSessionId}
-            onBack={() => setSelectedSessionId(null)}
+            sessionId={reviewSessionId}
+            onBack={() => {
+              if (sessionId) {
+                // If we came via URL, navigate back to sessions list
+                navigate('/admin/extraction-sessions')
+              } else {
+                // If we came via state, just clear the selection
+                setSelectedSessionId(null)
+              }
+            }}
           />
         </div>
-      </div>
+      </AdminLayout>
     )
   }
 
   // Show loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <AdminLayout title="Extraction Sessions">
         <div className="max-w-7xl mx-auto">
           <Card>
             <CardContent className="p-6">
@@ -105,14 +116,14 @@ export const AdminExtractionSessions: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AdminLayout>
     )
   }
 
   // Show error if there's an issue loading sessions
   if (error) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <AdminLayout title="Extraction Sessions">
         <div className="max-w-7xl mx-auto">
           <Card className="border-destructive">
             <CardContent className="p-6">
@@ -129,12 +140,12 @@ export const AdminExtractionSessions: React.FC = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </AdminLayout>
     )
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <AdminLayout title="Extraction Sessions">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -397,7 +408,7 @@ export const AdminExtractionSessions: React.FC = () => {
           </Card>
         )}
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 
