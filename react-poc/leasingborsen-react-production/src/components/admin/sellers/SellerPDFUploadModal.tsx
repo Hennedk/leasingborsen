@@ -126,8 +126,8 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
   // Get extraction config directly from seller make data
   const getExtractionConfig = useCallback(() => {
     return {
-      makeId: seller.make_id,
-      makeName: seller.make_name,
+      makeId: seller.make_id || null,
+      makeName: seller.make_name || null,
       sellerId: seller.id,
       sellerName: seller.name
     }
