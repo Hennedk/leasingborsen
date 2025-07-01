@@ -78,6 +78,25 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     jobId: null
   })
 
+  // Reset state when modal opens to ensure fresh start
+  React.useEffect(() => {
+    if (open) {
+      setState({
+        isDragOver: false,
+        file: null,
+        isProcessing: false,
+        currentStep: 'idle',
+        progress: 0,
+        progressMessage: '',
+        railwayResult: null,
+        aiResult: null,
+        extractionResult: null,
+        error: null,
+        jobId: null
+      })
+    }
+  }, [open])
+
   // Monitor job progress for AI extraction
   const { startPolling } = useJobProgress(state.jobId || '', {
     autoStart: false,
@@ -379,6 +398,9 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         console.log('🔍 Fetching extraction session summary from database...')
         
         try {
+          // Add a small delay to ensure database has processed the extraction
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
           // Fetch the actual extraction session summary from the database
           const { error: sessionError } = await supabase
             .from('extraction_sessions')
@@ -423,6 +445,13 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             }
 
             console.log('📊 Actual extraction stats:', actualStats)
+            console.log('📊 Extraction changes breakdown:', {
+              creates: pendingCreates,
+              updates: pendingUpdates,
+              deletes: pendingDeletes,
+              unchanged: unchangedChanges,
+              total: changesData.length
+            })
           } else {
             console.warn('Could not fetch changes data:', changesError?.message)
           }
