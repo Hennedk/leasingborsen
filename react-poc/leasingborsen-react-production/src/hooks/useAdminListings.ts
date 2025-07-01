@@ -396,12 +396,63 @@ export function useBulkDeleteListings() {
 
   return useMutation({
     mutationFn: async (listingIds: string[]) => {
-      const { error } = await supabase
+      console.log('🗑️ Starting bulk cascading deletion for listings:', listingIds.length)
+      
+      // Delete related records first to avoid foreign key constraint violations
+      // Use batch operations for efficiency
+      
+      // 1. Delete extraction listing changes for all listings
+      const { error: extractionError } = await supabase
+        .from('extraction_listing_changes')
+        .delete()
+        .in('existing_listing_id', listingIds)
+      
+      if (extractionError) {
+        console.warn('⚠️ Could not delete extraction changes:', extractionError.message)
+      }
+      
+      // 2. Delete listing offers for all listings
+      const { error: offersError } = await supabase
+        .from('listing_offers')
+        .delete()
+        .in('listing_id', listingIds)
+      
+      if (offersError) {
+        console.warn('⚠️ Could not delete listing offers:', offersError.message)
+      }
+      
+      // 3. Delete price change logs for all listings
+      const { error: priceLogError } = await supabase
+        .from('price_change_log')
+        .delete()
+        .in('listing_id', listingIds)
+      
+      if (priceLogError) {
+        console.warn('⚠️ Could not delete price change logs:', priceLogError.message)
+      }
+      
+      // 4. Delete lease pricing for all listings
+      const { error: pricingError } = await supabase
+        .from('lease_pricing')
+        .delete()
+        .in('listing_id', listingIds)
+      
+      if (pricingError) {
+        console.warn('⚠️ Could not delete lease pricing:', pricingError.message)
+      }
+      
+      // 5. Finally, delete all listings
+      const { error: listingsError } = await supabase
         .from('listings')
         .delete()
         .in('id', listingIds)
 
-      if (error) throw error
+      if (listingsError) {
+        console.error('❌ Failed to bulk delete listings after clearing dependencies:', listingsError)
+        throw listingsError
+      }
+      
+      console.log('✅ Successfully bulk deleted', listingIds.length, 'listings and all related records')
       return { deletedIds: listingIds }
     },
     onSuccess: (data) => {
@@ -413,9 +464,11 @@ export function useBulkDeleteListings() {
       // Invalidate all listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
       queryClient.invalidateQueries({ queryKey: ['admin'] })
+      
+      console.log('🔄 Cache invalidated for', data.deletedIds.length, 'deleted listings')
     },
     onError: (error) => {
-      console.error('Failed to bulk delete listings:', error)
+      console.error('❌ Failed to bulk delete listings:', error)
     }
   })
 }
@@ -582,12 +635,67 @@ export function useAdminDeleteListing() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      console.log('🗑️ Starting cascading deletion for listing:', id)
+      
+      // Delete related records first to avoid foreign key constraint violations
+      // Order matters: delete from child tables before parent table
+      
+      // 1. Delete extraction listing changes (referencing existing_listing_id)
+      const { error: extractionError } = await supabase
+        .from('extraction_listing_changes')
+        .delete()
+        .eq('existing_listing_id', id)
+      
+      if (extractionError) {
+        console.warn('⚠️ Could not delete extraction changes:', extractionError.message)
+        // Continue anyway as this might not exist
+      }
+      
+      // 2. Delete listing offers
+      const { error: offersError } = await supabase
+        .from('listing_offers')
+        .delete()
+        .eq('listing_id', id)
+      
+      if (offersError) {
+        console.warn('⚠️ Could not delete listing offers:', offersError.message)
+        // Continue anyway as this might not exist
+      }
+      
+      // 3. Delete price change log
+      const { error: priceLogError } = await supabase
+        .from('price_change_log')
+        .delete()
+        .eq('listing_id', id)
+      
+      if (priceLogError) {
+        console.warn('⚠️ Could not delete price change log:', priceLogError.message)
+        // Continue anyway as this might not exist
+      }
+      
+      // 4. Delete lease pricing (should cascade already, but explicit for safety)
+      const { error: pricingError } = await supabase
+        .from('lease_pricing')
+        .delete()
+        .eq('listing_id', id)
+      
+      if (pricingError) {
+        console.warn('⚠️ Could not delete lease pricing:', pricingError.message)
+        // Continue anyway as this should cascade
+      }
+      
+      // 5. Finally, delete the listing itself
+      const { error: listingError } = await supabase
         .from('listings')
         .delete()
         .eq('id', id)
 
-      if (error) throw error
+      if (listingError) {
+        console.error('❌ Failed to delete listing after clearing dependencies:', listingError)
+        throw listingError
+      }
+      
+      console.log('✅ Successfully deleted listing and all related records')
       return { id }
     },
     onSuccess: (_, id) => {
@@ -597,9 +705,11 @@ export function useAdminDeleteListing() {
       // Invalidate listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
       queryClient.invalidateQueries({ queryKey: ['admin'] })
+      
+      console.log('🔄 Cache invalidated for deleted listing')
     },
     onError: (error) => {
-      console.error('Failed to delete listing:', error)
+      console.error('❌ Failed to delete listing:', error)
     }
   })
 }

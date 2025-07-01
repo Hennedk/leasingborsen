@@ -31,7 +31,7 @@ export const QuickExtractionCheck: React.FC<QuickExtractionCheckProps> = ({ sess
         fuzzyMatches.forEach((change, index) => {
           const data = change.extracted_data || {}
           console.log(`\n${index + 1}. ${data.make} ${data.model} "${data.variant}"`)
-          console.log(`   Confidence: ${(change.confidence_score * 100).toFixed(1)}%`)
+          console.log(`   Confidence: ${((change.confidence_score || 0) * 100).toFixed(1)}%`)
           console.log(`   Change Type: ${change.change_type}`)
           if (change.field_changes?.variant) {
             console.log(`   Variant Update: "${change.field_changes.variant.old}" → "${change.field_changes.variant.new}"`)
@@ -45,7 +45,7 @@ export const QuickExtractionCheck: React.FC<QuickExtractionCheckProps> = ({ sess
         console.log('\n🚗 Kodiaq Changes:')
         kodiaqChanges.forEach((change, index) => {
           console.log(`\n${index + 1}. "${change.extracted_data?.variant}"`)
-          console.log(`   Type: ${change.change_type} | Method: ${change.match_method} | Confidence: ${(change.confidence_score * 100).toFixed(1)}%`)
+          console.log(`   Type: ${change.change_type} | Method: ${change.match_method} | Confidence: ${((change.confidence_score || 0) * 100).toFixed(1)}%`)
         })
       }
     }
