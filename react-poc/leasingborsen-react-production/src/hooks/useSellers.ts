@@ -10,6 +10,8 @@ export interface Seller {
   address?: string | null
   country?: string | null
   logo_url?: string | null
+  make_id?: string | null // Reference to makes table
+  make_name?: string | null // Populated from join
   created_at?: string // Made optional in case DB doesn't have this column
   updated_at?: string | null // Made optional since DB doesn't have this column
   // Import-related fields
@@ -23,11 +25,37 @@ export const useSellers = () => {
     queryKey: ['sellers'],
     queryFn: async (): Promise<Seller[]> => {
       try {
-        // Get sellers with aggregated import data
-        const { data: sellersData, error: sellersError } = await supabase
-          .from('sellers')
-          .select('*')
-          .order('name')
+        // Get sellers with make information - fallback for backward compatibility
+        let sellersData, sellersError
+        
+        try {
+          // Try new view first (after migration)
+          const result = await supabase
+            .from('sellers_with_make')
+            .select('*')
+            .order('name')
+          sellersData = result.data
+          sellersError = result.error
+        } catch (viewError) {
+          // Fallback to old table with manual join (before migration)
+          console.log('Using fallback query - sellers_with_make view not available yet')
+          const result = await supabase
+            .from('sellers')
+            .select(`
+              *,
+              makes!sellers_make_id_fkey(name)
+            `)
+            .order('name')
+          
+          // Transform the data to match expected format
+          if (result.data) {
+            sellersData = result.data.map(seller => ({
+              ...seller,
+              make_name: seller.makes?.name || null
+            }))
+          }
+          sellersError = result.error
+        }
 
         if (sellersError) {
           console.error('Error fetching sellers:', sellersError)
@@ -98,9 +126,9 @@ export const useSeller = (sellerId: string) => {
       if (!sellerId) return null
 
       try {
-        // Get seller data
+        // Get seller data with make information
         const { data: sellerData, error: sellerError } = await supabase
-          .from('sellers')
+          .from('sellers_with_make')
           .select('*')
           .eq('id', sellerId)
           .single()

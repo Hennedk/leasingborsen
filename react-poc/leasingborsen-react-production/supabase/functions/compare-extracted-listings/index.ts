@@ -1,6 +1,5 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { OpenAI } from 'https://esm.sh/openai@4.20.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,15 +12,9 @@ interface ExtractedCar {
   variant: string
   horsepower?: number
   engine_info?: string
-  fuel_type?: string
-  transmission?: string
-  body_type?: string
-  // UUID fields for database updates
-  make_id?: string
-  model_id?: string  
-  fuel_type_id?: string
-  transmission_id?: string
-  body_type_id?: string
+  fuel_type: string
+  transmission: string
+  body_type: string
   seats?: number
   doors?: number
   year?: number
@@ -30,12 +23,11 @@ interface ExtractedCar {
   consumption_l_100km?: number
   consumption_kwh_100km?: number
   co2_tax_half_year?: number
-  offers: Array<{
-    monthly_price: number
-    first_payment?: number
-    period_months?: number
-    mileage_per_year?: number
-  }>
+  monthly_price?: number
+  first_payment?: number
+  period_months?: number
+  mileage_per_year?: number
+  total_price?: number
 }
 
 interface ExistingListing {
@@ -44,9 +36,9 @@ interface ExistingListing {
   model: string
   variant: string
   horsepower?: number
-  fuel_type?: string
-  transmission?: string
-  body_type?: string
+  fuel_type: string
+  transmission: string
+  body_type: string
   year?: number
   wltp?: number
   co2_emission?: number
@@ -54,88 +46,139 @@ interface ExistingListing {
   consumption_l_100km?: number
   consumption_kwh_100km?: number
   monthly_price?: number
-  offers?: Array<{
-    monthly_price: number
-    first_payment?: number
-    period_months?: number
-    mileage_per_year?: number
+  offers: any[]
+}
+
+interface ComparisonRequest {
+  extractedCars: ExtractedCar[]
+  sellerId?: string
+}
+
+interface ComparisonResult {
+  newListings: ExtractedCar[]
+  potentialUpdates: Array<{
+    extracted: ExtractedCar
+    existing: ExistingListing
+    confidence: number
+    matchMethod: string
   }>
+  summary: {
+    totalExtracted: number
+    newListings: number
+    potentialUpdates: number
+  }
 }
 
-interface MatchResult {
-  extracted: ExtractedCar
-  existing?: ExistingListing
-  matchType: 'exact' | 'fuzzy' | 'unmatched'
-  confidence: number
-  changeType: 'create' | 'update' | 'unchanged'
-  changes?: Record<string, { old: any; new: any }>
+/**
+ * Enhanced variant processing utility - extracts HP, transmission, and AWD info
+ */
+function extractSpecsFromVariant(variant: string): { 
+  coreVariant: string
+  horsepower?: number
+  transmission?: string
+  awd?: boolean
+} {
+  const original = variant.toLowerCase()
+  let coreVariant = variant
+  let horsepower: number | undefined
+  let transmission: string | undefined
+  let awd = false
+
+  // Extract horsepower (150 HK, 150HK, 150 hp)
+  const hpMatch = original.match(/(\d+)\s*(?:hk|hp)\b/i)
+  if (hpMatch) {
+    horsepower = parseInt(hpMatch[1])
+    coreVariant = coreVariant.replace(new RegExp(hpMatch[0], 'gi'), '').trim()
+  }
+
+  // Extract transmission info
+  if (original.includes('dsg') || original.includes('s tronic') || original.includes('automatgear')) {
+    transmission = 'automatic'
+    coreVariant = coreVariant.replace(/\b(?:dsg\d*|s[\s-]?tronic|automatgear)\b/gi, '').trim()
+  } else if (original.includes('manual')) {
+    transmission = 'manual'
+    coreVariant = coreVariant.replace(/\bmanual\b/gi, '').trim()
+  }
+
+  // Check for AWD/4WD indicators
+  if (original.includes('quattro') || original.includes('4motion') || original.includes('awd') || 
+      original.includes('4wd') || original.includes('xdrive') || original.includes('allrad')) {
+    awd = true
+    coreVariant = coreVariant.replace(/\b(?:quattro|4motion|awd|4wd|xdrive|allrad)\b/gi, '').trim()
+  }
+
+  // Remove fuel type modifiers that are redundant
+  coreVariant = coreVariant
+    .replace(/\b(mild\s*hybrid|hybrid|phev|ev|e-tron)\b/gi, '')
+    .replace(/\b(tsi|tfsi|tdi|fsi|etsi)\b/gi, '') // Remove engine type codes
+    .replace(/\s+/g, ' ')
+    .replace(/\s*-\s*/g, ' ')
+    .trim()
+
+  return { coreVariant, horsepower, transmission, awd }
 }
 
-interface OfferComparison {
-  hasChanges: boolean
-  changes: Record<string, { old: any; new: any }>
-}
-
-// Compare offers between existing and extracted listings
-// Strategy: If ANY difference exists, suggest replacing ALL offers
-function compareOffers(
-  existingOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>,
-  extractedOffers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>
-): OfferComparison {
-  const changes: Record<string, { old: any; new: any }> = {}
+/**
+ * Generate composite key including technical specs for enhanced matching
+ */
+function generateCompositeKey(make: string, model: string, variant: string, horsepower?: number, transmission?: string): string {
+  const specs = extractSpecsFromVariant(variant)
+  const hp = horsepower || specs.horsepower
+  const trans = transmission || specs.transmission
   
-  // Deep equality check for offers arrays
-  const offersEqual = JSON.stringify(sortOffersForComparison(existingOffers)) === 
-                      JSON.stringify(sortOffersForComparison(extractedOffers))
+  let key = `${make}|${model}|${specs.coreVariant}`.toLowerCase()
+  if (hp) key += `|${hp}hp`
+  if (trans) key += `|${trans}`
+  if (specs.awd) key += `|awd`
   
-  if (!offersEqual) {
-    // ANY difference in offers = replace ALL offers
-    changes['offers_replacement'] = {
-      old: formatOffersForDisplay(existingOffers),
-      new: formatOffersForDisplay(extractedOffers)
-    }
-    
-    // Add detailed summary for review
-    changes['offers_summary'] = {
-      old: `${existingOffers.length} eksisterende tilbud`,
-      new: `${extractedOffers.length} nye tilbud (alle tilbud erstattes)`
+  return key
+}
+
+/**
+ * Calculate match confidence based on multiple factors
+ */
+function calculateMatchConfidence(extracted: ExtractedCar, existing: ExistingListing): number {
+  let confidence = 0.0
+
+  // Core variant similarity (most important)
+  const extractedSpecs = extractSpecsFromVariant(extracted.variant)
+  const existingSpecs = extractSpecsFromVariant(existing.variant)
+  
+  if (extractedSpecs.coreVariant.toLowerCase() === existingSpecs.coreVariant.toLowerCase()) {
+    confidence += 0.4
+  } else if (extractedSpecs.coreVariant.toLowerCase().includes(existingSpecs.coreVariant.toLowerCase()) ||
+             existingSpecs.coreVariant.toLowerCase().includes(extractedSpecs.coreVariant.toLowerCase())) {
+    confidence += 0.2
+  }
+
+  // Horsepower match (critical differentiator)
+  const extractedHp = extracted.horsepower || extractedSpecs.horsepower
+  const existingHp = existing.horsepower || existingSpecs.horsepower
+  
+  if (extractedHp && existingHp) {
+    if (extractedHp === existingHp) {
+      confidence += 0.3
+    } else if (Math.abs(extractedHp - existingHp) <= 5) {
+      confidence += 0.15 // Close HP might be rounding difference
     }
   }
 
-  return { hasChanges: !offersEqual, changes }
-}
-
-// Helper function to sort offers for consistent comparison
-function sortOffersForComparison(offers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>) {
-  return offers
-    .map(offer => ({
-      monthly_price: offer.monthly_price,
-      first_payment: offer.first_payment || 0,
-      period_months: offer.period_months || 36,
-      mileage_per_year: offer.mileage_per_year || 15000
-    }))
-    .sort((a, b) => {
-      // Sort by monthly_price first, then by other fields for consistent ordering
-      if (a.monthly_price !== b.monthly_price) return a.monthly_price - b.monthly_price
-      if (a.first_payment !== b.first_payment) return a.first_payment - b.first_payment
-      if (a.period_months !== b.period_months) return a.period_months - b.period_months
-      return a.mileage_per_year - b.mileage_per_year
-    })
-}
-
-// Helper function to format offers for display in UI
-function formatOffersForDisplay(offers: Array<{ monthly_price: number; first_payment?: number; period_months?: number; mileage_per_year?: number }>) {
-  if (!offers || offers.length === 0) return 'Ingen tilbud'
+  // Transmission match (critical differentiator)
+  const extractedTrans = extracted.transmission || extractedSpecs.transmission
+  const existingTrans = existing.transmission || existingSpecs.transmission
   
-  return offers
-    .map(offer => {
-      const price = `${offer.monthly_price.toLocaleString('da-DK')} kr/md`
-      const period = offer.period_months ? `${offer.period_months} mdr` : '36 mdr'
-      const mileage = offer.mileage_per_year ? `${offer.mileage_per_year.toLocaleString('da-DK')} km/år` : '15.000 km/år'
-      const firstPayment = offer.first_payment ? ` (${offer.first_payment.toLocaleString('da-DK')} kr udbetaling)` : ''
-      return `${price}, ${period}, ${mileage}${firstPayment}`
-    })
-    .join(' | ')
+  if (extractedTrans && existingTrans) {
+    if (extractedTrans === existingTrans) {
+      confidence += 0.2
+    }
+  }
+
+  // AWD match
+  if (extractedSpecs.awd === existingSpecs.awd) {
+    confidence += 0.1
+  }
+
+  return Math.min(confidence, 1.0)
 }
 
 serve(async (req) => {
@@ -144,70 +187,89 @@ serve(async (req) => {
   }
 
   try {
-    const { extractedCars, sellerId, sessionName } = await req.json()
+    const { extractedCars, sellerId }: ComparisonRequest = await req.json()
 
     if (!extractedCars || !Array.isArray(extractedCars)) {
-      throw new Error('Missing or invalid extractedCars array')
-    }
-
-    if (!sellerId) {
-      throw new Error('Missing sellerId')
+      throw new Error('extractedCars must be an array')
     }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Initialize OpenAI for fuzzy matching
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    const openai = openaiApiKey ? new OpenAI({ apiKey: openaiApiKey }) : null
-
-    // Fetch reference data for UUID mapping
-    const [makesResult, modelsResult, fuelTypesResult, transmissionsResult, bodyTypesResult] = await Promise.all([
+    // Fetch reference data
+    const [makesResult, modelsResult] = await Promise.all([
       supabase.from('makes').select('id, name'),
-      supabase.from('models').select('id, name, make_id'),
-      supabase.from('fuel_types').select('id, name'),
-      supabase.from('transmissions').select('id, name'),
-      supabase.from('body_types').select('id, name')
+      supabase.from('models').select('id, name, make_id')
     ])
 
-    if (makesResult.error || modelsResult.error || fuelTypesResult.error || 
-        transmissionsResult.error || bodyTypesResult.error) {
-      throw new Error('Failed to fetch reference data for UUID mapping')
+    if (makesResult.error) throw makesResult.error
+    if (modelsResult.error) throw modelsResult.error
+
+    // Create lookup maps
+    const makesMap = new Map()
+    makesResult.data.forEach((make: any) => {
+      makesMap.set(make.name.toLowerCase(), make.id)
+    })
+
+    const modelsMap = new Map()
+    modelsResult.data.forEach((model: any) => {
+      const key = `${model.name.toLowerCase()}|${model.make_id}`
+      modelsMap.set(key, model.id)
+    })
+
+    // Build query for existing listings
+    let existingQuery = supabase.from('full_listing_view').select('*')
+    
+    // Filter by seller if provided
+    if (sellerId) {
+      existingQuery = existingQuery.eq('seller_id', sellerId)
     }
 
-    // Create lookup maps for name -> UUID conversion
-    const makesMap = new Map(makesResult.data.map(m => [m.name.toLowerCase(), m.id]))
-    const modelsMap = new Map(modelsResult.data.map(m => [`${m.name.toLowerCase()}|${m.make_id}`, m.id]))
-    const fuelTypesMap = new Map(fuelTypesResult.data.map(f => [f.name.toLowerCase(), f.id]))
-    const transmissionsMap = new Map(transmissionsResult.data.map(t => [t.name.toLowerCase(), t.id]))
-    const bodyTypesMap = new Map(bodyTypesResult.data.map(b => [b.name.toLowerCase(), b.id]))
+    const { data: existingListings, error: existingError } = await existingQuery
+    if (existingError) throw existingError
 
-    // Fetch existing listings for the seller with all offers
-    const { data: existingListings, error: fetchError } = await supabase
-      .from('full_listing_view')
-      .select(`
-        *,
-        lease_pricing (
-          monthly_price,
-          first_payment,
-          period_months,
-          mileage_per_year
-        )
-      `)
-      .eq('seller_id', sellerId)
+    // Create lookup maps for existing listings with enhanced fuzzy matching
+    const existingByExactKey = new Map()
+    const existingByCompositeKey = new Map()
+    const existingListingsArray: ExistingListing[] = []
 
-    if (fetchError) {
-      throw new Error(`Failed to fetch existing listings: ${fetchError.message}`)
-    }
+    existingListings?.forEach((listing: any) => {
+      // Exact key for Level 1 matching
+      const exactKey = `${listing.make}|${listing.model}|${listing.variant}`.toLowerCase()
+      if (!existingByExactKey.has(exactKey)) {
+        existingByExactKey.set(exactKey, {
+          id: listing.listing_id,
+          make: listing.make,
+          model: listing.model,
+          variant: listing.variant,
+          horsepower: listing.horsepower,
+          fuel_type: listing.fuel_type,
+          transmission: listing.transmission,
+          body_type: listing.body_type,
+          year: listing.year,
+          wltp: listing.wltp,
+          co2_emission: listing.co2_emission,
+          co2_tax_half_year: listing.co2_tax_half_year,
+          consumption_l_100km: listing.consumption_l_100km,
+          consumption_kwh_100km: listing.consumption_kwh_100km,
+          monthly_price: listing.monthly_price,
+          offers: listing.lease_pricing || []
+        })
+      }
 
-    // Group existing listings by unique car (make/model/variant)
-    const existingByKey = new Map<string, ExistingListing>()
-    existingListings?.forEach(listing => {
-      const key = `${listing.make}|${listing.model}|${listing.variant}`.toLowerCase()
-      if (!existingByKey.has(key)) {
-        existingByKey.set(key, {
+      // Composite key for Level 2 matching (enhanced fuzzy)
+      const compositeKey = generateCompositeKey(
+        listing.make, 
+        listing.model, 
+        listing.variant, 
+        listing.horsepower, 
+        listing.transmission
+      )
+      
+      if (!existingByCompositeKey.has(compositeKey)) {
+        existingByCompositeKey.set(compositeKey, {
           id: listing.listing_id,
           make: listing.make,
           model: listing.model,
@@ -238,199 +300,120 @@ serve(async (req) => {
         ...car,
         make_id: makeId,
         model_id: modelId,
-        fuel_type_id: fuelTypesMap.get(car.fuel_type?.toLowerCase() || ''),
-        transmission_id: transmissionsMap.get(car.transmission?.toLowerCase() || ''),
-        body_type_id: bodyTypesMap.get(car.body_type?.toLowerCase() || '')
       }
     })
 
-    // Process each extracted car
-    const matches: MatchResult[] = []
-    
-    for (const extracted of enrichedExtractedCars) {
-      // Try exact match first
-      const exactKey = `${extracted.make}|${extracted.model}|${extracted.variant}`.toLowerCase()
-      let match = existingByKey.get(exactKey)
-      let matchType: 'exact' | 'fuzzy' | 'unmatched' = 'exact'
-      let confidence = 1.0
+    // Compare cars using enhanced multi-level matching
+    const newListings: ExtractedCar[] = []
+    const potentialUpdates: Array<{
+      extracted: ExtractedCar
+      existing: ExistingListing
+      confidence: number
+      matchMethod: string
+    }> = []
 
-      // If no exact match, try fuzzy matching with AI
-      if (!match && openai) {
-        const fuzzyMatch = await findFuzzyMatch(
-          extracted,
-          Array.from(existingByKey.values()),
-          openai
+    for (const car of enrichedExtractedCars) {
+      let matchFound = false
+      let matchMethod = ''
+      let existingMatch: ExistingListing | null = null
+      let confidence = 0
+
+      // Level 1: Exact variant match
+      const exactKey = `${car.make}|${car.model}|${car.variant}`.toLowerCase()
+      const exactMatch = existingByExactKey.get(exactKey)
+      
+      if (exactMatch) {
+        matchFound = true
+        matchMethod = 'exact'
+        existingMatch = exactMatch
+        confidence = 1.0
+      }
+      
+      // Level 2: Composite key match (enhanced fuzzy)
+      if (!matchFound) {
+        const compositeKey = generateCompositeKey(
+          car.make, 
+          car.model, 
+          car.variant, 
+          car.horsepower, 
+          car.transmission
         )
+        const compositeMatch = existingByCompositeKey.get(compositeKey)
         
-        if (fuzzyMatch) {
-          match = fuzzyMatch.listing
-          matchType = 'fuzzy'
-          confidence = fuzzyMatch.confidence
+        if (compositeMatch) {
+          matchFound = true
+          matchMethod = 'fuzzy'
+          existingMatch = compositeMatch
+          confidence = 0.95
         }
       }
-
-      // Determine change type and what changed
-      let changeType: 'create' | 'update' | 'unchanged' = 'create'
-      let changes: Record<string, { old: any; new: any }> = {}
-
-      if (match) {
-        // Compare fields to detect changes
-        const fieldsToCompare = [
-          'horsepower', 'fuel_type', 'transmission', 'body_type',
-          'year', 'wltp', 'co2_emission', 'consumption_l_100km',
-          'consumption_kwh_100km', 'co2_tax_half_year'
-        ]
-
-        let hasChanges = false
-        for (const field of fieldsToCompare) {
-          const oldValue = match[field as keyof ExistingListing]
-          const newValue = extracted[field as keyof ExtractedCar]
-          
-          if (oldValue !== newValue && (oldValue || newValue)) {
-            hasChanges = true
-            changes[field] = { old: oldValue, new: newValue }
+      
+      // Level 3: Algorithmic confidence matching
+      if (!matchFound) {
+        let bestMatch: ExistingListing | null = null
+        let bestConfidence = 0
+        
+        // Check all existing listings for algorithmic match
+        for (const [key, existing] of existingByExactKey.entries()) {
+          // Only check same make/model
+          if (existing.make.toLowerCase() === car.make.toLowerCase() && 
+              existing.model.toLowerCase() === car.model.toLowerCase()) {
+            
+            const calcConfidence = calculateMatchConfidence(car, existing)
+            if (calcConfidence > bestConfidence && calcConfidence >= 0.8) {
+              bestConfidence = calcConfidence
+              bestMatch = existing
+            }
           }
         }
-
-        // Compare offers comprehensively
-        const offerChanges = compareOffers(match.offers || [], extracted.offers || [])
-        if (offerChanges.hasChanges) {
-          hasChanges = true
-          Object.assign(changes, offerChanges.changes)
+        
+        if (bestMatch && bestConfidence >= 0.8) {
+          matchFound = true
+          matchMethod = 'fuzzy'
+          existingMatch = bestMatch
+          confidence = bestConfidence
         }
-
-        changeType = hasChanges ? 'update' : 'unchanged'
       }
 
-      matches.push({
-        extracted,
-        existing: match,
-        matchType: match ? matchType : 'unmatched',
-        confidence,
-        changeType,
-        changes: Object.keys(changes).length > 0 ? changes : undefined
-      })
+      // Categorize result
+      if (matchFound && existingMatch) {
+        potentialUpdates.push({
+          extracted: car,
+          existing: existingMatch,
+          confidence,
+          matchMethod
+        })
+      } else {
+        newListings.push(car)
+      }
     }
 
-    // Find deleted listings (existing but not in extracted)
-    const extractedKeys = new Set(
-      enrichedExtractedCars.map(car => 
-        `${car.make}|${car.model}|${car.variant}`.toLowerCase()
-      )
-    )
-    
-    const deletedListings = Array.from(existingByKey.entries())
-      .filter(([key]) => !extractedKeys.has(key))
-      .map(([_, listing]) => ({
-        existing: listing,
-        changeType: 'delete' as const,
-        matchType: 'exact' as const,
-        confidence: 1.0
-      }))
-
-    // Combine all results
-    const allMatches = [...matches, ...deletedListings]
-
-    // Calculate summary statistics
-    const summary = {
-      totalExtracted: enrichedExtractedCars.length,
-      totalExisting: existingByKey.size,
-      totalMatched: matches.filter(m => m.existing).length,
-      totalNew: matches.filter(m => m.changeType === 'create').length,
-      totalUpdated: matches.filter(m => m.changeType === 'update').length,
-      totalUnchanged: matches.filter(m => m.changeType === 'unchanged').length,
-      totalDeleted: deletedListings.length,
-      exactMatches: matches.filter(m => m.matchType === 'exact').length,
-      fuzzyMatches: matches.filter(m => m.matchType === 'fuzzy').length
+    const result: ComparisonResult = {
+      newListings,
+      potentialUpdates,
+      summary: {
+        totalExtracted: extractedCars.length,
+        newListings: newListings.length,
+        potentialUpdates: potentialUpdates.length
+      }
     }
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        matches: allMatches,
-        summary 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200
+    })
 
   } catch (error) {
-    console.error('Error comparing listings:', error)
+    console.error('Error in compare-extracted-listings:', error)
     return new Response(
       JSON.stringify({ 
-        success: false, 
-        error: error.message 
+        error: error.message, 
+        details: error.stack 
       }),
-      { 
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     )
   }
 })
-
-async function findFuzzyMatch(
-  extracted: ExtractedCar,
-  existingListings: ExistingListing[],
-  openai: OpenAI
-): Promise<{ listing: ExistingListing; confidence: number } | null> {
-  try {
-    const prompt = `
-You are a car listing matcher. Compare this extracted car with existing listings and find the best match.
-
-Extracted Car:
-- Make: ${extracted.make}
-- Model: ${extracted.model}
-- Variant: ${extracted.variant}
-- Engine: ${extracted.engine_info || 'N/A'}
-- Horsepower: ${extracted.horsepower || 'N/A'} HP
-- Fuel: ${extracted.fuel_type || 'N/A'}
-- Transmission: ${extracted.transmission || 'N/A'}
-
-Existing Listings:
-${existingListings.map((listing, idx) => `
-${idx}. ${listing.make} ${listing.model} ${listing.variant}
-   - Horsepower: ${listing.horsepower || 'N/A'} HP
-   - Fuel: ${listing.fuel_type || 'N/A'}
-   - Transmission: ${listing.transmission || 'N/A'}
-`).join('\n')}
-
-If there's a match (same car but possibly different variant names or minor differences), 
-respond with: MATCH:<index>:<confidence>
-Where index is the listing number and confidence is 0.0-1.0
-
-If no match exists, respond with: NO_MATCH
-
-Consider these matching rules:
-- Same make and model is required
-- Variant names might differ slightly (e.g., "Style" vs "Style Plus")
-- Engine specs should be similar
-- Minor spelling differences should be ignored
-`
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.1,
-      max_tokens: 50
-    })
-
-    const response = completion.choices[0].message.content?.trim() || ''
-    
-    if (response.startsWith('MATCH:')) {
-      const parts = response.split(':')
-      const index = parseInt(parts[1])
-      const confidence = parseFloat(parts[2])
-      
-      if (!isNaN(index) && index >= 0 && index < existingListings.length) {
-        return {
-          listing: existingListings[index],
-          confidence: Math.min(Math.max(confidence, 0), 1)
-        }
-      }
-    }
-  } catch (error) {
-    console.error('Fuzzy matching error:', error)
-  }
-  
-  return null
-}

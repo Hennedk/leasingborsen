@@ -8,11 +8,12 @@ import { Badge } from '@/components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
-import { Search, Car, Eye, Edit, RefreshCw, Download, Upload } from 'lucide-react'
+import { Search, Car, Eye, Edit, RefreshCw, Download } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useSellers } from '@/hooks/useSellers'
 import { useAdminListings } from '@/hooks/useAdminListings'
+import { SellerImportButton } from '@/components/admin/sellers/SellerImportButton'
 
 interface SellerListingsFilters {
   sellerId: string
@@ -116,6 +117,12 @@ const AdminSellerListings: React.FC = () => {
   const handleRefresh = () => {
     refetch()
     toast.success('Data opdateret')
+  }
+
+  const handleImportClick = (_sellerId: string) => {
+    // Refresh data after import
+    refetch()
+    toast.success('Data opdateret efter import')
   }
 
   const isLoading = sellersLoading || listingsLoading
@@ -274,19 +281,14 @@ const AdminSellerListings: React.FC = () => {
                   </Badge>
                 )}
               </span>
-              {filters.sellerId && (
+              {filters.sellerId && selectedSeller && (
                 <div className="flex gap-2">
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    className="flex items-center gap-2"
-                    asChild
-                  >
-                    <Link to={`/admin/pdf-extraction?seller=${filters.sellerId}`}>
-                      <Upload className="h-4 w-4" />
-                      Opdater annoncer
-                    </Link>
-                  </Button>
+                  <div className="min-w-[150px]">
+                    <SellerImportButton 
+                      seller={selectedSeller}
+                      onImportClick={handleImportClick}
+                    />
+                  </div>
                   <Button variant="outline" size="sm" className="flex items-center gap-2">
                     <Download className="h-4 w-4" />
                     Eksporter

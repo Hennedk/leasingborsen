@@ -17,6 +17,7 @@ import {
   type ListingChange 
 } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
+import { QuickExtractionCheck } from './QuickExtractionCheck'
 
 interface ExtractionSessionReviewProps {
   sessionId: string
@@ -36,7 +37,9 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
     updateChangeStatus,
     bulkUpdateChanges,
     applyChanges,
-    isApplyingChanges
+    applySelectedChanges,
+    isApplyingChanges,
+    isApplyingSelectedChanges
   } = useListingComparison()
 
   const { data: changes = [], isLoading } = useSessionChanges(sessionId)
@@ -127,6 +130,30 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
     if (confirm(`Er du sikker på at du vil anvende ${approvedCount} godkendte ændringer? Dette kan ikke fortrydes.`)) {
       applyChanges(sessionId)
+    }
+  }
+
+  // MVP streamlined workflow: Apply selected changes and discard non-selected
+  const handleApplySelected = () => {
+    if (selectedChanges.size === 0) {
+      toast.error('Vælg mindst én ændring at anvende')
+      return
+    }
+    
+    const nonSelectedCount = changes.filter(c => 
+      c.change_status === 'pending' && !selectedChanges.has(c.id)
+    ).length
+    
+    const message = nonSelectedCount > 0 
+      ? `Anvend ${selectedChanges.size} valgte ændringer og forkast ${nonSelectedCount} ikke-valgte? Dette kan ikke fortrydes.`
+      : `Anvend ${selectedChanges.size} valgte ændringer? Dette kan ikke fortrydes.`
+    
+    if (confirm(message)) {
+      applySelectedChanges({
+        sessionId,
+        selectedChangeIds: Array.from(selectedChanges)
+      })
+      setSelectedChanges(new Set()) // Clear selection after applying
     }
   }
 
@@ -275,6 +302,8 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         return changes.filter(c => c.change_status === 'rejected')
       case 'applied':
         return changes.filter(c => c.change_status === 'applied')
+      case 'discarded':
+        return changes.filter(c => c.change_status === 'discarded')
       case 'create':
         return changes.filter(c => c.change_type === 'create')
       case 'update':
@@ -301,6 +330,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const approvedCount = changes.filter(c => c.change_status === 'approved').length
   const rejectedCount = changes.filter(c => c.change_status === 'rejected').length
   const appliedCount = changes.filter(c => c.change_status === 'applied').length
+  const discardedCount = changes.filter(c => c.change_status === 'discarded').length
 
   const createCount = changes.filter(c => c.change_type === 'create').length
   const updateCount = changes.filter(c => c.change_type === 'update').length
@@ -308,6 +338,9 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
   return (
     <div className="space-y-6">
+      {/* Quick Check Component */}
+      <QuickExtractionCheck sessionId={sessionId} />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -325,6 +358,26 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         </div>
 
         <div className="flex items-center gap-2">
+          {/* MVP Streamlined workflow button */}
+          <Button
+            onClick={handleApplySelected}
+            disabled={selectedChanges.size === 0 || isApplyingSelectedChanges}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {isApplyingSelectedChanges ? (
+              <>
+                <Settings className="h-4 w-4 animate-spin mr-2" />
+                Anvender...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Anvend valgte ({selectedChanges.size})
+              </>
+            )}
+          </Button>
+          
+          {/* Legacy workflow button (for comparison) */}
           <Button
             onClick={handleApplyApprovedChanges}
             disabled={approvedCount === 0 || isApplyingChanges}
@@ -460,7 +513,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
       {/* Changes List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="pending" className="text-yellow-600">
             Pending ({pendingCount})
           </TabsTrigger>
@@ -473,6 +526,9 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           <TabsTrigger value="applied" className="text-blue-600">
             Applied ({appliedCount})
           </TabsTrigger>
+          <TabsTrigger value="discarded" className="text-gray-600">
+            Discarded ({discardedCount})
+          </TabsTrigger>
           <TabsTrigger value="create">
             Creates ({createCount})
           </TabsTrigger>
@@ -484,7 +540,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           </TabsTrigger>
         </TabsList>
 
-        {(['pending', 'approved', 'rejected', 'applied', 'create', 'update', 'delete'] as const).map((tabValue) => (
+        {(['pending', 'approved', 'rejected', 'applied', 'discarded', 'create', 'update', 'delete'] as const).map((tabValue) => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4">
             <Card>
               <CardContent className="p-0">

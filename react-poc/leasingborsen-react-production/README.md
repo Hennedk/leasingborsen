@@ -1,369 +1,183 @@
-# Leasingbørsen React Application
+# Supabase CLI
 
-> **Modern React car leasing marketplace** with comprehensive admin interface
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white)
-![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)
-![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
----
+This repository contains all the functionality for Supabase CLI.
 
-## 🚀 Project Overview
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-Leasingbørsen is a production-ready car leasing marketplace built with modern React architecture. This application provides a comprehensive platform for browsing car listings, advanced filtering, mobile-responsive design, and a complete admin interface for managing listings, sellers, and reference data.
+## Getting started
 
-### ✨ Key Features
+### Install the CLI
 
-- **🔍 Advanced Search & Filtering** - Real-time filtering with URL persistence
-- **📱 Mobile-First Design** - Responsive across all devices with feature parity
-- **⚡ Performance Optimized** - Code splitting, lazy loading, and intelligent caching
-- **🎨 Modern UI** - shadcn/ui components with Tailwind CSS
-- **🌙 Theme System** - Multiple themes with light/dark mode support
-- **🔒 Admin Interface** - Complete CRUD operations for all entities
-- **🌍 Danish Localization** - Full da-DK language support
-- **📊 Production Ready** - TypeScript strict mode, error boundaries, comprehensive testing
-
----
-
-## 🚡 Serena Integration
-
-This project includes **[Serena](https://github.com/oraios/serena)** integration for enhanced AI-powered development with semantic code understanding.
-
-### What is Serena?
-
-Serena is an open-source coding agent toolkit that provides semantic code analysis and editing capabilities through the Model Context Protocol (MCP). It enables:
-- **Semantic code navigation** - Find components, hooks, and types by meaning, not just text
-- **Intelligent refactoring** - Update code with full understanding of TypeScript/React patterns
-- **Codebase analysis** - Understand component relationships and dependencies
-- **AI-enhanced development** - Work more efficiently with Claude and other AI assistants
-
-### Quick Start with Serena
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
 ```bash
-# Install uv if not already installed
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Start Serena for this project
-cd leasingborsen-react-production
-uvx --from git+https://github.com/oraios/serena serena-mcp-server --project $(pwd)
+npm i supabase --save-dev
 ```
 
-### Benefits for Development
-
-- **🔍 Faster Navigation**: Find React components by purpose, not just name
-- **🧩 Smart Refactoring**: Update all component usages automatically
-- **📊 Architecture Analysis**: Visualize component hierarchies and dependencies
-- **🤖 AI Integration**: Enhanced Claude/Cursor capabilities with semantic understanding
-- **⚡ Performance**: Indexed codebase for instant semantic searches
-
-See [SERENA_SETUP.md](./SERENA_SETUP.md) for detailed configuration and usage.
-
----
-
-## 🛠️ Technology Stack
-
-### **Frontend**
-- **React 18** - Latest React with concurrent features
-- **TypeScript** - Strict mode for type safety
-- **Vite 6.3.5** - Lightning-fast build tool with HMR
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **shadcn/ui** - High-quality component library
-- **React Router 6** - Client-side routing with lazy loading
-
-### **Backend & Data**
-- **Supabase** - PostgreSQL database with Row Level Security
-- **React Query** - Server state management with intelligent caching
-- **Zustand** - Lightweight client state management
-
-### **Developer Experience**
-- **ESLint** - Code quality and consistency
-- **Prettier** - Code formatting
-- **Husky** - Git hooks for quality gates
-- **TypeScript** - Static type checking
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- **Node.js** 18+ 
-- **npm** 8+
-
-### Installation
+To install the beta release channel:
 
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd leasingborsen-react-production
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your Supabase credentials
-
-# Start development server
-npm run dev
+npm i supabase@beta --save-dev
 ```
 
-The application will be available at `http://localhost:5173`
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
-### Environment Variables
+```
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
+```
+
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
+
+<details>
+  <summary><b>macOS</b></summary>
+
+  Available via [Homebrew](https://brew.sh). To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
 
 ```bash
-# .env.local
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+supabase bootstrap
 ```
 
----
-
-## 📋 Available Scripts
+Or using npx:
 
 ```bash
-# Development
-npm run dev          # Start development server with HMR
-npm run preview      # Preview production build locally
-
-# Building
-npm run build        # Build for production
-npm run build:analyze # Build with bundle analysis
-
-# Code Quality
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint issues automatically
-npm run type-check   # Run TypeScript compiler check
-
-# Testing
-npm run test         # Run test suite (when implemented)
-npm run test:watch   # Run tests in watch mode
+npx supabase bootstrap
 ```
 
----
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-## 🏗️ Project Architecture
+## Docs
 
-### **Directory Structure**
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
+## Breaking changes
+
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
+
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
 ```
-src/
-├── components/              # Reusable React components
-│   ├── admin/              # Admin interface components
-│   │   ├── AdminLayout.tsx # Admin layout wrapper
-│   │   ├── DataTable.tsx   # Advanced data table
-│   │   ├── ListingsTable.tsx # Listings management
-│   │   └── form-sections/  # Modular form components
-│   ├── ui/                 # shadcn/ui components
-│   ├── layout/             # Layout components
-│   └── [feature]/          # Feature-specific components
-├── hooks/                  # Custom React hooks
-│   ├── useListings.ts      # Car listings data fetching
-│   ├── useUrlSync.ts       # URL parameter synchronization
-│   └── useMutations.ts     # Data mutation operations
-├── pages/                  # Route-level components
-│   ├── admin/              # Admin interface pages
-│   └── [public]/           # Public-facing pages
-├── stores/                 # Zustand state management
-│   ├── filterStore.ts      # Search filter state
-│   └── themeStore.ts       # Theme management
-├── lib/                    # Utilities and configurations
-│   ├── supabase.ts         # Supabase client setup
-│   ├── utils.ts            # Utility functions
-│   └── validations.ts      # Form validation schemas
-└── types/                  # TypeScript type definitions
-```
-
-### **Key Components**
-
-#### **Public Interface**
-- **Home Page** - Hero banner with latest car listings
-- **Listings Page** - Advanced search with filtering and sorting
-- **Listing Detail** - Individual car information and contact
-- **Filter System** - Real-time filtering with URL persistence
-
-#### **Admin Interface**
-- **Listings Management** - CRUD operations for car listings
-- **Seller Management** - Seller profiles and contact information
-- **Reference Data** - Makes, models, body types, fuel types
-- **Image Upload** - Integrated image management system
-
----
-
-## 🎨 Design System
-
-### **Theme System**
-The application supports multiple themes with instant switching:
-- Light/Dark modes
-- Custom color schemes
-- Consistent component styling
-- CSS variable-based theming
-
-### **Component Library**
-Built on shadcn/ui for consistency and accessibility:
-- Form components (Input, Select, Button, etc.)
-- Data display (Table, Card, Badge)
-- Navigation (Dropdown, Dialog, Toast)
-- Layout (Container, Grid, Flex)
-
-### **Responsive Design**
-Mobile-first approach with breakpoints:
-- `sm`: 640px and up
-- `md`: 768px and up  
-- `lg`: 1024px and up
-- `xl`: 1280px and up
-
----
-
-## 📊 Performance
-
-### **Optimization Features**
-- **Code Splitting** - Route-based lazy loading
-- **Image Optimization** - Progressive loading with intersection observer
-- **Caching Strategy** - Intelligent React Query caching
-- **Bundle Analysis** - Webpack bundle analyzer integration
-
-### **Build Targets**
-- **CSS Bundle**: ~109KB (optimized with tree-shaking)
-- **JavaScript**: ~292KB (with code splitting)
-- **Loading Performance** - First Contentful Paint < 1.5s
-
-### **Core Web Vitals**
-- **LCP** - Largest Contentful Paint optimization
-- **FID** - First Input Delay minimization  
-- **CLS** - Cumulative Layout Shift prevention
-
----
-
-## 🔒 Admin Interface
-
-### **Authentication & Authorization**
-- Role-based access control
-- Secure admin routes
-- Session management
-
-### **Features**
-- **Car Listings** - Complete CRUD with advanced forms
-- **Seller Management** - Contact and company information
-- **Reference Data** - Manage makes, models, categories
-- **Image Upload** - Drag-and-drop with progress tracking
-- **Data Tables** - Sorting, filtering, bulk operations
-- **Form Validation** - Real-time validation with error handling
-
-### **Access**
-Admin interface available at `/admin` (requires authentication)
-
----
-
-## 🌍 Internationalization
-
-### **Danish Localization (da-DK)**
-- All UI text in Danish
-- Date/time formatting: `dd/mm/yyyy`
-- Number formatting: `1.234,56 kr`
-- Currency: Danish Kroner (DKK)
-
-### **Error Messages**
-Comprehensive Danish error messages:
-- Form validation errors
-- Network connectivity issues
-- Database operation failures
-- User-friendly fallbacks
-
----
-
-## 🧪 Testing Strategy
-
-### **Testing Framework** (Planned)
-- **Vitest** - Fast unit test runner
-- **React Testing Library** - Component testing
-- **MSW** - API mocking
-- **Playwright** - End-to-end testing
-
-### **Coverage Targets**
-- Unit tests: >90% coverage
-- Integration tests: Critical user flows
-- E2E tests: Complete user journeys
-
----
-
-## 🚀 Deployment
-
-### **Production Build**
-```bash
-npm run build
-```
-
-### **Environment Configuration**
-- Development: `.env.local`
-- Staging: `.env.staging` 
-- Production: `.env.production`
-
-### **Deployment Platforms**
-- **Vercel** - Recommended for easy React deployment
-- **Netlify** - Alternative with edge functions
-- **Self-hosted** - Docker containerization available
-
----
-
-## 📚 Documentation
-
-### **Additional Resources**
-- **[Development History](./DEVELOPMENT_HISTORY.md)** - Complete project timeline
-- **[Admin Review](./ADMIN_REVIEW.md)** - Admin interface analysis
-- **[Claude Instructions](./CLAUDE.md)** - Development guidelines
-- **[Session Summary](./SESSION_SUMMARY.md)** - Latest development session
-- **[Archived Docs](./docs/archive/)** - Historical documentation
-
-### **API Documentation**
-- Supabase schema documentation
-- Database relationship diagrams
-- API endpoint specifications
-
----
-
-## 🤝 Contributing
-
-### **Development Workflow**
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### **Code Standards**
-- Follow TypeScript strict mode
-- Use Danish for all user-facing text
-- Implement proper error handling
-- Add comprehensive tests
-- Follow component naming conventions
-
-### **Commit Message Format**
-```
-type(scope): description
-
-feat(admin): add seller management interface
-fix(filters): resolve mobile filter overlay issue
-docs(readme): update installation instructions
-```
-
----
-
-## 📄 License
-
-This project is proprietary. All rights reserved.
-
----
-
-## 📞 Support
-
-For questions or support:
-- **Documentation**: Check the docs/ directory
-- **Issues**: Report bugs through the issue tracker
-- **Development**: Follow the contributing guidelines
-
----
-
-**Built with ❤️ using modern React best practices**

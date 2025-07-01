@@ -24,6 +24,7 @@ import {
 import { Save, ArrowLeft } from 'lucide-react'
 import { useCreateSeller, useUpdateSeller, type CreateSellerData } from '@/hooks/useSellerMutations'
 import type { Seller } from '@/hooks/useSellers'
+import { useMakes } from '@/hooks/useReferenceData'
 import { useNavigate } from 'react-router-dom'
 
 const sellerSchema = z.object({
@@ -33,7 +34,8 @@ const sellerSchema = z.object({
   company: z.string().optional(),
   address: z.string().optional(),
   country: z.string().optional(),
-  logo_url: z.string().url('Ugyldig URL').optional().or(z.literal(''))
+  logo_url: z.string().url('Ugyldig URL').optional().or(z.literal('')),
+  make_id: z.string().optional()
 })
 
 type SellerFormData = z.infer<typeof sellerSchema>
@@ -50,6 +52,7 @@ const SellerForm = React.memo<SellerFormProps>(({
   const navigate = useNavigate()
   const createMutation = useCreateSeller()
   const updateMutation = useUpdateSeller()
+  const { data: makes, isLoading: makesLoading } = useMakes()
 
   const form = useForm<SellerFormData>({
     resolver: zodResolver(sellerSchema),
@@ -60,7 +63,8 @@ const SellerForm = React.memo<SellerFormProps>(({
       company: seller?.company || '',
       address: seller?.address || '',
       country: seller?.country || 'Denmark',
-      logo_url: seller?.logo_url || ''
+      logo_url: seller?.logo_url || '',
+      make_id: seller?.make_id || 'none'
     }
   })
 
@@ -76,7 +80,8 @@ const SellerForm = React.memo<SellerFormProps>(({
         company: data.company || undefined,
         address: data.address || undefined,
         country: data.country || undefined,
-        logo_url: data.logo_url || undefined
+        logo_url: data.logo_url || undefined,
+        make_id: data.make_id && data.make_id !== 'none' ? data.make_id : undefined
       }
 
       if (isEditing && seller) {
@@ -174,6 +179,33 @@ const SellerForm = React.memo<SellerFormProps>(({
                 )}
               />
             </div>
+
+            {/* Make Selection */}
+            <FormField
+              control={form.control}
+              name="make_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bilmærke (Specialisering)</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vælg bilmærke (valgfrit)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="none">Intet specifikt mærke</SelectItem>
+                      {!makesLoading && makes?.map((make) => (
+                        <SelectItem key={make.id} value={make.id}>
+                          {make.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 

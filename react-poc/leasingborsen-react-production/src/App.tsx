@@ -131,6 +131,7 @@ function App() {
                       <Route path="toyota-pdf" element={<ToyotaPDFProcessingPage />} />
                       <Route path="pdf-extraction" element={<AdminPDFExtraction />} />
                       <Route path="extraction-sessions" element={<AdminExtractionSessions />} />
+                      <Route path="extraction-sessions/:sessionId" element={<AdminExtractionSessions />} />
                     </Routes>
                   </AdminErrorBoundary>
                 } />

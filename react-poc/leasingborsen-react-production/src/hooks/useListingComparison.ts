@@ -77,7 +77,7 @@ export interface ListingChange {
   session_id: string
   existing_listing_id?: string
   change_type: 'create' | 'update' | 'delete' | 'unchanged'
-  change_status: 'pending' | 'approved' | 'rejected' | 'applied'
+  change_status: 'pending' | 'approved' | 'rejected' | 'applied' | 'discarded'
   confidence_score?: number
   extracted_data: any
   field_changes?: Record<string, { old: any; new: any }>
@@ -376,6 +376,59 @@ export const useListingComparison = () => {
     }
   })
 
+  // Apply selected changes (MVP streamlined workflow)
+  const applySelectedChangesMutation = useMutation({
+    mutationFn: async ({
+      sessionId,
+      selectedChangeIds,
+      appliedBy = 'admin'
+    }: {
+      sessionId: string
+      selectedChangeIds: string[]
+      appliedBy?: string
+    }) => {
+      const { data, error } = await supabase
+        .rpc('apply_selected_extraction_changes', {
+          p_session_id: sessionId,
+          p_selected_change_ids: selectedChangeIds,
+          p_applied_by: appliedBy
+        })
+
+      if (error) throw error
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['extraction-sessions'] })
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+      queryClient.invalidateQueries({ queryKey: ['listing'] }) // Invalidate individual listing caches
+      queryClient.invalidateQueries({ queryKey: ['admin', 'listing'], type: 'all' }) // Invalidate all admin listing caches
+      queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] }) // Invalidate admin listings list
+      
+      console.log('Apply selected changes response:', data)
+      
+      // Handle the response structure from the PostgreSQL function
+      let result
+      if (Array.isArray(data) && data.length > 0) {
+        result = data[0]
+      } else if (data && typeof data === 'object') {
+        result = data
+      } else {
+        console.warn('Unexpected response format:', data)
+        toast.success('Ændringer anvendt og session afsluttet')
+        return
+      }
+      
+      // Display success message with details
+      toast.success('Ændringer anvendt og session afsluttet', {
+        description: `${result.applied_creates || 0} oprettet, ${result.applied_updates || 0} opdateret, ${result.applied_deletes || 0} slettet, ${result.discarded_count || 0} forkastet`
+      })
+    },
+    onError: (error) => {
+      console.error('Apply selected changes error:', error)
+      toast.error('Fejl ved anvendelse af valgte ændringer')
+    }
+  })
+
   return {
     // Mutations
     compareListings: compareListingsMutation.mutateAsync,
@@ -383,6 +436,7 @@ export const useListingComparison = () => {
     updateChangeStatus: updateChangeStatusMutation.mutate,
     bulkUpdateChanges: bulkUpdateChangesMutation.mutate,
     applyChanges: applyChangesMutation.mutate,
+    applySelectedChanges: applySelectedChangesMutation.mutate,
     
     // State
     currentSessionId,
@@ -391,7 +445,8 @@ export const useListingComparison = () => {
     // Loading states
     isComparing: compareListingsMutation.isPending,
     isCreatingSession: createSessionMutation.isPending,
-    isApplyingChanges: applyChangesMutation.isPending
+    isApplyingChanges: applyChangesMutation.isPending,
+    isApplyingSelectedChanges: applySelectedChangesMutation.isPending
   }
 }
 

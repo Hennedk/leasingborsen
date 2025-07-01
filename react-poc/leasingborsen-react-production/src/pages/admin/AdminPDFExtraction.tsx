@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -551,7 +552,7 @@ export default function AdminPDFExtraction() {
   // Show results page if extraction is complete and successful
   if (showResults && result?.success && result.cars) {
     return (
-      <div className="container mx-auto py-8 px-4">
+      <AdminLayout title="PDF Extraction - Results">
         <div className="max-w-7xl mx-auto">
           <ExtractedCarsResultsWithComparison
             cars={result.cars}
@@ -564,12 +565,12 @@ export default function AdminPDFExtraction() {
             initialSellerId={selectedSellerId}
           />
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <AdminLayout title="PDF Extraction">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2">PDF Car Extraction</h1>
@@ -994,6 +995,6 @@ export default function AdminPDFExtraction() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

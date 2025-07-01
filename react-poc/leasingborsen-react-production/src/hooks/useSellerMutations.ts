@@ -11,6 +11,7 @@ export interface CreateSellerData {
   address?: string
   country?: string
   logo_url?: string
+  make_id?: string
 }
 
 export interface UpdateSellerData extends Partial<CreateSellerData> {

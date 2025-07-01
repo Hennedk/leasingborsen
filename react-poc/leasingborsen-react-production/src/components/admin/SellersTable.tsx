@@ -21,7 +21,8 @@ import {
   Building2,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Car
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Seller } from '@/hooks/useSellers'
@@ -151,6 +152,22 @@ const SellersTable = React.memo<SellersTableProps>(({
           </div>
         ) : (
           <span className="text-muted-foreground">–</span>
+        )
+      },
+    },
+    {
+      accessorKey: "make_name",
+      header: "Specialisering",
+      meta: { displayName: "Bilmærke" },
+      cell: ({ row }) => {
+        const makeName = row.getValue("make_name") as string
+        return makeName ? (
+          <div className="flex items-center gap-2">
+            <Car className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">{makeName}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-sm">Alle mærker</span>
         )
       },
     },

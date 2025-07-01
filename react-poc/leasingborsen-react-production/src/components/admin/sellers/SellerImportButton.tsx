@@ -2,17 +2,10 @@ import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Upload, FileText, Clock, CheckCircle } from 'lucide-react'
-import { GenericBatchUploadDialog } from './GenericBatchUploadDialog'
+import { SellerPDFUploadModal } from './SellerPDFUploadModal'
 import { BatchUploadErrorBoundary } from '@/components/ErrorBoundaries'
-import type { BatchProcessingResult } from '@/lib/processors/vwPDFProcessor'
 
-interface Seller {
-  id: string
-  name: string
-  total_listings?: number
-  last_import_date?: string
-  batch_config?: any
-}
+import type { Seller } from '@/hooks/useSellers'
 
 interface SellerImportButtonProps {
   seller: Seller
@@ -26,18 +19,6 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
   isProcessing = false
 }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
-  
-  // Detect dealer type with expanded support
-  const sellerNameLower = seller.name.toLowerCase()
-  const isVWDealer = sellerNameLower.includes('volkswagen') || 
-                     sellerNameLower.includes('audi') || 
-                     sellerNameLower.includes('seat') || 
-                     sellerNameLower.includes('škoda') || 
-                     sellerNameLower.includes('skoda') ||
-                     sellerNameLower.includes('vw') ||
-                     sellerNameLower.includes('cupra')
-  const isToyotaDealer = sellerNameLower.includes('toyota') || 
-                         sellerNameLower.includes('lexus')
   
   // Enable import for all dealers - use auto-detection for unknown brands
   const isSupportedDealer = true // Allow all dealers to use auto-detection
@@ -108,14 +89,8 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
     }
   }
   
-  // Determine suggested dealer type
-  const getSuggestedDealer = (): 'volkswagen' | 'toyota' | 'auto-detect' => {
-    if (isVWDealer) return 'volkswagen'
-    if (isToyotaDealer) return 'toyota'
-    return 'auto-detect'
-  }
 
-  const handleUploadComplete = (result: BatchProcessingResult) => {
+  const handleUploadComplete = (result: any) => {
     console.log('Upload complete:', result)
     // Close dialog and refresh seller data
     setShowUploadDialog(false)
@@ -161,12 +136,10 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
         onRetry={() => setShowUploadDialog(true)}
         onCancel={() => setShowUploadDialog(false)}
       >
-        <GenericBatchUploadDialog
+        <SellerPDFUploadModal
           open={showUploadDialog}
           onOpenChange={setShowUploadDialog}
-          sellerId={seller.id}
-          sellerName={seller.name}
-          suggestedDealer={getSuggestedDealer()}
+          seller={seller}
           onUploadComplete={handleUploadComplete}
         />
       </BatchUploadErrorBoundary>
