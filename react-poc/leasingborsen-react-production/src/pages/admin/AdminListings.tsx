@@ -17,6 +17,7 @@ import {
   useAdminDeleteListing,
   useAdminDuplicateListing
 } from '@/hooks/useAdminListings'
+import { useSellers } from '@/hooks/useSellers'
 import { 
   DataErrorBoundary, 
   ComponentErrorBoundary 
@@ -34,7 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import type { AdminListing, AdminFilters, SellerReference } from '@/types/admin'
+import type { AdminListing, AdminFilters } from '@/types/admin'
 
 const AdminListings: React.FC = () => {
   const [filters, setFilters] = useState<AdminFilters>({
@@ -59,12 +60,8 @@ const AdminListings: React.FC = () => {
   const deleteMutation = useAdminDeleteListing()
   const duplicateMutation = useAdminDuplicateListing()
 
-  // Available sellers for filtering - TODO: Move to reference data hook
-  const sellers: SellerReference[] = useMemo(() => [
-    { id: '2bbeae55-2db6-415b-b00b-5de22889de4e', name: 'Audi Privatleasing Online', active: true },
-    { id: '11327fb8-4305-4156-8897-ddedb23e508b', name: 'Škoda Privatleasing', active: true },
-    { id: 'f5cdd423-d949-49fa-a68d-937c25c2269a', name: 'Volkswagen Privatleasing', active: true }
-  ], [])
+  // Fetch all available sellers dynamically from database
+  const { data: sellers = [], isLoading: sellersLoading, error: sellersError } = useSellers()
 
   // Filter listings based on selected filters
   const filteredListings = useMemo(() => {
@@ -277,17 +274,24 @@ const AdminListings: React.FC = () => {
               <Select
                 value={filters.seller_id || 'all'}
                 onValueChange={handleSellerChange}
+                disabled={sellersLoading}
               >
                 <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Vælg sælger" />
+                  <SelectValue placeholder={sellersLoading ? "Indlæser sælgere..." : "Vælg sælger"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle sælgere</SelectItem>
-                  {sellers.map((seller) => (
-                    <SelectItem key={seller.id} value={seller.id}>
-                      {seller.name}
+                  {sellersError ? (
+                    <SelectItem value="error" disabled>
+                      Fejl ved indlæsning af sælgere
                     </SelectItem>
-                  ))}
+                  ) : (
+                    sellers.map((seller) => (
+                      <SelectItem key={seller.id} value={seller.id}>
+                        {seller.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
