@@ -1,12 +1,17 @@
 # app.py - Minimal PDFPlumber service for Railway deployment
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import pdfplumber
 import traceback
 import io
+import os
 
-app = FastAPI()
+app = FastAPI(
+    title="PDF Extraction Service",
+    description="FastAPI service for extracting text from PDF files",
+    version="1.1.0"
+)
 
 # Add CORS middleware for cross-origin requests
 app.add_middleware(
@@ -29,10 +34,10 @@ def health():
 async def extract_structured(file: UploadFile = File(...)):
     """Extract structured text from PDF for AI processing"""
     try:
-        if not file.filename.lower().endswith('.pdf'):
-            return JSONResponse(
+        if not file.filename or not file.filename.lower().endswith('.pdf'):
+            raise HTTPException(
                 status_code=400,
-                content={"error": "Only PDF files are supported"}
+                detail="Only PDF files are supported"
             )
 
         # Read the uploaded PDF file
@@ -50,9 +55,9 @@ async def extract_structured(file: UploadFile = File(...)):
         extracted_text = extracted_text.strip()
         
         if not extracted_text:
-            return JSONResponse(
+            raise HTTPException(
                 status_code=400,
-                content={"error": "No text could be extracted from the PDF"}
+                detail="No text could be extracted from the PDF"
             )
         
         return JSONResponse(

@@ -1,0 +1,17 @@
+# Ignore unnecessary files to speed up Railway builds
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.git/
+.gitignore
+*.md
+.DS_Store
+.pytest_cache/
+*.log
