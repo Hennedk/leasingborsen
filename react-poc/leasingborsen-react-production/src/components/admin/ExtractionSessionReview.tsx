@@ -34,11 +34,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const [activeTab, setActiveTab] = useState('pending')
 
   const {
-    updateChangeStatus,
-    bulkUpdateChanges,
-    applyChanges,
     applySelectedChanges,
-    isApplyingChanges,
     isApplyingSelectedChanges
   } = useListingComparison()
 
@@ -94,44 +90,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
     setSelectedChanges(new Set([...selectedChanges, ...typeChanges]))
   }
 
-  const handleBulkApprove = () => {
-    if (selectedChanges.size === 0) {
-      toast.error('Vælg venligst mindst én ændring')
-      return
-    }
-
-    bulkUpdateChanges({
-      changeIds: Array.from(selectedChanges),
-      status: 'approved'
-    })
-    setSelectedChanges(new Set())
-  }
-
-  const handleBulkReject = () => {
-    if (selectedChanges.size === 0) {
-      toast.error('Vælg venligst mindst én ændring')
-      return
-    }
-
-    bulkUpdateChanges({
-      changeIds: Array.from(selectedChanges),
-      status: 'rejected'
-    })
-    setSelectedChanges(new Set())
-  }
-
-  const handleApplyApprovedChanges = () => {
-    const approvedCount = changes.filter(c => c.change_status === 'approved').length
-    
-    if (approvedCount === 0) {
-      toast.error('Ingen godkendte ændringer at anvende')
-      return
-    }
-
-    if (confirm(`Er du sikker på at du vil anvende ${approvedCount} godkendte ændringer? Dette kan ikke fortrydes.`)) {
-      applyChanges(sessionId)
-    }
-  }
+  // Streamlined workflow: Apply selected changes directly
 
   // MVP streamlined workflow: Apply selected changes and discard non-selected
   const handleApplySelected = () => {
@@ -259,34 +218,9 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           />
         </div>
 
-        {/* Individual Actions */}
-        <div className="flex gap-2">
-          <Button
-            size="sm"
-            onClick={() => updateChangeStatus({ 
-              changeId: change.id, 
-              status: 'approved',
-              reviewNotes: reviewNotes[change.id]
-            })}
-            disabled={change.change_status !== 'pending'}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Godkend
-          </Button>
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => updateChangeStatus({ 
-              changeId: change.id, 
-              status: 'rejected',
-              reviewNotes: reviewNotes[change.id]
-            })}
-            disabled={change.change_status !== 'pending'}
-          >
-            <XCircle className="h-4 w-4 mr-1" />
-            Afvis
-          </Button>
+        {/* Selection Note */}
+        <div className="text-sm text-muted-foreground italic">
+          💡 Brug checkboxen øverst for at vælge denne ændring til anvendelse
         </div>
       </div>
     )
@@ -358,7 +292,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         </div>
 
         <div className="flex items-center gap-2">
-          {/* MVP Streamlined workflow button */}
+          {/* Streamlined workflow: Select and apply directly */}
           <Button
             onClick={handleApplySelected}
             disabled={selectedChanges.size === 0 || isApplyingSelectedChanges}
@@ -373,25 +307,6 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Anvend valgte ({selectedChanges.size})
-              </>
-            )}
-          </Button>
-          
-          {/* Legacy workflow button (for comparison) */}
-          <Button
-            onClick={handleApplyApprovedChanges}
-            disabled={approvedCount === 0 || isApplyingChanges}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isApplyingChanges ? (
-              <>
-                <Settings className="h-4 w-4 animate-spin mr-2" />
-                Anvender...
-              </>
-            ) : (
-              <>
-                <GitCommit className="h-4 w-4 mr-2" />
-                Anvend godkendte ({approvedCount})
               </>
             )}
           </Button>
@@ -449,11 +364,14 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         </Card>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Selection Actions */}
       {pendingCount > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Bulk Actions</CardTitle>
+            <CardTitle className="text-lg">Vælg ændringer</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Vælg de ændringer du vil anvende. Ikke-valgte ændringer bliver forkastet.
+            </p>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -485,27 +403,6 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
               >
                 Fravælg alle
               </Button>
-              
-              <div className="ml-auto flex gap-2">
-                <Button
-                  onClick={handleBulkApprove}
-                  disabled={selectedChanges.size === 0}
-                  className="bg-green-600 hover:bg-green-700"
-                  size="sm"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Godkend valgte ({selectedChanges.size})
-                </Button>
-                <Button
-                  onClick={handleBulkReject}
-                  disabled={selectedChanges.size === 0}
-                  variant="destructive"
-                  size="sm"
-                >
-                  <XCircle className="h-4 w-4 mr-1" />
-                  Afvis valgte ({selectedChanges.size})
-                </Button>
-              </div>
             </div>
           </CardContent>
         </Card>

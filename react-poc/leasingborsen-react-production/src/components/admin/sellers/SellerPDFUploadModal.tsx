@@ -328,7 +328,69 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         progressMessage: 'Processing with AI extraction engine...'
       }))
 
-      // Use the extracted text from Railway for AI processing
+      // Fetch reference data for AI context
+      setState(prev => ({
+        ...prev,
+        progress: 65,
+        progressMessage: 'Fetching database reference data for AI context...'
+      }))
+
+      let referenceData = null
+      try {
+        const { data: refData, error: refError } = await supabase
+          .rpc('get_extraction_reference_data', {
+            seller_make_id: config.makeId
+          })
+        
+        if (refError) {
+          console.warn('Could not fetch reference data:', refError.message)
+        } else {
+          referenceData = refData
+          console.log('📚 Reference data fetched:', {
+            makesCount: Object.keys(refData.makes_models || {}).length,
+            fuelTypesCount: refData.fuel_types?.length || 0,
+            transmissionsCount: refData.transmissions?.length || 0,
+            bodyTypesCount: refData.body_types?.length || 0
+          })
+        }
+      } catch (refError) {
+        console.warn('Error fetching reference data:', refError)
+      }
+
+      // Fetch existing dealer listings for AI context
+      setState(prev => ({
+        ...prev,
+        progress: 67,
+        progressMessage: 'Fetching dealer\'s existing listings for AI context...'
+      }))
+
+      let existingListings = null
+      try {
+        const { data: existingData, error: existingError } = await supabase
+          .rpc('get_dealer_existing_listings', {
+            seller_id_param: seller.id
+          })
+        
+        if (existingError) {
+          console.warn('Could not fetch existing listings:', existingError.message)
+        } else {
+          existingListings = existingData
+          console.log('🚗 Existing listings fetched:', {
+            listingsCount: existingData?.existing_listings?.length || 0,
+            sampleVariants: existingData?.existing_listings?.slice(0, 3).map(l => l.variant) || []
+          })
+        }
+      } catch (existingError) {
+        console.warn('Error fetching existing listings:', existingError)
+      }
+
+      setState(prev => ({
+        ...prev,
+        progress: 70,
+        progressMessage: 'Starting AI extraction with reference context...'
+      }))
+
+      // Use the extracted text from Railway for AI processing with reference data
       const aiRequestPayload = {
         textContent: extractedText,
         dealerName: seller.name,
@@ -337,7 +399,13 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         sellerName: seller.name,
         batchId,
         makeId: config.makeId,
-        makeName: config.makeName
+        makeName: config.makeName,
+        // Enhanced: Add reference data for better AI accuracy
+        referenceData: referenceData,
+        // Enhanced: Add existing dealer listings for consistent variant naming
+        existingListings: existingListings,
+        // Add PDF URL (can be a placeholder since we're not storing the actual PDF)
+        pdfUrl: `local://${state.file.name}`
       }
 
       console.log('🤖 AI: Starting extraction with payload', {

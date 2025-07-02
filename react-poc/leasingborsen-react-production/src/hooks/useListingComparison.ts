@@ -405,16 +405,30 @@ export const useListingComparison = () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'listings'] }) // Invalidate admin listings list
       
       console.log('Apply selected changes response:', data)
+      console.log('Response type:', typeof data)
+      console.log('Is array:', Array.isArray(data))
+      console.log('Response keys:', data ? Object.keys(data) : 'No keys')
       
       // Handle the response structure from the PostgreSQL function
       let result
       if (Array.isArray(data) && data.length > 0) {
         result = data[0]
+        console.log('Using array[0] result:', result)
       } else if (data && typeof data === 'object') {
         result = data
+        console.log('Using direct object result:', result)
       } else {
         console.warn('Unexpected response format:', data)
         toast.success('Ændringer anvendt og session afsluttet')
+        return
+      }
+      
+      // Check if there are any errors in the result
+      if (result && result.error) {
+        console.error('Function returned error:', result.error)
+        toast.error('Fejl ved anvendelse af ændringer', {
+          description: result.error
+        })
         return
       }
       
