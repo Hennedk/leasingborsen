@@ -21,3 +21,16 @@ The main React application calls this service at `https://leasingborsen-producti
 ## Deployment
 
 This service is automatically deployed to Railway when changes are pushed to this directory.
+
+### Railway Configuration Files
+
+- `Procfile` - Specifies how to start the service
+- `nixpacks.toml` - Defines build configuration and system dependencies
+- `runtime.txt` - Specifies Python version (3.11.x)
+- `requirements.txt` - Python package dependencies
+
+### Start Command
+
+The service starts with: `uvicorn app:app --host 0.0.0.0 --port $PORT`
+
+Where `$PORT` is provided by Railway's environment.
