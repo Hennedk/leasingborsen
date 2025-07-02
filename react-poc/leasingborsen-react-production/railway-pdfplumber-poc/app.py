@@ -46,6 +46,7 @@ async def extract_structured(file: UploadFile = File(...)):
         # Extract text using pdfplumber
         extracted_text = ""
         with pdfplumber.open(io.BytesIO(content)) as pdf:
+            num_pages = len(pdf.pages)
             for page_num, page in enumerate(pdf.pages, 1):
                 page_text = page.extract_text()
                 if page_text:
@@ -64,7 +65,7 @@ async def extract_structured(file: UploadFile = File(...)):
             status_code=200,
             content={
                 "extracted_text": extracted_text,
-                "pages_processed": len(pdf.pages),
+                "pages_processed": num_pages,
                 "text_length": len(extracted_text),
                 "status": "success"
             }
