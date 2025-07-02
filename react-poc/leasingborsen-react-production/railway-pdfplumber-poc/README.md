@@ -25,7 +25,7 @@ This service is automatically deployed to Railway when changes are pushed to thi
 ### Railway Configuration Files
 
 - `Procfile` - Specifies how to start the service
-- `nixpacks.toml` - Defines build configuration and system dependencies
+- `pip.conf` - Handles externally-managed environment in Nix
 - `runtime.txt` - Specifies Python version (3.11.x)
 - `requirements.txt` - Python package dependencies
 
