@@ -377,7 +377,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
           existingListings = existingData
           console.log('🚗 Existing listings fetched:', {
             listingsCount: existingData?.existing_listings?.length || 0,
-            sampleVariants: existingData?.existing_listings?.slice(0, 3).map(l => l.variant) || []
+            sampleVariants: existingData?.existing_listings?.slice(0, 3).map((l: any) => l.variant) || []
           })
         }
       } catch (existingError) {
