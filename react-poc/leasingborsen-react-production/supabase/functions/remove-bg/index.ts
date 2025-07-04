@@ -229,8 +229,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         // Create new image with transparent background
         const targetImage = new Image(dimensions.width, dimensions.height);
         
-        // Calculate scale to fit image with 10% padding
-        const padding = 0.1;
+        // Calculate scale to fit image with 5% padding
+        const padding = 0.05;
         const maxWidth = dimensions.width * (1 - padding * 2);
         const maxHeight = dimensions.height * (1 - padding * 2);
         

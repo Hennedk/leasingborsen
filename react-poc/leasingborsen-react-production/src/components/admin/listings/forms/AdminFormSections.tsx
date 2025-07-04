@@ -6,7 +6,7 @@ import type { ReferenceData } from '@/types'
 import {
   BasicInfoSection,
   SpecificationsSection,
-  MediaSection,
+  MediaSectionWithBackgroundRemoval,
   OffersSection,
   SellerSection
 } from './form-sections'
@@ -116,9 +116,10 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
               <CardTitle className="text-lg">Billeder</CardTitle>
             </CardHeader>
             <CardContent className="px-6">
-              <MediaSection 
+              <MediaSectionWithBackgroundRemoval 
                 control={control}
                 onImagesChange={onImagesChange}
+                enableBackgroundRemoval={true}
               />
             </CardContent>
           </Card>
