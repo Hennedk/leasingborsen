@@ -77,7 +77,7 @@ async function getExtractionSummary() {
     
     console.log('🎯 The Issue:')
     console.log('=============')
-    console.log('The Edge Function (extract-cars-generic) returns immediately with:')
+    console.log('The Edge Function (ai-extract-vehicles) returns immediately with:')
     console.log('  - extractionSessionId')
     console.log('  - itemsProcessed: 27')
     console.log('  - But NO summary data')

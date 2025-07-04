@@ -1,5 +1,5 @@
 // Test the production fix for the Skoda edge case
-// This simulates the enhanced fuzzy matching logic now in extract-cars-generic
+// This simulates the enhanced fuzzy matching logic now in ai-extract-vehicles
 
 function extractSpecsFromVariant(variant) {
   const original = variant.toLowerCase()
@@ -207,6 +207,6 @@ if (compositeKeyMatch) {
 
 console.log()
 console.log('🏁 Summary:')
-console.log('The enhanced fuzzy matching logic in extract-cars-generic should now')
+console.log('The enhanced fuzzy matching logic in ai-extract-vehicles should now')
 console.log('correctly identify "Selection 2.0 TDI DSG7 150 HK" as an UPDATE to')
 console.log('"Selection 2.0 TDI DSG7" instead of creating a NEW listing.')

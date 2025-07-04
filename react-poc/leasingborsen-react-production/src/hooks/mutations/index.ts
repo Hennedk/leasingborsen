@@ -23,5 +23,11 @@ export {
   useRefreshData
 } from './useDataMutations'
 
+// Model management mutations
+export {
+  useCreateModel,
+  useCheckModelExists
+} from './useModelMutations'
+
 // Note: Offer mutations are in useOffers.ts
 // Note: Seller mutations are in useSellerMutations.ts

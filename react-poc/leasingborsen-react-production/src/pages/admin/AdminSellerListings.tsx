@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { useSellers } from '@/hooks/useSellers'
 import { useAdminListings } from '@/hooks/useAdminListings'
 import { SellerImportButton } from '@/components/admin/sellers/SellerImportButton'
+import { supabase } from '@/lib/supabase'
 
 interface SellerListingsFilters {
   sellerId: string
@@ -21,6 +22,7 @@ interface SellerListingsFilters {
   make: string
   status: 'all' | 'active' | 'inactive' | 'pending'
 }
+
 
 const AdminSellerListings: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -119,10 +121,125 @@ const AdminSellerListings: React.FC = () => {
     toast.success('Data opdateret')
   }
 
-  const handleImportClick = (_sellerId: string) => {
+  const handleImportClick = () => {
     // Refresh data after import
     refetch()
     toast.success('Data opdateret efter import')
+  }
+
+  const handleExport = async () => {
+    if (!filters.sellerId || !selectedSeller) {
+      toast.error('Vælg en sælger for at eksportere')
+      return
+    }
+
+    try {
+      toast.info('Eksporterer data...')
+
+      // Get all listings with pricing for the seller
+      const { data: rawData, error } = await supabase
+        .from('full_listing_view')
+        .select('*')
+        .eq('seller_id', filters.sellerId)
+        .not('monthly_price', 'is', null)
+        .order('make', { ascending: true })
+        .order('model', { ascending: true })
+        .order('variant', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      if (!rawData || rawData.length === 0) {
+        toast.error('Ingen data at eksportere')
+        return
+      }
+
+      // Group by make, model, variant to collect all pricing options
+      interface GroupedListing {
+        make: string
+        model: string
+        variant?: string
+        horsepower?: number
+        fuel_type: string
+        transmission: string
+        body_type: string
+        co2_emissions?: number
+        fuel_consumption_combined?: number
+        electric_range?: number
+        energy_consumption?: number
+        vehicle_tax?: number
+        offers: number[][]
+      }
+      const groupedData = new Map<string, GroupedListing>()
+
+      rawData.forEach((listing) => {
+        const key = `${listing.make}|${listing.model}|${listing.variant || ''}`
+        
+        if (!groupedData.has(key)) {
+          groupedData.set(key, {
+            ...listing,
+            offers: []
+          })
+        }
+
+        const item = groupedData.get(key)!
+        
+        // Add pricing offer: [monthly_price, down_payment, contract_length, mileage_limit, total_cost]
+        const offer = [
+          listing.monthly_price || 0,
+          listing.down_payment || 0,
+          listing.contract_length || 36,
+          listing.mileage_limit || 15000,
+          // Calculate total cost approximation
+          Math.round(((listing.monthly_price || 0) * (listing.contract_length || 36)) + (listing.down_payment || 0) + (listing.final_payment || 0))
+        ]
+        
+        item.offers.push(offer)
+      })
+
+      // Convert to the required export format
+      const exportData = {
+        cars: Array.from(groupedData.values()).map(listing => ({
+          make: listing.make,
+          model: listing.model,
+          variant: listing.variant || '',
+          hp: listing.horsepower || 0,
+          ft: listing.fuel_type || '',
+          tr: listing.transmission || '', 
+          bt: listing.body_type || '',
+          co2: listing.co2_emissions || 0,
+          l100: listing.fuel_consumption_combined || 0,
+          // Add WLTP range for electric vehicles
+          ...(listing.fuel_type?.toLowerCase().includes('electric') && listing.electric_range ? { wltp: listing.electric_range } : {}),
+          // Add kWh/100km for electric vehicles
+          ...(listing.fuel_type?.toLowerCase().includes('electric') && listing.energy_consumption ? { kwh100: listing.energy_consumption } : {}),
+          tax: listing.vehicle_tax || 0,
+          offers: listing.offers
+        }))
+      }
+
+      // Generate filename
+      const timestamp = new Date().toISOString().slice(0, 10)
+      const filename = `${selectedSeller.name.replace(/[^a-zA-Z0-9]/g, '_')}_export_${timestamp}.json`
+
+      // Download file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.success(`Eksporteret ${exportData.cars.length} biler til ${filename}`)
+
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Fejl ved eksportering: ' + (error as Error).message)
+    }
   }
 
   const isLoading = sellersLoading || listingsLoading
@@ -253,7 +370,7 @@ const AdminSellerListings: React.FC = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value as any }))}>
+                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value as 'all' | 'active' | 'inactive' | 'pending' }))}>
                   <SelectTrigger>
                     <SelectValue placeholder="Alle statusser" />
                   </SelectTrigger>
@@ -289,7 +406,13 @@ const AdminSellerListings: React.FC = () => {
                       onImportClick={handleImportClick}
                     />
                   </div>
-                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex items-center gap-2"
+                    onClick={handleExport}
+                    disabled={isLoading}
+                  >
                     <Download className="h-4 w-4" />
                     Eksporter
                   </Button>

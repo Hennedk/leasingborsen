@@ -97,7 +97,7 @@ supabase functions serve    # Serve Edge Functions locally
 - **Backend**: Supabase with PostgreSQL, Row Level Security, and Edge Functions
 - **Routing**: React Router 7.6.2 with lazy loading and nested routes
 - **State Management**: Zustand 5.0.5 + React Query 5.80.7 for optimal caching
-- **AI Integration**: Anthropic Claude + OpenAI for PDF extraction and processing
+- **AI Integration**: Multi-provider system (OpenAI GPT-3.5/4, Anthropic Claude) via secure Edge Functions
 - **Testing**: Vitest 3.2.4 + React Testing Library 16.3.0 + MSW 2.10.2
 - **Type Safety**: TypeScript 5.8.3 with strict configuration
 - **Icons**: Lucide React 0.513.0 (513+ icons)
@@ -380,9 +380,8 @@ export const errorMessages = {
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# AI Integration (Required for PDF extraction)
-VITE_OPENAI_API_KEY=your_openai_api_key
-VITE_ANTHROPIC_API_KEY=your_anthropic_api_key
+# AI Integration (Feature Flag Only - API keys stored securely in Edge Functions)
+# Note: Actual API keys are stored server-side in Supabase Edge Functions for security
 
 # Feature Flags
 VITE_AI_EXTRACTION_ENABLED=false             # Enable AI PDF extraction features
@@ -406,7 +405,7 @@ VITE_PERFORMANCE_MONITORING=true             # Enable performance tracking
 ### Primary Data Sources
 - **Primary Data Source**: `full_listing_view` (denormalized for performance)
 - **Core Tables**: `listings`, `lease_pricing`, `sellers`, comprehensive reference data
-- **AI Integration Tables**: `extraction_sessions`, `extraction_cache`, `ai_usage_tracking`
+- **AI Integration Tables**: `ai_usage_log` (comprehensive tracking), `monthly_ai_usage` (cost view)
 - **Workflow Tables**: `processing_jobs`, `listing_changes`, `batch_imports`
 
 ### Query Patterns
@@ -428,7 +427,7 @@ This React application has evolved from a Vue migration into a **sophisticated, 
 
 ### Key Achievements
 - **🚀 Technology Excellence**: React 19.1.0 + TypeScript 5.8.3 + Vite 6.3.5
-- **🤖 AI-Powered Innovation**: Multi-provider AI integration for PDF extraction
+- **🤖 AI-Powered Innovation**: Secure Edge Function-based AI system with comprehensive cost controls
 - **📊 Admin Interface Sophistication**: Complete CRUD operations and batch workflows
 - **⚡ Performance & Quality**: Bundle optimization meeting production targets
 - **🧪 Professional Testing**: 90% function coverage with comprehensive testing

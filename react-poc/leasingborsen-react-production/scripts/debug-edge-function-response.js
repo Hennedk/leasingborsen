@@ -13,7 +13,7 @@ const supabase = createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SU
 
 async function debugEdgeFunctionResponse() {
   try {
-    console.log('🔍 Testing What extract-cars-generic Actually Returns')
+    console.log('🔍 Testing What ai-extract-vehicles Actually Returns')
     console.log('===================================================')
     
     // Create a small test extraction to see the response structure
@@ -32,9 +32,9 @@ Toyota C-HR Selection 1.8 Hybrid 140 HK
       makeName: 'Toyota'
     }
     
-    console.log('📤 Calling extract-cars-generic with test payload...')
+    console.log('📤 Calling ai-extract-vehicles with test payload...')
     
-    const { data: aiResult, error } = await supabase.functions.invoke('extract-cars-generic', {
+    const { data: aiResult, error } = await supabase.functions.invoke('ai-extract-vehicles', {
       body: testPayload
     })
     

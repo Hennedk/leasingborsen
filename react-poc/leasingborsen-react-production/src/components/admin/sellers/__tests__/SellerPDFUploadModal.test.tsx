@@ -376,7 +376,7 @@ describe('SellerPDFUploadModal', () => {
 
       // Check AI API call
       expect(fetch).toHaveBeenNthCalledWith(2,
-        expect.stringContaining('/functions/v1/extract-cars-generic'),
+        expect.stringContaining('/functions/v1/ai-extract-vehicles'),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({

@@ -1,10 +1,9 @@
-import OpenAI from 'openai'
-import type { AIExtractedVehicle, AIExtractionResult } from './types'
-import { getPromptForDealer, estimateTokens, estimateCost } from './prompts'
+import type { AIExtractionResult } from './types'
+import { estimateTokens, estimateCost } from './utils'
 import { aiCostTracker } from './costTracker'
+import { supabase } from '@/lib/supabase'
 
 export class AIVehicleExtractor {
-  private openai: OpenAI | null = null
   private model = 'gpt-3.5-turbo'
   private lastRequestTime = 0
   private requestCount = 0
@@ -12,16 +11,8 @@ export class AIVehicleExtractor {
   private readonly rateLimitRequests = 3 // 3 requests per minute
   
   constructor() {
-    const apiKey = import.meta.env.VITE_OPENAI_API_KEY
-    
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        dangerouslyAllowBrowser: true // Note: In production, this should be server-side
-      })
-    } else {
-      console.warn('OpenAI API key not found. AI extraction will be disabled.')
-    }
+    // AI extraction now happens via secure Edge Function
+    // No API keys needed in frontend
   }
   
   private async waitForRateLimit(): Promise<void> {
@@ -51,13 +42,11 @@ export class AIVehicleExtractor {
   async extractVehicles(
     text: string,
     dealerHint?: string,
-    batchId?: string
+    batchId?: string,
+    sellerId?: string,
+    includeExistingListings: boolean = false
   ): Promise<AIExtractionResult> {
     const startTime = Date.now()
-    
-    if (!this.openai) {
-      throw new Error('OpenAI not configured. Please add VITE_OPENAI_API_KEY to environment.')
-    }
     
     // Check if we should use AI based on budget
     const aiDecision = await aiCostTracker.shouldUseAI(text.length, 0)
@@ -68,108 +57,75 @@ export class AIVehicleExtractor {
     // Wait for rate limit if needed
     await this.waitForRateLimit()
     
-    console.log(`🤖 Starting AI extraction with ${this.model}`)
+    console.log(`🤖 Starting AI extraction with ${this.model} via Edge Function`)
     console.log(`📄 Text length: ${text.length} characters`)
     console.log(`🏪 Dealer hint: ${dealerHint || 'None'}`)
     
     try {
-      // Get appropriate prompt for dealer
-      const prompt = getPromptForDealer(dealerHint)
+      // Get current user session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
-      // Prepare messages
-      const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-        { role: 'system', content: prompt.system },
-        { role: 'user', content: prompt.user + text }
-      ]
+      if (sessionError || !session) {
+        throw new Error('Authentication required for AI extraction')
+      }
       
-      // Estimate tokens and cost
-      const inputTokens = estimateTokens(prompt.system + prompt.user + text)
-      const estimatedCost = estimateCost(inputTokens, 500, this.model) // Estimate 500 output tokens
+      // Estimate cost for logging
+      const inputTokens = estimateTokens(text)
+      const estimatedCost = estimateCost(inputTokens, 500, this.model)
       
       console.log(`💰 Estimated cost: $${estimatedCost.toFixed(4)} (${inputTokens} input tokens)`)
       
-      // Make API call with retry logic for rate limits
-      let completion: OpenAI.Chat.ChatCompletion
-      let retryCount = 0
-      const maxRetries = 3
+      // Call secure Edge Function
+      const response = await fetch('/functions/v1/ai-extract-vehicles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text,
+          dealerHint,
+          batchId,
+          sellerId,
+          includeExistingListings
+        })
+      })
       
-      while (retryCount <= maxRetries) {
-        try {
-          completion = await this.openai.chat.completions.create({
-            model: this.model,
-            messages,
-            response_format: { type: 'json_object' },
-            temperature: 0.1, // Low temperature for consistency
-            max_tokens: 4000
-          })
-          break // Success, exit retry loop
-          
-        } catch (error: any) {
-          if (error?.status === 429 && retryCount < maxRetries) {
-            console.log(`⏳ Rate limit hit (attempt ${retryCount + 1}/${maxRetries + 1}). Waiting 20s...`)
-            await new Promise(resolve => setTimeout(resolve, 20000)) // Wait 20 seconds
-            retryCount++
-            continue
-          }
-          throw error // Re-throw if not rate limit or max retries exceeded
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed - please log in again')
+        } else if (response.status === 429) {
+          throw new Error(`Budget limit exceeded: ${errorData.details || 'Rate limit hit'}`)
+        } else {
+          throw new Error(`AI extraction failed: ${errorData.error || 'Unknown error'}`)
         }
       }
       
-      if (!completion!) {
-        throw new Error('Failed to get completion after retries')
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(`AI extraction failed: ${result.error}`)
       }
       
-      const response = completion.choices[0]?.message?.content
-      if (!response) {
-        throw new Error('Empty response from AI')
-      }
+      console.log(`✅ AI extraction complete: ${result.vehicles.length} vehicles found`)
+      console.log(`📊 Tokens used: ${result.tokens_used}, Actual cost: $${result.cost_estimate?.toFixed(4)}`)
       
-      // Parse JSON response
-      let parsedData: { vehicles: AIExtractedVehicle[] }
-      try {
-        parsedData = JSON.parse(response)
-      } catch (parseError) {
-        throw new Error(`Failed to parse AI response as JSON: ${parseError}`)
-      }
-      
-      const vehicles = parsedData.vehicles || []
-      const tokensUsed = completion.usage?.total_tokens || inputTokens
-      const actualCost = estimateCost(
-        completion.usage?.prompt_tokens || inputTokens,
-        completion.usage?.completion_tokens || 500,
-        this.model
-      )
-      
-      console.log(`✅ AI extraction complete: ${vehicles.length} vehicles found`)
-      console.log(`📊 Tokens used: ${tokensUsed}, Actual cost: $${actualCost.toFixed(4)}`)
-      
-      // Log usage for tracking
-      await aiCostTracker.trackUsage({
-        batch_id: batchId,
-        model: this.model,
-        tokens_used: tokensUsed,
-        cost: actualCost,
-        success: true
-      })
-      
-      // Calculate overall confidence
-      const overallConfidence = vehicles.length > 0
-        ? vehicles.reduce((sum, v) => sum + (v.confidence || 0), 0) / vehicles.length
-        : 0
-      
+      // Return the result with calculated processing time
       return {
-        vehicles: this.validateAndCleanVehicles(vehicles),
+        vehicles: result.vehicles || [],
         extraction_method: 'ai',
-        tokens_used: tokensUsed,
-        cost_estimate: actualCost,
+        tokens_used: result.tokens_used,
+        cost_estimate: result.cost_estimate,
         processing_time_ms: Date.now() - startTime,
-        confidence_score: overallConfidence
+        confidence_score: result.confidence_score || 0
       }
       
     } catch (error) {
       console.error('AI extraction failed:', error)
       
-      // Log failed usage
+      // Log failed usage locally for tracking
       await aiCostTracker.trackUsage({
         batch_id: batchId,
         model: this.model,
@@ -183,57 +139,27 @@ export class AIVehicleExtractor {
     }
   }
   
-  private validateAndCleanVehicles(vehicles: AIExtractedVehicle[]): AIExtractedVehicle[] {
-    return vehicles
-      .filter(vehicle => {
-        // Basic validation
-        if (!vehicle.make || !vehicle.model) {
-          console.warn('Skipping vehicle without make/model:', vehicle)
-          return false
-        }
-        
-        if (!vehicle.offers || vehicle.offers.length === 0) {
-          console.warn('Skipping vehicle without offers:', vehicle)
-          return false
-        }
-        
-        return true
-      })
-      .map(vehicle => ({
-        ...vehicle,
-        // Ensure required fields have defaults
-        make: vehicle.make.trim(),
-        model: vehicle.model.trim(),
-        variant: vehicle.variant?.trim() || '',
-        horsepower: vehicle.horsepower || 0,
-        specifications: {
-          ...vehicle.specifications,
-          is_electric: vehicle.specifications?.is_electric || false,
-          fuel_type: vehicle.specifications?.fuel_type || 'Unknown',
-          transmission: vehicle.specifications?.transmission || 'Unknown'
-        },
-        offers: vehicle.offers.map(offer => ({
-          duration_months: offer.duration_months || 12,
-          mileage_km: offer.mileage_km || 10000,
-          monthly_price: offer.monthly_price || 0,
-          deposit: offer.deposit,
-          total_cost: offer.total_cost,
-          min_price_12_months: offer.min_price_12_months
-        })),
-        confidence: Math.max(0, Math.min(1, vehicle.confidence || 0.5)) // Clamp to 0-1
-      }))
-  }
   
   async testConnection(): Promise<boolean> {
-    if (!this.openai) return false
-    
     try {
-      await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: 'Test' }],
-        max_tokens: 1
+      // Test connection to Edge Function
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return false
+      
+      const response = await fetch('/functions/v1/ai-extract-vehicles', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: 'Test connection',
+          dealerHint: 'test'
+        })
       })
-      return true
+      
+      // We expect this to work or fail with a specific error, not network error
+      return response.status !== 0 && response.status < 500
     } catch {
       return false
     }

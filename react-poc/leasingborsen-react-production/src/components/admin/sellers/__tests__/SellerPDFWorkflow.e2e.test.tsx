@@ -197,7 +197,7 @@ describe('Complete PDF Upload Workflow E2E', () => {
 
       // Verify AI extraction API call
       expect(fetch).toHaveBeenNthCalledWith(2,
-        expect.stringContaining('/functions/v1/extract-cars-generic'),
+        expect.stringContaining('/functions/v1/ai-extract-vehicles'),
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -270,7 +270,7 @@ describe('Complete PDF Upload Workflow E2E', () => {
       // Verify generic extraction is called
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/functions/v1/extract-cars-generic'),
+          expect.stringContaining('/functions/v1/ai-extract-vehicles'),
           expect.objectContaining({
             body: expect.stringMatching(/"dealerType":"auto-detect"/)
           })
@@ -318,7 +318,7 @@ describe('Complete PDF Upload Workflow E2E', () => {
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith(
-          expect.stringContaining('/functions/v1/extract-cars-generic'),
+          expect.stringContaining('/functions/v1/ai-extract-vehicles'),
           expect.objectContaining({
             body: expect.stringMatching(/"dealerType":"volkswagen"/)
           })

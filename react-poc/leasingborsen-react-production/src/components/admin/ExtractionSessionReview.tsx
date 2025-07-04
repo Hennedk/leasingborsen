@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   CheckCircle, XCircle, Clock, GitCommit,
-  Plus, Edit, Trash, Settings, ChevronDown, ChevronRight
+  Plus, Edit, Trash, Settings, ChevronDown, ChevronRight, PlusCircle
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { 
@@ -18,6 +18,10 @@ import {
 } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
 import { QuickExtractionCheck } from './QuickExtractionCheck'
+import { useCreateModel } from '@/hooks/mutations/useModelMutations'
+import { useMakes } from '@/hooks/useReferenceData'
+import { useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 
 interface ExtractionSessionReviewProps {
   sessionId: string
@@ -39,6 +43,9 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   } = useListingComparison()
 
   const { data: changes = [], isLoading } = useSessionChanges(sessionId)
+  const createModel = useCreateModel()
+  const { data: makes = [] } = useMakes()
+  const queryClient = useQueryClient()
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '–'
@@ -54,6 +61,76 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const formatPrice = (price?: number): string => {
     if (!price) return '–'
     return `${price.toLocaleString('da-DK')} kr`
+  }
+
+  const handleCreateModel = async (change: ListingChange) => {
+    const extractedData = change.extracted_data || {}
+    const makeName = extractedData.make
+    const modelName = extractedData.model
+
+    if (!makeName || !modelName) {
+      toast.error('Mangler mærke eller model information')
+      return
+    }
+
+    // Find the make ID
+    const make = makes.find(m => m.name.toLowerCase() === makeName.toLowerCase())
+    if (!make) {
+      toast.error(`Mærket "${makeName}" findes ikke i systemet`)
+      return
+    }
+
+    try {
+      // Create the model
+      await createModel.mutateAsync({
+        name: modelName,
+        make_id: make.id
+      })
+      
+      // Find all changes in this session with the same missing model
+      const affectedChanges = changes.filter(c => 
+        c.change_type === 'missing_model' && 
+        c.extracted_data?.make?.toLowerCase() === makeName.toLowerCase() &&
+        c.extracted_data?.model?.toLowerCase() === modelName.toLowerCase()
+      )
+      
+      console.log(`Found ${affectedChanges.length} changes with the same missing model`)
+      
+      // Update ALL extraction changes with this missing model from 'missing_model' to 'create'
+      const updatePromises = affectedChanges.map(async (affectedChange) => {
+        const { error } = await supabase
+          .from('extraction_listing_changes')
+          .update({
+            change_type: 'create',
+            change_summary: `Ny bil: ${affectedChange.extracted_data.make} ${affectedChange.extracted_data.model} ${affectedChange.extracted_data.variant || ''}`.trim(),
+            match_method: 'exact'
+          })
+          .eq('id', affectedChange.id)
+        
+        return { id: affectedChange.id, error }
+      })
+      
+      const updateResults = await Promise.all(updatePromises)
+      const failedUpdates = updateResults.filter(r => r.error)
+      
+      if (failedUpdates.length > 0) {
+        console.error('Some updates failed:', failedUpdates)
+        toast.error(`Model blev tilføjet, men ${failedUpdates.length} ændringer kunne ikke opdateres`)
+      } else {
+        // Invalidate the queries to refresh the changes and session data
+        // The extraction_session_summary view will automatically recalculate stats
+        queryClient.invalidateQueries({ queryKey: ['session-changes', sessionId] })
+        queryClient.invalidateQueries({ queryKey: ['extraction-sessions'] })
+        
+        const message = affectedChanges.length > 1 
+          ? `Model "${modelName}" blev tilføjet og ${affectedChanges.length} ændringer er nu klar til anvendelse`
+          : `Model "${modelName}" blev tilføjet og ændringen er nu klar til anvendelse`
+        
+        toast.success(message)
+      }
+    } catch (error) {
+      console.error('Error creating model:', error)
+    }
   }
 
   const toggleChangeSelection = (changeId: string) => {
@@ -78,7 +155,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
   const selectAllByStatus = (status: 'pending') => {
     const statusChanges = changes
-      .filter(change => change.change_status === status)
+      .filter(change => change.change_status === status && change.change_type !== 'missing_model')
       .map(change => change.id)
     setSelectedChanges(new Set(statusChanges))
   }
@@ -118,6 +195,102 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
   const renderChangeDetails = (change: ListingChange) => {
     const extractedData = change.extracted_data || {}
+    
+    // Special handling for missing model items
+    if (change.change_type === 'missing_model') {
+      return (
+        <div className="space-y-3">
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-medium">Bil:</span>{' '}
+              {extractedData.make} {extractedData.model} {extractedData.variant}
+            </div>
+            <div>
+              <span className="font-medium">Status:</span>{' '}
+              <span className="text-orange-600 font-medium">Model findes ikke i systemet</span>
+            </div>
+          </div>
+
+          {/* Missing Model Explanation */}
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <XCircle className="h-5 w-5 text-orange-600 mt-0.5" />
+              <div>
+                <h5 className="font-medium text-orange-800 mb-2">Model mangler i databasen</h5>
+                <p className="text-sm text-orange-700 mb-3">
+                  Denne bil kunne ikke oprettes fordi modellen "{extractedData.model}" ikke findes i systemets modeltabel for mærket "{extractedData.make}".
+                </p>
+                <div className="space-y-3">
+                  <div className="text-xs text-orange-600">
+                    <strong>Løsning:</strong> Tilføj den manglende model til databasen for at kunne oprette denne bil.
+                  </div>
+                  {(() => {
+                    const sameModelCount = changes.filter(c => 
+                      c.change_type === 'missing_model' && 
+                      c.extracted_data?.make?.toLowerCase() === extractedData.make?.toLowerCase() &&
+                      c.extracted_data?.model?.toLowerCase() === extractedData.model?.toLowerCase()
+                    ).length
+                    
+                    return sameModelCount > 1 && (
+                      <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                        <strong>Note:</strong> Der er {sameModelCount} biler i denne session med samme manglende model. Alle vil blive opdateret når modellen tilføjes.
+                      </div>
+                    )
+                  })()}
+                  <Button
+                    size="sm"
+                    onClick={() => handleCreateModel(change)}
+                    disabled={createModel.isPending}
+                    className="w-full sm:w-auto"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    {createModel.isPending ? 'Tilføjer model...' : (() => {
+                      const sameModelCount = changes.filter(c => 
+                        c.change_type === 'missing_model' && 
+                        c.extracted_data?.make?.toLowerCase() === extractedData.make?.toLowerCase() &&
+                        c.extracted_data?.model?.toLowerCase() === extractedData.model?.toLowerCase()
+                      ).length
+                      
+                      return sameModelCount > 1 
+                        ? `Tilføj "${extractedData.model}" til ${extractedData.make} (${sameModelCount} biler)`
+                        : `Tilføj "${extractedData.model}" til ${extractedData.make}`
+                    })()}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Extracted Vehicle Details (for reference) */}
+          <div>
+            <h5 className="font-medium text-sm mb-2">Ekstraherede biloplysninger (til reference):</h5>
+            <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
+              {extractedData.variant && (
+                <div><span className="font-medium">Variant:</span> {extractedData.variant}</div>
+              )}
+              {extractedData.horsepower && (
+                <div><span className="font-medium">Hestekræfter:</span> {extractedData.horsepower} HK</div>
+              )}
+              {extractedData.fuel_type && (
+                <div><span className="font-medium">Brændstof:</span> {extractedData.fuel_type}</div>
+              )}
+              {extractedData.transmission && (
+                <div><span className="font-medium">Transmission:</span> {extractedData.transmission}</div>
+              )}
+              {extractedData.monthly_price && (
+                <div><span className="font-medium">Månedspris:</span> {formatPrice(extractedData.monthly_price)}/md</div>
+              )}
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded">
+            📝 <strong>Bemærk:</strong> Denne bil kan ikke vælges til anvendelse. Løs først problemet med den manglende model.
+          </div>
+        </div>
+      )
+    }
     
     return (
       <div className="space-y-3">
@@ -244,6 +417,8 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         return changes.filter(c => c.change_type === 'update')
       case 'delete':
         return changes.filter(c => c.change_type === 'delete')
+      case 'missing_model':
+        return changes.filter(c => c.change_type === 'missing_model')
       default:
         return changes
     }
@@ -269,6 +444,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const createCount = changes.filter(c => c.change_type === 'create').length
   const updateCount = changes.filter(c => c.change_type === 'update').length
   const deleteCount = changes.filter(c => c.change_type === 'delete').length
+  const missingModelCount = changes.filter(c => c.change_type === 'missing_model').length
 
   return (
     <div className="space-y-6">
@@ -314,7 +490,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -360,6 +536,18 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{appliedCount}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <XCircle className="h-4 w-4 text-orange-600" />
+              Missing Models
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{missingModelCount}</div>
           </CardContent>
         </Card>
       </div>
@@ -410,7 +598,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
       {/* Changes List */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="pending" className="text-yellow-600">
             Pending ({pendingCount})
           </TabsTrigger>
@@ -435,9 +623,12 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           <TabsTrigger value="delete">
             Deletes ({deleteCount})
           </TabsTrigger>
+          <TabsTrigger value="missing_model" className="text-orange-600">
+            Missing Models ({missingModelCount})
+          </TabsTrigger>
         </TabsList>
 
-        {(['pending', 'approved', 'rejected', 'applied', 'discarded', 'create', 'update', 'delete'] as const).map((tabValue) => (
+        {(['pending', 'approved', 'rejected', 'applied', 'discarded', 'create', 'update', 'delete', 'missing_model'] as const).map((tabValue) => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4">
             <Card>
               <CardContent className="p-0">
@@ -468,12 +659,19 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                             )}
                             onClick={() => toggleChangeExpansion(change.id)}
                           >
-                            {tabValue === 'pending' && (
+                            {tabValue === 'pending' && change.change_type !== 'missing_model' && (
                               <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
                                   checked={isSelected}
                                   onCheckedChange={() => toggleChangeSelection(change.id)}
                                 />
+                              </TableCell>
+                            )}
+                            {tabValue === 'pending' && change.change_type === 'missing_model' && (
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <div className="text-xs text-orange-600 font-medium">
+                                  N/A
+                                </div>
                               </TableCell>
                             )}
                             <TableCell>
@@ -488,12 +686,16 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                                 change.change_type === 'create' ? 'default' :
                                 change.change_type === 'update' ? 'secondary' :
                                 change.change_type === 'delete' ? 'destructive' :
+                                change.change_type === 'missing_model' ? 'outline' :
                                 'outline'
+                              } className={
+                                change.change_type === 'missing_model' ? 'border-orange-600 text-orange-600' : ''
                               }>
                                 {change.change_type === 'create' && <Plus className="h-3 w-3 mr-1" />}
                                 {change.change_type === 'update' && <Edit className="h-3 w-3 mr-1" />}
                                 {change.change_type === 'delete' && <Trash className="h-3 w-3 mr-1" />}
-                                {change.change_type}
+                                {change.change_type === 'missing_model' && <XCircle className="h-3 w-3 mr-1" />}
+                                {change.change_type === 'missing_model' ? 'Missing Model' : change.change_type}
                               </Badge>
                             </TableCell>
                             <TableCell>
@@ -509,7 +711,10 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                               </div>
                             </TableCell>
                             <TableCell>
-                              {change.change_summary || `${change.change_type} operation`}
+                              {change.change_type === 'missing_model' 
+                                ? `Model "${extractedData.model}" findes ikke i systemet` 
+                                : (change.change_summary || `${change.change_type} operation`)
+                              }
                             </TableCell>
                             <TableCell>
                               <Badge variant={

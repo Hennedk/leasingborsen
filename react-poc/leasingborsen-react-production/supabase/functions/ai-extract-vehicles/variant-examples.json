@@ -1,0 +1,84 @@
+{
+  "audi": {
+    "A6": {
+      "patterns": [
+        "Limousine TDI S tronic {hp} HK",
+        "Limousine TDI quattro S tronic {hp} HK",
+        "Limousine TFSI S tronic {hp} HK",
+        "Avant TDI S tronic {hp} HK", 
+        "Avant TDI quattro S tronic {hp} HK",
+        "Avant TFSI S tronic {hp} HK"
+      ],
+      "examples": [
+        "Limousine TDI S tronic 204 HK",
+        "Limousine TDI quattro S tronic 204 HK",
+        "Limousine TFSI S tronic 204 HK",
+        "Avant TDI S tronic 204 HK",
+        "Avant TDI quattro S tronic 204 HK",
+        "Avant TFSI S tronic 204 HK"
+      ]
+    },
+    "Q6 e-tron": {
+      "patterns": [
+        "Progress {hp} HK",
+        "Progress plus {hp} HK", 
+        "Ultra {hp} HK",
+        "Progress performance {hp} HK",
+        "Progress plus performance {hp} HK",
+        "Ultra performance {hp} HK",
+        "Progress quattro {hp} HK",
+        "Progress plus quattro {hp} HK",
+        "Ultra quattro {hp} HK"
+      ],
+      "examples": [
+        "Progress 252 HK",
+        "Progress plus 252 HK",
+        "Ultra 252 HK",
+        "Progress performance 306 HK",
+        "Progress plus performance 306 HK", 
+        "Ultra performance 306 HK",
+        "Progress quattro 388 HK",
+        "Progress plus quattro 388 HK",
+        "Ultra quattro 388 HK"
+      ]
+    },
+    "Q6 e-tron Sportback": {
+      "patterns": [
+        "Progress {hp} HK",
+        "Progress plus {hp} HK",
+        "Ultra {hp} HK", 
+        "Progress performance {hp} HK",
+        "Progress plus performance {hp} HK",
+        "Ultra performance {hp} HK",
+        "Progress quattro {hp} HK",
+        "Progress plus quattro {hp} HK",
+        "Ultra quattro {hp} HK"
+      ],
+      "examples": [
+        "Progress 252 HK",
+        "Progress plus 252 HK",
+        "Ultra 252 HK",
+        "Progress performance 306 HK",
+        "Progress plus performance 306 HK",
+        "Ultra performance 306 HK", 
+        "Progress quattro 388 HK",
+        "Progress plus quattro 388 HK",
+        "Ultra quattro 388 HK"
+      ]
+    }
+  },
+  "naming_rules": {
+    "power_unit": "Always use 'HK', never 'kW' or 'HP'",
+    "transmission": "Use 'S tronic', 'Tiptronic', 'Manual' as appears in official specs",
+    "drivetrain": "Use 'quattro' for AWD, omit for FWD",
+    "fuel_type": "Include 'TDI' for diesel, 'TFSI' for petrol, 'e-tron' for electric",
+    "body_style": "Include 'Sportback', 'Avant', 'Limousine' when applicable",
+    "trim_levels": "Common patterns: Progress, Ultra, S line, Edition, GT, Performance"
+  },
+  "usage_instructions": {
+    "purpose": "These examples show real-world Audi variant naming patterns from Danish market",
+    "application": "Use these as inspiration for consistent variant naming during AI extraction",
+    "flexibility": "Adapt patterns to match actual specifications found in PDFs",
+    "consistency": "Prioritize matching existing dealer listings over these examples"
+  }
+}

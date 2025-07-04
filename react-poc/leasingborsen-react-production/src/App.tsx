@@ -33,6 +33,9 @@ const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProces
 const AdminPDFExtraction = lazy(() => import('@/pages/admin/AdminPDFExtraction'))
 const AdminExtractionSessions = lazy(() => import('@/pages/admin/AdminExtractionSessions'))
 
+// POC pages (standalone, outside main menu)
+const BackgroundRemovalPOC = lazy(() => import('@/pages/BackgroundRemovalPOC'))
+
 // Create a client with optimized configuration
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +113,13 @@ function App() {
                 <Route path="/advertising" element={
                   <RouteErrorBoundary routeName="Annoncering">
                     <Advertising />
+                  </RouteErrorBoundary>
+                } />
+                
+                {/* POC routes (standalone, outside main menu) */}
+                <Route path="/background-removal-poc" element={
+                  <RouteErrorBoundary routeName="Background Removal POC">
+                    <BackgroundRemovalPOC />
                   </RouteErrorBoundary>
                 } />
                 

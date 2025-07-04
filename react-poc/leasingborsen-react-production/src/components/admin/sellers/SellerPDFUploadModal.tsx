@@ -19,6 +19,7 @@ interface ExtractionResult {
     new: number
     updated: number
     removed: number
+    missing_models: number
     total_processed: number
   }
   dealerDetection?: {
@@ -114,6 +115,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             new: (job as any).result?.summary?.totalNew || 0, 
             updated: (job as any).result?.summary?.totalUpdated || 0, 
             removed: (job as any).result?.summary?.totalDeleted || 0,
+            missing_models: (job as any).result?.summary?.missing_models || 0,
             total_processed: (job as any).result?.summary?.totalExtracted || job.itemsProcessed || 0 
           },
           extractionSessionId: (job as any).extractionSessionId || (job as any).extraction_session_id || (job as any).stats?.extraction_session?.session_id
@@ -364,7 +366,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         progressMessage: 'Fetching dealer\'s existing listings for AI context...'
       }))
 
-      let existingListings = null
+      // let existingListings = null
       try {
         const { data: existingData, error: existingError } = await supabase
           .rpc('get_dealer_existing_listings', {
@@ -374,7 +376,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         if (existingError) {
           console.warn('Could not fetch existing listings:', existingError.message)
         } else {
-          existingListings = existingData
+          // existingListings = existingData
           console.log('🚗 Existing listings fetched:', {
             listingsCount: existingData?.existing_listings?.length || 0,
             sampleVariants: existingData?.existing_listings?.slice(0, 3).map((l: any) => l.variant) || []
@@ -392,8 +394,8 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
 
       // Use the extracted text from Railway for AI processing with reference data
       const aiRequestPayload = {
-        textContent: extractedText,
-        dealerName: seller.name,
+        text: extractedText,  // Changed from textContent to text
+        dealerHint: seller.name,  // Changed from dealerName to dealerHint
         fileName: state.file.name,
         sellerId: seller.id,
         sellerName: seller.name,
@@ -401,9 +403,9 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         makeId: config.makeId,
         makeName: config.makeName,
         // Enhanced: Add reference data for better AI accuracy
-        referenceData: referenceData,
+        referenceData: referenceData,  // Pass complete reference data to edge function
         // Enhanced: Add existing dealer listings for consistent variant naming
-        existingListings: existingListings,
+        includeExistingListings: true,
         // Add PDF URL (can be a placeholder since we're not storing the actual PDF)
         pdfUrl: `local://${state.file.name}`
       }
@@ -418,7 +420,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         batchId
       })
 
-      const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-cars-generic`, {
+      const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
@@ -491,6 +493,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             new: 0,
             updated: 0,
             removed: 0,
+            missing_models: 0,
             total_processed: aiResult.itemsProcessed || 0
           }
 
@@ -500,15 +503,17 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             const pendingUpdates = changesData.filter(c => c.change_type === 'update').length
             const pendingDeletes = changesData.filter(c => c.change_type === 'delete').length
             const unchangedChanges = changesData.filter(c => c.change_type === 'unchanged').length
+            const missingModels = changesData.filter(c => c.change_type === 'missing_model').length
             
             // If we have explicit "unchanged" changes, use them, otherwise calculate
             const unchanged = unchangedChanges > 0 ? unchangedChanges : 
-                             changesData.length - pendingCreates - pendingUpdates - pendingDeletes
+                             changesData.length - pendingCreates - pendingUpdates - pendingDeletes - missingModels
 
             actualStats = {
               new: pendingCreates,
               updated: pendingUpdates,
               removed: unchanged, // Use unchanged for "No Change Identified"
+              missing_models: missingModels,
               total_processed: changesData.length
             }
 
@@ -518,6 +523,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
               updates: pendingUpdates,
               deletes: pendingDeletes,
               unchanged: unchangedChanges,
+              missingModels: missingModels,
               total: changesData.length
             })
           } else {
@@ -556,6 +562,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
                 new: aiResult.summary?.totalNew || 0,
                 updated: aiResult.summary?.totalUpdated || 0,
                 removed: aiResult.summary?.totalDeleted || 0,
+                missing_models: aiResult.summary?.missing_models || 0,
                 total_processed: aiResult.summary?.totalExtracted || aiResult.itemsProcessed || 0
               }
             }
@@ -582,6 +589,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
               new: aiResult.summary?.totalNew || 0,
               updated: aiResult.summary?.totalUpdated || 0,
               removed: aiResult.summary?.totalDeleted || 0,
+              missing_models: aiResult.summary?.missing_models || 0,
               total_processed: aiResult.summary?.totalExtracted || aiResult.itemsProcessed || 0
             }
           }
@@ -819,7 +827,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
                 </AlertDescription>
               </Alert>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-muted rounded-lg">
                   <p className="text-2xl font-bold text-green-600">
                     {state.extractionResult.stats?.new || 0}
@@ -837,6 +845,12 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
                     {state.extractionResult.stats?.removed || 0}
                   </p>
                   <p className="text-sm text-muted-foreground">No Change Identified</p>
+                </div>
+                <div className="text-center p-4 bg-muted rounded-lg">
+                  <p className="text-2xl font-bold text-orange-600">
+                    {state.extractionResult.stats?.missing_models || 0}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Missing Models</p>
                 </div>
               </div>
 

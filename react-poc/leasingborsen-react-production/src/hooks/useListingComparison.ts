@@ -39,7 +39,7 @@ export interface ListingMatch {
   }
   matchType: 'exact' | 'fuzzy' | 'unmatched'
   confidence: number
-  changeType: 'create' | 'update' | 'unchanged' | 'delete'
+  changeType: 'create' | 'update' | 'unchanged' | 'delete' | 'missing_model'
   changes?: Record<string, { old: any; new: any }>
 }
 
@@ -76,7 +76,7 @@ export interface ListingChange {
   id: string
   session_id: string
   existing_listing_id?: string
-  change_type: 'create' | 'update' | 'delete' | 'unchanged'
+  change_type: 'create' | 'update' | 'delete' | 'unchanged' | 'missing_model'
   change_status: 'pending' | 'approved' | 'rejected' | 'applied' | 'discarded'
   confidence_score?: number
   extracted_data: any

@@ -60,7 +60,7 @@ interface ListingMatch {
   existing: ExistingListing
   confidence: number
   matchMethod: string
-  changeType: 'create' | 'update' | 'unchanged'
+  changeType: 'create' | 'update' | 'unchanged' | 'missing_model'
   changes?: Record<string, { old: any; new: any }>
 }
 
@@ -80,6 +80,7 @@ interface ComparisonResult {
     totalUpdated: number
     totalUnchanged: number
     totalDeleted: number
+    totalMissingModels: number
     exactMatches: number
     fuzzyMatches: number
   }
@@ -505,14 +506,26 @@ serve(async (req) => {
           })
         }
       } else {
-        // No match found - this is a new listing
-        matches.push({
-          extracted: car,
-          existing: null as any,
-          confidence: 1.0,
-          matchMethod: 'unmatched',
-          changeType: 'create'
-        })
+        // No match found - check if model exists before creating
+        if (!car.model_id) {
+          // Model doesn't exist in reference data
+          matches.push({
+            extracted: car,
+            existing: null as any,
+            confidence: 1.0,
+            matchMethod: 'model_not_found',
+            changeType: 'missing_model'
+          })
+        } else {
+          // This is a new listing
+          matches.push({
+            extracted: car,
+            existing: null as any,
+            confidence: 1.0,
+            matchMethod: 'unmatched',
+            changeType: 'create'
+          })
+        }
       }
     }
 
@@ -520,8 +533,9 @@ serve(async (req) => {
     const newCount = matches.filter(m => m.changeType === 'create').length
     const updateCount = matches.filter(m => m.changeType === 'update').length
     const unchangedCount = matches.filter(m => m.changeType === 'unchanged').length
+    const missingModelCount = matches.filter(m => m.changeType === 'missing_model').length
 
-    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged`)
+    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models`)
 
     const result: ComparisonResult = {
       matches,
@@ -533,6 +547,7 @@ serve(async (req) => {
         totalUpdated: updateCount,
         totalUnchanged: unchangedCount,
         totalDeleted: 0, // Not implemented yet
+        totalMissingModels: missingModelCount,
         exactMatches: exactMatchCount,
         fuzzyMatches: fuzzyMatchCount
       }

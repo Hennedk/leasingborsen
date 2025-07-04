@@ -351,7 +351,7 @@ export default function AdminPDFExtraction() {
 
       // Determine which extraction endpoint to use
       const useGeneric = selectedMakeId || useGenericExtraction;
-      const endpoint = useGeneric ? 'extract-cars-generic' : 'extract-cars-openai';
+      const endpoint = useGeneric ? 'ai-extract-vehicles' : 'extract-cars-openai';
       const extractionType = useGeneric ? 
         (selectedMakeId ? `generisk (${makes?.find(m => m.id === selectedMakeId)?.name})` : 'generisk') : 
         'Toyota-specifik';

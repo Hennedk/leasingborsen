@@ -103,7 +103,7 @@ async function findExtractionData() {
     console.log('  - totalDeleted')
     console.log('  - totalExtracted')
     console.log()
-    console.log('But the extract-cars-generic function might not be returning this summary.')
+    console.log('But the ai-extract-vehicles function might not be returning this summary.')
     console.log('The summary data might be generated later in the processing pipeline.')
     console.log()
     console.log('💡 Possible Solutions:')
