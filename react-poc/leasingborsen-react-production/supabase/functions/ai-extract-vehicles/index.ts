@@ -257,12 +257,29 @@ IMPORTANT:
 CRITICAL DEDUPLICATION RULE:
 If the same make + model + variant appears multiple times with identical technical specs (same WLTP, CO2, HP, etc.), merge them into ONE entry with ALL offers combined in the offers array. Only create separate entries when technical specifications differ (e.g., different WLTP values indicating different battery/engine configurations).
 
+RANGE SPECIFICATION HANDLING:
+- When you see range values like "443-563 km", "76.1-99.8 kWh", or "195-228 Wh/km", these typically show the range across ALL variants of a model, NOT multiple vehicles in the current PDF
+- Use context clues to determine the actual variant:
+  * Filename indicators (e.g., "standard-range" = use lower value, "long-range" = use higher value)
+  * Section headers or titles indicating specific variant
+  * The pricing context (standard range typically has lower prices)
+  * Look for specific text like "Standard Range", "Long Range", "GT-Line" in the document
+- Multiple pricing tables with different down payments (Førstegangsydelse) = multiple offers for the SAME vehicle, NOT different vehicles
+
+KIA-SPECIFIC RULES:
+- Kia PDFs often show full model range specifications but contain pricing for only one specific variant
+- The filename usually indicates which variant (e.g., "ev9-upgrade-standard-range.pdf" = Standard Range variant only)
+- When you see different down payment amounts (e.g., 29,995 kr and 49,995 kr), these are different financing options for the SAME vehicle
+- Do NOT create separate vehicles based on different down payments or range specifications
+
 ${referenceContext}
 ${existingListingsContext}
 ${variantExamplesContext}
 
 Dealer: ${finalDealerName}
 File: ${fileName || 'PDF Upload'}
+${fileName && fileName.toLowerCase().includes('standard-range') ? 'IMPORTANT: This file is for STANDARD RANGE variant only - use lower WLTP values from any ranges shown.' : ''}
+${fileName && fileName.toLowerCase().includes('long-range') ? 'IMPORTANT: This file is for LONG RANGE variant only - use higher WLTP values from any ranges shown.' : ''}
 PDF TEXT:
 ${finalText}`
 
@@ -271,6 +288,8 @@ ${finalText}`
 
 Dealer: ${finalDealerName}
 File: ${fileName || 'PDF Upload'}
+${fileName && fileName.toLowerCase().includes('standard-range') ? 'IMPORTANT: This file is for STANDARD RANGE variant only - use lower WLTP values from any ranges shown.' : ''}
+${fileName && fileName.toLowerCase().includes('long-range') ? 'IMPORTANT: This file is for LONG RANGE variant only - use higher WLTP values from any ranges shown.' : ''}
 PDF TEXT:
 ${finalText}`
 

@@ -37,6 +37,37 @@ interface PDFExtractionStatus {
   error?: string
 }
 
+// Helper function to extract variant information from Kia filenames
+const extractVariantFromFilename = (filename: string): string | null => {
+  const variantPatterns: Record<string, string> = {
+    'standard-range': 'Standard Range',
+    'long-range': 'Long Range',
+    'extended-range': 'Extended Range',
+    'gt-line': 'GT-Line',
+    'gt': 'GT',
+    'upgrade': 'Upgrade',
+    'earth': 'Earth',
+    'gravity': 'Gravity',
+    'wind': 'Wind',
+    'land': 'Land',
+    'air': 'Air'
+  }
+  
+  const lower = filename.toLowerCase()
+  for (const [pattern, variant] of Object.entries(variantPatterns)) {
+    if (lower.includes(pattern)) {
+      return variant
+    }
+  }
+  
+  // Check for battery size indicators
+  if (lower.includes('77kwh') || lower.includes('77-kwh')) return '77 kWh'
+  if (lower.includes('84kwh') || lower.includes('84-kwh')) return '84 kWh'
+  if (lower.includes('99kwh') || lower.includes('99-kwh')) return '99 kWh'
+  
+  return null
+}
+
 export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModalProps> = ({
   open,
   onOpenChange,
@@ -210,14 +241,20 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         body: JSON.stringify({
           text: combinedText,
           dealerHint: seller.name,
-          fileName: `Merged ${pdfUrls.length} PDFs`,
+          fileName: `Merged ${pdfUrls.length} PDFs: ${pdfUrls.map(p => p.name).join(', ')}`,
           sellerId: seller.id,
           sellerName: seller.name,
           batchId,
           makeId: config.makeId,
           makeName: config.makeName,
           includeExistingListings: true,
-          pdfUrl: pdfUrls.map(p => p.url).join(', ')
+          pdfUrl: pdfUrls.map(p => p.url).join(', '),
+          // Add filename hints for better variant detection
+          filenameHints: pdfUrls.map(pdf => ({
+            name: pdf.name,
+            url: pdf.url,
+            variantHint: extractVariantFromFilename(pdf.url)
+          }))
         })
       })
 
@@ -537,14 +574,16 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         body: JSON.stringify({
           text: extractedText,
           dealerHint: seller.name,
-          fileName: file.name,
+          fileName: pdfUrl.name || file.name,
           sellerId: seller.id,
           sellerName: seller.name,
           batchId,
           makeId: config.makeId,
           makeName: config.makeName,
           includeExistingListings: true,
-          pdfUrl: pdfUrl.url
+          pdfUrl: pdfUrl.url,
+          // Add variant hint based on filename
+          variantHint: extractVariantFromFilename(pdfUrl.url)
         })
       })
 
