@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Upload, FileText, Clock, CheckCircle } from 'lucide-react'
+import { Upload, FileText, Clock, CheckCircle, Layers } from 'lucide-react'
 import { SellerPDFUploadModal } from './SellerPDFUploadModal'
+import { SellerBulkPDFExtractionModal } from './SellerBulkPDFExtractionModal'
 import { BatchUploadErrorBoundary } from '@/components/ErrorBoundaries'
 
 import type { Seller } from '@/hooks/useSellers'
@@ -19,11 +20,13 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
   isProcessing = false
 }) => {
   const [showUploadDialog, setShowUploadDialog] = useState(false)
+  const [showBulkExtractionDialog, setShowBulkExtractionDialog] = useState(false)
   
   // Enable import for all dealers - use auto-detection for unknown brands
   const isSupportedDealer = true // Allow all dealers to use auto-detection
   
   const hasListings = (seller.total_listings || 0) > 0
+  const hasMultiplePdfUrls = (seller.pdf_urls?.length || 0) > 1
   
   const getImportButtonText = () => {
     if (isProcessing) return 'Processing...'
@@ -96,20 +99,42 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
     setShowUploadDialog(false)
     onImportClick(seller.id) // Trigger refresh
   }
+
+  const handleBulkExtractionComplete = () => {
+    console.log('Bulk extraction complete')
+    // Close dialog and refresh seller data
+    setShowBulkExtractionDialog(false)
+    onImportClick(seller.id) // Trigger refresh
+  }
   
   return (
     <>
       <div className="space-y-2">
-        <Button
-          variant={hasListings ? "outline" : "default"}
-          size="sm"
-          onClick={handleImportClick}
-          disabled={!isSupportedDealer || isProcessing}
-          className="w-full"
-        >
-        {getImportIcon()}
-        <span className="ml-2">{getImportButtonText()}</span>
-      </Button>
+        <div className="flex gap-2">
+          <Button
+            variant={hasListings ? "outline" : "default"}
+            size="sm"
+            onClick={handleImportClick}
+            disabled={!isSupportedDealer || isProcessing}
+            className="flex-1"
+          >
+            {getImportIcon()}
+            <span className="ml-2">{getImportButtonText()}</span>
+          </Button>
+          
+          {hasMultiplePdfUrls && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowBulkExtractionDialog(true)}
+              disabled={isProcessing}
+              title={`Extract all ${seller.pdf_urls?.length} PDFs`}
+            >
+              <Layers className="h-4 w-4" />
+              <span className="ml-2">{seller.pdf_urls?.length}</span>
+            </Button>
+          )}
+        </div>
       
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1 text-muted-foreground">
@@ -143,6 +168,20 @@ export const SellerImportButton: React.FC<SellerImportButtonProps> = ({
           onUploadComplete={handleUploadComplete}
         />
       </BatchUploadErrorBoundary>
+
+      {hasMultiplePdfUrls && (
+        <BatchUploadErrorBoundary
+          onRetry={() => setShowBulkExtractionDialog(true)}
+          onCancel={() => setShowBulkExtractionDialog(false)}
+        >
+          <SellerBulkPDFExtractionModal
+            open={showBulkExtractionDialog}
+            onOpenChange={setShowBulkExtractionDialog}
+            seller={seller}
+            onComplete={handleBulkExtractionComplete}
+          />
+        </BatchUploadErrorBoundary>
+      )}
     </>
   )
 }

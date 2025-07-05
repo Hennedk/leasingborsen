@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AdminListing } from '@/types/admin'
@@ -85,10 +86,11 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
         listing.is_draft && "opacity-75"
       )}
     >
-      <TableCell>
+      <TableCell onClick={(e) => e.stopPropagation()}>
         <Checkbox
           checked={isSelected}
           onCheckedChange={onToggleSelection}
+          onClick={(e) => e.stopPropagation()}
           aria-label={`Vælg ${listing.make} ${listing.model}`}
         />
       </TableCell>
@@ -221,9 +223,38 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
     )
   }
 
+  const hasSelectedItems = tableState.selectedListings.length > 0
+
   return (
     <TooltipProvider>
       <div className="space-y-4">
+        {/* Bulk actions bar - Outside table to prevent layout shift */}
+        {hasSelectedItems && (
+          <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
+            <span className="text-sm font-medium">
+              {tableState.selectedListings.length} annonce(r) valgt:
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => tableState.handleBulkAction('delete')}
+              className="flex items-center gap-2"
+              aria-label={`Slet ${tableState.selectedListings.length} valgte annoncer`}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+              Slet valgte
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => tableState.handleBulkAction('export')}
+              aria-label={`Eksporter ${tableState.selectedListings.length} valgte annoncer`}
+            >
+              Eksporter valgte
+            </Button>
+          </div>
+        )}
+
         {/* Table with header */}
         <div className="border rounded-lg">
           <Table>
@@ -231,7 +262,6 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
               listings={listings}
               selectedListings={tableState.selectedListings}
               onToggleSelectAll={() => tableState.toggleSelectAll(listings)}
-              onBulkAction={tableState.handleBulkAction}
             />
             <TableBody>
               {listings.map((listing) => (

@@ -1,15 +1,12 @@
 import React from 'react'
-import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Trash2 } from 'lucide-react'
 import type { CarListing } from '@/lib/supabase'
 
 interface ListingsTableHeaderProps {
   listings: CarListing[]
   selectedListings: CarListing[]
   onToggleSelectAll: () => void
-  onBulkAction: (action: string) => void
 }
 
 /**
@@ -19,48 +16,18 @@ interface ListingsTableHeaderProps {
 export const ListingsTableHeader = React.memo<ListingsTableHeaderProps>(({
   listings,
   selectedListings,
-  onToggleSelectAll,
-  onBulkAction
+  onToggleSelectAll
 }) => {
-  const hasSelectedItems = selectedListings.length > 0
   const allSelected = selectedListings.length === listings.length && listings.length > 0
 
   return (
-    <>
-      {/* Bulk actions bar */}
-      {hasSelectedItems && (
-        <div className="flex items-center gap-2 p-4 bg-muted rounded-lg mb-4">
-          <span className="text-sm font-medium">
-            {selectedListings.length} annonce(r) valgt:
-          </span>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onBulkAction('delete')}
-            className="flex items-center gap-2"
-            aria-label={`Slet ${selectedListings.length} valgte annoncer`}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-            Slet valgte
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onBulkAction('export')}
-            aria-label={`Eksporter ${selectedListings.length} valgte annoncer`}
-          >
-            Eksporter valgte
-          </Button>
-        </div>
-      )}
-
-      {/* Table header */}
-      <TableHeader>
+    <TableHeader>
         <TableRow>
-          <TableHead className="w-12">
+          <TableHead className="w-12" onClick={(e) => e.stopPropagation()}>
             <Checkbox
               checked={allSelected}
               onCheckedChange={onToggleSelectAll}
+              onClick={(e) => e.stopPropagation()}
               aria-label={allSelected ? "Fravælg alle annoncer" : "Vælg alle annoncer"}
             />
           </TableHead>
@@ -76,7 +43,6 @@ export const ListingsTableHeader = React.memo<ListingsTableHeaderProps>(({
           <TableHead className="w-32">Handlinger</TableHead>
         </TableRow>
       </TableHeader>
-    </>
   )
 })
 

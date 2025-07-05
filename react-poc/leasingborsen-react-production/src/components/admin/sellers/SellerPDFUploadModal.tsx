@@ -4,11 +4,15 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Upload, FileText, CheckCircle, AlertCircle, Info, Settings, ExternalLink } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Upload, FileText, CheckCircle, AlertCircle, Info, Settings, ExternalLink, Link } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useJobProgress } from '@/hooks/useJobProgress'
 import { toast } from 'sonner'
 import type { Seller } from '@/hooks/useSellers'
+import { useUpdateSeller } from '@/hooks/useSellerMutations'
 import { supabase } from '@/lib/supabase'
 
 interface ExtractionResult {
@@ -38,13 +42,17 @@ interface SellerPDFUploadModalProps {
 }
 
 interface UploadState {
+  // Input mode
+  inputMode: 'file' | 'url'
+  fileUrl: string
+  
   // Upload states
   isDragOver: boolean
   file: File | null
   
   // Processing states
   isProcessing: boolean
-  currentStep: 'idle' | 'railway' | 'ai' | 'complete' | 'error'
+  currentStep: 'idle' | 'downloading' | 'railway' | 'ai' | 'complete' | 'error'
   progress: number
   progressMessage: string
   
@@ -65,7 +73,10 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
   onUploadComplete: _onUploadComplete
 }) => {
   const navigate = useNavigate()
+  const updateSeller = useUpdateSeller()
   const [state, setState] = useState<UploadState>({
+    inputMode: 'file',
+    fileUrl: '',
     isDragOver: false,
     file: null,
     isProcessing: false,
@@ -82,7 +93,13 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
   // Reset state when modal opens to ensure fresh start
   React.useEffect(() => {
     if (open) {
+      // Check if seller has any PDF URLs
+      const hasPdfUrls = seller?.pdf_urls && seller.pdf_urls.length > 0
+      const hasLegacyUrl = seller?.pdf_url
+      
       setState({
+        inputMode: hasPdfUrls || hasLegacyUrl ? 'url' : 'file',
+        fileUrl: hasPdfUrls ? '' : (seller?.pdf_url || ''), // Don't auto-populate if multiple URLs
         isDragOver: false,
         file: null,
         isProcessing: false,
@@ -96,7 +113,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         jobId: null
       })
     }
-  }, [open])
+  }, [open, seller?.pdf_url, seller?.pdf_urls])
 
   // Monitor job progress for AI extraction
   const { startPolling } = useJobProgress(state.jobId || '', {
@@ -154,6 +171,46 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     }
   }, [seller])
 
+  // Recent URLs management
+  const [recentUrls, setRecentUrls] = useState<string[]>(() => {
+    const stored = localStorage.getItem('recentPDFUrls')
+    return stored ? JSON.parse(stored) : []
+  })
+
+  const addRecentUrl = useCallback((url: string) => {
+    const updated = [url, ...recentUrls.filter(u => u !== url)].slice(0, 5)
+    setRecentUrls(updated)
+    localStorage.setItem('recentPDFUrls', JSON.stringify(updated))
+  }, [recentUrls])
+
+  // URL validation
+  const validatePDFUrl = useCallback((url: string): boolean => {
+    try {
+      const urlObj = new URL(url)
+      
+      // Basic checks
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        return false
+      }
+      
+      // Check file extension (not foolproof but helpful)
+      if (urlObj.pathname.endsWith('.pdf')) {
+        return true
+      }
+      
+      // Check for common PDF URL patterns
+      if (urlObj.pathname.includes('/download/') ||
+          urlObj.pathname.includes('/pdf/') ||
+          urlObj.searchParams.has('format=pdf')) {
+        return true
+      }
+      
+      return true // Let server validate content-type
+    } catch {
+      return false
+    }
+  }, [])
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setState(prev => ({ ...prev, isDragOver: true }))
@@ -195,8 +252,46 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     }))
   }, [])
 
-  const processWithRailwayAndAI = useCallback(async () => {
-    if (!state.file) return
+  // Helper function to check if URL is already saved
+  const isUrlAlreadySaved = useCallback((url: string): boolean => {
+    if (!seller) return false
+    
+    // Check legacy single URL
+    if (seller.pdf_url === url) return true
+    
+    // Check multiple URLs
+    if (seller.pdf_urls) {
+      return seller.pdf_urls.some(pdfUrl => pdfUrl.url === url)
+    }
+    
+    return false
+  }, [seller])
+  
+  // Helper function to prompt and save URL
+  const promptToSaveUrl = useCallback((url: string) => {
+    if (!seller || isUrlAlreadySaved(url)) return
+    
+    setTimeout(() => {
+      const name = window.prompt('Giv denne PDF URL et navn (f.eks. "VW Personbiler", "Erhverv 2024"):', 'Standard prisliste')
+      
+      if (name) {
+        const currentPdfUrls = seller.pdf_urls || []
+        const updatedPdfUrls = [...currentPdfUrls, { name, url }]
+        
+        updateSeller.mutate({
+          id: seller.id,
+          pdf_urls: updatedPdfUrls
+        })
+        
+        toast.success('PDF URL gemt til fremtidig brug')
+      }
+    }, 500)
+  }, [seller, isUrlAlreadySaved, updateSeller])
+
+  const processWithRailwayAndAI = useCallback(async (fileToProcess?: File) => {
+    // Use provided file or fall back to state.file
+    const file = fileToProcess || state.file
+    if (!file) return
 
     const config = getExtractionConfig()
     
@@ -224,12 +319,12 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       try {
         const railwayUrl = 'https://leasingborsen-production.up.railway.app'
         const formData = new FormData()
-        formData.append('file', state.file)
+        formData.append('file', file)
         formData.append('profile', 'automotive')
 
         console.log('🚂 Railway: Starting PDF extraction...', {
-          file: state.file.name,
-          fileSize: `${(state.file.size / 1024 / 1024).toFixed(2)}MB`,
+          file: file.name,
+          fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
           url: `${railwayUrl}/extract/structured`
         })
 
@@ -303,7 +398,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         console.error('🚂 Railway: Extraction failed', railwayError)
         // Fallback to basic text extraction
         const errorMessage = railwayError instanceof Error ? railwayError.message : String(railwayError)
-        extractedText = `PDF file: ${state.file.name}\nFallback extraction - content not available\nError: ${errorMessage}`
+        extractedText = `PDF file: ${file.name}\nFallback extraction - content not available\nError: ${errorMessage}`
         
         // Show error in UI
         setState(prev => ({
@@ -396,7 +491,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       const aiRequestPayload = {
         text: extractedText,  // Changed from textContent to text
         dealerHint: seller.name,  // Changed from dealerName to dealerHint
-        fileName: state.file.name,
+        fileName: file.name,
         sellerId: seller.id,
         sellerName: seller.name,
         batchId,
@@ -407,14 +502,14 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         // Enhanced: Add existing dealer listings for consistent variant naming
         includeExistingListings: true,
         // Add PDF URL (can be a placeholder since we're not storing the actual PDF)
-        pdfUrl: `local://${state.file.name}`
+        pdfUrl: state.fileUrl || `local://${file.name}`
       }
 
       console.log('🤖 AI: Starting extraction with payload', {
         textContentLength: extractedText.length,
         textPreview: extractedText.substring(0, 200) + (extractedText.length > 200 ? '...' : ''),
         dealerName: seller.name,
-        fileName: state.file.name,
+        fileName: file.name,
         makeId: config.makeId,
         makeName: config.makeName,
         batchId
@@ -544,6 +639,11 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
               stats: actualStats
             }
           }))
+          
+          // Prompt to save PDF URL if it's not already saved and was entered via URL
+          if (state.inputMode === 'url' && state.fileUrl) {
+            promptToSaveUrl(state.fileUrl)
+          }
         } catch (dbError) {
           console.error('Error fetching extraction session data:', dbError)
           // Fallback to original behavior
@@ -567,6 +667,11 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
               }
             }
           }))
+          
+          // Prompt to save PDF URL if it's not already saved and was entered via URL
+          if (state.inputMode === 'url' && state.fileUrl) {
+            promptToSaveUrl(state.fileUrl)
+          }
         }
       } else if (aiResult.jobId) {
         // Legacy workflow: monitor job progress
@@ -594,6 +699,11 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             }
           }
         }))
+        
+        // Prompt to save PDF URL if it's not already saved and was entered via URL
+        if (state.inputMode === 'url' && state.fileUrl) {
+          promptToSaveUrl(state.fileUrl)
+        }
       }
 
     } catch (error) {
@@ -608,10 +718,109 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       
       toast.error('PDF processing failed')
     }
-  }, [state.file, seller, getExtractionConfig, startPolling])
+  }, [seller, getExtractionConfig, startPolling, state.fileUrl, state.inputMode, promptToSaveUrl])
 
+  // Handle URL submit
+  const handleURLSubmit = useCallback(async () => {
+    if (!state.fileUrl) {
+      setState(prev => ({ ...prev, error: 'Please enter a PDF URL' }))
+      return
+    }
+
+    if (!validatePDFUrl(state.fileUrl)) {
+      setState(prev => ({ ...prev, error: 'Invalid PDF URL format' }))
+      return
+    }
+
+    setState(prev => ({
+      ...prev,
+      isProcessing: true,
+      currentStep: 'downloading',
+      progress: 5,
+      progressMessage: 'Downloading PDF from URL...',
+      error: null
+    }))
+
+    try {
+      // Download PDF from URL
+      let response: Response
+      
+      // Check if we need to use the proxy (for external URLs)
+      const isLocalUrl = state.fileUrl.startsWith(window.location.origin) || 
+                        state.fileUrl.startsWith('/')
+      
+      if (isLocalUrl) {
+        // Direct fetch for local URLs
+        response = await fetch(state.fileUrl)
+      } else {
+        // Use proxy for external URLs to avoid CORS issues
+        console.log('Using PDF proxy for external URL:', state.fileUrl)
+        
+        const proxyResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pdf-proxy`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: state.fileUrl })
+        })
+        
+        response = proxyResponse
+      }
+      
+      if (!response.ok) {
+        // Try to get error details from proxy response
+        if (!isLocalUrl && response.headers.get('content-type')?.includes('json')) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || `Failed to download PDF: ${response.status}`)
+        }
+        throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`)
+      }
+
+      // Check content type
+      const contentType = response.headers.get('content-type')
+      if (!contentType?.includes('pdf')) {
+        throw new Error('URL does not point to a PDF file')
+      }
+
+      // Convert to File object
+      const blob = await response.blob()
+      const fileName = state.fileUrl.split('/').pop()?.split('?')[0] || 'downloaded.pdf'
+      const file = new File([blob], fileName, { type: 'application/pdf' })
+
+      // Update state with file
+      setState(prev => ({
+        ...prev,
+        file,
+        progress: 10,
+        progressMessage: 'PDF downloaded successfully, starting extraction...'
+      }))
+
+      // Add to recent URLs
+      addRecentUrl(state.fileUrl)
+
+      // Continue with existing processing pipeline
+      // Pass the file directly to avoid state timing issues
+      await processWithRailwayAndAI(file)
+
+    } catch (error) {
+      console.error('Error downloading PDF:', error)
+      setState(prev => ({
+        ...prev,
+        isProcessing: false,
+        currentStep: 'error',
+        error: error instanceof Error ? error.message : 'Failed to download PDF',
+        progress: 0
+      }))
+      
+      toast.error('Failed to download PDF from URL')
+    }
+  }, [state.fileUrl, validatePDFUrl, addRecentUrl, processWithRailwayAndAI])
+  
   const handleReset = useCallback(() => {
     setState({
+      inputMode: 'file',
+      fileUrl: '',
       isDragOver: false,
       file: null,
       isProcessing: false,
@@ -689,37 +898,138 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             </div>
           </div>
 
-          {/* File Upload Area */}
+          {/* File Upload / URL Input Area */}
           {!state.file && !state.isProcessing && (
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`
-                border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
-                transition-colors duration-200
-                ${state.isDragOver 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-border hover:border-primary/50'
-                }
-              `}
-              onClick={() => document.getElementById('pdf-upload-input')?.click()}
+            <Tabs 
+              value={state.inputMode} 
+              onValueChange={(value) => setState(prev => ({ ...prev, inputMode: value as 'file' | 'url' }))}
+              className="w-full"
             >
-              <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <p className="text-sm font-medium mb-2">
-                Drag and drop your PDF here, or click to browse
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Supports dealer price lists in PDF format
-              </p>
-              <input
-                id="pdf-upload-input"
-                type="file"
-                accept="application/pdf"
-                className="hidden"
-                onChange={handleFileSelect}
-              />
-            </div>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="file">Upload PDF</TabsTrigger>
+                <TabsTrigger value="url">PDF URL</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="file" className="mt-4">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`
+                    border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+                    transition-colors duration-200
+                    ${state.isDragOver 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-border hover:border-primary/50'
+                    }
+                  `}
+                  onClick={() => document.getElementById('pdf-upload-input')?.click()}
+                >
+                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-sm font-medium mb-2">
+                    Drag and drop your PDF here, or click to browse
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Supports dealer price lists in PDF format
+                  </p>
+                  <input
+                    id="pdf-upload-input"
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={handleFileSelect}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="url" className="mt-4 space-y-4">
+                {/* Saved PDF URLs Dropdown */}
+                {seller?.pdf_urls && seller.pdf_urls.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Gemte PDF URLs</Label>
+                    <div className="space-y-1">
+                      {seller.pdf_urls.map((pdfUrl, index) => (
+                        <Button
+                          key={index}
+                          variant={state.fileUrl === pdfUrl.url ? "secondary" : "ghost"}
+                          size="sm"
+                          className="w-full justify-start text-sm h-10"
+                          onClick={() => setState(prev => ({ ...prev, fileUrl: pdfUrl.url }))}
+                        >
+                          <FileText className="h-4 w-4 mr-2" />
+                          <span className="truncate font-medium">{pdfUrl.name}</span>
+                        </Button>
+                      ))}
+                    </div>
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">eller indtast ny URL</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="pdf-url">PDF URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="pdf-url"
+                      type="url"
+                      placeholder="https://example.com/prisliste.pdf"
+                      value={state.fileUrl}
+                      onChange={(e) => setState(prev => ({ ...prev, fileUrl: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && handleURLSubmit()}
+                      disabled={state.isProcessing}
+                    />
+                    <Button 
+                      onClick={handleURLSubmit}
+                      disabled={!state.fileUrl || state.isProcessing}
+                      className="gap-2"
+                    >
+                      <Link className="h-4 w-4" />
+                      Fetch PDF
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter a direct link to a PDF file from supported dealers (VW, Audi, BMW, Mercedes, etc.)
+                  </p>
+                </div>
+
+                {/* Recent URLs */}
+                {recentUrls.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm text-muted-foreground">Recent URLs</Label>
+                    <div className="space-y-1">
+                      {recentUrls.map((url, index) => {
+                        try {
+                          const urlObj = new URL(url)
+                          const displayName = url.split('/').pop()?.split('?')[0] || 'PDF'
+                          return (
+                            <Button
+                              key={index}
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start text-xs h-8"
+                              onClick={() => setState(prev => ({ ...prev, fileUrl: url }))}
+                            >
+                              <FileText className="h-3 w-3 mr-2" />
+                              <span className="truncate">
+                                {urlObj.hostname} - {displayName}
+                              </span>
+                            </Button>
+                          )
+                        } catch {
+                          return null
+                        }
+                      })}
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
 
           {/* Selected File */}
@@ -744,7 +1054,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
                 </Button>
                 <Button
                   size="sm"
-                  onClick={processWithRailwayAndAI}
+                  onClick={() => processWithRailwayAndAI()}
                 >
                   Extract with AI
                 </Button>
@@ -764,7 +1074,17 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
               </div>
               
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className={`h-2 w-2 rounded-full ${
+                {state.inputMode === 'url' && (
+                  <>
+                    <div className={`h-2 w-2 rounded-full ${
+                      state.currentStep === 'downloading' ? 'bg-blue-500 animate-pulse' : 
+                      state.progress > 10 ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                    <span>Download PDF</span>
+                  </>
+                )}
+                
+                <div className={`h-2 w-2 rounded-full ${state.inputMode === 'url' ? 'ml-4' : ''} ${
                   state.currentStep === 'railway' ? 'bg-blue-500 animate-pulse' : 
                   state.progress > 30 ? 'bg-green-500' : 'bg-gray-300'
                 }`} />
