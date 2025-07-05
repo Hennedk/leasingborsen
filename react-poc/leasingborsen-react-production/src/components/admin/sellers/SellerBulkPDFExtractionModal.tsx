@@ -792,22 +792,22 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
                   
                   {/* Merge Mode Toggle */}
                   {selectedUrls.length > 1 && (
-                    <div className="mt-4 p-4 bg-accent/20 rounded-lg border border-accent">
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-start space-x-3">
                         <Checkbox
                           id="merge-mode"
                           checked={mergeMode}
                           onCheckedChange={(checked) => setMergeMode(checked as boolean)}
-                          className="mt-0.5"
+                          className="mt-0.5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                         />
                         <div className="flex-1">
                           <label 
                             htmlFor="merge-mode" 
-                            className="text-sm font-medium cursor-pointer"
+                            className="text-sm font-medium cursor-pointer text-blue-900 dark:text-blue-100"
                           >
                             Merge PDFs before extraction
                           </label>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
                             Combine all selected PDFs into one extraction session. 
                             Perfect for dealers like Kia with separate PDFs per pricing option.
                             This will merge identical vehicles and keep all pricing offers.
