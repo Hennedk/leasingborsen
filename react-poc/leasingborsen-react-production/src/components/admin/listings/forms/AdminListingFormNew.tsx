@@ -77,6 +77,7 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
         onMakeChange={formState.handleMakeChange}
         onModelChange={formState.handleModelChange}
         onImagesChange={formState.handleImagesChange}
+        onProcessedImagesChange={formState.handleProcessedImagesChange}
         onJsonDataParsed={(data) => {
           // Store the offers data for later use when listing is created
           console.log('JSON offers data received:', data.offers)

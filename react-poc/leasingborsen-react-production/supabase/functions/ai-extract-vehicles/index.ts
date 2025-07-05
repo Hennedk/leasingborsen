@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import OpenAI from "https://esm.sh/openai@4.20.1"
+import OpenAI from "https://esm.sh/openai@4.76.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -102,12 +102,10 @@ serve(async (req) => {
     // Stored prompt configuration
     const useStoredPrompt = Deno.env.get('USE_OPENAI_STORED_PROMPT') === 'true'
     const storedPromptId = Deno.env.get('OPENAI_STORED_PROMPT_ID')
-    const storedPromptVersion = Deno.env.get('OPENAI_STORED_PROMPT_VERSION') || '3'
     
     console.log('[ai-extract-vehicles] Prompt configuration:', {
       useStoredPrompt,
-      storedPromptId: storedPromptId ? 'configured' : 'not configured',
-      storedPromptVersion
+      storedPromptId: storedPromptId ? 'configured' : 'not configured'
     })
 
     // Prepare reference data context (like original function)
@@ -256,6 +254,9 @@ IMPORTANT:
 - Each car must have at least one offer
 - Use the numeric codes for fuel_type, transmission, and body_type
 
+CRITICAL DEDUPLICATION RULE:
+If the same make + model + variant appears multiple times with identical technical specs (same WLTP, CO2, HP, etc.), merge them into ONE entry with ALL offers combined in the offers array. Only create separate entries when technical specifications differ (e.g., different WLTP values indicating different battery/engine configurations).
+
 ${referenceContext}
 ${existingListingsContext}
 ${variantExamplesContext}
@@ -278,23 +279,21 @@ ${finalText}`
     if (useStoredPrompt && storedPromptId) {
       console.log('[ai-extract-vehicles] Using stored prompt:', storedPromptId)
       
-      // Using stored prompt approach
-      // Note: The exact format may vary based on OpenAI's implementation
-      // This assumes the stored prompt contains the system message and expects user content
+      // For now, let's use the inline prompt approach since stored prompts 
+      // require special API access or different configuration
+      console.log('[ai-extract-vehicles] Falling back to inline prompts due to stored prompt API issues')
+      
+      // Using inline prompts with the same system prompt as the stored one
       completion = await openai.chat.completions.create({
         model: 'gpt-4.1',
         messages: [
           {
             role: 'system',
-            content: {
-              type: 'stored',
-              id: storedPromptId,
-              version: storedPromptVersion
-            } as any
+            content: systemPrompt
           },
           {
             role: 'user',
-            content: dynamicContent
+            content: userPrompt
           }
         ],
         temperature: 0.1,

@@ -94,6 +94,8 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
     }
 
     try {
+      console.log(`Starting extraction for ${pdfUrl.name} (${pdfUrl.url})`)
+      
       // Update status to downloading
       updatePdfStatus(pdfUrl.url, { status: 'downloading', progress: 10, message: 'Downloading PDF...' })
 
@@ -124,17 +126,87 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
       formData.append('file', file)
       formData.append('profile', 'automotive')
 
-      const railwayResponse = await fetch(`${railwayUrl}/extract/structured`, {
-        method: 'POST',
-        body: formData
-      })
+      // Add timeout to Railway request with retry logic
+      let railwayResponse
+      let retries = 2 // Allow 2 retries
+      let lastError: Error | null = null
+
+      while (retries >= 0) {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+
+        try {
+          console.log(`Attempting Railway extraction for ${pdfUrl.name} (${2 - retries} attempt)`)
+          
+          railwayResponse = await fetch(`${railwayUrl}/extract/structured`, {
+            method: 'POST',
+            body: formData,
+            signal: controller.signal
+          })
+          
+          clearTimeout(timeoutId)
+          
+          // If we got a response (even if not ok), break the retry loop
+          if (railwayResponse) {
+            break
+          }
+        } catch (fetchError) {
+          clearTimeout(timeoutId)
+          lastError = fetchError instanceof Error ? fetchError : new Error('Unknown error')
+          
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            lastError = new Error('Railway extraction timed out after 30 seconds')
+          } else {
+            lastError = new Error(`Railway connection failed: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`)
+          }
+          
+          console.error(`Railway attempt ${2 - retries} failed:`, lastError.message)
+          
+          retries--
+          if (retries >= 0) {
+            // Wait a bit before retrying
+            await new Promise(resolve => setTimeout(resolve, 2000))
+          }
+        }
+      }
+
+      if (!railwayResponse) {
+        throw lastError || new Error('Railway extraction failed after all retries')
+      }
 
       if (!railwayResponse.ok) {
-        throw new Error('Railway extraction failed')
+        let errorMessage = `Railway extraction failed with status ${railwayResponse.status}`
+        
+        // Common error status explanations
+        if (railwayResponse.status === 500) {
+          errorMessage += ' (Internal Server Error - Railway service may be experiencing issues)'
+        } else if (railwayResponse.status === 502) {
+          errorMessage += ' (Bad Gateway - Railway service may be down)'
+        } else if (railwayResponse.status === 503) {
+          errorMessage += ' (Service Unavailable - Railway service may be overloaded)'
+        } else if (railwayResponse.status === 504) {
+          errorMessage += ' (Gateway Timeout - Railway service took too long to respond)'
+        }
+        
+        try {
+          const errorData = await railwayResponse.text()
+          if (errorData) {
+            errorMessage += `: ${errorData.substring(0, 200)}` // Limit error message length
+          }
+        } catch (e) {
+          // Ignore error parsing
+        }
+        throw new Error(errorMessage)
       }
 
       const railwayData = await railwayResponse.json()
       const extractedText = railwayData.text || railwayData.content || ''
+
+      if (!extractedText) {
+        throw new Error('No text extracted from PDF')
+      }
+
+      console.log(`Railway extraction successful for ${pdfUrl.name}, extracted ${extractedText.length} characters`)
 
       // Update status to processing
       updatePdfStatus(pdfUrl.url, { status: 'processing', progress: 60, message: 'Processing with AI...' })
@@ -221,6 +293,21 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
 
     setIsProcessing(true)
     setCurrentPdfIndex(0)
+
+    // Quick health check for Railway service
+    try {
+      const healthResponse = await fetch('https://leasingborsen-production.up.railway.app/health', {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      })
+      
+      if (!healthResponse.ok) {
+        console.warn('Railway health check failed, but continuing anyway')
+      }
+    } catch (error) {
+      console.warn('Could not reach Railway service for health check:', error)
+      toast.warning('Railway service may be experiencing issues. Extraction may be slower.')
+    }
 
     const selectedPdfs = seller.pdf_urls?.filter(pdf => selectedUrls.includes(pdf.url)) || []
     

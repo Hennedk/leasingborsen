@@ -15,23 +15,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
-
-interface CarListing {
-  listing_id?: string
-  id?: string
-  make: string
-  model: string
-  variant?: string
-  monthly_price?: number
-  mileage_per_year?: number
-  first_payment?: number
-  fuel_type?: string
-  transmission?: string
-  body_type?: string
-  horsepower?: number
-  image?: string
-  thumbnail_base64?: string
-}
+import type { CarListing } from '@/types'
 
 interface ListingCardProps {
   car?: CarListing | null
@@ -47,7 +31,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     imageError,
     retryImage,
     canRetry
-  } = useImageLazyLoading(car?.image, {
+  } = useImageLazyLoading(car?.processed_image_grid || car?.image, {
     threshold: 0.1,
     rootMargin: '200px',
     maxRetries: 3
@@ -204,7 +188,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         {/* Progressive Image Loading with Enhanced Error States */}
         <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
           {/* Enhanced placeholder for missing images */}
-          {!car.image ? (
+          {!car.image && !car.processed_image_grid ? (
             <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] flex items-center justify-center text-muted-foreground w-full h-56">
               <div className="text-center space-y-2">
                 <div className="w-12 h-12 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center">
@@ -233,10 +217,10 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/70 animate-pulse z-10" />
               )}
               
-              {/* High-resolution image */}
+              {/* High-resolution image - prefer processed grid image */}
               <img
                 ref={imageRef}
-                src={car.image}
+                src={car.processed_image_grid || car.image}
                 alt={carAltText}
                 className={`w-full h-56 object-cover transition-opacity duration-500 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'

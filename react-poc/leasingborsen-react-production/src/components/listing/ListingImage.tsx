@@ -15,13 +15,13 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   return (
     <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
       <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
-        {car.image && !imageError ? (
+        {(car.processed_image_detail || car.image) && !imageError ? (
           <>
             {imageLoading && (
               <Skeleton className="w-full h-96 absolute inset-0" />
             )}
             <img 
-              src={car.image} 
+              src={car.processed_image_detail || car.image} 
               alt={`${car.make} ${car.model}`}
               className={cn(
                 "w-full h-96 object-cover transition-opacity duration-500 ease-out",

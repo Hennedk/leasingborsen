@@ -33,13 +33,15 @@ interface ImageUploadProps {
   maxImages?: number
   className?: string
   enableBackgroundRemoval?: boolean
-  onBackgroundRemovalComplete?: (processed: string, original: string) => void
+  onBackgroundRemovalComplete?: (processed: string, original: string, gridUrl?: string, detailUrl?: string) => void
 }
 
 interface ProcessingPreview {
   file: File
   originalUrl: string
   processedUrl?: string
+  gridUrl?: string
+  detailUrl?: string
   error?: string
 }
 
@@ -74,19 +76,13 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     reset: resetProcessing
   } = useBackgroundRemoval({
     onSuccess: (result) => {
-      // Use detail view (1600x800) for better quality
-      if (result.standardizedImages?.detail) {
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          processedUrl: result.standardizedImages!.detail!.url
-        } : null)
-      } else if (result.standardizedImages?.grid) {
-        // Fallback to grid if detail not available
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          processedUrl: result.standardizedImages!.grid!.url
-        } : null)
-      }
+      // Store both grid and detail URLs
+      setProcessingPreview(prev => prev ? {
+        ...prev,
+        processedUrl: result.standardizedImages?.detail?.url || result.standardizedImages?.grid?.url,
+        gridUrl: result.standardizedImages?.grid?.url,
+        detailUrl: result.standardizedImages?.detail?.url
+      } : null)
     },
     onError: (error) => {
       setProcessingPreview(prev => prev ? {
@@ -180,16 +176,18 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     if (!processingPreview?.processedUrl || !processingPreview.file) return
 
     try {
-      // Upload the processed image
-      const response = await fetch(processingPreview.processedUrl)
-      const blob = await response.blob()
-      const processedFile = new File([blob], processingPreview.file.name, { type: 'image/png' })
+      // Use the detail URL as the main image (it's higher quality)
+      const mainImageUrl = processingPreview.detailUrl || processingPreview.processedUrl
       
-      const uploadedImage = await uploadImage(processedFile)
-      onImagesChange([...images, uploadedImage.publicUrl])
+      onImagesChange([...images, mainImageUrl])
       
       if (onBackgroundRemovalComplete) {
-        onBackgroundRemovalComplete(uploadedImage.publicUrl, processingPreview.originalUrl)
+        onBackgroundRemovalComplete(
+          mainImageUrl, 
+          processingPreview.originalUrl,
+          processingPreview.gridUrl,
+          processingPreview.detailUrl
+        )
       }
       
       toast.success('Billede med fjernet baggrund uploadet')
@@ -200,7 +198,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       console.error('Error uploading processed image:', error)
       toast.error('Fejl ved upload af behandlet billede')
     }
-  }, [processingPreview, uploadImage, images, onImagesChange, onBackgroundRemovalComplete, resetProcessing])
+  }, [processingPreview, images, onImagesChange, onBackgroundRemovalComplete, resetProcessing])
 
   const handleUseOriginal = useCallback(async () => {
     if (!processingPreview?.file) return

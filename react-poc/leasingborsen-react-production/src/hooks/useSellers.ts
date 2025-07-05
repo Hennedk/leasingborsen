@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 
+export interface SellerPDFUrl {
+  name: string
+  url: string
+}
+
 export interface Seller {
   id: string
   name: string
@@ -10,6 +15,8 @@ export interface Seller {
   address?: string | null
   country?: string | null
   logo_url?: string | null
+  pdf_url?: string | null // URL to dealer's PDF price list (legacy - single URL)
+  pdf_urls?: SellerPDFUrl[] | null // Multiple named PDF URLs
   make_id?: string | null // Reference to makes table
   make_name?: string | null // Populated from join
   created_at?: string // Made optional in case DB doesn't have this column

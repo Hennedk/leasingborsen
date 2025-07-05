@@ -132,6 +132,9 @@ export interface LeasePricing {
 // Media and presentation
 export interface CarMedia {
   image?: string
+  images?: string[]
+  processed_image_grid?: string
+  processed_image_detail?: string
   thumbnail_base64?: string
   description?: string
 }

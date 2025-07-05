@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import type { Seller } from './useSellers'
 
+import type { SellerPDFUrl } from './useSellers'
+
 export interface CreateSellerData {
   name: string
   email?: string
@@ -11,6 +13,8 @@ export interface CreateSellerData {
   address?: string
   country?: string
   logo_url?: string
+  pdf_url?: string
+  pdf_urls?: SellerPDFUrl[]
   make_id?: string
 }
 

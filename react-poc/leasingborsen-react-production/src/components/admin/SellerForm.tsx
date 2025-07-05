@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Save, ArrowLeft } from 'lucide-react'
+import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useCreateSeller, useUpdateSeller, type CreateSellerData } from '@/hooks/useSellerMutations'
 import type { Seller } from '@/hooks/useSellers'
 import { useMakes } from '@/hooks/useReferenceData'
@@ -35,6 +36,11 @@ const sellerSchema = z.object({
   address: z.string().optional(),
   country: z.string().optional(),
   logo_url: z.string().url('Ugyldig URL').optional().or(z.literal('')),
+  pdf_url: z.string().url('Ugyldig URL').optional().or(z.literal('')),
+  pdf_urls: z.array(z.object({
+    name: z.string().min(1, 'Navn er påkrævet'),
+    url: z.string().url('Ugyldig URL')
+  })).optional(),
   make_id: z.string().optional()
 })
 
@@ -64,6 +70,8 @@ const SellerForm = React.memo<SellerFormProps>(({
       address: seller?.address || '',
       country: seller?.country || 'Denmark',
       logo_url: seller?.logo_url || '',
+      pdf_url: seller?.pdf_url || '',
+      pdf_urls: seller?.pdf_urls || [],
       make_id: seller?.make_id || 'none'
     }
   })
@@ -81,6 +89,8 @@ const SellerForm = React.memo<SellerFormProps>(({
         address: data.address || undefined,
         country: data.country || undefined,
         logo_url: data.logo_url || undefined,
+        pdf_url: data.pdf_url || undefined,
+        pdf_urls: data.pdf_urls && data.pdf_urls.length > 0 ? data.pdf_urls : undefined,
         make_id: data.make_id && data.make_id !== 'none' ? data.make_id : undefined
       }
 
@@ -328,6 +338,122 @@ const SellerForm = React.memo<SellerFormProps>(({
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        {/* PDF Import */}
+        <Card>
+          <CardHeader>
+            <CardTitle>PDF Import</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Multiple PDF URLs */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <FormLabel>PDF URLs til Prislister</FormLabel>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const currentPdfUrls = form.getValues('pdf_urls') || []
+                    form.setValue('pdf_urls', [...currentPdfUrls, { name: '', url: '' }])
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Tilføj PDF URL
+                </Button>
+              </div>
+              
+              {form.watch('pdf_urls')?.map((_, index) => (
+                <div key={index} className="space-y-4 p-4 border rounded-lg">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 space-y-4">
+                      <FormField
+                        control={form.control}
+                        name={`pdf_urls.${index}.name`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Navn</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="f.eks. VW Personbiler, Audi Q-Series, Erhverv 2024" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name={`pdf_urls.${index}.url`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>URL</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="url" 
+                                placeholder="f.eks. https://prislister.volkswagen.dk/leasingpriser" 
+                                {...field} 
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        const currentPdfUrls = form.getValues('pdf_urls') || []
+                        form.setValue('pdf_urls', currentPdfUrls.filter((_, i) => i !== index))
+                      }}
+                      className="mt-8"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              
+              {(!form.watch('pdf_urls') || form.watch('pdf_urls')?.length === 0) && (
+                <p className="text-sm text-muted-foreground">
+                  Ingen PDF URLs tilføjet. Klik "Tilføj PDF URL" for at tilføje prisliste URLs.
+                </p>
+              )}
+              
+              <FormDescription>
+                Tilføj en eller flere PDF URLs til forhandlerens prislister. 
+                Giv hver URL et beskrivende navn for nem identifikation.
+              </FormDescription>
+            </div>
+
+            {/* Legacy single PDF URL (hidden if pdf_urls exist) */}
+            {(!form.watch('pdf_urls') || form.watch('pdf_urls')?.length === 0) && (
+              <FormField
+                control={form.control}
+                name="pdf_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Enkelt PDF URL (Legacy)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="url" 
+                        placeholder="f.eks. https://prislister.volkswagen.dk/leasingpriser" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
           </CardContent>
         </Card>
 

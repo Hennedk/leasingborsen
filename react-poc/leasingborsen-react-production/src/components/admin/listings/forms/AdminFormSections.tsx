@@ -22,6 +22,7 @@ interface AdminFormSectionsProps {
   onMakeChange: (makeId: string) => void
   onModelChange: (modelId: string) => void
   onImagesChange: (images: string[]) => void
+  onProcessedImagesChange?: (grid: string | null, detail: string | null) => void
   onJsonDataParsed?: (data: any) => void
 }
 
@@ -39,6 +40,7 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
   onMakeChange,
   onModelChange,
   onImagesChange,
+  onProcessedImagesChange,
   onJsonDataParsed
 }) => {
   return (
@@ -119,6 +121,7 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
               <MediaSectionWithBackgroundRemoval 
                 control={control}
                 onImagesChange={onImagesChange}
+                onProcessedImagesChange={onProcessedImagesChange}
                 enableBackgroundRemoval={true}
               />
             </CardContent>

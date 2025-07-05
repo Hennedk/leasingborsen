@@ -14,12 +14,14 @@ interface MediaSectionProps {
   control: Control<CarListingFormData>
   onImagesChange: (images: string[]) => void
   enableBackgroundRemoval?: boolean
+  onProcessedImagesChange?: (grid: string | null, detail: string | null) => void
 }
 
 export const MediaSectionWithBackgroundRemoval = React.memo<MediaSectionProps>(({ 
   control, 
   onImagesChange,
-  enableBackgroundRemoval = true
+  enableBackgroundRemoval = true,
+  onProcessedImagesChange
 }) => {
   return (
     <TooltipProvider>
@@ -39,8 +41,12 @@ export const MediaSectionWithBackgroundRemoval = React.memo<MediaSectionProps>((
                   }}
                   maxImages={10}
                   enableBackgroundRemoval={enableBackgroundRemoval}
-                  onBackgroundRemovalComplete={(processed, original) => {
-                    console.log('Background removed:', { processed, original })
+                  onBackgroundRemovalComplete={(processed, original, gridUrl, detailUrl) => {
+                    console.log('Background removed:', { processed, original, gridUrl, detailUrl })
+                    // Notify parent component
+                    if (onProcessedImagesChange) {
+                      onProcessedImagesChange(gridUrl || null, detailUrl || null)
+                    }
                   }}
                 />
               </FormControl>

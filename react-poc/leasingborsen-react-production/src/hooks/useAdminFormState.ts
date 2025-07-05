@@ -30,6 +30,10 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [selectedMakeId, setSelectedMakeId] = useState<string>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [processedImages, setProcessedImages] = useState<{
+    grid: string | null
+    detail: string | null
+  }>({ grid: null, detail: null })
 
   // Form default values
   const defaultValues = useMemo(() => ({
@@ -58,6 +62,8 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     // Media
     images: listing?.image ? [listing.image] : [],
     image_urls: [],
+    processed_image_grid: listing?.processed_image_grid || '',
+    processed_image_detail: listing?.processed_image_detail || '',
   }), [listing])
 
   // Initialize form
@@ -93,6 +99,12 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
   const handleImagesChange = useCallback((images: string[]) => {
     form.setValue('images', images, { shouldDirty: true })
     form.setValue('image_urls', images, { shouldDirty: true })
+  }, [form])
+
+  const handleProcessedImagesChange = useCallback((grid: string | null, detail: string | null) => {
+    setProcessedImages({ grid, detail })
+    if (grid) form.setValue('processed_image_grid', grid, { shouldDirty: true })
+    if (detail) form.setValue('processed_image_detail', detail, { shouldDirty: true })
   }, [form])
 
   const handleCancel = useCallback(() => {
@@ -166,6 +178,9 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         wltp: data.wltp ? parseInt(data.wltp as unknown as string) : null,
         seller_id: data.seller_id || null,
         image: data.images?.[0] || null,
+        images: data.images || [],
+        processed_image_grid: processedImages.grid || null,
+        processed_image_detail: processedImages.detail || null,
       }
 
       if (isEditing && currentListingId) {
@@ -306,6 +321,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     handleReset,
     handleMakeChange,
     handleModelChange,
-    handleImagesChange
+    handleImagesChange,
+    handleProcessedImagesChange
   }
 }
