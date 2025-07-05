@@ -110,12 +110,138 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
       })
 
       if (!proxyResponse.ok) {
-        throw new Error(`Failed to download PDF: ${proxyResponse.status}`)
+        const errorData = await proxyResponse.json().catch(() => ({ error: 'Unknown error' }))
+        console.error(`PDF proxy error for ${pdfUrl.name}:`, errorData)
+        throw new Error(`Failed to download PDF: ${proxyResponse.status} - ${errorData.error || 'Unknown error'}`)
       }
 
+      const contentType = proxyResponse.headers.get('content-type')
+      console.log(`PDF proxy response for ${pdfUrl.name}:`, {
+        contentType,
+        contentLength: proxyResponse.headers.get('content-length'),
+        status: proxyResponse.status
+      })
+
       const blob = await proxyResponse.blob()
+      
+      // Validate that we got actual content
+      if (blob.size === 0) {
+        throw new Error('Downloaded file is empty')
+      }
+      
+      // Check if it's actually a PDF by looking at the first few bytes
+      const arrayBuffer = await blob.slice(0, 5).arrayBuffer()
+      const bytes = new Uint8Array(arrayBuffer)
+      const pdfHeader = String.fromCharCode(...bytes)
+      
+      if (!pdfHeader.startsWith('%PDF')) {
+        console.warn(`Not a PDF for ${pdfUrl.name}, checking if it's an HTML page...`)
+        
+        // It might be an HTML page displaying the PDF
+        // Try to extract the actual PDF URL from the HTML
+        const text = await blob.text()
+        
+        // Common patterns for PDF URLs in HTML
+        const patterns = [
+          // iframe src
+          /<iframe[^>]+src=["']([^"']+\.pdf[^"']*)/i,
+          // embed src
+          /<embed[^>]+src=["']([^"']+\.pdf[^"']*)/i,
+          // object data
+          /<object[^>]+data=["']([^"']+\.pdf[^"']*)/i,
+          // Direct PDF links
+          /href=["']([^"']+\.pdf[^"']*)/i,
+          // PDF viewer URLs
+          /pdfUrl=["']?([^"'&\s]+\.pdf[^"'&\s]*)/i,
+          // Common PDF viewer patterns
+          /viewer.*[?&]file=([^&\s]+\.pdf[^&\s]*)/i,
+          // Hyundai specific pattern
+          /window\.open\(['"]([^'"]+\.pdf[^'"]*)/i,
+          // Download button patterns
+          /download.*href=["']([^"']+\.pdf[^"']*)/i,
+          // Data attributes
+          /data-pdf-url=["']([^"']+\.pdf[^"']*)/i,
+          // JavaScript variable assignments
+          /(?:var|let|const)\s+\w*[Pp]df\w*\s*=\s*["']([^"']+\.pdf[^"']*)/i,
+        ]
+        
+        let actualPdfUrl: string | null = null
+        
+        for (const pattern of patterns) {
+          const match = text.match(pattern)
+          if (match) {
+            actualPdfUrl = match[1]
+            
+            // URL decode in case it's encoded
+            try {
+              actualPdfUrl = decodeURIComponent(actualPdfUrl)
+            } catch (e) {
+              // If decoding fails, use the original
+            }
+            
+            // Make it absolute if it's relative
+            if (actualPdfUrl.startsWith('/')) {
+              const baseUrl = new URL(pdfUrl.url)
+              actualPdfUrl = `${baseUrl.protocol}//${baseUrl.host}${actualPdfUrl}`
+            } else if (!actualPdfUrl.startsWith('http')) {
+              const baseUrl = new URL(pdfUrl.url)
+              actualPdfUrl = new URL(actualPdfUrl, baseUrl.href).href
+            }
+            console.log(`Found PDF URL in HTML for ${pdfUrl.name}: ${actualPdfUrl}`)
+            break
+          }
+        }
+        
+        if (!actualPdfUrl) {
+          // Log first 500 chars of HTML to help debug
+          console.error(`Could not find PDF URL in HTML for ${pdfUrl.name}. HTML preview:`, text.substring(0, 500))
+          
+          // Check if this might be a specific known pattern
+          if (text.includes('katalog.hyundai.dk')) {
+            throw new Error('This is a Hyundai catalog viewer page. Please right-click the download button and copy the direct PDF link instead.')
+          } else if (text.includes('viewer') || text.includes('pdf-viewer')) {
+            throw new Error('This is a PDF viewer page. Please find the download button and copy the direct PDF link.')
+          } else {
+            throw new Error('This appears to be a web page, not a direct PDF link. Please use the direct PDF download URL (usually found by right-clicking the download button and copying the link).')
+          }
+        }
+        
+        // Try downloading the actual PDF
+        console.log(`Attempting to download actual PDF from: ${actualPdfUrl}`)
+        updatePdfStatus(pdfUrl.url, { status: 'downloading', progress: 15, message: 'Found PDF link, downloading actual PDF...' })
+        
+        const actualPdfResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pdf-proxy`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url: actualPdfUrl })
+        })
+        
+        if (!actualPdfResponse.ok) {
+          throw new Error(`Failed to download actual PDF: ${actualPdfResponse.status}`)
+        }
+        
+        const actualPdfBlob = await actualPdfResponse.blob()
+        
+        // Verify this is actually a PDF
+        const actualArrayBuffer = await actualPdfBlob.slice(0, 5).arrayBuffer()
+        const actualBytes = new Uint8Array(actualArrayBuffer)
+        const actualPdfHeader = String.fromCharCode(...actualBytes)
+        
+        if (!actualPdfHeader.startsWith('%PDF')) {
+          throw new Error('Downloaded file from extracted URL is still not a valid PDF')
+        }
+        
+        // Use the actual PDF blob
+        blob = actualPdfBlob
+      }
+
       const fileName = pdfUrl.url.split('/').pop()?.split('?')[0] || 'downloaded.pdf'
       const file = new File([blob], fileName, { type: 'application/pdf' })
+      
+      console.log(`Successfully downloaded PDF ${pdfUrl.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB`)
 
       // Update status to extracting
       updatePdfStatus(pdfUrl.url, { status: 'extracting', progress: 30, message: 'Extracting text from PDF...' })
