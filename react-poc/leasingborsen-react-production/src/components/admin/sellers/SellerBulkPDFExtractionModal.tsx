@@ -49,6 +49,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
   const [currentPdfIndex, setCurrentPdfIndex] = useState(0)
   const [extractionStatuses, setExtractionStatuses] = useState<PDFExtractionStatus[]>([])
   const [overallProgress, setOverallProgress] = useState(0)
+  const [mergeMode, setMergeMode] = useState(false)
 
   // Initialize selected URLs when modal opens
   React.useEffect(() => {
@@ -85,6 +86,186 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
   }, [])
 
   // Process a single PDF URL
+  // Process multiple PDFs by merging their text content
+  const processMergedPdfs = async (pdfUrls: SellerPDFUrl[]): Promise<PDFExtractionStatus> => {
+    const mergedStatus: PDFExtractionStatus = {
+      url: 'merged',
+      name: `Merged ${pdfUrls.length} PDFs`,
+      status: 'downloading',
+      progress: 0
+    }
+
+    try {
+      console.log(`Starting merged extraction for ${pdfUrls.length} PDFs`)
+      
+      // Step 1: Download and extract text from all PDFs
+      const extractedTexts: { name: string; text: string }[] = []
+      
+      for (let i = 0; i < pdfUrls.length; i++) {
+        const pdfUrl = pdfUrls[i]
+        const progress = Math.round((i / pdfUrls.length) * 30) // 0-30% for downloading
+        
+        updatePdfStatus('merged', { 
+          status: 'downloading', 
+          progress, 
+          message: `Downloading PDF ${i + 1} of ${pdfUrls.length}: ${pdfUrl.name}` 
+        })
+
+        try {
+          // Download PDF
+          const proxyResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pdf-proxy`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url: pdfUrl.url })
+          })
+
+          if (!proxyResponse.ok) {
+            throw new Error(`Failed to download ${pdfUrl.name}`)
+          }
+
+          const blob = await proxyResponse.blob()
+          
+          // Validate PDF
+          const arrayBuffer = await blob.slice(0, 5).arrayBuffer()
+          const bytes = new Uint8Array(arrayBuffer)
+          const pdfHeader = String.fromCharCode(...bytes)
+          
+          if (!pdfHeader.startsWith('%PDF')) {
+            throw new Error(`${pdfUrl.name} is not a valid PDF`)
+          }
+
+          const fileName = pdfUrl.url.split('/').pop()?.split('?')[0] || 'downloaded.pdf'
+          const file = new File([blob], fileName, { type: 'application/pdf' })
+
+          // Extract text using Railway
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('profile', 'automotive')
+
+          const railwayResponse = await fetch(`https://leasingborsen-production.up.railway.app/extract/structured`, {
+            method: 'POST',
+            body: formData
+          })
+
+          if (!railwayResponse.ok) {
+            throw new Error(`Railway extraction failed for ${pdfUrl.name}`)
+          }
+
+          const railwayData = await railwayResponse.json()
+          const extractedText = railwayData.text || railwayData.content || ''
+
+          if (extractedText) {
+            extractedTexts.push({
+              name: pdfUrl.name,
+              text: extractedText
+            })
+            console.log(`Extracted ${extractedText.length} chars from ${pdfUrl.name}`)
+          }
+
+        } catch (error) {
+          console.error(`Failed to process ${pdfUrl.name}:`, error)
+          // Continue with other PDFs even if one fails
+        }
+      }
+
+      if (extractedTexts.length === 0) {
+        throw new Error('No text could be extracted from any PDF')
+      }
+
+      // Step 2: Combine all extracted texts
+      updatePdfStatus('merged', { 
+        status: 'processing', 
+        progress: 40, 
+        message: `Combining text from ${extractedTexts.length} PDFs...` 
+      })
+
+      const combinedText = extractedTexts
+        .map(({ name, text }) => `\n=== PDF: ${name} ===\n${text}`)
+        .join('\n\n')
+
+      console.log(`Combined text length: ${combinedText.length} characters from ${extractedTexts.length} PDFs`)
+
+      // Step 3: Process with AI
+      updatePdfStatus('merged', { 
+        status: 'processing', 
+        progress: 60, 
+        message: 'Processing combined PDFs with AI...' 
+      })
+
+      const batchId = `batch_merged_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      const config = {
+        makeId: seller.make_id || null,
+        makeName: seller.make_name || 'Unknown'
+      }
+
+      const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          text: combinedText,
+          dealerHint: seller.name,
+          fileName: `Merged ${pdfUrls.length} PDFs`,
+          sellerId: seller.id,
+          sellerName: seller.name,
+          batchId,
+          makeId: config.makeId,
+          makeName: config.makeName,
+          includeExistingListings: true,
+          pdfUrl: pdfUrls.map(p => p.url).join(', ')
+        })
+      })
+
+      if (!aiResponse.ok) {
+        const errorData = await aiResponse.json()
+        throw new Error(errorData.error || 'AI extraction failed')
+      }
+
+      const aiResult = await aiResponse.json()
+
+      updatePdfStatus('merged', { 
+        status: 'complete', 
+        progress: 100, 
+        message: 'Merged extraction complete!',
+        extractionSessionId: aiResult.extractionSessionId,
+        itemsExtracted: aiResult.summary?.totalExtracted || aiResult.itemsProcessed || 0
+      })
+
+      return {
+        url: 'merged',
+        name: `Merged ${pdfUrls.length} PDFs`,
+        status: 'complete',
+        progress: 100,
+        extractionSessionId: aiResult.extractionSessionId,
+        itemsExtracted: aiResult.summary?.totalExtracted || aiResult.itemsProcessed || 0
+      }
+
+    } catch (error) {
+      console.error('Error in merged PDF processing:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      updatePdfStatus('merged', { 
+        status: 'error', 
+        progress: 0, 
+        error: errorMessage,
+        message: `Failed: ${errorMessage}`
+      })
+
+      return {
+        url: 'merged',
+        name: `Merged ${pdfUrls.length} PDFs`,
+        status: 'error',
+        progress: 0,
+        error: errorMessage
+      }
+    }
+  }
+
   const processSinglePdf = async (pdfUrl: SellerPDFUrl): Promise<PDFExtractionStatus> => {
     const status: PDFExtractionStatus = {
       url: pdfUrl.url,
@@ -437,31 +618,60 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
 
     const selectedPdfs = seller.pdf_urls?.filter(pdf => selectedUrls.includes(pdf.url)) || []
     
-    // Process PDFs sequentially
-    for (let i = 0; i < selectedPdfs.length; i++) {
-      setCurrentPdfIndex(i)
-      setOverallProgress(Math.round((i / selectedPdfs.length) * 100))
+    if (mergeMode && selectedPdfs.length > 1) {
+      // Merge mode: Process all PDFs together
+      console.log(`Starting merged extraction for ${selectedPdfs.length} PDFs`)
       
-      await processSinglePdf(selectedPdfs[i])
+      // Initialize status for merged extraction
+      setExtractionStatuses([{
+        url: 'merged',
+        name: `Merged ${selectedPdfs.length} PDFs`,
+        status: 'pending',
+        progress: 0
+      }])
       
-      // Add a small delay between PDFs to avoid overwhelming the services
-      if (i < selectedPdfs.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+      const result = await processMergedPdfs(selectedPdfs)
+      
+      // Update the status with the result
+      setExtractionStatuses([result])
+      
+      setOverallProgress(100)
+      setIsProcessing(false)
+      
+      // Show summary
+      if (result.status === 'complete') {
+        toast.success(`Successfully extracted ${result.itemsExtracted || 0} vehicles from ${selectedPdfs.length} merged PDFs`)
+      } else {
+        toast.error(`Failed to extract from merged PDFs: ${result.error}`)
       }
-    }
+      
+    } else {
+      // Sequential mode: Process PDFs one by one
+      for (let i = 0; i < selectedPdfs.length; i++) {
+        setCurrentPdfIndex(i)
+        setOverallProgress(Math.round((i / selectedPdfs.length) * 100))
+        
+        await processSinglePdf(selectedPdfs[i])
+        
+        // Add a small delay between PDFs to avoid overwhelming the services
+        if (i < selectedPdfs.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
 
-    setOverallProgress(100)
-    setIsProcessing(false)
+      setOverallProgress(100)
+      setIsProcessing(false)
 
-    // Show summary toast
-    const completed = extractionStatuses.filter(s => s.status === 'complete').length
-    const failed = extractionStatuses.filter(s => s.status === 'error').length
-    
-    if (completed > 0) {
-      toast.success(`Successfully extracted ${completed} PDF${completed > 1 ? 's' : ''}`)
-    }
-    if (failed > 0) {
-      toast.error(`Failed to extract ${failed} PDF${failed > 1 ? 's' : ''}`)
+      // Show summary toast
+      const completed = extractionStatuses.filter(s => s.status === 'complete').length
+      const failed = extractionStatuses.filter(s => s.status === 'error').length
+      
+      if (completed > 0) {
+        toast.success(`Successfully extracted ${completed} PDF${completed > 1 ? 's' : ''}`)
+      }
+      if (failed > 0) {
+        toast.error(`Failed to extract ${failed} PDF${failed > 1 ? 's' : ''}`)
+      }
     }
   }
 
@@ -579,6 +789,33 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
                       ))}
                     </div>
                   </ScrollArea>
+                  
+                  {/* Merge Mode Toggle */}
+                  {selectedUrls.length > 1 && (
+                    <div className="mt-4 p-4 bg-accent/20 rounded-lg border border-accent">
+                      <div className="flex items-start space-x-3">
+                        <Checkbox
+                          id="merge-mode"
+                          checked={mergeMode}
+                          onCheckedChange={(checked) => setMergeMode(checked as boolean)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <label 
+                            htmlFor="merge-mode" 
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            Merge PDFs before extraction
+                          </label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Combine all selected PDFs into one extraction session. 
+                            Perfect for dealers like Kia with separate PDFs per pricing option.
+                            This will merge identical vehicles and keep all pricing offers.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -589,9 +826,19 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Overall Progress</span>
-                  <span>{currentPdfIndex + 1} of {selectedUrls.length} PDFs</span>
+                  <span>
+                    {mergeMode 
+                      ? `Merging ${selectedUrls.length} PDFs` 
+                      : `${currentPdfIndex + 1} of {selectedUrls.length} PDFs`
+                    }
+                  </span>
                 </div>
                 <Progress value={overallProgress} className="h-2" />
+                {mergeMode && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Combining PDFs into single extraction session...
+                  </p>
+                )}
               </div>
 
               {/* Individual PDF Status */}
@@ -698,7 +945,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
                 className="gap-2"
               >
                 <PlayCircle className="h-4 w-4" />
-                Start Extraction ({selectedUrls.length})
+                {mergeMode && selectedUrls.length > 1
+                  ? `Merge & Extract (${selectedUrls.length} PDFs)`
+                  : `Start Extraction (${selectedUrls.length})`
+                }
               </Button>
             )}
           </div>
