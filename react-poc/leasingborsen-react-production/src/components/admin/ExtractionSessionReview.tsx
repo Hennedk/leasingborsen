@@ -36,6 +36,7 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const [expandedChanges, setExpandedChanges] = useState<Set<string>>(new Set())
   const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({})
   const [activeTab, setActiveTab] = useState('pending')
+  const [sessionData, setSessionData] = useState<any>(null)
 
   const {
     applySelectedChanges,
@@ -46,6 +47,27 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const createModel = useCreateModel()
   const { data: makes = [] } = useMakes()
   const queryClient = useQueryClient()
+
+  // Fetch session details
+  React.useEffect(() => {
+    const fetchSessionData = async () => {
+      const { data, error } = await supabase
+        .from('extraction_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single()
+      
+      if (error) {
+        console.error('Error fetching session:', error)
+      } else {
+        setSessionData(data)
+      }
+    }
+    
+    if (sessionId) {
+      fetchSessionData()
+    }
+  }, [sessionId])
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '–'
@@ -464,6 +486,22 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
             <p className="text-muted-foreground">
               Gennemgå og godkend ændringer før de anvendes
             </p>
+            {sessionData && (
+              <div className="flex items-center gap-4 mt-2">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Session ID:</span>{' '}
+                  <code className="bg-muted px-2 py-0.5 rounded text-xs font-mono">
+                    {sessionId}
+                  </code>
+                </p>
+                {sessionData.session_name && (
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">Name:</span>{' '}
+                    <span className="font-medium">{sessionData.session_name}</span>
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
