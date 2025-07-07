@@ -72,6 +72,15 @@ export const vehicleInformationSchema = z.object({
       .max(1000, "WLTP må ikke overstige 1000 km")
       .optional()
   ),
+
+  // Pricing Information - Optional
+  retail_price: z.preprocess(
+    (val) => val === '' ? undefined : Number(val),
+    z.number()
+      .min(0, "Vejledende pris skal være mindst 0")
+      .max(10000000, "Vejledende pris må ikke overstige 10.000.000 kr")
+      .optional()
+  ),
 })
 
 // Seller Schema

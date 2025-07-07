@@ -257,6 +257,37 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             </FormItem>
           )}
         />
+
+        {/* Retail Price */}
+        <FormField
+          control={control as any}
+          name="retail_price"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="flex items-center gap-1">
+                Vejledende udsalgspris
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Bilens normale udsalgspris hos forhandler</p>
+                    <p className="text-xs mt-1">Bruges til beregning af leasing score</p>
+                  </TooltipContent>
+                </Tooltip>
+              </FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  placeholder="f.eks. 399900"
+                  {...field}
+                  onChange={(e) => field.onChange(e.target.value === '' ? '' : e.target.value)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
         {/* Description - full width */}
         <div className="col-span-full mt-4">
