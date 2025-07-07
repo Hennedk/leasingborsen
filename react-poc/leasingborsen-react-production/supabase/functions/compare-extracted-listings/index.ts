@@ -56,11 +56,11 @@ interface ExistingListing {
 }
 
 interface ListingMatch {
-  extracted: ExtractedCar
-  existing: ExistingListing
+  extracted: ExtractedCar | null
+  existing: ExistingListing | null
   confidence: number
   matchMethod: string
-  changeType: 'create' | 'update' | 'unchanged' | 'missing_model'
+  changeType: 'create' | 'update' | 'unchanged' | 'missing_model' | 'delete'
   changes?: Record<string, { old: any; new: any }>
 }
 
@@ -529,24 +529,73 @@ serve(async (req) => {
       }
     }
 
+    // Track which existing listings have been matched
+    const matchedExistingIds = new Set(
+      matches
+        .filter(m => m.existing && m.existing.id)
+        .map(m => m.existing.id)
+    )
+
+    // Find existing listings that weren't matched (potential deletes)
+    const unmatchedExistingListings = existingListings?.filter(
+      listing => !matchedExistingIds.has(listing.listing_id)
+    ) || []
+
+    // Add unmatched existing listings as "delete" type changes
+    for (const unmatchedListing of unmatchedExistingListings) {
+      const offers = unmatchedListing.lease_pricing || (unmatchedListing.monthly_price ? [{
+        monthly_price: unmatchedListing.monthly_price,
+        first_payment: unmatchedListing.first_payment,
+        period_months: unmatchedListing.period_months || 36,
+        mileage_per_year: unmatchedListing.mileage_per_year || 15000,
+        total_price: unmatchedListing.total_lease_cost
+      }] : [])
+
+      matches.push({
+        extracted: null as any,
+        existing: {
+          id: unmatchedListing.listing_id,
+          make: unmatchedListing.make,
+          model: unmatchedListing.model,
+          variant: unmatchedListing.variant,
+          horsepower: unmatchedListing.horsepower,
+          fuel_type: unmatchedListing.fuel_type,
+          transmission: unmatchedListing.transmission,
+          body_type: unmatchedListing.body_type,
+          year: unmatchedListing.year,
+          wltp: unmatchedListing.wltp,
+          co2_emission: unmatchedListing.co2_emission,
+          co2_tax_half_year: unmatchedListing.co2_tax_half_year,
+          consumption_l_100km: unmatchedListing.consumption_l_100km,
+          consumption_kwh_100km: unmatchedListing.consumption_kwh_100km,
+          monthly_price: unmatchedListing.monthly_price,
+          offers: offers
+        },
+        confidence: 1.0,
+        matchMethod: 'unmatched_existing',
+        changeType: 'delete' as const
+      })
+    }
+
     // Count change types
     const newCount = matches.filter(m => m.changeType === 'create').length
     const updateCount = matches.filter(m => m.changeType === 'update').length
     const unchangedCount = matches.filter(m => m.changeType === 'unchanged').length
     const missingModelCount = matches.filter(m => m.changeType === 'missing_model').length
+    const deleteCount = matches.filter(m => m.changeType === 'delete').length
 
-    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models`)
+    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
 
     const result: ComparisonResult = {
       matches,
       summary: {
         totalExtracted: extractedCars.length,
         totalExisting: existingListings?.length || 0,
-        totalMatched: matches.filter(m => m.existing).length,
+        totalMatched: matches.filter(m => m.existing && m.changeType !== 'delete').length,
         totalNew: newCount,
         totalUpdated: updateCount,
         totalUnchanged: unchangedCount,
-        totalDeleted: 0, // Not implemented yet
+        totalDeleted: deleteCount,
         totalMissingModels: missingModelCount,
         exactMatches: exactMatchCount,
         fuzzyMatches: fuzzyMatchCount
