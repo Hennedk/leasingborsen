@@ -281,7 +281,13 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
                   type="number" 
                   placeholder="f.eks. 399900"
                   {...field}
-                  onChange={(e) => field.onChange(e.target.value === '' ? '' : e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? '' : e.target.value
+                    if (setValue) {
+                      setValue('retail_price', value as any, { shouldDirty: true })
+                    }
+                    field.onChange(value)
+                  }}
                 />
               </FormControl>
               <FormMessage />

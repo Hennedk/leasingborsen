@@ -62,6 +62,9 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     consumption_kwh_100km: listing?.consumption_kwh_100km?.toString() || '' as any,
     wltp: listing?.wltp?.toString() || '' as any,
     
+    // Pricing
+    retail_price: listing?.retail_price?.toString() || '' as any,
+    
     // Seller
     seller_id: listing?.seller_id || '',
     
@@ -137,6 +140,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         consumption_l_100km: formData.consumption_l_100km ? parseFloat(formData.consumption_l_100km as unknown as string) : null,
         consumption_kwh_100km: formData.consumption_kwh_100km ? parseFloat(formData.consumption_kwh_100km as unknown as string) : null,
         wltp: formData.wltp ? parseInt(formData.wltp as unknown as string) : null,
+        retail_price: formData.retail_price ? parseFloat(formData.retail_price as unknown as string) : null,
         seller_id: formData.seller_id || null,
         image: images?.[0] || null,
         images: images || [],
@@ -332,6 +336,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         consumption_l_100km: data.consumption_l_100km ? parseFloat(data.consumption_l_100km as unknown as string) : null,
         consumption_kwh_100km: data.consumption_kwh_100km ? parseFloat(data.consumption_kwh_100km as unknown as string) : null,
         wltp: data.wltp ? parseInt(data.wltp as unknown as string) : null,
+        retail_price: data.retail_price ? parseFloat(data.retail_price as unknown as string) : null,
         seller_id: data.seller_id || null,
         image: data.images?.[0] || null,
         images: data.images || [],
@@ -340,12 +345,33 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       }
 
       if (isEditing && currentListingId) {
-        await updateMutation.mutateAsync({
+        const result = await updateMutation.mutateAsync({
           listingId: currentListingId,
           listingUpdates: listingData as any,
           offers: undefined
         })
+        
         toast.success('Annoncen blev opdateret succesfuldt')
+        
+        // Update form with the fresh data from the server
+        if (result?.updatedListing) {
+          const freshData = {
+            ...defaultValues,
+            retail_price: result.updatedListing.retail_price?.toString() || '' as any,
+            // Include other potentially updated fields
+          }
+          
+          // Reset form state immediately with fresh data
+          setHasUnsavedChanges(false)
+          form.reset(freshData, {
+            keepValues: true,
+            keepDirty: false,
+            keepDirtyValues: false,
+            keepErrors: false,
+            keepTouched: false,
+            keepIsSubmitted: false,
+          })
+        }
       } else {
         const result = await createMutation.mutateAsync({
           listingData: listingData as any,
@@ -357,9 +383,8 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         }
         
         toast.success('Ny annonce blev oprettet succesfuldt')
+        setHasUnsavedChanges(false)
       }
-      
-      setHasUnsavedChanges(false)
       
     } catch (error: any) {
       console.error('Form submission failed:', error)
@@ -413,21 +438,15 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       
       // Don't override hasUnsavedChanges if we just auto-saved
       if (!preventWatcherOverride.current) {
-        console.log('Form watcher detected changes:')
-        console.log('  hasChanges:', hasChanges)
-        console.log('  isDirty:', form.formState.isDirty)
-        console.log('  fieldName:', name)
-        console.log('  currentValue:', JSON.stringify(value, null, 2))
-        console.log('  preventOverride:', preventWatcherOverride.current)
-        console.log('  dirtyFields:', JSON.stringify(form.formState.dirtyFields, null, 2))
-        console.log('  defaultValues:', JSON.stringify(form.formState.defaultValues, null, 2))
+        // Only log significant changes, not every keystroke
+        if (hasChanges !== hasUnsavedChanges) {
+          console.log('Form state changed:', { hasChanges, isDirty: form.formState.isDirty, fieldName: name })
+        }
         setHasUnsavedChanges(hasChanges)
-      } else {
-        console.log('Form watcher change ignored due to preventWatcherOverride')
       }
     })
     return () => subscription.unsubscribe()
-  }, [form])
+  }, [form, hasUnsavedChanges])
 
   // Initialize form data when listing changes
   useEffect(() => {

@@ -127,6 +127,7 @@ export interface LeasePricing {
   mileage_per_year?: number
   first_payment?: number
   period_months?: number
+  retail_price?: number
 }
 
 // Media and presentation
@@ -158,6 +159,20 @@ export interface CarListing extends
   // Supabase timestamp fields
   created_at?: string
   updated_at?: string
+  
+  // Lease score fields
+  lease_score?: number
+  lease_score_calculated_at?: string
+  lease_score_breakdown?: {
+    totalScore: number
+    monthlyRateScore: number
+    monthlyRatePercent: number
+    mileageScore: number
+    mileageNormalized: number
+    flexibilityScore: number
+    pricing_id?: string
+    calculation_version?: string
+  }
 }
 
 // API Response Types
