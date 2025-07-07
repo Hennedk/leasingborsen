@@ -365,7 +365,10 @@ export const AdminExtractionSessions: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() => setSelectedSessionId(session.id)}
+                              onClick={() => {
+                                const url = `/admin/extraction-sessions/${session.id}`
+                                window.open(url, '_blank', 'noopener,noreferrer')
+                              }}
                             >
                               <Eye className="h-4 w-4" />
                             </Button>

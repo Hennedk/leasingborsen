@@ -444,6 +444,7 @@ const AdminSellerListings: React.FC = () => {
                       <TableHead>Månedlig pris</TableHead>
                       <TableHead>Brændstof</TableHead>
                       <TableHead>Oprettet</TableHead>
+                      <TableHead>Opdateret</TableHead>
                       <TableHead className="text-right">Handlinger</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -486,6 +487,9 @@ const AdminSellerListings: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           {formatDate(listing.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          {listing.updated_at ? formatDate(listing.updated_at) : '–'}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">

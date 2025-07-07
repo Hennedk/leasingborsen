@@ -195,6 +195,11 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
         </div>
       </TableCell>
       <TableCell>
+        <div className="text-sm text-muted-foreground">
+          {listing.updated_at ? new Date(listing.updated_at).toLocaleDateString('da-DK') : '–'}
+        </div>
+      </TableCell>
+      <TableCell>
         <ListingRowActions
           listing={listing}
           onView={onView}

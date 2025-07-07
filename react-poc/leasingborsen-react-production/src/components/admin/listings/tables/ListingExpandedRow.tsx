@@ -28,7 +28,7 @@ export const ListingExpandedRow = React.memo<ListingExpandedRowProps>(({
 }) => {
   return (
     <TableRow>
-      <TableCell colSpan={11} className="bg-muted/30 p-4">
+      <TableCell colSpan={12} className="bg-muted/30 p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-4 w-4 animate-spin mr-2" aria-hidden="true" />

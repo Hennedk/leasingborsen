@@ -40,6 +40,7 @@ export const ListingsTableHeader = React.memo<ListingsTableHeaderProps>(({
           <TableHead>Laveste pris</TableHead>
           <TableHead className="w-20">Tilbud</TableHead>
           <TableHead>Oprettet</TableHead>
+          <TableHead>Opdateret</TableHead>
           <TableHead className="w-32">Handlinger</TableHead>
         </TableRow>
       </TableHeader>
