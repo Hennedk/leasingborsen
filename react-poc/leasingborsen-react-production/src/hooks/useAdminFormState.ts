@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useCreateListingWithOffers, useUpdateListingWithOffers } from '@/hooks/mutations'
 import { carListingSchema, type CarListingFormData } from '@/lib/validations'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import type { CarListing } from '@/types'
 
 interface UseAdminFormStateProps {
@@ -34,6 +35,11 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     grid: string | null
     detail: string | null
   }>({ grid: null, detail: null })
+  const [currentImages, setCurrentImages] = useState<string[]>(
+    listing?.image ? [listing.image] : []
+  )
+  const isAutoSavingRef = useRef(false)
+  const preventWatcherOverride = useRef(false)
 
   // Form default values
   const defaultValues = useMemo(() => ({
@@ -73,10 +79,141 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     defaultValues
   })
 
+  // Auto-save function for images only
+  const performImageAutoSave = useCallback(async (images: string[]) => {
+    console.log('performImageAutoSave called with:', { 
+      images, 
+      currentListingId, 
+      isEditing, 
+      isAutoSaving: isAutoSavingRef.current,
+      hasReferenceData: !!referenceData 
+    })
+    
+    // Prevent concurrent auto-saves
+    if (isAutoSavingRef.current) {
+      console.log('Skipping auto-save: Already in progress')
+      return
+    }
+
+    // Only auto-save if we have a current listing ID (editing mode)
+    if (!currentListingId || !isEditing) {
+      console.log('Skipping auto-save: No listing ID or not in edit mode', { currentListingId, isEditing })
+      return
+    }
+
+    // Set flag to prevent concurrent saves
+    isAutoSavingRef.current = true
+
+    try {
+      // Get current form data
+      const formData = form.getValues()
+      
+      // Find reference data IDs
+      const makeId = referenceData?.makes?.find(m => m.name === formData.make)?.id
+      const modelId = referenceData?.models?.find(m => m.name === formData.model)?.id
+      const bodyTypeId = referenceData?.bodyTypes?.find(bt => bt.name === formData.body_type)?.id
+      const fuelTypeId = referenceData?.fuelTypes?.find(ft => ft.name === formData.fuel_type)?.id
+      const transmissionId = referenceData?.transmissions?.find(t => t.name === formData.transmission)?.id
+
+      if (!makeId || !modelId || !bodyTypeId || !fuelTypeId || !transmissionId) {
+        console.log('Skipping auto-save: Missing reference data')
+        return
+      }
+
+      // Prepare minimal listing data for auto-save (only images and essential data)
+      const listingData = {
+        make_id: makeId,
+        model_id: modelId,
+        body_type_id: bodyTypeId,
+        fuel_type_id: fuelTypeId,
+        transmission_id: transmissionId,
+        variant: formData.variant || null,
+        horsepower: formData.horsepower ? parseInt(formData.horsepower as unknown as string) : null,
+        seats: formData.seats ? parseInt(formData.seats as unknown as string) : null,
+        doors: formData.doors ? parseInt(formData.doors as unknown as string) : null,
+        description: formData.description || null,
+        co2_emission: formData.co2_emission ? parseInt(formData.co2_emission as unknown as string) : null,
+        co2_tax_half_year: formData.co2_tax_half_year ? parseInt(formData.co2_tax_half_year as unknown as string) : null,
+        consumption_l_100km: formData.consumption_l_100km ? parseFloat(formData.consumption_l_100km as unknown as string) : null,
+        consumption_kwh_100km: formData.consumption_kwh_100km ? parseFloat(formData.consumption_kwh_100km as unknown as string) : null,
+        wltp: formData.wltp ? parseInt(formData.wltp as unknown as string) : null,
+        seller_id: formData.seller_id || null,
+        image: images?.[0] || null,
+        images: images || [],
+        processed_image_grid: processedImages.grid || null,
+        processed_image_detail: processedImages.detail || null,
+      }
+
+      await updateMutation.mutateAsync({
+        listingId: currentListingId,
+        listingUpdates: listingData as any,
+        offers: undefined
+      })
+
+      // Clear unsaved changes after successful auto-save
+      console.log('🔄 Starting auto-save state reset...')
+      preventWatcherOverride.current = true
+      setHasUnsavedChanges(false)
+      
+      // Reset form dirty state to reflect that data is now saved
+      const currentValues = form.getValues()
+      console.log('📋 Current form values before reset:', JSON.stringify(currentValues, null, 2))
+      
+      // Update the current values to reflect the auto-saved images
+      currentValues.images = images
+      currentValues.image_urls = images
+      currentValues.processed_image_grid = processedImages.grid || ''
+      currentValues.processed_image_detail = processedImages.detail || ''
+      
+      console.log('📋 Updated values for reset:', JSON.stringify(currentValues, null, 2))
+      form.reset(currentValues)
+      
+      console.log('✅ Form reset completed, isDirty:', form.formState.isDirty)
+      console.log('📊 Dirty fields after reset:', JSON.stringify(form.formState.dirtyFields, null, 2))
+      
+      // Allow watcher to resume after a brief delay
+      setTimeout(() => {
+        preventWatcherOverride.current = false
+        console.log('🔓 Form watcher re-enabled')
+      }, 100)
+      
+      console.log('Images auto-saved successfully')
+    } catch (error: any) {
+      console.error('Auto-save failed:', error)
+      throw new Error(error?.message || 'Auto-gemning fejlede')
+    } finally {
+      // Always reset the flag
+      isAutoSavingRef.current = false
+    }
+  }, [currentListingId, isEditing, form, referenceData, processedImages])
+
+  // Auto-save hook for images
+  const autoSaveEnabled = isEditing && !!currentListingId && !!referenceData
+  console.log('Auto-save enabled check:', { 
+    autoSaveEnabled, 
+    isEditing, 
+    currentListingId, 
+    hasReferenceData: !!referenceData,
+    currentImages 
+  })
+  
+  const imageAutoSave = useAutoSave(currentImages, {
+    delay: 1500,
+    onSave: performImageAutoSave,
+    enabled: autoSaveEnabled,
+    onSuccess: () => {
+      console.log('Auto-save success callback triggered')
+      // Additional success handling if needed
+    },
+    onError: (error) => {
+      console.error('Auto-save error callback triggered:', error)
+    }
+  })
+
   // Calculate loading state
   const isLoading = useMemo(() => 
-    createMutation.isPending || updateMutation.isPending || isSubmitting,
-    [createMutation.isPending, updateMutation.isPending, isSubmitting]
+    createMutation.isPending || updateMutation.isPending || isSubmitting || imageAutoSave.isAutoSaving,
+    [createMutation.isPending, updateMutation.isPending, isSubmitting, imageAutoSave.isAutoSaving]
   )
 
   // Event handlers
@@ -97,9 +234,28 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
   }, [referenceData?.models])
 
   const handleImagesChange = useCallback((images: string[]) => {
-    form.setValue('images', images, { shouldDirty: true })
-    form.setValue('image_urls', images, { shouldDirty: true })
-  }, [form])
+    // Compare against currentImages state, not form values (which may already be updated)
+    const changed = JSON.stringify(currentImages) !== JSON.stringify(images)
+    
+    console.log('handleImagesChange called:', { 
+      newImages: images, 
+      currentImages,
+      changed,
+      newImagesStr: JSON.stringify(images),
+      currentImagesStr: JSON.stringify(currentImages),
+      isEditing,
+      currentListingId 
+    })
+    
+    if (changed) {
+      form.setValue('images', images, { shouldDirty: true })
+      form.setValue('image_urls', images, { shouldDirty: true })
+      setCurrentImages(images) // This will trigger auto-save
+      console.log('Form values updated, triggering auto-save')
+    } else {
+      console.log('No change detected, skipping auto-save. Images already match.')
+    }
+  }, [form, isEditing, currentListingId, currentImages])
 
   const handleProcessedImagesChange = useCallback((grid: string | null, detail: string | null) => {
     setProcessedImages({ grid, detail })
@@ -213,6 +369,20 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     }
   }, [isLoading, referenceData, currentListingId, isEditing, createMutation, updateMutation])
 
+  // Sync currentImages with listing changes (but not during auto-save)
+  useEffect(() => {
+    if (listing && !isAutoSavingRef.current) {
+      const listingImages = listing.image ? [listing.image] : []
+      const currentFormImages = form.getValues('images') || []
+      
+      // Only update if we're not already in sync and not auto-saving
+      if (JSON.stringify(listingImages) !== JSON.stringify(currentFormImages) && 
+          JSON.stringify(listingImages) !== JSON.stringify(currentImages)) {
+        setCurrentImages(listingImages)
+      }
+    }
+  }, [listing?.image, listing?.images, form])
+
   // Watch for form changes
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
@@ -241,7 +411,20 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         }
       }
       
-      setHasUnsavedChanges(hasChanges)
+      // Don't override hasUnsavedChanges if we just auto-saved
+      if (!preventWatcherOverride.current) {
+        console.log('Form watcher detected changes:')
+        console.log('  hasChanges:', hasChanges)
+        console.log('  isDirty:', form.formState.isDirty)
+        console.log('  fieldName:', name)
+        console.log('  currentValue:', JSON.stringify(value, null, 2))
+        console.log('  preventOverride:', preventWatcherOverride.current)
+        console.log('  dirtyFields:', JSON.stringify(form.formState.dirtyFields, null, 2))
+        console.log('  defaultValues:', JSON.stringify(form.formState.defaultValues, null, 2))
+        setHasUnsavedChanges(hasChanges)
+      } else {
+        console.log('Form watcher change ignored due to preventWatcherOverride')
+      }
     })
     return () => subscription.unsubscribe()
   }, [form])
@@ -314,6 +497,11 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     referenceLoading,
     referenceData,
     isEditing,
+    
+    // Auto-save state
+    isAutoSaving: imageAutoSave.isAutoSaving,
+    autoSaveError: imageAutoSave.error,
+    lastSaved: imageAutoSave.lastSaved,
     
     // Handlers
     handleSubmit,

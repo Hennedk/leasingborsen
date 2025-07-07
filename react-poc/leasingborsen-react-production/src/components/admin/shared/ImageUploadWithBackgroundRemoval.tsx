@@ -219,6 +219,10 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
   const handleAddUrl = useCallback(() => {
     if (!urlInput.trim()) return
 
+    console.log('🔗 handleAddUrl called with URL:', urlInput.trim())
+    console.log('🔗 Current images:', images)
+    console.log('🔗 Max images:', maxImages)
+
     if (!validateImageUrl(urlInput)) {
       toast.error('Ugyldig billede URL')
       return
@@ -229,7 +233,9 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       return
     }
 
-    onImagesChange([...images, urlInput.trim()])
+    const newImages = [...images, urlInput.trim()]
+    console.log('🔗 Calling onImagesChange with:', newImages)
+    onImagesChange(newImages)
     setUrlInput('')
     toast.success('Billede URL tilføjet')
   }, [urlInput, images, maxImages, validateImageUrl, onImagesChange])

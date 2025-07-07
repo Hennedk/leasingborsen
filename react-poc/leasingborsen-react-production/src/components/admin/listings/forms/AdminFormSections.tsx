@@ -1,6 +1,12 @@
 import React from 'react'
 import type { Control, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
 import type { CarListingFormData } from '@/lib/validations'
 import type { ReferenceData } from '@/types'
 import {
@@ -45,15 +51,29 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
 }) => {
   return (
     <>
-      {/* JSON Import Section - Full Width Top */}
+      {/* JSON Import Section - Collapsible Accordion */}
       <div className="mb-6">
-        <JsonPasteSection 
-          setValue={setValue}
-          onDataParsed={(data) => {
-            // Pass the parsed data (including offers) to parent
-            onJsonDataParsed?.(data)
-          }}
-        />
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="json-import" className="border rounded-lg">
+            <AccordionTrigger className="px-4 py-3 hover:no-underline">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">JSON Data Import</span>
+                <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                  Avanceret
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-4">
+              <JsonPasteSection 
+                setValue={setValue}
+                onDataParsed={(data) => {
+                  // Pass the parsed data (including offers) to parent
+                  onJsonDataParsed?.(data)
+                }}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </div>
 
       {/* 2/1 Column Layout */}

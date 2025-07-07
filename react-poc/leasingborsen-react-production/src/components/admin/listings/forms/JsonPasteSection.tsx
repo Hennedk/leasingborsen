@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { AlertCircle, Upload, CheckCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import type { CarListingFormData } from '@/lib/validations'
@@ -182,21 +180,12 @@ export const JsonPasteSection: React.FC<JsonPasteSectionProps> = ({
   }
 
   return (
-    <Card className="border-2 border-dashed border-muted-foreground/25 bg-muted/30">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Upload className="h-5 w-5" />
-          JSON Data Import
-          <Badge variant="secondary" className="text-xs">
-            Valgfrit
-          </Badge>
-        </CardTitle>
+    <div className="space-y-4">
+      <div className="mb-4">
         <p className="text-sm text-muted-foreground">
           Indsæt struktureret JSON data for automatisk udfyldning af formularen
         </p>
-      </CardHeader>
-      
-      <CardContent className="space-y-4">
+      </div>
         {/* JSON Input */}
         <div className="space-y-2">
           <Textarea
@@ -292,8 +281,7 @@ export const JsonPasteSection: React.FC<JsonPasteSectionProps> = ({
             <li>Billeder: <code>images</code> array med URL'er</li>
           </ul>
         </div>
-      </CardContent>
-    </Card>
+    </div>
   )
 }
 
