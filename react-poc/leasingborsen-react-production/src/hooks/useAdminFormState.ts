@@ -355,22 +355,55 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         
         // Update form with the fresh data from the server
         if (result?.updatedListing) {
+          // Build fresh form data from the server response
           const freshData = {
-            ...defaultValues,
+            // Vehicle Information
+            make: result.updatedListing.make || '',
+            model: result.updatedListing.model || '',
+            variant: result.updatedListing.variant || '',
+            body_type: result.updatedListing.body_type || '',
+            fuel_type: result.updatedListing.fuel_type || '',
+            transmission: result.updatedListing.transmission || '',
+            horsepower: result.updatedListing.horsepower?.toString() || '' as any,
+            seats: result.updatedListing.seats?.toString() || '' as any,
+            doors: result.updatedListing.doors?.toString() || '' as any,
+            description: result.updatedListing.description || '',
+            
+            // Environmental & Consumption
+            co2_emission: result.updatedListing.co2_emission?.toString() || '' as any,
+            co2_tax_half_year: result.updatedListing.co2_tax_half_year?.toString() || '' as any,
+            consumption_l_100km: result.updatedListing.consumption_l_100km?.toString() || '' as any,
+            consumption_kwh_100km: result.updatedListing.consumption_kwh_100km?.toString() || '' as any,
+            wltp: result.updatedListing.wltp?.toString() || '' as any,
+            
+            // Pricing
             retail_price: result.updatedListing.retail_price?.toString() || '' as any,
-            // Include other potentially updated fields
+            
+            // Seller
+            seller_id: result.updatedListing.seller_id || '',
+            
+            // Media
+            images: result.updatedListing.image ? [result.updatedListing.image] : [],
+            image_urls: [],
+            processed_image_grid: result.updatedListing.processed_image_grid || '',
+            processed_image_detail: result.updatedListing.processed_image_detail || '',
           }
           
           // Reset form state immediately with fresh data
           setHasUnsavedChanges(false)
-          form.reset(freshData, {
-            keepValues: true,
-            keepDirty: false,
-            keepDirtyValues: false,
-            keepErrors: false,
-            keepTouched: false,
-            keepIsSubmitted: false,
-          })
+          
+          // Use setTimeout to ensure React has processed the state update
+          setTimeout(() => {
+            console.log('Resetting form with fresh data:', { retail_price: freshData.retail_price })
+            form.reset(freshData, {
+              keepValues: false,
+              keepDirty: false,
+              keepDirtyValues: false,
+              keepErrors: false,
+              keepTouched: false,
+              keepIsSubmitted: false,
+            })
+          }, 0)
         }
       } else {
         const result = await createMutation.mutateAsync({
