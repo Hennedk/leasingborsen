@@ -119,12 +119,13 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
   // Process a single PDF URL
   // Process multiple PDFs by merging their text content
   const processMergedPdfs = async (pdfUrls: SellerPDFUrl[]): Promise<PDFExtractionStatus> => {
-    const mergedStatus: PDFExtractionStatus = {
-      url: 'merged',
-      name: `Merged ${pdfUrls.length} PDFs`,
-      status: 'downloading',
-      progress: 0
-    }
+    // Note: mergedStatus could be used for progress tracking in the future
+    // const mergedStatus: PDFExtractionStatus = {
+    //   url: 'merged',
+    //   name: `Merged ${pdfUrls.length} PDFs`,
+    //   status: 'downloading',
+    //   progress: 0
+    // }
 
     try {
       console.log(`Starting merged extraction for ${pdfUrls.length} PDFs`)
@@ -340,7 +341,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         status: proxyResponse.status
       })
 
-      const blob = await proxyResponse.blob()
+      let blob = await proxyResponse.blob()
       
       // Validate that we got actual content
       if (blob.size === 0) {
