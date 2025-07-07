@@ -1,15 +1,18 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Save, RotateCcw, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, RotateCcw, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface AdminFormHeaderProps {
   isEditing: boolean
   isLoading: boolean
   hasUnsavedChanges: boolean
   currentListingId?: string
+  isAutoSaving?: boolean
+  autoSaveError?: string | null
+  lastSaved?: Date | null
   onCancel: () => void
   onReset: () => void
-  onSubmit: () => void
+  onSubmit: () => void | Promise<void>
 }
 
 /**
@@ -21,6 +24,9 @@ export const AdminFormHeader = React.memo<AdminFormHeaderProps>(({
   isLoading,
   hasUnsavedChanges,
   currentListingId,
+  isAutoSaving = false,
+  autoSaveError = null,
+  lastSaved = null,
   onCancel,
   onReset,
   onSubmit
@@ -48,8 +54,42 @@ export const AdminFormHeader = React.memo<AdminFormHeaderProps>(({
         </h1>
         
         <div className="admin-button-group gap-3">
+          {/* Auto-save status indicators */}
+          {isAutoSaving && (
+            <span 
+              className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-md flex items-center gap-2"
+              aria-label="Gemmer automatisk"
+            >
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Gemmer billeder...
+            </span>
+          )}
+          
+          {!isAutoSaving && lastSaved && !autoSaveError && isEditing && (
+            <span 
+              className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-md flex items-center gap-2"
+              aria-label="Automatisk gemt"
+            >
+              <CheckCircle2 className="h-3 w-3" />
+              Billeder gemt {new Date(lastSaved).toLocaleTimeString('da-DK', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </span>
+          )}
+          
+          {autoSaveError && (
+            <span 
+              className="text-sm text-red-600 bg-red-50 px-3 py-1 rounded-md flex items-center gap-2"
+              aria-label="Auto-gemning fejlede"
+            >
+              <AlertCircle className="h-3 w-3" />
+              Auto-gemning fejlede
+            </span>
+          )}
+
           {/* Save shortcut hint */}
-          {(hasUnsavedChanges || !currentListingId) && (
+          {(hasUnsavedChanges || !currentListingId) && !isAutoSaving && (
             <span 
               className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-md"
               aria-label="Genvej til at gemme"
