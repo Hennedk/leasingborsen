@@ -154,7 +154,11 @@ export interface CarListing extends
   CarListingStatus, 
   LeasePricing, 
   CarMedia, 
-  SellerInfo {}
+  SellerInfo {
+  // Supabase timestamp fields
+  created_at?: string
+  updated_at?: string
+}
 
 // API Response Types
 export type SupabaseResponse<T> = {

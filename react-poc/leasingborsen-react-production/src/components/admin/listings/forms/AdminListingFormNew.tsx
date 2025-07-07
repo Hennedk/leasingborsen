@@ -61,10 +61,40 @@ const AdminListingFormNew: React.FC<AdminListingFormProps> = ({
         isLoading={formState.isLoading}
         hasUnsavedChanges={formState.hasUnsavedChanges}
         currentListingId={formState.currentListingId}
+        isAutoSaving={formState.isAutoSaving}
+        autoSaveError={formState.autoSaveError}
+        lastSaved={formState.lastSaved}
         onCancel={formState.handleCancel}
         onReset={formState.handleReset}
         onSubmit={() => formState.form.handleSubmit(formState.handleSubmit)()}
       />
+
+      {/* Metadata display for existing listings */}
+      {isEditing && listing?.updated_at && (
+        <div className="mb-6 p-4 bg-muted/30 rounded-lg border border-border">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span>
+              <strong>Oprettet:</strong> {listing.created_at ? new Date(listing.created_at).toLocaleDateString('da-DK', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : 'N/A'}
+            </span>
+            <span className="text-muted-foreground">•</span>
+            <span>
+              <strong>Sidst opdateret:</strong> {listing.updated_at ? new Date(listing.updated_at).toLocaleDateString('da-DK', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : 'N/A'}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Form Sections */}
       <AdminFormSections
