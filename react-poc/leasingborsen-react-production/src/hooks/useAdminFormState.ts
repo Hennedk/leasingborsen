@@ -17,6 +17,8 @@ interface UseAdminFormStateProps {
 /**
  * useAdminFormState - Centralized form state management for admin listing forms
  * Extracted from AdminListingFormNew for better separation of concerns
+ * 
+ * Handles form state, validation, auto-save for images, and manual save for other fields
  */
 export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormStateProps) => {
   const navigate = useNavigate()
