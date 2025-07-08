@@ -425,7 +425,8 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const filterChangesByTab = (tabValue: string) => {
     switch (tabValue) {
       case 'pending':
-        return changes.filter(c => c.change_status === 'pending')
+        // Exclude missing_model from pending tab - they have their own tab
+        return changes.filter(c => c.change_status === 'pending' && c.change_type !== 'missing_model')
       case 'approved':
         return changes.filter(c => c.change_status === 'approved')
       case 'rejected':
@@ -458,12 +459,14 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
     )
   }
 
-  const pendingCount = changes.filter(c => c.change_status === 'pending').length
+  // Count pending items excluding missing_model (which can't be selected)
+  const pendingCount = changes.filter(c => c.change_status === 'pending' && c.change_type !== 'missing_model').length
   const approvedCount = changes.filter(c => c.change_status === 'approved').length
   const rejectedCount = changes.filter(c => c.change_status === 'rejected').length
   const appliedCount = changes.filter(c => c.change_status === 'applied').length
   const discardedCount = changes.filter(c => c.change_status === 'discarded').length
 
+  // Count by type
   const createCount = changes.filter(c => c.change_type === 'create').length
   const updateCount = changes.filter(c => c.change_type === 'update').length
   const deleteCount = changes.filter(c => c.change_type === 'delete').length
@@ -599,6 +602,11 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
             <p className="text-sm text-muted-foreground">
               Vælg de ændringer du vil anvende. Ikke-valgte ændringer bliver forkastet.
             </p>
+            {missingModelCount > 0 && (
+              <p className="text-xs text-orange-600 mt-1">
+                ⚠️ {missingModelCount} biler med manglende modeller kan ikke vælges - se "Missing Models" fanen
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -669,6 +677,30 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
 
         {(['pending', 'approved', 'rejected', 'applied', 'discarded', 'create', 'update', 'delete', 'missing_model'] as const).map((tabValue) => (
           <TabsContent key={tabValue} value={tabValue} className="mt-4">
+            {/* Special message for missing_model tab */}
+            {tabValue === 'missing_model' && missingModelCount > 0 && (
+              <Card className="mb-4 border-orange-200 bg-orange-50">
+                <CardHeader>
+                  <CardTitle className="text-orange-800 flex items-center gap-2">
+                    <XCircle className="h-5 w-5" />
+                    Manglende modeller kræver manuel handling
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-orange-700 mb-3">
+                    Disse biler kunne ikke oprettes fordi deres modeller ikke findes i systemets modeltabel. 
+                    For at løse dette skal du:
+                  </p>
+                  <ol className="list-decimal list-inside text-sm text-orange-700 space-y-1">
+                    <li>Tilføje de manglende modeller til databasen</li>
+                    <li>Køre ekstraktionen igen for disse biler</li>
+                  </ol>
+                  <p className="text-xs text-orange-600 mt-3">
+                    <strong>Bemærk:</strong> Disse elementer kan ikke vælges eller anvendes før modellerne er oprettet.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardContent className="p-0">
                 <Table>
@@ -698,19 +730,12 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                             )}
                             onClick={() => toggleChangeExpansion(change.id)}
                           >
-                            {tabValue === 'pending' && change.change_type !== 'missing_model' && (
+                            {tabValue === 'pending' && (
                               <TableCell onClick={(e) => e.stopPropagation()}>
                                 <Checkbox
                                   checked={isSelected}
                                   onCheckedChange={() => toggleChangeSelection(change.id)}
                                 />
-                              </TableCell>
-                            )}
-                            {tabValue === 'pending' && change.change_type === 'missing_model' && (
-                              <TableCell onClick={(e) => e.stopPropagation()}>
-                                <div className="text-xs text-orange-600 font-medium">
-                                  N/A
-                                </div>
                               </TableCell>
                             )}
                             <TableCell>
