@@ -60,6 +60,12 @@ export function useUpdateListingWithOffers() {
       // Start a transaction-like approach
       try {
         // 1. Update the main listing
+        console.log('🔄 Updating listing with:', {
+          listingId,
+          updates: listingUpdates,
+          retail_price: listingUpdates.retail_price
+        })
+        
         const { data: updatedListing, error: listingError } = await supabase
           .from('listings')
           .update(listingUpdates)
