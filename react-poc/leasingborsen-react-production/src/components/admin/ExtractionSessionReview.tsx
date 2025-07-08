@@ -18,7 +18,6 @@ import {
 } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
 import { QuickExtractionCheck } from './QuickExtractionCheck'
-import { UnmappedDealerListings } from './UnmappedDealerListings'
 import { useCreateModel } from '@/hooks/mutations/useModelMutations'
 import { useMakes } from '@/hooks/useReferenceData'
 import { useQueryClient } from '@tanstack/react-query'
@@ -816,15 +815,6 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
         ))}
       </Tabs>
 
-      {/* Unmapped Dealer Listings Section */}
-      {sessionData?.seller_id && (
-        <div className="mt-6">
-          <UnmappedDealerListings 
-            sessionId={sessionId} 
-            sellerId={sessionData.seller_id} 
-          />
-        </div>
-      )}
     </div>
   )
 }

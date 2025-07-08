@@ -166,7 +166,8 @@ export const UnmappedDealerListings: React.FC<UnmappedDealerListingsProps> = ({
                 Identificeret som udgået ({deleteChanges.length})
               </h4>
               {deleteChanges.map(change => {
-                const existing = change.field_changes?.existing || change.extracted_data
+                // For delete changes, the existing listing data is stored in extracted_data
+                const existing = change.extracted_data
                 if (!existing) return null
                 
                 return (
