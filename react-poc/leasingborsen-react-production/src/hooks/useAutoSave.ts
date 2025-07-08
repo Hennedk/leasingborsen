@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useDebounce } from './useDebounce'
-import { toast } from 'sonner'
 
 interface UseAutoSaveOptions {
   delay?: number
