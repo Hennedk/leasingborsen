@@ -315,73 +315,34 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
           raw_retail_price: data.retail_price
         })
         
-        const result = await updateMutation.mutateAsync({
+        await updateMutation.mutateAsync({
           listingId: currentListingId,
           listingUpdates: listingData as any,
           offers: undefined
         })
         toast.success('Annoncen blev opdateret succesfuldt')
         
-        // Update form with the fresh data from the server
-        if (result?.updatedListing) {
-          // Build fresh form data from the server response
-          const freshData = {
-            // Vehicle Information
-            make: result.updatedListing.make || '',
-            model: result.updatedListing.model || '',
-            variant: result.updatedListing.variant || '',
-            body_type: result.updatedListing.body_type || '',
-            fuel_type: result.updatedListing.fuel_type || '',
-            transmission: result.updatedListing.transmission || '',
-            horsepower: result.updatedListing.horsepower?.toString() || '' as any,
-            seats: result.updatedListing.seats?.toString() || '' as any,
-            doors: result.updatedListing.doors?.toString() || '' as any,
-            description: result.updatedListing.description || '',
-            
-            // Environmental & Consumption
-            co2_emission: result.updatedListing.co2_emission?.toString() || '' as any,
-            co2_tax_half_year: result.updatedListing.co2_tax_half_year?.toString() || '' as any,
-            consumption_l_100km: result.updatedListing.consumption_l_100km?.toString() || '' as any,
-            consumption_kwh_100km: result.updatedListing.consumption_kwh_100km?.toString() || '' as any,
-            wltp: result.updatedListing.wltp?.toString() || '' as any,
-            
-            // Pricing
-            retail_price: result.updatedListing.retail_price?.toString() || '' as any,
-            
-            // Seller
-            seller_id: result.updatedListing.seller_id || '',
-            
-            // Media
-            images: result.updatedListing.image ? [result.updatedListing.image] : [],
-            image_urls: [],
-            processed_image_grid: result.updatedListing.processed_image_grid || '',
-            processed_image_detail: result.updatedListing.processed_image_detail || '',
-          }
+        // Clear the dirty state without resetting form values
+        preventWatcherOverride.current = true
+        setHasUnsavedChanges(false)
+        
+        // Keep the current form values but mark as not dirty
+        const currentValues = form.getValues()
+        
+        // Use setTimeout to ensure React has processed the state update
+        setTimeout(() => {
+          // Reset form with current values to clear dirty state
+          form.reset(currentValues, {
+            keepValues: true,
+            keepDefaultValues: false
+          })
           
-          // Reset form state immediately with fresh data
-          preventWatcherOverride.current = true
-          setHasUnsavedChanges(false)
-          
-          // Use setTimeout to ensure React has processed the state update
+          // Allow watcher to resume
           setTimeout(() => {
-            // Reset form with fresh data from server
-            form.reset(freshData)
-            
-            // Double-check that all values are synced
-            setTimeout(() => {
-              // Ensure form state is clean
-              if (form.formState.isDirty) {
-                // Force a clean state by resetting again with current values
-                const currentValues = form.getValues()
-                form.reset(currentValues)
-              }
-              
-              // Allow watcher to resume
-              preventWatcherOverride.current = false
-              setHasUnsavedChanges(false)
-            }, 100)
+            preventWatcherOverride.current = false
+            setHasUnsavedChanges(false)
           }, 100)
-        }
+        }, 100)
       } else {
         const result = await createMutation.mutateAsync({
           listingData: listingData as any,
