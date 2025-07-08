@@ -92,8 +92,14 @@ export const sellerSchema = z.object({
 export const mediaSchema = z.object({
   images: z.array(z.string().url("Billede URL skal være en gyldig URL")).optional(),
   image_urls: z.array(z.string().url("Billede URL skal være en gyldig URL")).optional(),
-  processed_image_grid: z.string().url("Grid billede URL skal være en gyldig URL").optional(),
-  processed_image_detail: z.string().url("Detail billede URL skal være en gyldig URL").optional(),
+  processed_image_grid: z.union([
+    z.string().url("Grid billede URL skal være en gyldig URL"),
+    z.literal("")
+  ]).optional(),
+  processed_image_detail: z.union([
+    z.string().url("Detail billede URL skal være en gyldig URL"),
+    z.literal("")
+  ]).optional(),
 })
 
 // Individual Offer Schema - flexible to handle both string and number inputs

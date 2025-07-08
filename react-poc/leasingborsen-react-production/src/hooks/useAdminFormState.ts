@@ -79,28 +79,23 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
   const form = useForm<CarListingFormData>({
     resolver: zodResolver(carListingSchema) as any,
     mode: 'onChange',
-    defaultValues
+    defaultValues,
+    resetOptions: {
+      keepDirtyValues: false,
+      keepErrors: false
+    }
   })
 
   // Auto-save function for images only
   const performImageAutoSave = useCallback(async (images: string[]) => {
-    console.log('performImageAutoSave called with:', { 
-      images, 
-      currentListingId, 
-      isEditing, 
-      isAutoSaving: isAutoSavingRef.current,
-      hasReferenceData: !!referenceData 
-    })
     
     // Prevent concurrent auto-saves
     if (isAutoSavingRef.current) {
-      console.log('Skipping auto-save: Already in progress')
       return
     }
 
     // Only auto-save if we have a current listing ID (editing mode)
     if (!currentListingId || !isEditing) {
-      console.log('Skipping auto-save: No listing ID or not in edit mode', { currentListingId, isEditing })
       return
     }
 
@@ -119,7 +114,6 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       const transmissionId = referenceData?.transmissions?.find(t => t.name === formData.transmission)?.id
 
       if (!makeId || !modelId || !bodyTypeId || !fuelTypeId || !transmissionId) {
-        console.log('Skipping auto-save: Missing reference data')
         return
       }
 
@@ -155,13 +149,11 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       })
 
       // Clear unsaved changes after successful auto-save
-      console.log('🔄 Starting auto-save state reset...')
       preventWatcherOverride.current = true
       setHasUnsavedChanges(false)
       
       // Reset form dirty state to reflect that data is now saved
       const currentValues = form.getValues()
-      console.log('📋 Current form values before reset:', JSON.stringify(currentValues, null, 2))
       
       // Update the current values to reflect the auto-saved images
       currentValues.images = images
@@ -169,19 +161,12 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       currentValues.processed_image_grid = processedImages.grid || ''
       currentValues.processed_image_detail = processedImages.detail || ''
       
-      console.log('📋 Updated values for reset:', JSON.stringify(currentValues, null, 2))
       form.reset(currentValues)
-      
-      console.log('✅ Form reset completed, isDirty:', form.formState.isDirty)
-      console.log('📊 Dirty fields after reset:', JSON.stringify(form.formState.dirtyFields, null, 2))
       
       // Allow watcher to resume after a brief delay
       setTimeout(() => {
         preventWatcherOverride.current = false
-        console.log('🔓 Form watcher re-enabled')
       }, 100)
-      
-      console.log('Images auto-saved successfully')
     } catch (error: any) {
       console.error('Auto-save failed:', error)
       throw new Error(error?.message || 'Auto-gemning fejlede')
@@ -193,25 +178,11 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
 
   // Auto-save hook for images
   const autoSaveEnabled = isEditing && !!currentListingId && !!referenceData
-  console.log('Auto-save enabled check:', { 
-    autoSaveEnabled, 
-    isEditing, 
-    currentListingId, 
-    hasReferenceData: !!referenceData,
-    currentImages 
-  })
   
   const imageAutoSave = useAutoSave(currentImages, {
     delay: 1500,
     onSave: performImageAutoSave,
-    enabled: autoSaveEnabled,
-    onSuccess: () => {
-      console.log('Auto-save success callback triggered')
-      // Additional success handling if needed
-    },
-    onError: (error) => {
-      console.error('Auto-save error callback triggered:', error)
-    }
+    enabled: autoSaveEnabled
   })
 
   // Calculate loading state
@@ -241,30 +212,19 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     // Compare against currentImages state, not form values (which may already be updated)
     const changed = JSON.stringify(currentImages) !== JSON.stringify(images)
     
-    console.log('handleImagesChange called:', { 
-      newImages: images, 
-      currentImages,
-      changed,
-      newImagesStr: JSON.stringify(images),
-      currentImagesStr: JSON.stringify(currentImages),
-      isEditing,
-      currentListingId 
-    })
-    
     if (changed) {
-      form.setValue('images', images, { shouldDirty: true })
-      form.setValue('image_urls', images, { shouldDirty: true })
+      // Don't mark as dirty since images auto-save
+      form.setValue('images', images, { shouldDirty: false })
+      form.setValue('image_urls', images, { shouldDirty: false })
       setCurrentImages(images) // This will trigger auto-save
-      console.log('Form values updated, triggering auto-save')
-    } else {
-      console.log('No change detected, skipping auto-save. Images already match.')
     }
   }, [form, isEditing, currentListingId, currentImages])
 
   const handleProcessedImagesChange = useCallback((grid: string | null, detail: string | null) => {
     setProcessedImages({ grid, detail })
-    if (grid) form.setValue('processed_image_grid', grid, { shouldDirty: true })
-    if (detail) form.setValue('processed_image_detail', detail, { shouldDirty: true })
+    // Don't mark as dirty since processed images are part of auto-save
+    if (grid) form.setValue('processed_image_grid', grid, { shouldDirty: false })
+    if (detail) form.setValue('processed_image_detail', detail, { shouldDirty: false })
   }, [form])
 
   const handleCancel = useCallback(() => {
@@ -303,7 +263,9 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
 
   // Form submission
   const handleSubmit = useCallback(async (data: CarListingFormData) => {
-    if (isLoading) return
+    if (isLoading) {
+      return
+    }
     
     setIsSubmitting(true)
     
@@ -350,7 +312,6 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
           listingUpdates: listingData as any,
           offers: undefined
         })
-        
         toast.success('Annoncen blev opdateret succesfuldt')
         
         // Update form with the fresh data from the server
@@ -390,20 +351,28 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
           }
           
           // Reset form state immediately with fresh data
+          preventWatcherOverride.current = true
           setHasUnsavedChanges(false)
           
           // Use setTimeout to ensure React has processed the state update
           setTimeout(() => {
-            console.log('Resetting form with fresh data:', { retail_price: freshData.retail_price })
-            form.reset(freshData, {
-              keepValues: false,
-              keepDirty: false,
-              keepDirtyValues: false,
-              keepErrors: false,
-              keepTouched: false,
-              keepIsSubmitted: false,
-            })
-          }, 0)
+            // Reset form with fresh data from server
+            form.reset(freshData)
+            
+            // Double-check that all values are synced
+            setTimeout(() => {
+              // Ensure form state is clean
+              if (form.formState.isDirty) {
+                // Force a clean state by resetting again with current values
+                const currentValues = form.getValues()
+                form.reset(currentValues)
+              }
+              
+              // Allow watcher to resume
+              preventWatcherOverride.current = false
+              setHasUnsavedChanges(false)
+            }, 100)
+          }, 100)
         }
       } else {
         const result = await createMutation.mutateAsync({
@@ -421,6 +390,11 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       
     } catch (error: any) {
       console.error('Form submission failed:', error)
+      console.error('Error details:', { 
+        message: error?.message, 
+        stack: error?.stack,
+        fullError: error 
+      })
       toast.error(error?.message || 'Der opstod en fejl ved gemning')
     } finally {
       setIsSubmitting(false)
@@ -444,7 +418,26 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
   // Watch for form changes
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      let hasChanges = form.formState.isDirty
+      // Skip watcher during form submission
+      if (isSubmitting) {
+        return
+      }
+
+      // Skip image-related fields since they auto-save
+      if (name === 'images' || name === 'image_urls' || 
+          name === 'processed_image_grid' || name === 'processed_image_detail') {
+        return
+      }
+
+      // Check if form is dirty, but exclude image fields from the check
+      const dirtyFields = Object.keys(form.formState.dirtyFields)
+      const nonImageDirtyFields = dirtyFields.filter(field => 
+        field !== 'images' && 
+        field !== 'image_urls' && 
+        field !== 'processed_image_grid' && 
+        field !== 'processed_image_detail'
+      )
+      let hasChanges = nonImageDirtyFields.length > 0
       
       // Special handling for fields that might not be detected by RHF
       if (!hasChanges && name) {
@@ -462,24 +455,31 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
           hasChanges = currentFieldValue !== originalFieldValue
         }
         
-        if (name === 'images' || name === 'image_urls') {
-          const currentImages = value?.images || []
-          const originalImages = form.formState.defaultValues?.images || []
-          hasChanges = JSON.stringify(currentImages) !== JSON.stringify(originalImages)
+        
+        // Handle numeric fields that might be strings
+        if (name === 'retail_price' || name === 'horsepower' || name === 'seats' || 
+            name === 'doors' || name === 'co2_emission' || name === 'co2_tax_half_year' ||
+            name === 'consumption_l_100km' || name === 'consumption_kwh_100km' || name === 'wltp') {
+          const currentValue = (value as any)?.[name]
+          const originalValue = (form.formState.defaultValues as any)?.[name]
+          
+          // Compare as strings to handle type mismatches
+          const currentStr = currentValue?.toString() || ''
+          const originalStr = originalValue?.toString() || ''
+          
+          if (currentStr !== originalStr) {
+            hasChanges = true
+          }
         }
       }
       
-      // Don't override hasUnsavedChanges if we just auto-saved
-      if (!preventWatcherOverride.current) {
-        // Only log significant changes, not every keystroke
-        if (hasChanges !== hasUnsavedChanges) {
-          console.log('Form state changed:', { hasChanges, isDirty: form.formState.isDirty, fieldName: name })
-        }
+      // Don't override hasUnsavedChanges if we just auto-saved or are submitting
+      if (!preventWatcherOverride.current && !isSubmitting) {
         setHasUnsavedChanges(hasChanges)
       }
     })
     return () => subscription.unsubscribe()
-  }, [form, hasUnsavedChanges])
+  }, [form, hasUnsavedChanges, isSubmitting])
 
   // Initialize form data when listing changes
   useEffect(() => {
@@ -487,18 +487,15 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       const currentListingInForm = form.getValues()
       const hasFormData = currentListingInForm.make || currentListingInForm.model || currentListingInForm.variant
       
-      if (hasUnsavedChanges && hasFormData) {
-        console.log('🛡️ Preserving form data during cache update - has unsaved changes')
+      if (hasUnsavedChanges && hasFormData && !isSubmitting) {
         return
       }
       
       if (hasFormData && currentListingId === listing.listing_id) {
-        console.log('🛡️ Preserving form data for same listing ID:', currentListingId)
         return
       }
       
       if (currentListingId !== listing.listing_id || !hasFormData) {
-        console.log('✅ Resetting form for listing change:', listing.listing_id)
         
         form.reset(defaultValues)
         

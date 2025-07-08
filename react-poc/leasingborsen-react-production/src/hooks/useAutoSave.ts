@@ -63,12 +63,6 @@ export const useAutoSave = <T>(data: T, options: UseAutoSaveOptions) => {
 
       lastSavedData.current = dataToSave
       onSuccess?.()
-      
-      // Show subtle success feedback
-      toast.success('Ændringer gemt automatisk', {
-        duration: 2000,
-        position: 'bottom-right'
-      })
     } catch (error: any) {
       const errorMessage = error.message || 'Der opstod en fejl ved auto-gemning'
       
@@ -79,12 +73,6 @@ export const useAutoSave = <T>(data: T, options: UseAutoSaveOptions) => {
       }))
 
       onError?.(errorMessage)
-      
-      // Show error feedback
-      toast.error(`Auto-gemning fejlede: ${errorMessage}`, {
-        duration: 4000,
-        position: 'bottom-right'
-      })
     }
   }, [enabled, onSave, onSuccess, onError])
 
@@ -110,22 +98,13 @@ export const useAutoSave = <T>(data: T, options: UseAutoSaveOptions) => {
 
     // Skip if currently auto-saving
     if (state.isAutoSaving) {
-      console.log('Skipping auto-save trigger: Already in progress')
       return
     }
 
     // Only auto-save if data has actually changed and enabled
     const dataChanged = JSON.stringify(debouncedData) !== JSON.stringify(lastSavedData.current)
-    console.log('Auto-save effect triggered:', {
-      enabled,
-      dataChanged,
-      debouncedData,
-      lastSavedData: lastSavedData.current,
-      isAutoSaving: state.isAutoSaving
-    })
     
     if (enabled && dataChanged) {
-      console.log('Triggering auto-save due to data change')
       performAutoSave(debouncedData)
     }
   }, [debouncedData, enabled, performAutoSave, state.isAutoSaving])
@@ -152,9 +131,6 @@ export const useImageAutoSave = (
     delay: 1500, // Faster for images
     onSave,
     enabled,
-    onSuccess: () => {
-      console.log('Images auto-saved successfully')
-    },
     onError: (error) => {
       console.error('Image auto-save failed:', error)
     }
