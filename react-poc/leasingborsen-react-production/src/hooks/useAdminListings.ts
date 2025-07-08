@@ -28,6 +28,7 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
           horsepower,
           description,
           image,
+          retail_price,
           make_id,
           model_id,
           seller_id,
@@ -75,6 +76,7 @@ export function useAdminListings(filters: Partial<FilterOptions> = {}) {
           horsepower: listing.horsepower,
           description: listing.description,
           image: listing.image,
+          retail_price: listing.retail_price,
           body_type: (listing.body_types as any)?.name || null,
           fuel_type: (listing.fuel_types as any)?.name || null,
           transmission: (listing.transmissions as any)?.name || null,
@@ -140,6 +142,7 @@ export function useAdminListing(id: string) {
           horsepower,
           description,
           image,
+          retail_price,
           make_id,
           model_id,
           seller_id,
@@ -189,6 +192,7 @@ export function useAdminListing(id: string) {
           horsepower: listingAny.horsepower,
           description: listingAny.description,
           image: listingAny.image,
+          retail_price: listingAny.retail_price,
           body_type: listingAny.body_types?.name || null,
           fuel_type: listingAny.fuel_types?.name || null,
           transmission: listingAny.transmissions?.name || null,
@@ -577,6 +581,7 @@ const getValidListingFields = (listing: Partial<CarListing>) => {
   if (listing.consumption_l_100km !== undefined) validFields.consumption_l_100km = listing.consumption_l_100km
   if (listing.consumption_kwh_100km !== undefined) validFields.consumption_kwh_100km = listing.consumption_kwh_100km
   if (listing.drive_type !== undefined) validFields.drive_type = listing.drive_type
+  if (listing.retail_price !== undefined) validFields.retail_price = listing.retail_price
 
   // Note: make, model, body_type, fuel_type, transmission require ID lookups
   // These will need special handling to convert names to IDs
@@ -729,6 +734,7 @@ export function useAdminDuplicateListing() {
           horsepower,
           description,
           image,
+          retail_price,
           make_id,
           model_id,
           seller_id,

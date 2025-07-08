@@ -300,7 +300,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         consumption_l_100km: data.consumption_l_100km ? parseFloat(data.consumption_l_100km as unknown as string) : null,
         consumption_kwh_100km: data.consumption_kwh_100km ? parseFloat(data.consumption_kwh_100km as unknown as string) : null,
         wltp: data.wltp ? parseInt(data.wltp as unknown as string) : null,
-        retail_price: data.retail_price && data.retail_price !== '' ? parseFloat(data.retail_price as unknown as string) : null,
+        retail_price: data.retail_price ? parseFloat(data.retail_price as unknown as string) : null,
         seller_id: data.seller_id || null,
         image: data.images?.[0] || null,
         images: data.images || [],
