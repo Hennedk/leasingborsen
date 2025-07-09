@@ -217,21 +217,42 @@ export const useListingComparison = () => {
       if (sessionError) throw sessionError
 
       // Create listing changes
-      const changes = comparisonResult.matches.map(match => ({
-        session_id: session.id,
-        existing_listing_id: match.existing?.id || null,
-        change_type: match.changeType,
-        change_status: 'pending' as const,
-        confidence_score: match.confidence,
-        extracted_data: match.extracted || {},
-        field_changes: match.changes || null,
-        change_summary: generateChangeSummary(match),
-        match_method: match.matchType || 'unmatched',
-        match_details: {
-          matchType: match.matchType,
-          confidence: match.confidence
+      const changes = comparisonResult.matches.map(match => {
+        // For delete changes, we need to store the existing data in extracted_data
+        // so the apply function knows what to delete
+        let extractedData = match.extracted || {}
+        if (match.changeType === 'delete' && match.existing) {
+          // For deletions, store the existing listing data
+          extractedData = {
+            make: match.existing.make,
+            model: match.existing.model,
+            variant: match.existing.variant,
+            year: match.existing.year,
+            horsepower: match.existing.horsepower,
+            fuel_type: match.existing.fuel_type,
+            transmission: match.existing.transmission,
+            body_type: match.existing.body_type,
+            // Include other fields that might be needed
+            offers: match.existing.offers || []
+          }
         }
-      }))
+        
+        return {
+          session_id: session.id,
+          existing_listing_id: match.existing?.id || null,
+          change_type: match.changeType,
+          change_status: 'pending' as const,
+          confidence_score: match.confidence,
+          extracted_data: extractedData,
+          field_changes: match.changes || null,
+          change_summary: generateChangeSummary(match),
+          match_method: match.matchType || 'unmatched',
+          match_details: {
+            matchType: match.matchType,
+            confidence: match.confidence
+          }
+        }
+      })
 
       const { error: changesError } = await supabase
         .from('extraction_listing_changes')

@@ -537,12 +537,24 @@ serve(async (req) => {
     )
 
     // Find existing listings that weren't matched (potential deletes)
-    const unmatchedExistingListings = existingListings?.filter(
-      listing => !matchedExistingIds.has(listing.listing_id)
-    ) || []
+    // ALL unmatched listings from the seller will be marked for deletion
+    const unmatchedExistingListings = existingListings?.filter(listing => {
+      // Mark for deletion if this specific listing wasn't matched
+      return !matchedExistingIds.has(listing.listing_id)
+    }) || []
+
+    console.log(`[compare-extracted-listings] Found ${unmatchedExistingListings.length} unmatched listings to mark for deletion`)
 
     // Add unmatched existing listings as "delete" type changes
+    // First, deduplicate by listing_id to avoid creating multiple delete records for the same listing
+    const uniqueUnmatchedListings = new Map<string, any>()
     for (const unmatchedListing of unmatchedExistingListings) {
+      uniqueUnmatchedListings.set(unmatchedListing.listing_id, unmatchedListing)
+    }
+    
+    console.log(`[compare-extracted-listings] After deduplication: ${uniqueUnmatchedListings.size} unique unmatched listings`)
+    
+    for (const unmatchedListing of uniqueUnmatchedListings.values()) {
       const offers = unmatchedListing.lease_pricing || (unmatchedListing.monthly_price ? [{
         monthly_price: unmatchedListing.monthly_price,
         first_payment: unmatchedListing.first_payment,
@@ -572,7 +584,7 @@ serve(async (req) => {
           offers: offers
         },
         confidence: 1.0,
-        matchMethod: 'unmatched_existing',
+        matchMethod: 'unmatched',
         changeType: 'delete' as const
       })
     }
