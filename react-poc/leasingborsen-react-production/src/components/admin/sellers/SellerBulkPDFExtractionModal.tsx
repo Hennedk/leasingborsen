@@ -18,6 +18,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import type { Seller, SellerPDFUrl } from '@/hooks/useSellers'
+import { useReferenceData } from '@/hooks/useReferenceData'
+import { useSellerListings } from '@/hooks/useSellerListings'
 
 interface SellerBulkPDFExtractionModalProps {
   open: boolean
@@ -81,6 +83,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
   const [extractionStatuses, setExtractionStatuses] = useState<PDFExtractionStatus[]>([])
   const [overallProgress, setOverallProgress] = useState(0)
   const [mergeMode, setMergeMode] = useState(false)
+
+  // Fetch reference data and existing listings
+  const { data: referenceData } = useReferenceData()
+  const { data: sellerListings } = useSellerListings(seller.id, { limit: 500 })
 
   // Initialize selected URLs when modal opens
   React.useEffect(() => {
@@ -233,6 +239,27 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         makeName: seller.make_name || 'Unknown'
       }
 
+      // Transform reference data to only include the dealer's make
+      const transformedReferenceData = referenceData && seller.make_id ? {
+        makes_models: referenceData.makes?.reduce((acc, make) => {
+          if (make.id === seller.make_id) {
+            const makeModels = referenceData.models
+              ?.filter(model => model.make_id === make.id)
+              .map(model => model.name) || [];
+            acc[make.name] = makeModels;
+          }
+          return acc;
+        }, {} as Record<string, string[]>) || {},
+        fuel_types: referenceData.fuelTypes?.map(ft => ft.name) || [],
+        transmissions: referenceData.transmissions?.map(t => t.name) || [],
+        body_types: referenceData.bodyTypes?.map(bt => bt.name) || []
+      } : {
+        makes_models: {},
+        fuel_types: [],
+        transmissions: [],
+        body_types: []
+      };
+
       const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
         method: 'POST',
         headers: {
@@ -249,6 +276,12 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
           makeId: config.makeId,
           makeName: config.makeName,
           includeExistingListings: true,
+          // Add reference data
+          referenceData: transformedReferenceData,
+          // Add existing listings
+          existingListings: sellerListings ? {
+            existing_listings: sellerListings
+          } : { existing_listings: [] },
           pdfUrl: pdfUrls.map(p => p.url).join(', '),
           // Add filename hints for better variant detection
           filenameHints: pdfUrls.map(pdf => ({
@@ -565,6 +598,27 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         makeName: seller.make_name || 'Unknown'
       }
 
+      // Transform reference data to only include the dealer's make
+      const transformedReferenceData = referenceData && seller.make_id ? {
+        makes_models: referenceData.makes?.reduce((acc, make) => {
+          if (make.id === seller.make_id) {
+            const makeModels = referenceData.models
+              ?.filter(model => model.make_id === make.id)
+              .map(model => model.name) || [];
+            acc[make.name] = makeModels;
+          }
+          return acc;
+        }, {} as Record<string, string[]>) || {},
+        fuel_types: referenceData.fuelTypes?.map(ft => ft.name) || [],
+        transmissions: referenceData.transmissions?.map(t => t.name) || [],
+        body_types: referenceData.bodyTypes?.map(bt => bt.name) || []
+      } : {
+        makes_models: {},
+        fuel_types: [],
+        transmissions: [],
+        body_types: []
+      };
+
       // Process with AI
       const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
         method: 'POST',
@@ -582,6 +636,12 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
           makeId: config.makeId,
           makeName: config.makeName,
           includeExistingListings: true,
+          // Add reference data
+          referenceData: transformedReferenceData,
+          // Add existing listings
+          existingListings: sellerListings ? {
+            existing_listings: sellerListings
+          } : { existing_listings: [] },
           pdfUrl: pdfUrl.url,
           // Add variant hint based on filename
           variantHint: extractVariantFromFilename(pdfUrl.url)

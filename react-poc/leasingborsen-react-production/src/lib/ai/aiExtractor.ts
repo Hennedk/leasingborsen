@@ -44,7 +44,9 @@ export class AIVehicleExtractor {
     dealerHint?: string,
     batchId?: string,
     sellerId?: string,
-    includeExistingListings: boolean = false
+    includeExistingListings: boolean = false,
+    referenceData?: any,
+    existingListings?: any
   ): Promise<AIExtractionResult> {
     const startTime = Date.now()
     
@@ -87,7 +89,9 @@ export class AIVehicleExtractor {
           dealerHint,
           batchId,
           sellerId,
-          includeExistingListings
+          referenceData,      // Pass through
+          existingListings,   // Pass through
+          includeExistingListings // Keep for backward compatibility
         })
       })
       

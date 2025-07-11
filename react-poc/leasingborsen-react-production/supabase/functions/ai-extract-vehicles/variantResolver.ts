@@ -67,16 +67,20 @@ export class VariantResolver {
         criteria.push('exact_variant_match')
       }
       
-      // Horsepower match (critical for variant identification)
+      // Horsepower match (critical for variant identification - Step 1: ±5 HP rule)
       if (vehicle.hp && candidate.horsepower) {
         const hpDiff = Math.abs(vehicle.hp - candidate.horsepower)
         if (hpDiff === 0) {
-          score += 0.3
+          score += 0.4  // Increased weight for exact HP match
           criteria.push('exact_hp_match')
         } else if (hpDiff <= 5) {
-          score += 0.2
-          criteria.push('close_hp_match')
+          score += 0.35  // High weight for ±5 HP match (Step 1 rule)
+          criteria.push('close_hp_match_within_5')
+        } else if (hpDiff <= 10) {
+          score += 0.1  // Lower weight for 6-10 HP difference
+          criteria.push('moderate_hp_match')
         }
+        // >10 HP difference gets no score (Step 2 rule)
       }
       
       // Variant similarity check
@@ -120,7 +124,21 @@ export class VariantResolver {
     }
     
     // Only consider it a match if confidence is high enough
-    if (bestScore >= 0.8) {
+    // Lower threshold to 0.7 to catch more matches per Step 1 rules
+    if (bestScore >= 0.7 && matchCriteria.includes('close_hp_match_within_5')) {
+      return {
+        source: 'existing',
+        confidence: Math.min(bestScore, 1.0),
+        matchDetails: {
+          matchedId: bestMatch.id || bestMatch.listing_id,
+          matchScore: bestScore,
+          matchCriteria
+        },
+        suggestedVariant: bestMatch.variant,
+        reason: `Matched to existing listing with ${matchCriteria.join(', ')}`
+      }
+    } else if (bestScore >= 0.8) {
+      // Keep original threshold for other matches
       return {
         source: 'existing',
         confidence: Math.min(bestScore, 1.0),
@@ -204,6 +222,81 @@ export class VariantResolver {
   private isVariantMatch(extracted: string, reference: string): boolean {
     const similarity = this.calculateVariantSimilarity(extracted, reference)
     return similarity >= 0.8
+  }
+  
+  // Check if a new variant should be created based on Step 2 rules
+  shouldCreateNewVariant(vehicle: CompactExtractedVehicle, existingListings: any[]): boolean {
+    const key = `${vehicle.make}-${vehicle.model}`.toLowerCase()
+    const candidates = this.existingListings.get(key) || []
+    
+    if (candidates.length === 0) {
+      return true // No existing listings for this make/model
+    }
+    
+    // Check each existing listing
+    for (const candidate of candidates) {
+      // Step 2: Check if this is truly different
+      
+      // 1. HP difference <= 10 means it's the same variant (use existing)
+      if (vehicle.hp && candidate.horsepower) {
+        const hpDiff = Math.abs(vehicle.hp - candidate.horsepower)
+        if (hpDiff <= 10) {
+          // Check if it's just equipment differences
+          const hasEquipmentSuffix = vehicle.variant.includes(' – ')
+          const existingHasEquipment = candidate.variant.includes(' – ')
+          
+          if (hasEquipmentSuffix && !existingHasEquipment) {
+            // This is base variant with added equipment - create new
+            return true
+          }
+          
+          // Otherwise, it's the same variant - don't create new
+          return false
+        }
+      }
+      
+      // 2. Check fuel type difference
+      const fuelTypeMap: Record<number, string> = {
+        1: 'Electric',
+        2: 'Hybrid - Petrol',
+        3: 'Petrol',
+        4: 'Diesel',
+        5: 'Hybrid - Diesel',
+        6: 'Plug-in - Petrol',
+        7: 'Plug-in - Diesel'
+      }
+      
+      if (candidate.fuel_type !== fuelTypeMap[vehicle.ft]) {
+        return true // Different fuel type
+      }
+      
+      // 3. Check transmission type (if significantly different)
+      const vehicleTransmission = vehicle.tr === 1 ? 'Automatic' : 'Manual'
+      if (candidate.transmission !== vehicleTransmission) {
+        // Only create new if the variant name doesn't already handle this
+        const variantHandlesTransmission = 
+          candidate.variant.toLowerCase().includes('automatik') ||
+          candidate.variant.toLowerCase().includes('aut.') ||
+          candidate.variant.toLowerCase().includes('manual')
+        
+        if (!variantHandlesTransmission) {
+          return true // Transmission difference warrants new variant
+        }
+      }
+      
+      // 4. Check drivetrain differences (AWD vs RWD vs FWD)
+      const hasDrivetrainDiff = 
+        (vehicle.variant.includes('AWD') && !candidate.variant.includes('AWD')) ||
+        (vehicle.variant.includes('4WD') && !candidate.variant.includes('4WD')) ||
+        (vehicle.variant.includes('RWD') && !candidate.variant.includes('RWD'))
+      
+      if (hasDrivetrainDiff) {
+        return true
+      }
+    }
+    
+    // If we get here, create new variant
+    return true
   }
   
   // Batch resolve for performance

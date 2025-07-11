@@ -15,6 +15,7 @@ import { useBatchListingCreation } from '@/hooks/useBatchListingCreation';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useReferenceData, useMakes, useModels } from '@/hooks/useReferenceData';
+import { useSellerListings } from '@/hooks/useSellerListings';
 import { ExtractedCarsResultsWithComparison } from '@/components/admin/ExtractedCarsResultsWithComparison';
 
 interface LeaseOffer {
@@ -139,6 +140,9 @@ export default function AdminPDFExtraction() {
 
   // Get models for selected make
   const { data: availableModels } = useModels(selectedMakeId);
+  
+  // Fetch seller's existing listings (limited to avoid payload bloat)
+  const { data: sellerListings } = useSellerListings(selectedSellerId, { limit: 200 });
   
   // Auto-set dealer name when make is selected
   React.useEffect(() => {
@@ -358,17 +362,67 @@ export default function AdminPDFExtraction() {
 
       setCurrentStep(`Bruger ${extractionType} extraction...`);
 
+      // Transform reference data to the format expected by Edge Function
+      // Only include data for the selected make to avoid confusing the AI
+      const transformedReferenceData = referenceData ? {
+        makes_models: selectedMakeId ? 
+          // If a make is selected, only include that make's models
+          referenceData.makes?.reduce((acc, make) => {
+            if (make.id === selectedMakeId) {
+              const makeModels = referenceData.models
+                ?.filter(model => model.make_id === make.id)
+                .map(model => model.name) || [];
+              acc[make.name] = makeModels;
+            }
+            return acc;
+          }, {} as Record<string, string[]>) || {}
+          : 
+          // If no make selected, include all makes (fallback)
+          referenceData.makes?.reduce((acc, make) => {
+            const makeModels = referenceData.models
+              ?.filter(model => model.make_id === make.id)
+              .map(model => model.name) || [];
+            acc[make.name] = makeModels;
+            return acc;
+          }, {} as Record<string, string[]>) || {},
+        fuel_types: referenceData.fuelTypes?.map(ft => ft.name) || [],
+        transmissions: referenceData.transmissions?.map(t => t.name) || [],
+        body_types: referenceData.bodyTypes?.map(bt => bt.name) || []
+      } : {
+        makes_models: {},
+        fuel_types: [],
+        transmissions: [],
+        body_types: []
+      };
+
       // Prepare request body
       const requestBody: any = {
         textContent: textToProcess,
         dealerName: dealerName,
-        fileName: uploadResult?.fileName || textResult?.metadata?.fileName || 'manual-input'
+        sellerId: selectedSellerId,
+        fileName: uploadResult?.fileName || textResult?.metadata?.fileName || 'manual-input',
+        // Always send reference data (it's small and essential)
+        referenceData: transformedReferenceData,
+        // Always send existing listings when available
+        existingListings: sellerListings ? {
+          existing_listings: sellerListings
+        } : { existing_listings: [] },
+        // Keep backward compatibility
+        includeExistingListings: !!sellerListings && sellerListings.length > 0
       };
 
-      // Add reference data for generic extraction
-      if (useGeneric) {
-        requestBody.makeId = selectedMakeId || undefined;
-        requestBody.referenceData = referenceData || undefined;
+      // Add make ID for generic extraction
+      if (useGeneric && selectedMakeId) {
+        requestBody.makeId = selectedMakeId;
+      }
+
+      // Add payload size check for monitoring
+      const payloadSize = JSON.stringify(requestBody).length;
+      if (payloadSize > 500000) { // 500KB warning threshold
+        console.warn(`Large extraction payload: ${(payloadSize / 1024).toFixed(2)}KB`, {
+          sellerId: selectedSellerId,
+          listingsCount: sellerListings?.length || 0
+        });
       }
 
       // Send to appropriate OpenAI Edge Function
