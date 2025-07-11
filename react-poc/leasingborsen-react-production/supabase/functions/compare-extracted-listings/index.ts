@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Enhanced interface with variant tracking
 interface ExtractedCar {
   make: string
   model: string
@@ -34,6 +35,14 @@ interface ExtractedCar {
     period_months?: number
     mileage_per_year?: number
   }>
+  // New variant tracking fields
+  variantSource?: "existing" | "reference" | "inferred"
+  variantConfidence?: number
+  variantMatchDetails?: {
+    matchedId?: string
+    matchScore?: number
+    matchCriteria?: string[]
+  }
 }
 
 interface ExistingListing {
@@ -62,6 +71,12 @@ interface ListingMatch {
   matchMethod: string
   changeType: 'create' | 'update' | 'unchanged' | 'missing_model' | 'delete'
   changes?: Record<string, { old: any; new: any }>
+  // New variant tracking fields
+  variantTracking?: {
+    source: "existing" | "reference" | "inferred" | "unknown"
+    confidence: number
+    details?: any
+  }
 }
 
 interface ComparisonRequest {
@@ -83,6 +98,14 @@ interface ComparisonResult {
     totalMissingModels: number
     exactMatches: number
     fuzzyMatches: number
+    // New variant tracking summary
+    variantSources?: {
+      existing: number
+      reference: number
+      inferred: number
+      unknown: number
+    }
+    avgVariantConfidence?: number
   }
 }
 
@@ -275,6 +298,25 @@ function calculateMatchConfidence(extracted: ExtractedCar, existing: ExistingLis
   return Math.min(confidence, 1.0)
 }
 
+/**
+ * Get variant tracking information from extracted car
+ */
+function getVariantTracking(extracted: ExtractedCar): ListingMatch['variantTracking'] {
+  if (extracted.variantSource) {
+    return {
+      source: extracted.variantSource,
+      confidence: extracted.variantConfidence || 0,
+      details: extracted.variantMatchDetails
+    }
+  }
+  
+  return {
+    source: 'unknown',
+    confidence: 0,
+    details: null
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -288,6 +330,27 @@ serve(async (req) => {
     }
 
     console.log(`[compare-extracted-listings] Processing ${extractedCars.length} extracted cars for seller ${sellerId}`)
+    
+    // Track variant sources
+    const variantSources = {
+      existing: 0,
+      reference: 0,
+      inferred: 0,
+      unknown: 0
+    }
+    let totalVariantConfidence = 0
+    let variantTrackingCount = 0
+
+    // Count variant sources from extracted cars
+    extractedCars.forEach(car => {
+      if (car.variantSource) {
+        variantSources[car.variantSource]++
+        totalVariantConfidence += car.variantConfidence || 0
+        variantTrackingCount++
+      } else {
+        variantSources.unknown++
+      }
+    })
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -493,7 +556,8 @@ serve(async (req) => {
             confidence,
             matchMethod,
             changeType: 'update',
-            changes
+            changes,
+            variantTracking: getVariantTracking(car)
           })
         } else {
           // No changes detected - this listing is unchanged
@@ -502,7 +566,8 @@ serve(async (req) => {
             existing: existingMatch,
             confidence,
             matchMethod,
-            changeType: 'unchanged'
+            changeType: 'unchanged',
+            variantTracking: getVariantTracking(car)
           })
         }
       } else {
@@ -514,7 +579,8 @@ serve(async (req) => {
             existing: null as any,
             confidence: 1.0,
             matchMethod: 'model_not_found',
-            changeType: 'missing_model'
+            changeType: 'missing_model',
+            variantTracking: getVariantTracking(car)
           })
         } else {
           // This is a new listing
@@ -523,7 +589,8 @@ serve(async (req) => {
             existing: null as any,
             confidence: 1.0,
             matchMethod: 'unmatched',
-            changeType: 'create'
+            changeType: 'create',
+            variantTracking: getVariantTracking(car)
           })
         }
       }
@@ -585,7 +652,11 @@ serve(async (req) => {
         },
         confidence: 1.0,
         matchMethod: 'unmatched',
-        changeType: 'delete' as const
+        changeType: 'delete' as const,
+        variantTracking: {
+          source: 'unknown',
+          confidence: 0
+        }
       })
     }
 
@@ -597,6 +668,7 @@ serve(async (req) => {
     const deleteCount = matches.filter(m => m.changeType === 'delete').length
 
     console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
+    console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
 
     const result: ComparisonResult = {
       matches,
@@ -610,7 +682,10 @@ serve(async (req) => {
         totalDeleted: deleteCount,
         totalMissingModels: missingModelCount,
         exactMatches: exactMatchCount,
-        fuzzyMatches: fuzzyMatchCount
+        fuzzyMatches: fuzzyMatchCount,
+        // Add variant tracking summary
+        variantSources: variantSources,
+        avgVariantConfidence: variantTrackingCount > 0 ? totalVariantConfidence / variantTrackingCount : 0
       }
     }
 

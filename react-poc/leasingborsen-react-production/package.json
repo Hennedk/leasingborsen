@@ -26,7 +26,11 @@
     "staging:monitor": "echo 'Opening staging monitoring dashboard...'",
     "staging:logs": "echo 'Viewing staging logs in deploy/staging/logs/'",
     "staging:backup": "echo 'Creating staging backup...'",
-    "staging:rollback": "echo 'Rolling back staging deployment...'"
+    "staging:rollback": "echo 'Rolling back staging deployment...'",
+    "prompts:test": "npx tsx scripts/prompt-manager/quick-test.ts",
+    "prompts:example": "npx tsx scripts/prompt-manager/example-usage.ts",
+    "prompts:test:unit": "vitest run scripts/prompt-manager/__tests__/prompt-manager.test.ts",
+    "prompts:test:integration": "INTEGRATION_TEST=true vitest run scripts/prompt-manager/__tests__/integration.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",

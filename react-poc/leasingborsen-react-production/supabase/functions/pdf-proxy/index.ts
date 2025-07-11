@@ -36,7 +36,9 @@ const TRUSTED_DOMAINS = [
   'prislister.volkswagen.dk',
   'prislister.cupradanmark.dk',
   'katalog.hyundai.dk',
-  'privatleasing.renault.dk'
+  'privatleasing.renault.dk',
+  'prisliste.cars4ever.eu',
+  'cars4ever.eu'
 ]
 
 function isDomainTrusted(url: string): boolean {

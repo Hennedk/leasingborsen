@@ -40,6 +40,7 @@ For detailed information on specific areas, see:
 - **AI PDF Extraction System**: See `docs/archive/AI_EXTRACTION_SYSTEM.md` for complete AI implementation
 - **Batch Processing**: See `docs/archive/BATCH_PROCESSING_FEATURE_PLAN.md` for batch workflow details
 - **Hybrid AI Extraction**: See `docs/archive/HYBRID_AI_EXTRACTION_COMPLETE.md` for multi-provider AI setup
+- **Recent Extraction Fixes (July 2025)**: Major improvements to deletion logic and column fixes
 
 ### 📊 Admin Interface
 - **Admin Components**: See `docs/archive/ADMIN_COMPONENTS_REVIEW.md` for admin UI patterns
@@ -441,5 +442,14 @@ This React application has evolved from a Vue migration into a **sophisticated, 
 - **Error recovery** with intelligent retry mechanisms
 - **Performance monitoring** with bundle analysis and optimization
 - **AI cost tracking** with budget management and usage analytics
+
+### Recent Critical Improvements (July 2025)
+- **Extraction System Fixes**: Resolved column reference issues (removed `engine_info`, `colour`, fixed `duration_months` → `period_months`)
+- **Deletion Logic Overhaul**: Removed model-specific deletion restrictions - now ALL unmatched listings are marked for deletion
+- **Data Type Corrections**: Fixed DECIMAL vs INTEGER mismatches in lease_pricing table
+- **Duplicate Handling**: Added ON CONFLICT handling for duplicate offers from AI extraction
+- **Foreign Key Management**: Enhanced deletion process to remove ALL references before deleting listings
+
+⚠️ **IMPORTANT**: With the removal of model-specific deletion restrictions, uploading partial inventories (e.g., single model PDFs) will mark ALL unmatched listings for deletion. Always review extraction results carefully before applying changes.
 
 This application represents a **successful Vue to React migration** that has resulted in a feature-rich, performant, and maintainable enterprise platform ready for commercial deployment in the Danish car leasing market.

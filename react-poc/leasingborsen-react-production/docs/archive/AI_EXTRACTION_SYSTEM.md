@@ -353,3 +353,120 @@ console.log(`OpenAI available: ${openaiTest.available && openaiTest.authenticate
 - Budget alerts via `get_current_month_ai_spending()` function
 
 The AI extraction system represents a **production-ready, enterprise-grade solution** for Danish car leasing document processing, with security, cost control, and accuracy as primary design principles.
+
+## 🔄 Recent Improvements (July 2025)
+
+### Critical Fixes Applied
+
+#### 1. Column Reference Fixes
+**Problem**: The `apply_selected_extraction_changes` function referenced non-existent columns:
+- `engine_info` - This column doesn't exist in the listings table
+- `colour` - This column doesn't exist in the listings table  
+- `duration_months` - Should be `period_months` in the lease_pricing table
+
+**Solution**: Updated all SQL functions to use correct column names and removed references to non-existent columns.
+
+#### 2. Data Type Corrections
+**Problem**: The apply function was casting lease_pricing values to DECIMAL when the table uses INTEGER:
+```sql
+-- Incorrect
+(offer->>'monthly_price')::DECIMAL
+
+-- Correct
+(offer->>'monthly_price')::INTEGER
+```
+
+**Solution**: Changed all lease_pricing casts from DECIMAL to INTEGER to match the table schema.
+
+#### 3. Deletion Logic Overhaul
+**Problem**: Deletions were failing due to foreign key constraints. The apply function only deleted references from the current extraction session, leaving references from other sessions that prevented deletion.
+
+**Solution**: Updated deletion logic to remove ALL references from `extraction_listing_changes` table when deleting a listing, not just from the current session.
+
+#### 4. Model-Specific Deletion Removal
+**Problem**: The comparison function only marked listings for deletion if their model was present in the PDF extraction. This prevented cleaning up unrelated models when uploading full inventories.
+
+**Solution**: **REMOVED** the model-specific deletion restriction. Now ALL unmatched listings from a seller are marked for deletion regardless of model.
+
+⚠️ **BREAKING CHANGE**: This means uploading a single-model PDF will mark ALL other models for deletion. Users must carefully review deletion suggestions.
+
+#### 5. Duplicate Offer Handling
+**Problem**: AI extraction sometimes returns duplicate offers (same listing_id, mileage_per_year, first_payment, period_months), causing unique constraint violations.
+
+**Solution**: Added `ON CONFLICT DO UPDATE` handling to gracefully handle duplicate offers by updating the monthly_price.
+
+#### 6. Frontend Deletion Data Fix
+**Problem**: Delete records were saved with empty `extracted_data`, preventing the apply function from processing deletions correctly.
+
+**Solution**: Updated `useListingComparison.ts` to copy existing listing data into `extracted_data` field for delete records.
+
+## 🐛 Known Issues
+
+### Current Limitations
+
+1. **AI Duplicate Offers**: The AI extraction sometimes returns duplicate lease offers for the same vehicle. While we handle this with ON CONFLICT, the root cause in the AI prompt needs addressing.
+
+2. **Silent Failures**: The apply function's exception handler catches errors but doesn't make them visible to users. Listings can be marked as "applied" even when creation fails.
+
+3. **Deletion Scope**: With model-specific deletion restrictions removed, users must be extremely careful when uploading partial inventories as it will suggest deleting all unmatched listings.
+
+4. **Variant Matching**: The AI sometimes creates slight variations of existing variants (e.g., "Essential 217 HK" vs "Essential 217 HK Automatik") despite instructions to match exactly.
+
+## 📋 Best Practices
+
+### For Reliable Extractions
+
+1. **Upload Complete Inventories**: Always prefer uploading a dealer's complete inventory rather than single-model PDFs to avoid unintended deletion suggestions.
+
+2. **Review Deletions Carefully**: With the new deletion logic, ALL unmatched listings are marked for deletion. Review the deletion list thoroughly before applying.
+
+3. **Test with Small Batches**: When working with a new dealer, test the extraction with a small batch first to verify the AI correctly matches their variant naming conventions.
+
+4. **Monitor for Duplicates**: Check extraction results for duplicate offers (same vehicle with identical terms) and report patterns to improve AI prompts.
+
+5. **Verify Column Mappings**: When modifying the apply function, always verify that:
+   - Column names match the actual database schema
+   - Data types match (INTEGER vs DECIMAL)
+   - Required columns exist in the target tables
+
+### For Developers
+
+1. **Check Foreign Keys**: Before implementing deletion logic, identify all tables with foreign key references to avoid constraint violations.
+
+2. **Use ON CONFLICT**: When inserting data that might have duplicates, use `ON CONFLICT DO UPDATE` or `DO NOTHING` to handle gracefully.
+
+3. **Test Apply Functions**: Always test the apply function with:
+   - Create operations (including edge cases)
+   - Update operations (partial field updates)
+   - Delete operations (with foreign key constraints)
+
+4. **Log Errors Visibly**: Don't hide errors in exception handlers. Make sure failures are visible to users so they can take corrective action.
+
+## 🔧 Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### "Column does not exist" Errors
+- **Symptom**: `ERROR: column "engine_info" does not exist`
+- **Cause**: The apply function references a column that was removed or renamed
+- **Solution**: Check the actual table schema and update column references
+
+#### Foreign Key Constraint Violations
+- **Symptom**: `ERROR: update or delete on table "listings" violates foreign key constraint`
+- **Cause**: Other tables reference the listing you're trying to delete
+- **Solution**: Delete all references first (extraction_listing_changes, price_change_log, lease_pricing)
+
+#### Duplicate Key Violations
+- **Symptom**: `ERROR: duplicate key value violates unique constraint "lease_pricing_unique"`
+- **Cause**: AI extracted duplicate offers or trying to insert existing data
+- **Solution**: Use ON CONFLICT handling or deduplicate before insertion
+
+#### Silent Apply Failures
+- **Symptom**: Apply function returns success but changes aren't in database
+- **Cause**: Exception handler catching and suppressing errors
+- **Solution**: Add proper error logging and return error details in result
+
+#### Unexpected Deletion Suggestions
+- **Symptom**: Extraction suggests deleting entire inventory
+- **Cause**: Uploading partial inventory with new deletion logic
+- **Solution**: Upload complete inventories or carefully review deletion suggestions

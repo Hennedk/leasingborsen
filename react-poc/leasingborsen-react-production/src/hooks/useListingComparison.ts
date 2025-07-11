@@ -408,6 +408,12 @@ export const useListingComparison = () => {
       selectedChangeIds: string[]
       appliedBy?: string
     }) => {
+      console.log('Calling apply_selected_extraction_changes with:', {
+        sessionId,
+        selectedChangeIds,
+        appliedBy
+      })
+      
       const { data, error } = await supabase
         .rpc('apply_selected_extraction_changes', {
           p_session_id: sessionId,
@@ -418,8 +424,9 @@ export const useListingComparison = () => {
       if (error) throw error
       return data
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['extraction-sessions'] })
+      queryClient.invalidateQueries({ queryKey: ['session-changes', variables.sessionId] }) // Invalidate session changes
       queryClient.invalidateQueries({ queryKey: ['listings'] })
       queryClient.invalidateQueries({ queryKey: ['listing'] }) // Invalidate individual listing caches
       queryClient.invalidateQueries({ queryKey: ['admin', 'listing'], type: 'all' }) // Invalidate all admin listing caches

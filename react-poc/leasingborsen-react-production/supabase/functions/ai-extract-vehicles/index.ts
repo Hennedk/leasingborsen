@@ -87,18 +87,22 @@ async function callOpenAIWithFallback(params: {
   if (useResponsesAPI && storedPromptId) {
     try {
       console.log('[ai-extract-vehicles] Attempting Responses API call...')
+      console.log('[ai-extract-vehicles] Context includes:', {
+        hasReferenceData: !!context.referenceData && context.referenceData.length > 0,
+        hasExistingListings: !!context.existingListings && context.existingListings.length > 0,
+        referenceDataLength: context.referenceData?.length || 0,
+        existingListingsLength: context.existingListings?.length || 0
+      })
       
-      // Format context more efficiently for token usage
-      const existingVariants = context.existingListings?.existing_listings?.map((l: any) => l.variant) || []
-      
+      // Include full context with existing listings and reference data
       const contextMessage = `Dealer: ${context.dealerName || 'Unknown'}
 File: ${context.fileName || 'PDF Upload'}
 
+${context.referenceData}
+${context.existingListings}
+
 PDF Text:
 ${context.pdfText}
-
-Existing Dealer Variants (${existingVariants.length} vehicles):
-${existingVariants.length > 0 ? existingVariants.map((v: string) => `• ${v}`).join('\n') : 'No existing vehicles'}
 
 Extraction Instructions:
 - Prioritize existing variants: ${context.extractionInstructions?.prioritizeExistingVariants || true}
@@ -107,8 +111,8 @@ Extraction Instructions:
 
       const response = await openai.responses.create({
         prompt: {
-          id: storedPromptId,
-          version: Deno.env.get('OPENAI_STORED_PROMPT_VERSION') || '12'
+          id: storedPromptId
+          // Omitting version to use latest
         },
         model: 'gpt-4.1-2025-04-14',
         input: [
