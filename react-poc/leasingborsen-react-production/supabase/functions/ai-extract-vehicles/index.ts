@@ -1,6 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import OpenAI from "https://esm.sh/openai@4.76.0"
+import OpenAI from "https://esm.sh/openai@latest"
+
+// Import our new modules
+import type { 
+  ExtractedVehicle,
+  CompactExtractedVehicle,
+  CompactExtractionResponse,
+  ExtractionContext,
+  ExtractionMonitoringEvent,
+  ResponsesAPIError
+} from './types.ts'
+import { vehicleExtractionSchema, validateExtractionResponse } from './schema.ts'
+import { VariantResolver } from './variantResolver.ts'
+import { FeatureFlagManager } from './featureFlags.ts'
+import { FUEL_TYPE_MAP, TRANSMISSION_MAP, BODY_TYPE_MAP } from './types.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,6 +42,238 @@ function generateChangeSummary(match: any): string {
   }
   
   return 'Ingen ændringer'
+}
+
+// Build dynamic context for Responses API
+function buildDynamicContext(params: {
+  finalText: string
+  finalDealerName?: string
+  fileName?: string
+  referenceContext: string
+  existingListingsContext: string
+  variantExamplesContext: string
+}): Record<string, any> {
+  const { finalText, finalDealerName, fileName, referenceContext, existingListingsContext, variantExamplesContext } = params
+  
+  return {
+    dealerName: finalDealerName,
+    fileName: fileName,
+    pdfText: finalText,
+    referenceData: referenceContext,
+    existingListings: existingListingsContext,
+    variantExamples: variantExamplesContext,
+    extractionInstructions: {
+      prioritizeExistingVariants: true,
+      mergeTransmissionVariants: true,
+      handleRangeSpecifications: fileName?.toLowerCase().includes('standard-range') ? 'use-lower' : 
+                                 fileName?.toLowerCase().includes('long-range') ? 'use-higher' : 'use-context'
+    }
+  }
+}
+
+// Call Responses API with fallback to Chat Completions
+async function callOpenAIWithFallback(params: {
+  openai: OpenAI
+  context: Record<string, any>
+  systemPrompt: string
+  userPrompt: string
+  useResponsesAPI: boolean
+  storedPromptId?: string
+  sessionId: string
+  dealerId?: string
+}): Promise<{ response: any; apiVersion: 'responses-api' | 'chat-completions'; tokensUsed: number }> {
+  const { openai, context, systemPrompt, userPrompt, useResponsesAPI, storedPromptId, sessionId, dealerId } = params
+  
+  if (useResponsesAPI && storedPromptId) {
+    try {
+      console.log('[ai-extract-vehicles] Attempting Responses API call...')
+      
+      // Format context more efficiently for token usage
+      const existingVariants = context.existingListings?.existing_listings?.map((l: any) => l.variant) || []
+      
+      const contextMessage = `Dealer: ${context.dealerName || 'Unknown'}
+File: ${context.fileName || 'PDF Upload'}
+
+PDF Text:
+${context.pdfText}
+
+Existing Dealer Variants (${existingVariants.length} vehicles):
+${existingVariants.length > 0 ? existingVariants.map((v: string) => `• ${v}`).join('\n') : 'No existing vehicles'}
+
+Extraction Instructions:
+- Prioritize existing variants: ${context.extractionInstructions?.prioritizeExistingVariants || true}
+- Merge transmission variants: ${context.extractionInstructions?.mergeTransmissionVariants || true}
+- Range handling: ${context.extractionInstructions?.handleRangeSpecifications || 'use-context'}`;
+
+      const response = await openai.responses.create({
+        prompt: {
+          id: storedPromptId,
+          version: Deno.env.get('OPENAI_STORED_PROMPT_VERSION') || '12'
+        },
+        model: 'gpt-4.1-2025-04-14',
+        input: [
+          {
+            role: "user",
+            type: "message",
+            content: contextMessage
+          }
+        ],
+        text: {
+          format: {
+            type: "json_schema",
+            name: vehicleExtractionSchema.name,
+            strict: vehicleExtractionSchema.strict,
+            schema: vehicleExtractionSchema.schema
+          }
+        },
+        temperature: 0.1
+      })
+      
+      // Responses API returns `output`, not `results`
+      if (!response.output?.length) {
+        throw new Error('No output from Responses API')
+      }
+      
+      // Get the content from the response - it's available in output_text directly
+      const responseContent = response.output_text
+      if (!responseContent) {
+        throw new Error('No output_text in response')
+      }
+      
+      let parsedData: any
+      try {
+        // Try to parse as JSON directly
+        parsedData = JSON.parse(responseContent)
+      } catch (jsonError) {
+        // If that fails, try to extract JSON from the response
+        const jsonMatch = responseContent.match(/\{[\s\S]*\}/)
+        if (!jsonMatch) {
+          throw new Error('No JSON found in Responses API response')
+        }
+        parsedData = JSON.parse(jsonMatch[0])
+      }
+      
+      // Validate the response structure
+      const validation = validateExtractionResponse(parsedData)
+      if (!validation.valid) {
+        throw new Error(`Schema validation failed: ${validation.errors?.join(', ')}`)
+      }
+      
+      console.log('[ai-extract-vehicles] Responses API call successful!')
+      console.log(`[ai-extract-vehicles] Used ${response.usage?.total_tokens || 0} tokens (input: ${response.usage?.input_tokens || 0}, output: ${response.usage?.output_tokens || 0})`)
+      await FeatureFlagManager.logUsage(dealerId, true, 'success')
+      
+      return {
+        response: parsedData,
+        apiVersion: 'responses-api',
+        tokensUsed: response.usage?.total_tokens || 0
+      }
+    } catch (error) {
+      console.error('[ai-extract-vehicles] Responses API error:', error)
+      
+      // Extract detailed error information
+      let errorType = 'unknown_error'
+      let errorDetails: any = {}
+      
+      if (error.status === 400) {
+        // Parameter/format errors - fail fast
+        errorType = 'invalid_parameter'
+        errorDetails = {
+          param: error.param,
+          code: error.code,
+          message: error.message
+        }
+        console.error('[ai-extract-vehicles] Invalid parameter error - check API format:', errorDetails)
+      } else if (error.status >= 500) {
+        // Server errors - could retry
+        errorType = 'server_error'
+        errorDetails = {
+          status: error.status,
+          message: error.message
+        }
+      } else if (error.message?.includes('Schema validation')) {
+        errorType = 'schema_validation'
+        errorDetails = {
+          errors: error.message
+        }
+      }
+      
+      // Log the error for monitoring
+      const apiError: ResponsesAPIError = {
+        type: errorType,
+        message: error.message || 'Unknown error',
+        details: errorDetails,
+        fallbackUsed: true
+      }
+      
+      console.log('[ai-extract-vehicles] Falling back to Chat Completions API...')
+      await FeatureFlagManager.logUsage(dealerId, false, `error: ${errorType}`)
+    }
+  }
+  
+  // Fallback to Chat Completions API (existing logic)
+  console.log('[ai-extract-vehicles] Using Chat Completions API')
+  
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4.1-2025-04-14',
+    messages: [
+      {
+        role: 'system',
+        content: systemPrompt
+      },
+      {
+        role: 'user',
+        content: userPrompt
+      }
+    ],
+    temperature: 0.1,
+    max_tokens: 16000
+  })
+  
+  const response = completion.choices[0]?.message?.content
+  if (!response) {
+    throw new Error('Empty response from AI')
+  }
+  
+  // Extract JSON from response
+  const jsonMatch = response.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) {
+    throw new Error('No JSON found in AI response')
+  }
+  
+  const parsedData = JSON.parse(jsonMatch[0])
+  
+  return {
+    response: parsedData,
+    apiVersion: 'chat-completions',
+    tokensUsed: completion.usage?.total_tokens || 0
+  }
+}
+
+// Log monitoring event
+async function logMonitoringEvent(supabase: any, event: ExtractionMonitoringEvent) {
+  try {
+    const { error } = await supabase
+      .from('migration_metrics')
+      .insert({
+        created_at: event.timestamp,
+        api_version: event.apiVersion,
+        variant_source: 'mixed', // Will be updated with actual distribution
+        confidence_score: event.inferenceRate,
+        dealer_id: event.dealerId,
+        session_id: event.sessionId,
+        tokens_used: event.tokensUsed,
+        processing_time_ms: event.processingTimeMs,
+        error_occurred: event.errorOccurred,
+        error_message: event.errorMessage
+      })
+    
+    if (error) {
+      console.error('[Monitoring] Failed to log event:', error)
+    }
+  } catch (err) {
+    console.error('[Monitoring] Error logging event:', err)
+  }
 }
 
 serve(async (req) => {
@@ -99,13 +345,20 @@ serve(async (req) => {
 
     const openai = new OpenAI({ apiKey: openaiApiKey })
 
-    // Stored prompt configuration
-    const useStoredPrompt = Deno.env.get('USE_OPENAI_STORED_PROMPT') === 'true'
+    // Check feature flags
+    const useResponsesAPI = await FeatureFlagManager.shouldUseResponsesAPI(sellerId)
+    const isEmergencyDisabled = await FeatureFlagManager.isEmergencyDisabled()
+    
+    if (isEmergencyDisabled) {
+      console.log('[ai-extract-vehicles] Emergency disable active, using Chat Completions')
+    }
+    
     const storedPromptId = Deno.env.get('OPENAI_STORED_PROMPT_ID')
     
-    console.log('[ai-extract-vehicles] Prompt configuration:', {
-      useStoredPrompt,
-      storedPromptId: storedPromptId ? 'configured' : 'not configured'
+    console.log('[ai-extract-vehicles] Feature flag decision:', {
+      useResponsesAPI: useResponsesAPI && !isEmergencyDisabled,
+      storedPromptId: storedPromptId ? 'configured' : 'not configured',
+      dealerId: sellerId
     })
 
     // Prepare reference data context (like original function)
@@ -123,56 +376,60 @@ Use this reference data to ensure extracted data matches existing database value
     // Prepare existing listings context (like original function)
     let existingListingsContext = ''
     if (existingListings?.existing_listings && existingListings.existing_listings.length > 0) {
-      existingListingsContext = `\n\nEXISTING DEALER LISTINGS FOR CONSISTENT VARIANT NAMING:
+      existingListingsContext = `\n\n🚨 CRITICAL: EXISTING DEALER LISTINGS - YOU MUST MATCH THESE EXACTLY 🚨
 ${JSON.stringify(existingListings.existing_listings, null, 2)}
 
-CRITICAL VARIANT NAMING RULES:
-1. When you find a car that matches an existing listing (same make + model + similar specs), USE THE EXISTING VARIANT NAME
-2. Only use a different variant name if:
-   - The horsepower is significantly different (±10 HP)
-   - The transmission type is different (Manual vs Automatic)
-   - The fuel type is different
-   - You identify it as a genuinely new variant not in the existing listings
-3. Examples:
-   - If existing listing has "Active 72 HK" and you extract a 72HP Active variant → use "Active 72 HK"
-   - If existing listing has "Style 116 HK" and you extract a 116HP Style variant → use "Style 116 HK"
-   - If existing listing has "Executive AWD 343 HK" and you extract a 343HP AWD Executive → use "Executive AWD 343 HK"
-4. This ensures consistent naming across multiple PDF uploads of the same dealer catalog`
+MANDATORY VARIANT MATCHING RULES - YOU MUST FOLLOW THESE:
+1. BEFORE creating any new variant name, CHECK if a similar vehicle exists above:
+   - Same make + model + similar horsepower (±5 HP) = USE THE EXACT EXISTING VARIANT NAME
+   - Do NOT add "Automatik" if the existing variant doesn't have it
+   - Do NOT remove "Automatik" if the existing variant has it
+   - COPY the variant name CHARACTER BY CHARACTER as it appears above
+
+2. TRANSMISSION SUFFIX RULE:
+   - If existing listing has NO transmission suffix → DO NOT add one
+   - If existing listing HAS a transmission suffix → KEEP it exactly
+   - This prevents duplicates: "Essential 217 HK" and "Essential 217 HK Automatik" are the SAME car
+
+3. Only create a NEW variant name if:
+   - The horsepower is significantly different (>10 HP difference)
+   - It's a genuinely different trim level not in the existing listings
+   - The fuel type is fundamentally different (not just hybrid variations)
+
+4. EXAMPLES OF CORRECT MATCHING:
+   - Existing: "Essential 217 HK" → You MUST use: "Essential 217 HK" (NOT "Essential 217 HK Automatik")
+   - Existing: "Style 116 HK Automatik" → You MUST use: "Style 116 HK Automatik" (keep the suffix)
+   - Existing: "Executive AWD 343 HK" → You MUST use: "Executive AWD 343 HK" (NOT adding transmission)
+
+5. VALIDATION: For each car you extract, mentally check:
+   "Does this match any existing listing above? If yes, am I using the EXACT variant name?"`
     }
 
     // Load variant examples for AI guidance
     let variantExamplesContext = ''
-    try {
-      const variantExamplesText = await Deno.readTextFile('./variant-examples.json')
-      const variantExamples = JSON.parse(variantExamplesText)
-      
-      variantExamplesContext = `\n\nVARIANT NAMING EXAMPLES FOR INSPIRATION:
-${JSON.stringify(variantExamples, null, 2)}
+    // Skip loading variant examples file since it's not deployed with the function
+    // The examples are better provided through existing listings anyway
 
-CRITICAL: Use these real-world patterns as inspiration for consistent variant naming.
-- Follow these exact patterns when possible, replacing {hp} with actual horsepower
-- Prioritize matching existing dealer listings over these examples
-- These examples show proper Danish market naming conventions`
-    } catch (error) {
-      console.warn('Could not load variant examples:', error)
-      // Continue without variant examples if file load fails
-    }
+    // System and user prompts (from original function)
+    const systemPrompt = `You are a Danish vehicle leasing data extractor with a CRITICAL requirement: You MUST match extracted vehicles to the dealer's existing inventory to prevent duplicates.
 
+Your task is to parse car leasing brochures and return structured JSON, while MATCHING existing dealer listings whenever possible.
 
-    // Modern modular prompt structure for better maintainability
-    const systemPrompt = `You are a Danish vehicle leasing data extractor. Your task is to parse car leasing brochures written in Danish and return structured, compact JSON containing:
-- All car models and variants
-- All leasing offers (multiple per car)
-- Technical data (when available)
-
-Use normalized terms and remove accents (e.g., use "Skoda" not "Škoda").
+## PRIORITY #1: MATCH EXISTING DEALER LISTINGS
+- You will receive the dealer's current inventory
+- When you find a vehicle that matches (same make + model + similar HP), USE THE EXACT EXISTING VARIANT NAME
+- Do NOT create new variants like "X Automatik" if the dealer already has "X" in inventory
 
 ## Key Requirements
-1. Extract ALL vehicles from the brochure (including variants like Sportback, RS, GT)
-2. Extract ALL leasing offers for each vehicle (different mileage/period options)
-3. Use numeric codes for fuel_type, transmission, and body_type as specified
-4. Always use "HK" for horsepower in variant names, never "kW"
-5. Match variant names to existing patterns when possible
+1. MATCH to existing dealer inventory first, create new entries only when truly different
+2. Extract ALL vehicles from the brochure (but merge transmission variants)
+3. Extract ALL leasing offers for each vehicle (different mileage/period options)
+4. Use numeric codes for fuel_type, transmission, and body_type as specified
+5. Always use "HK" for horsepower in variant names, never "kW"
+6. Equipment differentiation: When the same powertrain/trim appears with different equipment packages:
+   - Base version: Use variant name as-is
+   - With equipment: Append " - " followed by the equipment list (e.g., "77.4 kWh - 325 HK 4WD Ultimate - 20\" alufælge, soltag, digitale sidespejle")
+   - Include all listed equipment items separated by commas
 
 ## Output Format
 Return ONLY a compact JSON object with this exact structure:
@@ -207,14 +464,24 @@ Return ONLY a compact JSON object with this exact structure:
 
     const userPrompt = `Extract all vehicles and their leasing offers from this Danish PDF.
 
+🚨 CRITICAL MATCHING REQUIREMENT 🚨
+Before extracting ANY vehicle, you MUST:
+1. Check if it matches an existing dealer listing (provided below)
+2. If it matches (same make + model + similar HP ±5) → USE THE EXACT EXISTING VARIANT NAME
+3. DO NOT create variants like "X" and "X Automatik" as separate entries - they are the SAME vehicle
+
 EXTRACTION RULES:
 1. Find ALL car models and variants in the document
-2. Extract ALL leasing offers for each car (multiple offers per car are common)
-3. Extract prices as numbers only (remove "kr.", ",-" etc.)
-4. Use existing variant naming patterns when possible
-5. Include transmission/engine/HP in variant names when needed to differentiate
-6. Always use "HK" for horsepower in variant names, never "kW"
-7. Normalize brand names (e.g., "Skoda" not "Škoda")
+2. MATCH to existing dealer listings when possible (USE EXACT VARIANT NAMES)
+3. Extract ALL leasing offers for each car (multiple offers per car are common)
+4. Extract prices as numbers only (remove "kr.", ",-" etc.)
+5. Always use "HK" for horsepower in variant names, never "kW"
+6. Normalize brand names (e.g., "Skoda" not "Škoda")
+7. NEVER create duplicate entries that differ only by transmission suffix
+8. Equipment differentiation: When the same powertrain/trim appears with different equipment packages:
+   - Base version: Use variant name as-is (e.g., "Ultimate 325 HK 4WD")
+   - With equipment: Append " - " followed by the equipment list (e.g., "Ultimate 325 HK 4WD - 20\" alufælge, soltag, digitale sidespejle")
+   - Include all listed equipment items separated by commas
 
 DANISH TERMS TO EXTRACT:
 - Monthly payment: "kr./md", "Ydelse pr. md"
@@ -254,8 +521,19 @@ IMPORTANT:
 - Each car must have at least one offer
 - Use the numeric codes for fuel_type, transmission, and body_type
 
-CRITICAL DEDUPLICATION RULE:
-If the same make + model + variant appears multiple times with identical technical specs (same WLTP, CO2, HP, etc.), merge them into ONE entry with ALL offers combined in the offers array. Only create separate entries when technical specifications differ (e.g., different WLTP values indicating different battery/engine configurations).
+🚨 CRITICAL DEDUPLICATION AND MATCHING RULES 🚨
+
+RULE 1 - MATCH EXISTING LISTINGS:
+- If the dealer already has "Essential 217 HK" in their inventory, and you find a Tucson Essential with 217 HP → USE "Essential 217 HK"
+- Do NOT create "Essential 217 HK Automatik" as a new variant - it's the SAME car
+
+RULE 2 - PREVENT TRANSMISSION DUPLICATES:
+- "Tucson Essential 217 HK" and "Tucson Essential 217 HK Automatik" = SAME vehicle, merge into ONE entry
+- "Kona Essential 120 HK" and "Kona Essential 120 HK Automatik" = SAME vehicle, merge into ONE entry
+- Use the variant name that matches existing inventory, or the simpler one if new
+
+RULE 3 - MERGE IDENTICAL VEHICLES:
+If the same make + model + variant appears multiple times with identical technical specs (same WLTP, CO2, HP, etc.), merge them into ONE entry with ALL offers combined in the offers array. Only create separate entries when technical specifications differ significantly.
 
 RANGE SPECIFICATION HANDLING:
 - When you see range values like "443-563 km", "76.1-99.8 kWh", or "195-228 Wh/km", these typically show the range across ALL variants of a model, NOT multiple vehicles in the current PDF
@@ -276,15 +554,12 @@ ${referenceContext}
 ${existingListingsContext}
 ${variantExamplesContext}
 
-Dealer: ${finalDealerName}
-File: ${fileName || 'PDF Upload'}
-${fileName && fileName.toLowerCase().includes('standard-range') ? 'IMPORTANT: This file is for STANDARD RANGE variant only - use lower WLTP values from any ranges shown.' : ''}
-${fileName && fileName.toLowerCase().includes('long-range') ? 'IMPORTANT: This file is for LONG RANGE variant only - use higher WLTP values from any ranges shown.' : ''}
-PDF TEXT:
-${finalText}`
-
-    // Prepare dynamic content for stored prompt
-    const dynamicContent = `${referenceContext}${existingListingsContext}${variantExamplesContext}
+DEALER-SPECIFIC MATCHING EXAMPLES FOR ${finalDealerName}:
+Based on the existing listings above, here are EXACT matches you must make:
+- If you extract a Tucson Essential with 217 HP → Use "Essential 217 HK" (NOT "Tucson Essential 217 HK Automatik")
+- If you extract a Kona Essential with 120 HP → Use "Essential 120 HK" (NOT "Kona Essential 120 HK Automatik") 
+- If you extract a Tucson Executive AWD with 192 HP → Use "Executive Line AWD 192 HK" (NOT adding Automatik)
+- Match the existing pattern EXACTLY - do not add model names or transmission types if they're not in the existing variant
 
 Dealer: ${finalDealerName}
 File: ${fileName || 'PDF Upload'}
@@ -293,106 +568,59 @@ ${fileName && fileName.toLowerCase().includes('long-range') ? 'IMPORTANT: This f
 PDF TEXT:
 ${finalText}`
 
-    // Call OpenAI with either stored prompt or inline prompts
-    let completion
-    if (useStoredPrompt && storedPromptId) {
-      console.log('[ai-extract-vehicles] Using stored prompt:', storedPromptId)
+    // Create extraction context
+    const extractionContext: ExtractionContext = {
+      dealerName: finalDealerName,
+      fileName,
+      referenceData,
+      existingListings
+    }
+
+    // Build dynamic context for Responses API
+    const dynamicContext = buildDynamicContext({
+      finalText,
+      finalDealerName,
+      fileName,
+      referenceContext,
+      existingListingsContext,
+      variantExamplesContext
+    })
+
+    // Call OpenAI with appropriate API
+    console.log('[ai-extract-vehicles] Starting AI extraction...')
+    const startTime = Date.now()
+    
+    const { response: aiResponse, apiVersion, tokensUsed } = await callOpenAIWithFallback({
+      openai,
+      context: dynamicContext,
+      systemPrompt,
+      userPrompt,
+      useResponsesAPI: useResponsesAPI && !isEmergencyDisabled,
+      storedPromptId,
+      sessionId: batchId || 'unknown',
+      dealerId: sellerId
+    })
+
+    const endTime = Date.now()
+    console.log(`[ai-extract-vehicles] AI extraction completed in ${endTime - startTime}ms using ${apiVersion}`)
+
+    // Extract cars from response
+    const extractedCars: CompactExtractedVehicle[] = aiResponse.cars || []
+    console.log('[ai-extract-vehicles] Successfully extracted ' + extractedCars.length + ' cars')
+
+    // Create variant resolver
+    const variantResolver = new VariantResolver(extractionContext)
+    
+    // Resolve variants and get statistics
+    const variantResolutions = await variantResolver.resolveVariants(extractedCars)
+    const resolutionStats = variantResolver.getResolutionStats(variantResolutions)
+    
+    console.log('[ai-extract-vehicles] Variant resolution stats:', resolutionStats)
+
+    // Convert from compact format to full format with variant tracking
+    const vehicles: ExtractedVehicle[] = extractedCars.map((car: CompactExtractedVehicle, index: number) => {
+      const resolution = variantResolutions.get(index)!
       
-      // For now, let's use the inline prompt approach since stored prompts 
-      // require special API access or different configuration
-      console.log('[ai-extract-vehicles] Falling back to inline prompts due to stored prompt API issues')
-      
-      // Using inline prompts with the same system prompt as the stored one
-      completion = await openai.chat.completions.create({
-        model: 'gpt-4.1',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: userPrompt
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 16000
-      })
-    } else {
-      console.log('[ai-extract-vehicles] Using inline prompts')
-      
-      // Using inline prompts (current approach)
-      completion = await openai.chat.completions.create({
-        model: 'gpt-4.1',
-        messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: userPrompt
-          }
-        ],
-        temperature: 0.1,
-        max_tokens: 16000
-      })
-    }
-
-    const response = completion.choices[0]?.message?.content
-    if (!response) {
-      throw new Error('Empty response from AI')
-    }
-
-    console.log('[ai-extract-vehicles] AI Response:', response.substring(0, 500) + '...')
-
-    let extractedCars = []
-    try {
-      // Extract JSON from response (handle cases where AI adds explanation text)
-      const jsonMatch = response.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) {
-        throw new Error('No JSON found in AI response')
-      }
-      
-      const parsedData = JSON.parse(jsonMatch[0])
-      extractedCars = parsedData.cars || []
-      console.log('[ai-extract-vehicles] Successfully extracted ' + extractedCars.length + ' cars')
-    } catch (parseError: any) {
-      console.error('Error parsing AI response:', parseError)
-      console.error('AI response content:', response)
-      throw new Error('Failed to parse AI response: ' + (parseError.message || String(parseError)))
-    }
-
-    // Convert from compact format to full format (like original function)
-    const fuelTypeMap = {
-      1: 'Electric',
-      2: 'Hybrid - Petrol', 
-      3: 'Petrol',
-      4: 'Diesel',
-      5: 'Hybrid - Diesel',
-      6: 'Plug-in - Petrol',
-      7: 'Plug-in - Diesel'
-    }
-
-    const transmissionMap = {
-      1: 'Automatic',
-      2: 'Manual'
-    }
-
-    const bodyTypeMap = {
-      1: 'SUV',
-      2: 'Hatchback',
-      3: 'Sedan', 
-      4: 'Stationcar',
-      5: 'Coupe',
-      6: 'Cabriolet',
-      7: 'Crossover (CUV)',
-      8: 'Minibus (MPV)',
-      9: 'Mikro'
-    }
-
-    // Expand cars from compact to full format
-    const vehicles = extractedCars.map((car: any) => {
       // Convert offers array to full format
       const offers = (car.offers || []).map((offer: any[]) => ({
         monthly_price: offer[0],
@@ -405,21 +633,25 @@ ${finalText}`
       return {
         make: car.make,
         model: car.model,
-        variant: car.variant,
+        variant: resolution.suggestedVariant || car.variant, // Use suggested variant if available
         horsepower: car.hp,
-        fuel_type: fuelTypeMap[car.ft as keyof typeof fuelTypeMap] || 'Petrol',
-        transmission: transmissionMap[car.tr as keyof typeof transmissionMap] || 'Manual', 
-        body_type: bodyTypeMap[car.bt as keyof typeof bodyTypeMap] || 'Hatchback',
+        fuel_type: FUEL_TYPE_MAP[car.ft as keyof typeof FUEL_TYPE_MAP] || 'Petrol',
+        transmission: TRANSMISSION_MAP[car.tr as keyof typeof TRANSMISSION_MAP] || 'Manual', 
+        body_type: BODY_TYPE_MAP[car.bt as keyof typeof BODY_TYPE_MAP] || 'Hatchback',
         wltp: car.wltp,
         co2_emission: car.co2,
         consumption_l_100km: car.l100,
         consumption_kwh_100km: car.kwh100,
         co2_tax_half_year: car.tax,
-        offers
+        offers,
+        // Add variant tracking fields
+        variantSource: resolution.source,
+        variantConfidence: resolution.confidence,
+        variantMatchDetails: resolution.matchDetails
       }
     })
 
-    console.log('[ai-extract-vehicles] Expanded cars:', vehicles.length)
+    console.log('[ai-extract-vehicles] Expanded cars with variant tracking:', vehicles.length)
     
     console.log('🚗 Processing ' + vehicles.length + ' extracted vehicles for comparison')
 
@@ -431,7 +663,7 @@ ${finalText}`
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        extractedCars: vehicles, // Already in proper format after expansion
+        extractedCars: vehicles, // Now includes variant tracking
         sellerId,
         sessionName: fileName || `PDF Extraction - ${finalDealerName || 'Unknown'} - ${new Date().toISOString().split('T')[0]}`
       })
@@ -468,7 +700,15 @@ ${finalText}`
         seller_id: sellerId,
         extraction_type: 'update', // Use 'update' like original
         status: 'processing',
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        // Add new fields for migration tracking
+        api_version: apiVersion,
+        inference_rate: resolutionStats.inferenceRate,
+        variant_source_stats: {
+          existing: resolutionStats.existing,
+          reference: resolutionStats.reference,
+          inferred: resolutionStats.inferred
+        }
       })
       .select()
       .single()
@@ -516,7 +756,11 @@ ${finalText}`
       match_method: match.matchMethod || 'unmatched',
       match_details: {
         matchMethod: match.matchMethod,
-        confidence: match.confidence
+        confidence: match.confidence,
+        // Include variant tracking if available
+        variantSource: match.extracted?.variantSource,
+        variantConfidence: match.extracted?.variantConfidence,
+        variantMatchDetails: match.extracted?.variantMatchDetails
       }
     }))
     
@@ -531,6 +775,23 @@ ${finalText}`
     
     console.log('✅ Successfully stored extraction changes:', changes.length)
     
+    // Log monitoring event
+    await logMonitoringEvent(supabase, {
+      timestamp: new Date(),
+      dealerId: sellerId,
+      sessionId: extractionSessionId,
+      apiVersion,
+      variantSourceDistribution: {
+        existing: resolutionStats.existing,
+        reference: resolutionStats.reference,
+        inferred: resolutionStats.inferred
+      },
+      inferenceRate: resolutionStats.inferenceRate,
+      tokensUsed,
+      processingTimeMs: endTime - startTime,
+      errorOccurred: false
+    })
+    
     // Use the comparison results for statistics
     const totalNew = comparisonResult.summary.totalNew
     const totalUpdated = comparisonResult.summary.totalUpdated  
@@ -542,13 +803,44 @@ ${finalText}`
       success: true,
       extractionSessionId: extractionSessionId,
       itemsProcessed: comparisonResult.summary.totalExtracted,
-      summary: comparisonResult.summary
+      summary: {
+        ...comparisonResult.summary,
+        apiVersion,
+        variantSourceDistribution: {
+          existing: resolutionStats.existing,
+          reference: resolutionStats.reference,
+          inferred: resolutionStats.inferred
+        },
+        inferenceRate: resolutionStats.inferenceRate,
+        avgVariantConfidence: resolutionStats.avgConfidence
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     })
   } catch (error) {
     console.error('[ai-extract-vehicles] Error:', error)
+    
+    // Log error event for monitoring
+    if (error instanceof Error) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      const supabase = createClient(supabaseUrl, supabaseServiceKey)
+      
+      await logMonitoringEvent(supabase, {
+        timestamp: new Date(),
+        dealerId: undefined,
+        sessionId: 'error',
+        apiVersion: 'unknown' as any,
+        variantSourceDistribution: { existing: 0, reference: 0, inferred: 0 },
+        inferenceRate: 0,
+        tokensUsed: 0,
+        processingTimeMs: 0,
+        errorOccurred: true,
+        errorMessage: error.message
+      })
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false,
