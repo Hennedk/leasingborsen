@@ -192,21 +192,54 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   // Streamlined workflow: Apply selected changes directly
 
   // MVP streamlined workflow: Apply selected changes and discard non-selected
-  const handleApplySelected = () => {
+  const handleApplySelected = async () => {
     if (selectedChanges.size === 0) {
       toast.error('Vælg mindst én ændring at anvende')
       return
     }
     
+    // Check if any selected changes are rejected
+    const selectedRejectedIds = Array.from(selectedChanges).filter(id => {
+      const change = changes.find(c => c.id === id)
+      return change?.change_status === 'rejected'
+    })
+    
     const nonSelectedCount = changes.filter(c => 
       c.change_status === 'pending' && !selectedChanges.has(c.id)
     ).length
     
-    const message = nonSelectedCount > 0 
-      ? `Anvend ${selectedChanges.size} valgte ændringer og forkast ${nonSelectedCount} ikke-valgte? Dette kan ikke fortrydes.`
-      : `Anvend ${selectedChanges.size} valgte ændringer? Dette kan ikke fortrydes.`
+    let message = nonSelectedCount > 0 
+      ? `Anvend ${selectedChanges.size} valgte ændringer og forkast ${nonSelectedCount} ikke-valgte?`
+      : `Anvend ${selectedChanges.size} valgte ændringer?`
+      
+    if (selectedRejectedIds.length > 0) {
+      message += `\n\nBemærk: ${selectedRejectedIds.length} tidligere afviste ændringer vil blive genovervejet.`
+    }
+    
+    message += '\n\nDette kan ikke fortrydes.'
     
     if (confirm(message)) {
+      // Reset rejected items to pending before applying
+      if (selectedRejectedIds.length > 0) {
+        const { error: resetError } = await supabase
+          .from('extraction_listing_changes')
+          .update({ 
+            change_status: 'pending',
+            applied_by: null,
+            reviewed_at: null
+          })
+          .in('id', selectedRejectedIds)
+          
+        if (resetError) {
+          console.error('Error resetting rejected changes:', resetError)
+          toast.error('Fejl ved nulstilling af afviste ændringer')
+          return
+        }
+        
+        // Refresh the changes to reflect the status update
+        queryClient.invalidateQueries({ queryKey: ['session-changes', sessionId] })
+      }
+      
       applySelectedChanges({
         sessionId,
         selectedChangeIds: Array.from(selectedChanges)
@@ -424,8 +457,11 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
   const filterChangesByTab = (tabValue: string) => {
     switch (tabValue) {
       case 'pending':
-        // Exclude missing_model from pending tab - they have their own tab
-        return changes.filter(c => c.change_status === 'pending' && c.change_type !== 'missing_model')
+        // Include both pending and rejected (for re-selection) - exclude missing_model
+        return changes.filter(c => 
+          (c.change_status === 'pending' || c.change_status === 'rejected') && 
+          c.change_type !== 'missing_model'
+        )
       case 'approved':
         return changes.filter(c => c.change_status === 'approved')
       case 'rejected':
@@ -606,6 +642,17 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                 ⚠️ {missingModelCount} biler med manglende modeller kan ikke vælges - se "Missing Models" fanen
               </p>
             )}
+            {Array.from(selectedChanges).some(id => {
+              const change = changes.find(c => c.id === id)
+              return change?.change_status === 'rejected'
+            }) && (
+              <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded-md">
+                <p className="text-xs text-orange-700 flex items-center gap-1">
+                  <XCircle className="h-3 w-3" />
+                  Du har valgt tidligere afviste ændringer. Disse vil blive genovervejet når du klikker "Anvend valgte".
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -725,7 +772,8 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                           <TableRow 
                             className={cn(
                               "hover:bg-muted/50 cursor-pointer",
-                              isSelected && "bg-muted/30"
+                              isSelected && "bg-muted/30",
+                              isSelected && change.change_status === 'rejected' && "bg-orange-50 border-l-4 border-l-orange-400"
                             )}
                             onClick={() => toggleChangeExpansion(change.id)}
                           >
