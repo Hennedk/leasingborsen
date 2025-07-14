@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { 
   CheckCircle, XCircle, Clock, GitCommit,
-  Plus, Edit, Trash, Settings, ChevronDown, ChevronRight, PlusCircle
+  Plus, Edit, Trash, Settings, ChevronDown, ChevronRight, PlusCircle, ExternalLink
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { 
@@ -342,6 +342,51 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
           {/* Note */}
           <div className="text-sm text-muted-foreground italic bg-muted/30 p-3 rounded">
             📝 <strong>Bemærk:</strong> Denne bil kan ikke vælges til anvendelse. Løs først problemet med den manglende model.
+          </div>
+        </div>
+      )
+    }
+    
+    // Special handling for delete changes
+    if (change.change_type === 'delete' && change.existing_listing_id) {
+      return (
+        <div className="space-y-3">
+          {/* Deletion Warning */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Trash className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h5 className="font-medium text-red-800 mb-2">Listing vil blive slettet</h5>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium">Listing ID:</span>{' '}
+                    <code className="bg-red-100 px-2 py-0.5 rounded text-xs font-mono">
+                      {change.existing_listing_id}
+                    </code>
+                  </div>
+                  <div>
+                    <span className="font-medium">Bil:</span>{' '}
+                    {change.change_summary?.replace('Slet: ', '')}
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/admin/listings/edit/${change.existing_listing_id}`, '_blank')}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      Se listing før sletning
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning Note */}
+          <div className="text-sm text-muted-foreground italic bg-red-50/50 p-3 rounded">
+            ⚠️ <strong>Advarsel:</strong> Denne handling kan ikke fortrydes. Kontroller venligst at denne listing skal slettes.
           </div>
         </div>
       )
@@ -817,6 +862,11 @@ export const ExtractionSessionReview: React.FC<ExtractionSessionReviewProps> = (
                                 {extractedData.engine_info && (
                                   <div className="text-sm text-muted-foreground">
                                     {extractedData.engine_info}
+                                  </div>
+                                )}
+                                {change.change_type === 'delete' && change.existing_listing_id && (
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    ID: {change.existing_listing_id.slice(0, 8)}...
                                   </div>
                                 )}
                               </div>
