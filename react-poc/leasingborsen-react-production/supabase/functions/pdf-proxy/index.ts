@@ -62,7 +62,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  console.log('[pdf-proxy] Request received')
+  // console.log('[pdf-proxy] Request received')
 
   try {
     // Parse request
@@ -78,7 +78,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('[pdf-proxy] Requested URL:', url)
+    // console.log('[pdf-proxy] Requested URL:', url)
 
     // Validate URL format
     let targetUrl: URL
@@ -96,7 +96,7 @@ serve(async (req) => {
 
     // Check if domain is trusted
     if (!isDomainTrusted(url)) {
-      console.log('[pdf-proxy] Untrusted domain:', targetUrl.hostname)
+      // console.log('[pdf-proxy] Untrusted domain:', targetUrl.hostname)
       return new Response(
         JSON.stringify({ 
           error: 'Domain not in trusted list',
@@ -109,7 +109,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('[pdf-proxy] Fetching from trusted domain:', targetUrl.hostname)
+    // console.log('[pdf-proxy] Fetching from trusted domain:', targetUrl.hostname)
 
     // Fetch the PDF
     const response = await fetch(url, {
@@ -119,9 +119,9 @@ serve(async (req) => {
       }
     })
 
-    console.log('[pdf-proxy] Response status:', response.status)
-    console.log('[pdf-proxy] Content-Type:', response.headers.get('content-type'))
-    console.log('[pdf-proxy] Content-Length:', response.headers.get('content-length'))
+    // console.log('[pdf-proxy] Response status:', response.status)
+    // console.log('[pdf-proxy] Content-Type:', response.headers.get('content-type'))
+    // console.log('[pdf-proxy] Content-Length:', response.headers.get('content-length'))
 
     if (!response.ok) {
       return new Response(

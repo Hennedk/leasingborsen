@@ -51,16 +51,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    console.log('Starting remove-bg function...');
+    // console.log('Starting remove-bg function...');
     
     const { imageData, fileName }: RemoveBgRequest = await req.json();
-    console.log('Received request with fileName:', fileName);
+    // console.log('Received request with fileName:', fileName);
     
     // Detect image type from base64 data
     const imageTypeMatch = imageData.match(/^data:image\/([a-z]+);base64,/);
     const imageType = imageTypeMatch ? imageTypeMatch[1] : 'jpeg';
     const contentType = `image/${imageType}`;
-    console.log('Detected image type:', imageType, 'contentType:', contentType);
+    // console.log('Detected image type:', imageType, 'contentType:', contentType);
 
     if (!imageData || !fileName) {
       console.error('Missing imageData or fileName');
@@ -80,7 +80,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
-    console.log('Environment check:', {
+    // console.log('Environment check:', {
       hasSupabaseUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey,
       hasApi4aiKey: !!Deno.env.get('API4AI_KEY')
@@ -119,15 +119,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const blob = new Blob([imageBuffer], { type: contentType });
     formData.append('image', blob, fileName);
     
-    console.log('FormData prepared:', {
+    // console.log('FormData prepared:', {
       blobSize: blob.size,
       blobType: blob.type,
       fileName: fileName
     });
 
     // Call API4.ai background removal service via RapidAPI
-    console.log('Calling API4.ai background removal via RapidAPI...');
-    console.log('Request details:', {
+    // console.log('Calling API4.ai background removal via RapidAPI...');
+    // console.log('Request details:', {
       url: 'https://api4ai-background-removal.p.rapidapi.com/v1/results',
       method: 'POST',
       hasApiKey: !!api4aiKey,
@@ -144,8 +144,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       body: formData,
     });
 
-    console.log('API4.ai response status:', api4Response.status);
-    console.log('API4.ai response headers:', Object.fromEntries(api4Response.headers.entries()));
+    // console.log('API4.ai response status:', api4Response.status);
+    // console.log('API4.ai response headers:', Object.fromEntries(api4Response.headers.entries()));
 
     if (!api4Response.ok) {
       const errorText = await api4Response.text();
@@ -154,7 +154,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const result = await api4Response.json();
-    console.log('API4.ai response structure:', {
+    // console.log('API4.ai response structure:', {
       hasResults: 'results' in result,
       resultsLength: result.results?.length,
       // Don't log full response as it contains large base64 data
@@ -180,7 +180,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const imageEntity = firstResult.entities?.find((entity: any) => entity.kind === 'image');
     const processedImageBase64 = imageEntity?.image;
     
-    console.log('Processed image info:', {
+    // console.log('Processed image info:', {
       hasImageEntity: !!imageEntity,
       hasProcessedImage: !!processedImageBase64,
       imageLength: processedImageBase64?.length,
@@ -212,7 +212,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const standardizedImages: RemoveBgResponse['standardizedImages'] = {};
     
     try {
-      console.log('Starting image standardization...');
+      // console.log('Starting image standardization...');
       
       // Define standard sizes with higher resolution
       const sizes = {
@@ -224,7 +224,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const sourceImage = await Image.decode(processedBuffer);
       
       for (const [variant, dimensions] of Object.entries(sizes)) {
-        console.log(`Creating ${variant} variant: ${dimensions.width}x${dimensions.height}`);
+        // console.log(`Creating ${variant} variant: ${dimensions.width}x${dimensions.height}`);
         
         // Create new image with transparent background
         const targetImage = new Image(dimensions.width, dimensions.height);
@@ -280,7 +280,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         };
       }
       
-      console.log('Image standardization completed');
+      // console.log('Image standardization completed');
       
     } catch (standardizationError) {
       console.error('Error during standardization:', standardizationError);

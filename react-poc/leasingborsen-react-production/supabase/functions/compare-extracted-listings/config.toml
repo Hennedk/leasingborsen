@@ -1,0 +1,4 @@
+[function]
+# Extend timeout to 5 minutes (300 seconds)
+# Default is usually 60-150 seconds
+timeout = 300

@@ -16,7 +16,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('Authentication and Authorization', () => {
     it('should reject requests without authorization header', async () => {
       if (!process.env.SUPABASE_URL) {
-        console.log('Skipping Edge Function test - no Supabase URL configured')
+        // console.log('Skipping Edge Function test - no Supabase URL configured')
         return
       }
 
@@ -37,7 +37,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
     it('should reject requests with invalid authorization', async () => {
       if (!process.env.SUPABASE_URL) {
-        console.log('Skipping Edge Function test - no Supabase URL configured')
+        // console.log('Skipping Edge Function test - no Supabase URL configured')
         return
       }
 
@@ -59,7 +59,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('Request Validation', () => {
     it('should reject requests without text parameter', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN) {
-        console.log('Skipping Edge Function test - missing configuration')
+        // console.log('Skipping Edge Function test - missing configuration')
         return
       }
 
@@ -81,7 +81,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
     it('should reject requests with invalid text parameter', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN) {
-        console.log('Skipping Edge Function test - missing configuration')
+        // console.log('Skipping Edge Function test - missing configuration')
         return
       }
 
@@ -103,7 +103,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('AI Extraction Logic', () => {
     it('should process Volkswagen vehicle data correctly', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN || !process.env.OPENAI_API_KEY) {
-        console.log('Skipping AI extraction test - missing configuration')
+        // console.log('Skipping AI extraction test - missing configuration')
         return
       }
 
@@ -152,7 +152,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
     it('should handle generic vehicle data', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN || !process.env.OPENAI_API_KEY) {
-        console.log('Skipping AI extraction test - missing configuration')
+        // console.log('Skipping AI extraction test - missing configuration')
         return
       }
 
@@ -187,7 +187,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('Cost Tracking and Limits', () => {
     it('should track usage in database', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN || !process.env.OPENAI_API_KEY) {
-        console.log('Skipping cost tracking test - missing configuration')
+        // console.log('Skipping cost tracking test - missing configuration')
         return
       }
 
@@ -216,7 +216,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
     it('should respect budget limits', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN) {
-        console.log('Skipping budget limit test - missing configuration')
+        // console.log('Skipping budget limit test - missing configuration')
         return
       }
 
@@ -248,7 +248,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('Error Handling', () => {
     it('should handle OpenAI API errors gracefully', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN) {
-        console.log('Skipping error handling test - missing configuration')
+        // console.log('Skipping error handling test - missing configuration')
         return
       }
 
@@ -276,7 +276,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
     it('should handle malformed requests', async () => {
       if (!process.env.SUPABASE_URL || !TEST_AUTH_TOKEN) {
-        console.log('Skipping malformed request test - missing configuration')
+        // console.log('Skipping malformed request test - missing configuration')
         return
       }
 
@@ -296,7 +296,7 @@ describe('AI Extract Vehicles Edge Function', () => {
   describe('CORS Handling', () => {
     it('should handle OPTIONS requests for CORS', async () => {
       if (!process.env.SUPABASE_URL) {
-        console.log('Skipping CORS test - no Supabase URL configured')
+        // console.log('Skipping CORS test - no Supabase URL configured')
         return
       }
 
@@ -313,7 +313,7 @@ describe('AI Extract Vehicles Edge Function', () => {
 
 // Test utilities for local development
 export const testEdgeFunctionLocally = async () => {
-  console.log('Testing Edge Function locally...')
+  // console.log('Testing Edge Function locally...')
   
   try {
     const response = await fetch('http://localhost:54321/functions/v1/ai-extract-vehicles', {
@@ -328,8 +328,8 @@ export const testEdgeFunctionLocally = async () => {
       })
     })
 
-    console.log('Response status:', response.status)
-    console.log('Response body:', await response.text())
+    // console.log('Response status:', response.status)
+    // console.log('Response body:', await response.text())
   } catch (error) {
     console.error('Local test failed:', error)
   }

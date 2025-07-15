@@ -329,7 +329,7 @@ serve(async (req) => {
       throw new Error('extractedCars must be an array')
     }
 
-    console.log(`[compare-extracted-listings] Processing ${extractedCars.length} extracted cars for seller ${sellerId}`)
+    // console.log(`[compare-extracted-listings] Processing ${extractedCars.length} extracted cars for seller ${sellerId}`)
     
     // Track variant sources
     const variantSources = {
@@ -389,7 +389,7 @@ serve(async (req) => {
     const { data: existingListings, error: existingError } = await existingQuery
     if (existingError) throw existingError
 
-    console.log(`[compare-extracted-listings] Found ${existingListings?.length || 0} existing listings for comparison`)
+    // console.log(`[compare-extracted-listings] Found ${existingListings?.length || 0} existing listings for comparison`)
 
     // Create lookup maps for existing listings with enhanced fuzzy matching
     const existingByExactKey = new Map()
@@ -610,7 +610,7 @@ serve(async (req) => {
       return !matchedExistingIds.has(listing.listing_id)
     }) || []
 
-    console.log(`[compare-extracted-listings] Found ${unmatchedExistingListings.length} unmatched listings to mark for deletion`)
+    // console.log(`[compare-extracted-listings] Found ${unmatchedExistingListings.length} unmatched listings to mark for deletion`)
 
     // Add unmatched existing listings as "delete" type changes
     // First, deduplicate by listing_id to avoid creating multiple delete records for the same listing
@@ -619,7 +619,7 @@ serve(async (req) => {
       uniqueUnmatchedListings.set(unmatchedListing.listing_id, unmatchedListing)
     }
     
-    console.log(`[compare-extracted-listings] After deduplication: ${uniqueUnmatchedListings.size} unique unmatched listings`)
+    // console.log(`[compare-extracted-listings] After deduplication: ${uniqueUnmatchedListings.size} unique unmatched listings`)
     
     for (const unmatchedListing of uniqueUnmatchedListings.values()) {
       const offers = unmatchedListing.lease_pricing || (unmatchedListing.monthly_price ? [{
@@ -667,8 +667,8 @@ serve(async (req) => {
     const missingModelCount = matches.filter(m => m.changeType === 'missing_model').length
     const deleteCount = matches.filter(m => m.changeType === 'delete').length
 
-    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
-    console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
+    // console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
+    // console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
 
     const result: ComparisonResult = {
       matches,

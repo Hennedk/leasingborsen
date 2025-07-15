@@ -57,7 +57,7 @@ function buildOptimizedListingsContext(existingListings: any[]): string {
       listingsToInclude.push(...group.slice(0, 3))
     })
     
-    console.log(`[ai-extract-vehicles] Reduced listings from ${existingListings.length} to ${listingsToInclude.length}`)
+    // console.log(`[ai-extract-vehicles] Reduced listings from ${existingListings.length} to ${listingsToInclude.length}`)
   }
   
   return `\n\n🚨 CRITICAL: EXISTING DEALER LISTINGS - YOU MUST MATCH THESE EXACTLY 🚨
@@ -171,8 +171,8 @@ async function callOpenAIWithFallback(params: {
   
   if (useResponsesAPI && storedPromptId) {
     try {
-      console.log('[ai-extract-vehicles] Attempting Responses API call...')
-      console.log('[ai-extract-vehicles] Context includes:', {
+      // console.log('[ai-extract-vehicles] Attempting Responses API call...')
+      // console.log('[ai-extract-vehicles] Context includes:', {
         hasReferenceData: !!context.referenceData && context.referenceData.length > 0,
         hasExistingListings: !!context.existingListings && context.existingListings.length > 0,
         referenceDataLength: context.referenceData?.length || 0,
@@ -267,8 +267,8 @@ Extraction Instructions:
         throw new Error(`Schema validation failed: ${validation.errors?.join(', ')}`)
       }
       
-      console.log('[ai-extract-vehicles] Responses API call successful!')
-      console.log(`[ai-extract-vehicles] Used ${response.usage?.total_tokens || 0} tokens (input: ${response.usage?.input_tokens || 0}, output: ${response.usage?.output_tokens || 0})`)
+      // console.log('[ai-extract-vehicles] Responses API call successful!')
+      // console.log(`[ai-extract-vehicles] Used ${response.usage?.total_tokens || 0} tokens (input: ${response.usage?.input_tokens || 0}, output: ${response.usage?.output_tokens || 0})`)
       await FeatureFlagManager.logUsage(dealerId, true, 'success')
       
       return {
@@ -314,13 +314,13 @@ Extraction Instructions:
         fallbackUsed: true
       }
       
-      console.log('[ai-extract-vehicles] Falling back to Chat Completions API...')
+      // console.log('[ai-extract-vehicles] Falling back to Chat Completions API...')
       await FeatureFlagManager.logUsage(dealerId, false, `error: ${errorType}`)
     }
   }
   
   // Fallback to Chat Completions API (existing logic)
-  console.log('[ai-extract-vehicles] Using Chat Completions API')
+  // console.log('[ai-extract-vehicles] Using Chat Completions API')
   
   const completion = await openai.chat.completions.create({
     model: 'gpt-4.1-2025-04-14',
@@ -387,14 +387,14 @@ async function logMonitoringEvent(supabase: any, event: ExtractionMonitoringEven
 serve(async (req) => {
   // Handle CORS preflight immediately
   if (req.method === 'OPTIONS') {
-    console.log('[ai-extract-vehicles] CORS preflight request received')
+    // console.log('[ai-extract-vehicles] CORS preflight request received')
     return new Response('ok', { 
       headers: corsHeaders,
       status: 200
     })
   }
 
-  console.log(`[ai-extract-vehicles] ${req.method} request received`)
+  // console.log(`[ai-extract-vehicles] ${req.method} request received`)
 
   try {
     // Parse request with all parameters from original function
@@ -437,7 +437,7 @@ serve(async (req) => {
     }
     
     // Log for monitoring
-    console.log('[ai-extract-vehicles] Context data:', {
+    // console.log('[ai-extract-vehicles] Context data:', {
       sellerId,
       dealerName: finalDealerName,
       referenceDataKeys: Object.keys(safeReferenceData),
@@ -475,12 +475,12 @@ serve(async (req) => {
     const isEmergencyDisabled = await FeatureFlagManager.isEmergencyDisabled()
     
     if (isEmergencyDisabled) {
-      console.log('[ai-extract-vehicles] Emergency disable active, using Chat Completions')
+      // console.log('[ai-extract-vehicles] Emergency disable active, using Chat Completions')
     }
     
     const storedPromptId = Deno.env.get('OPENAI_STORED_PROMPT_ID')
     
-    console.log('[ai-extract-vehicles] Feature flag decision:', {
+    // console.log('[ai-extract-vehicles] Feature flag decision:', {
       useResponsesAPI: useResponsesAPI && !isEmergencyDisabled,
       storedPromptId: storedPromptId ? 'configured' : 'not configured',
       dealerId: sellerId
@@ -730,7 +730,7 @@ ${finalText}`
     })
 
     // Call OpenAI with appropriate API
-    console.log('[ai-extract-vehicles] Starting AI extraction...')
+    // console.log('[ai-extract-vehicles] Starting AI extraction...')
     const startTime = Date.now()
     
     const { response: aiResponse, apiVersion, tokensUsed } = await callOpenAIWithFallback({
@@ -745,11 +745,11 @@ ${finalText}`
     })
 
     const endTime = Date.now()
-    console.log(`[ai-extract-vehicles] AI extraction completed in ${endTime - startTime}ms using ${apiVersion}`)
+    // console.log(`[ai-extract-vehicles] AI extraction completed in ${endTime - startTime}ms using ${apiVersion}`)
 
     // Extract cars from response
     const extractedCars: CompactExtractedVehicle[] = aiResponse.cars || []
-    console.log('[ai-extract-vehicles] Successfully extracted ' + extractedCars.length + ' cars')
+    // console.log('[ai-extract-vehicles] Successfully extracted ' + extractedCars.length + ' cars')
 
     // Create variant resolver
     const variantResolver = new VariantResolver(extractionContext)
@@ -758,7 +758,7 @@ ${finalText}`
     const variantResolutions = await variantResolver.resolveVariants(extractedCars)
     const resolutionStats = variantResolver.getResolutionStats(variantResolutions)
     
-    console.log('[ai-extract-vehicles] Variant resolution stats:', resolutionStats)
+    // console.log('[ai-extract-vehicles] Variant resolution stats:', resolutionStats)
 
     // Convert from compact format to full format with variant tracking
     const vehicles: ExtractedVehicle[] = extractedCars.map((car: CompactExtractedVehicle, index: number) => {
@@ -794,9 +794,9 @@ ${finalText}`
       }
     })
 
-    console.log('[ai-extract-vehicles] Expanded cars with variant tracking:', vehicles.length)
+    // console.log('[ai-extract-vehicles] Expanded cars with variant tracking:', vehicles.length)
     
-    console.log('🚗 Processing ' + vehicles.length + ' extracted vehicles for comparison')
+    // console.log('🚗 Processing ' + vehicles.length + ' extracted vehicles for comparison')
 
     // Use the existing compare-extracted-listings edge function for sophisticated comparison
     const comparisonResponse = await fetch(`${supabaseUrl}/functions/v1/compare-extracted-listings`, {
@@ -822,7 +822,7 @@ ${finalText}`
       throw new Error(`Comparison failed: ${comparisonResult.error}`)
     }
 
-    console.log('🔍 Comparison completed:', {
+    // console.log('🔍 Comparison completed:', {
       totalExtracted: comparisonResult.summary.totalExtracted,
       totalNew: comparisonResult.summary.totalNew,
       totalUpdated: comparisonResult.summary.totalUpdated,
@@ -861,7 +861,7 @@ ${finalText}`
       throw sessionError
     }
     
-    console.log(`[ai-extract-vehicles] Created extraction session:`, sessionData.id)
+    // console.log(`[ai-extract-vehicles] Created extraction session:`, sessionData.id)
     const extractionSessionId = sessionData.id
     
     // Update session with results (like original function)
@@ -884,7 +884,7 @@ ${finalText}`
       throw updateError
     }
     
-    console.log('✅ Successfully updated extraction session:', extractionSessionId)
+    // console.log('✅ Successfully updated extraction session:', extractionSessionId)
     
     // Store extraction changes in database (like original function)
     const changes = comparisonResult.matches.map((match: any) => ({
@@ -916,7 +916,7 @@ ${finalText}`
       throw changesError
     }
     
-    console.log('✅ Successfully stored extraction changes:', changes.length)
+    // console.log('✅ Successfully stored extraction changes:', changes.length)
     
     // Log monitoring event
     await logMonitoringEvent(supabase, {
@@ -940,7 +940,7 @@ ${finalText}`
     const totalUpdated = comparisonResult.summary.totalUpdated  
     const totalUnchanged = comparisonResult.summary.totalUnchanged
 
-    console.log(`[ai-extract-vehicles] Extraction completed successfully`)
+    // console.log(`[ai-extract-vehicles] Extraction completed successfully`)
     
     return new Response(JSON.stringify({
       success: true,

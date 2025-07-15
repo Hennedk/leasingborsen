@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "🔍 Checking current OPENAI_STORED_PROMPT_VERSION in Supabase Edge Functions..."
+echo ""
+echo "To update the prompt version to v12, run:"
+echo ""
+echo "supabase secrets set OPENAI_STORED_PROMPT_VERSION=12"
+echo ""
+echo "Then redeploy the Edge Function to apply the change:"
+echo "supabase functions deploy ai-extract-vehicles"
+echo ""
+echo "Current code defaults to '12' if not set, but if OPENAI_STORED_PROMPT_VERSION"
+echo "is set in the environment, it will override the default."
+echo ""
+echo "To verify after deployment, check the logs when running an extraction to see"
+echo "which version is being used."

@@ -28,7 +28,7 @@ export class FeatureFlagManager {
       excludedDealers
     }
     
-    console.log('[FeatureFlags] Initialized:', {
+    // console.log('[FeatureFlags] Initialized:', {
       enabled,
       phase,
       rolloutPercentage,
@@ -54,13 +54,13 @@ export class FeatureFlagManager {
     
     // Check excluded dealers first
     if (this.config!.excludedDealers?.includes(dealerId)) {
-      console.log(`[FeatureFlags] Dealer ${dealerId} is excluded from Responses API`)
+      // console.log(`[FeatureFlags] Dealer ${dealerId} is excluded from Responses API`)
       return false
     }
     
     // Check dealer overrides (always use Responses API for these)
     if (this.config!.dealerOverrides?.includes(dealerId)) {
-      console.log(`[FeatureFlags] Dealer ${dealerId} is in override list, using Responses API`)
+      // console.log(`[FeatureFlags] Dealer ${dealerId} is in override list, using Responses API`)
       return true
     }
     
@@ -70,7 +70,7 @@ export class FeatureFlagManager {
     
     const shouldUse = dealerHash < threshold
     
-    console.log(`[FeatureFlags] Dealer ${dealerId} hash: ${dealerHash.toFixed(3)}, threshold: ${threshold}, using Responses API: ${shouldUse}`)
+    // console.log(`[FeatureFlags] Dealer ${dealerId} hash: ${dealerHash.toFixed(3)}, threshold: ${threshold}, using Responses API: ${shouldUse}`)
     
     return shouldUse
   }
@@ -108,7 +108,7 @@ export class FeatureFlagManager {
   
   static async logUsage(dealerId: string | undefined, used: boolean, reason: string) {
     // Log feature flag decision for monitoring
-    console.log('[FeatureFlags] Usage:', {
+    // console.log('[FeatureFlags] Usage:', {
       dealerId,
       used,
       reason,
