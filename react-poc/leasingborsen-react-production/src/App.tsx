@@ -24,13 +24,13 @@ const Advertising = lazy(() => import('@/pages/Advertising'))
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
 const AdminListings = lazy(() => import('@/pages/admin/AdminListings'))
 const AdminListingForm = lazy(() => import('@/pages/admin/AdminListingForm'))
-const AdminBatchListings = lazy(() => import('@/pages/admin/AdminBatchListings'))
+// AdminBatchListings removed
 const AdminSellers = lazy(() => import('@/pages/admin/AdminSellers'))
 const AdminSellerListings = lazy(() => import('@/pages/admin/AdminSellerListings'))
 const AdminSellerForm = lazy(() => import('@/pages/admin/AdminSellerForm'))
 const BatchReviewPage = lazy(() => import('@/pages/admin/BatchReviewPage'))
 const ToyotaPDFProcessingPage = lazy(() => import('@/pages/admin/ToyotaPDFProcessingPage'))
-const AdminPDFExtraction = lazy(() => import('@/pages/admin/AdminPDFExtraction'))
+// AdminPDFExtraction removed
 const AdminExtractionSessions = lazy(() => import('@/pages/admin/AdminExtractionSessions'))
 
 // POC pages (standalone, outside main menu)
@@ -131,7 +131,7 @@ function App() {
                       <Route path="dashboard" element={<AdminDashboard />} />
                       <Route path="listings" element={<AdminListings />} />
                       <Route path="listings/create" element={<AdminListingForm />} />
-                      <Route path="listings/batch" element={<AdminBatchListings />} />
+                      {/* Route path="listings/batch" removed */}
                       <Route path="listings/edit/:id" element={<AdminListingForm />} />
                       <Route path="sellers" element={<AdminSellers />} />
                       <Route path="sellers/listings" element={<AdminSellerListings />} />
@@ -139,7 +139,7 @@ function App() {
                       <Route path="sellers/edit/:id" element={<AdminSellerForm />} />
                       <Route path="batches/:batchId/review" element={<BatchReviewPage />} />
                       <Route path="toyota-pdf" element={<ToyotaPDFProcessingPage />} />
-                      <Route path="pdf-extraction" element={<AdminPDFExtraction />} />
+                      {/* Route path="pdf-extraction" removed */}
                       <Route path="extraction-sessions" element={<AdminExtractionSessions />} />
                       <Route path="extraction-sessions/:sessionId" element={<AdminExtractionSessions />} />
                     </Routes>

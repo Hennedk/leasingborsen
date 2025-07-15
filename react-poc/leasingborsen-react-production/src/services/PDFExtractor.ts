@@ -237,7 +237,7 @@ export class PDFExtractor {
   /**
    * Validate PDF file
    */
-  private validateFile(file: File): { valid: boolean; error?: string } {
+  public validateFile(file: File): { valid: boolean; error?: string } {
     // Check file type
     if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
       return {
@@ -294,4 +294,4 @@ export class PDFExtractor {
 export const pdfExtractor = new PDFExtractor()
 
 // Export utility functions
-export const validatePDFFile = (file: File) => new PDFExtractor().validateFile(file)
+export const validatePDFFile = (file: File) => pdfExtractor.validateFile(file)

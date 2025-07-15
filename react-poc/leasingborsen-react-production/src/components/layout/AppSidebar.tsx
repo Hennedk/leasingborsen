@@ -10,7 +10,6 @@ import {
   Settings,
   LogOut,
   X,
-  FileText,
   GitMerge
 } from 'lucide-react'
 
@@ -42,11 +41,7 @@ const navigation: NavItem[] = [
     href: '/admin/sellers',
     icon: Users,
   },
-  {
-    title: 'PDF Extraction',
-    href: '/admin/pdf-extraction',
-    icon: FileText,
-  },
+  // PDF Extraction menu item removed
   {
     title: 'Extraction Sessions',
     href: '/admin/extraction-sessions',

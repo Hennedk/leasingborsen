@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 // import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Upload, FileText, CheckCircle, AlertCircle, Info } from 'lucide-react'
-import { pdfTextExtractor } from '@/lib/services/pdfTextExtractor'
+import { pdfExtractor } from '@/services/PDFExtractor'
 import { useNavigate } from 'react-router-dom'
 // import { supabase } from '@/lib/supabase'
 import { useJobProgress } from '@/hooks/useJobProgress'
@@ -176,7 +176,7 @@ export const GenericBatchUploadDialog = React.memo<GenericBatchUploadDialogProps
         currentStep: 'extract'
       }))
 
-      const extractionResult = await pdfTextExtractor.extractText(state.file)
+      const extractionResult = await pdfExtractor.extractText(state.file)
       const extractedText = extractionResult.text
       
       setState(prev => ({
