@@ -1,129 +1,88 @@
--- Fix RLS issues with sellers_with_make view and admin access
--- This migration ensures admin users can access sellers data properly
+-- Fix RLS access issues for sellers_with_make view and related tables
+-- This migration addresses the ERR_INTERNET_DISCONNECTED error when accessing admin/sellers
 
--- First, ensure the sellers_with_make view exists with proper structure
+-- First, ensure the sellers_with_make view exists and is properly defined
 CREATE OR REPLACE VIEW sellers_with_make AS
 SELECT 
-  s.id,
-  s.name,
-  s.email,
-  s.phone,
-  s.company,
-  s.address,
-  s.country,
-  s.logo_url,
-  s.pdf_url,
-  s.pdf_urls,
-  s.make_id,
-  s.active,
-  s.created_at,
-  s.updated_at,
+  s.*,
   m.name as make_name
 FROM sellers s
 LEFT JOIN makes m ON s.make_id = m.id;
 
--- Grant access to the view for different roles
-GRANT SELECT ON sellers_with_make TO authenticated;
-GRANT SELECT ON sellers_with_make TO anon;
-GRANT SELECT ON sellers_with_make TO service_role;
+-- Grant proper access to the sellers_with_make view for all roles
+GRANT SELECT ON sellers_with_make TO anon, authenticated, service_role;
 
--- Create specific policies for admin access to circumvent any RLS issues
--- This ensures admin users always have access to sellers data
+-- Important: Views inherit RLS from underlying tables, but we need to ensure
+-- the policies allow appropriate access for admin functionality
 
--- Update the sellers table policy to be more permissive for admin operations
-DROP POLICY IF EXISTS "Admin full access to sellers" ON sellers;
-CREATE POLICY "Admin full access to sellers" ON sellers
-  FOR ALL TO authenticated
-  USING (
-    COALESCE(
-      (current_setting('request.jwt.claims', true)::json->>'role') = 'admin',
-      false
-    )
-  );
-
--- Add a more permissive policy for authenticated users to read seller basic info
-DROP POLICY IF EXISTS "Authenticated can view sellers for admin" ON sellers;
-CREATE POLICY "Authenticated can view sellers for admin" ON sellers
+-- Update the sellers policies to be more permissive for admin interface
+-- Allow authenticated users to read all sellers (for admin interface)
+DROP POLICY IF EXISTS "Authenticated can view all sellers for admin" ON sellers;
+CREATE POLICY "Authenticated can view all sellers for admin" ON sellers
   FOR SELECT TO authenticated
   USING (true);
 
--- Update makes table to ensure admin can access make data
+-- Update makes policies to ensure they can be read by everyone
+-- (This is needed for the sellers_with_make view to work)
 DROP POLICY IF EXISTS "Anyone can read makes" ON makes;
 CREATE POLICY "Anyone can read makes" ON makes
   FOR SELECT TO anon, authenticated
   USING (true);
 
--- Ensure service role has proper access for Edge Functions
-GRANT ALL PRIVILEGES ON sellers TO service_role;
-GRANT ALL PRIVILEGES ON makes TO service_role;
-GRANT SELECT ON sellers_with_make TO service_role;
+-- Ensure admin users have full management access
+DROP POLICY IF EXISTS "Admin can modify sellers" ON sellers;
+CREATE POLICY "Admin can modify sellers" ON sellers
+  FOR ALL TO authenticated
+  USING (is_admin());
 
--- Create a function to test sellers access
-CREATE OR REPLACE FUNCTION test_sellers_access()
+-- Grant necessary table permissions
+GRANT SELECT ON sellers TO anon, authenticated, service_role;
+GRANT SELECT ON makes TO anon, authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON sellers TO authenticated;
+GRANT INSERT, UPDATE, DELETE ON makes TO authenticated;
+
+-- Create a function to check seller access permissions
+CREATE OR REPLACE FUNCTION check_seller_access_permissions()
 RETURNS TABLE(
-  test_name TEXT,
-  status TEXT,
-  details TEXT
+  object_name TEXT,
+  object_type TEXT,
+  anon_access BOOLEAN,
+  authenticated_access BOOLEAN,
+  admin_policy_exists BOOLEAN
 ) AS $$
 BEGIN
-  -- Test 1: Check if we can query sellers table
+  -- Check view access
   RETURN QUERY
   SELECT 
-    'Sellers table access'::TEXT,
-    CASE 
-      WHEN EXISTS (SELECT 1 FROM sellers LIMIT 1) THEN 'PASS'
-      ELSE 'FAIL'
-    END::TEXT,
-    'Basic sellers table query'::TEXT;
+    'sellers_with_make'::TEXT,
+    'view'::TEXT,
+    has_table_privilege('anon', 'sellers_with_make', 'SELECT')::BOOLEAN,
+    has_table_privilege('authenticated', 'sellers_with_make', 'SELECT')::BOOLEAN,
+    EXISTS(SELECT 1 FROM pg_policies WHERE tablename = 'sellers' AND policyname LIKE '%Admin%')::BOOLEAN;
 
-  -- Test 2: Check if we can query sellers_with_make view
+  -- Check sellers table access
   RETURN QUERY
   SELECT 
-    'Sellers view access'::TEXT,
-    CASE 
-      WHEN EXISTS (SELECT 1 FROM sellers_with_make LIMIT 1) THEN 'PASS'
-      ELSE 'FAIL'
-    END::TEXT,
-    'Sellers with make view query'::TEXT;
+    'sellers'::TEXT,
+    'table'::TEXT,
+    has_table_privilege('anon', 'sellers', 'SELECT')::BOOLEAN,
+    has_table_privilege('authenticated', 'sellers', 'SELECT')::BOOLEAN,
+    EXISTS(SELECT 1 FROM pg_policies WHERE tablename = 'sellers' AND policyname LIKE '%Admin%')::BOOLEAN;
 
-  -- Test 3: Check seller count
+  -- Check makes table access
   RETURN QUERY
   SELECT 
-    'Seller count'::TEXT,
-    'INFO'::TEXT,
-    ('Total sellers: ' || COUNT(*)::TEXT) as details
-  FROM sellers;
-
-EXCEPTION
-  WHEN OTHERS THEN
-    RETURN QUERY
-    SELECT 
-      'Error'::TEXT,
-      'FAIL'::TEXT,
-      SQLERRM::TEXT;
+    'makes'::TEXT,
+    'table'::TEXT,
+    has_table_privilege('anon', 'makes', 'SELECT')::BOOLEAN,
+    has_table_privilege('authenticated', 'makes', 'SELECT')::BOOLEAN,
+    EXISTS(SELECT 1 FROM pg_policies WHERE tablename = 'makes' AND policyname LIKE '%Admin%')::BOOLEAN;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
--- Grant execute permission on test function
-GRANT EXECUTE ON FUNCTION test_sellers_access() TO authenticated;
+-- Grant execute permission on the check function
+GRANT EXECUTE ON FUNCTION check_seller_access_permissions() TO authenticated;
 
--- Add comments for documentation
-COMMENT ON VIEW sellers_with_make IS 'View combining sellers with their associated make names - used by admin interface';
-COMMENT ON FUNCTION test_sellers_access() IS 'Diagnostic function to test sellers table and view access';
-
--- Log the migration
-INSERT INTO migration_metrics (
-  migration_name,
-  operation_type,
-  table_name,
-  execution_time_ms,
-  success,
-  details
-) VALUES (
-  '20250719_fix_sellers_view_rls',
-  'RLS_FIX',
-  'sellers_with_make',
-  0,
-  true,
-  'Fixed RLS policies for sellers view and admin access'
-);
+-- Add comment documenting the fix
+COMMENT ON VIEW sellers_with_make IS 'View combining sellers with make names - accessible to all roles for admin interface';
+COMMENT ON FUNCTION check_seller_access_permissions() IS 'Diagnostic function to verify seller access permissions are properly configured';
