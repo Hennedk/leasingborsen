@@ -146,7 +146,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
 
       await updateMutation.mutateAsync({
         listingId: currentListingId,
-        listingUpdates: listingData as any,
+        listingData: listingData as any,
         offers: undefined
       })
 
@@ -317,7 +317,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         
         await updateMutation.mutateAsync({
           listingId: currentListingId,
-          listingUpdates: listingData as any,
+          listingData: listingData as any,
           offers: undefined
         })
         toast.success('Annoncen blev opdateret succesfuldt')
@@ -349,8 +349,8 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
           offers: undefined
         })
         
-        if (result?.newListing?.id) {
-          setCurrentListingId(result.newListing.id)
+        if (result?.listingId) {
+          setCurrentListingId(result.listingId)
         }
         
         toast.success('Ny annonce blev oprettet succesfuldt')

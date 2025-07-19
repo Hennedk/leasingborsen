@@ -5,10 +5,18 @@ export {
   useDeleteListing
 } from './useListingCrudMutations'
 
-// Complex listing operations with offers
+// Admin operations using secure Edge Functions
 export {
+  useAdminOperations,
   useUpdateListingWithOffers,
-  useCreateListingWithOffers
+  useCreateListingWithOffers,
+  useDeleteListing as useDeleteListingWithEdgeFunction
+} from '../useAdminOperations'
+
+// Legacy complex listing operations (direct Supabase - deprecated)
+export {
+  useUpdateListingWithOffers as useUpdateListingWithOffersLegacy,
+  useCreateListingWithOffers as useCreateListingWithOffersLegacy
 } from './useListingOfferMutations'
 
 // Listing interaction mutations

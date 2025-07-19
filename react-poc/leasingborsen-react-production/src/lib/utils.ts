@@ -20,3 +20,18 @@ export function formatDate(date: string | Date): string {
 export function createLoadingArray(length: number) {
   return Array.from({ length }, (_, i) => i)
 }
+
+// Danish error messages for consistency
+export const errorMessages = {
+  fetchError: 'Der opstod en fejl ved hentning af data',
+  saveError: 'Kunne ikke gemme ændringerne',
+  notFound: 'Ressourcen blev ikke fundet',
+  networkError: 'Netværksfejl - prøv igen senere',
+  validationError: 'Ugyldige data - kontroller indtastning',
+  deleteError: 'Der opstod en fejl ved sletning',
+  updateError: 'Der opstod en fejl ved opdatering',
+  createError: 'Der opstod en fejl ved oprettelse',
+  uploadError: 'Der opstod en fejl ved upload',
+  unauthorizedError: 'Du har ikke tilladelse til denne handling',
+  generalError: 'Der opstod en fejl ved behandling af anmodningen'
+} as const
