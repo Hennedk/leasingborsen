@@ -461,7 +461,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         progressMessage: 'Fetching dealer\'s existing listings for AI context...'
       }))
 
-      // let existingListings = null
+      let existingListings = null
       try {
         const { data: existingData, error: existingError } = await supabase
           .rpc('get_dealer_existing_listings', {
@@ -471,7 +471,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         if (existingError) {
           console.warn('Could not fetch existing listings:', existingError.message)
         } else {
-          // existingListings = existingData
+          existingListings = existingData
           console.log('🚗 Existing listings fetched:', {
             listingsCount: existingData?.existing_listings?.length || 0,
             sampleVariants: existingData?.existing_listings?.slice(0, 3).map((l: any) => l.variant) || []
@@ -501,6 +501,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         referenceData: referenceData,  // Pass complete reference data to edge function
         // Enhanced: Add existing dealer listings for consistent variant naming
         includeExistingListings: true,
+        existingListings: existingListings,  // Add the actual existing listings data
         // Add PDF URL (can be a placeholder since we're not storing the actual PDF)
         pdfUrl: state.fileUrl || `local://${file.name}`
       }
@@ -512,7 +513,9 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         fileName: file.name,
         makeId: config.makeId,
         makeName: config.makeName,
-        batchId
+        batchId,
+        existingListingsCount: existingListings?.existing_listings?.length || 0,
+        hasExistingListings: !!existingListings
       })
 
       const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
