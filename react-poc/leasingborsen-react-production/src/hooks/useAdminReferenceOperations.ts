@@ -51,7 +51,10 @@ interface BulkDeleteReferencesParams {
 interface AdminReferenceOperationResponse {
   success: boolean
   reference?: any
-  references?: any[]
+  references?: {
+    deleted: string[]
+    failed: string[]
+  }
   referenceId?: string
   error?: string
   validationErrors?: string[]

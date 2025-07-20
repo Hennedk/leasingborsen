@@ -47,7 +47,10 @@ interface BulkDeleteSellersParams {
 interface AdminSellerOperationResponse {
   success: boolean
   seller?: any
-  sellers?: any[]
+  sellers?: {
+    deleted: string[]
+    failed: string[]
+  }
   sellerId?: string
   error?: string
   validationErrors?: string[]

@@ -59,26 +59,19 @@ const AdminSellers: React.FC = () => {
     }
   }
 
-  const executeDelete = () => {
-    if (deleteConfirmation.isBulk && deleteConfirmation.selectedSellers) {
-      const sellerIds = deleteConfirmation.selectedSellers.map(s => s.id)
-      bulkDeleteMutation.mutate(sellerIds, {
-        onSuccess: () => {
-          toast.success(`${deleteConfirmation.selectedSellers?.length} sælgere slettet`)
-        },
-        onError: () => {
-          toast.error('Kunne ikke slette sælgere')
-        }
-      })
-    } else if (deleteConfirmation.seller?.id) {
-      deleteMutation.mutate(deleteConfirmation.seller.id, {
-        onSuccess: () => {
-          toast.success('Sælger slettet')
-        },
-        onError: () => {
-          toast.error('Kunne ikke slette sælger')
-        }
-      })
+  const executeDelete = async () => {
+    try {
+      if (deleteConfirmation.isBulk && deleteConfirmation.selectedSellers) {
+        const sellerIds = deleteConfirmation.selectedSellers.map(s => s.id)
+        await bulkDeleteMutation.mutateAsync({ sellerIds })
+        // Success toast is handled in the hook
+      } else if (deleteConfirmation.seller?.id) {
+        await deleteMutation.mutateAsync(deleteConfirmation.seller.id)
+        // Success toast is handled in the hook
+      }
+    } catch (error) {
+      // Error toast is handled in the hook
+      console.error('Delete operation failed:', error)
     }
     
     setDeleteConfirmation({ open: false })

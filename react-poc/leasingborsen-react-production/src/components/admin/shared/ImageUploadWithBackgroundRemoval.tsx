@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useImageUpload } from '@/hooks/useImageUpload'
-import { useBackgroundRemoval } from '@/hooks/useBackgroundRemoval'
+import { useAdminImageUpload } from '@/hooks/useAdminImageUpload'
 import { 
   Upload, 
   X, 
@@ -66,31 +65,8 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     error: uploadError, 
     uploadImage, 
     validateImageUrl, 
-    reset: resetUpload 
-  } = useImageUpload()
-
-  const {
-    processImage,
-    processing,
-    progress: processingProgress,
-    reset: resetProcessing
-  } = useBackgroundRemoval({
-    onSuccess: (result) => {
-      // Store both grid and detail URLs
-      setProcessingPreview(prev => prev ? {
-        ...prev,
-        processedUrl: result.standardizedImages?.detail?.url || result.standardizedImages?.grid?.url,
-        gridUrl: result.standardizedImages?.grid?.url,
-        detailUrl: result.standardizedImages?.detail?.url
-      } : null)
-    },
-    onError: (error) => {
-      setProcessingPreview(prev => prev ? {
-        ...prev,
-        error
-      } : null)
-    }
-  })
+    reset: resetUpload
+  } = useAdminImageUpload()
 
   const handleFiles = useCallback(async (files: File[]) => {
     console.log('handleFiles called with:', { 
@@ -120,11 +96,23 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       })
       setShowPreviewDialog(true)
       
-      // Start processing
+      // Start processing with admin image upload
       try {
-        await processImage(file)
+        const result = await uploadImage(file, { processBackground: true })
+        
+        // Update preview with processed URLs
+        setProcessingPreview(prev => prev ? {
+          ...prev,
+          processedUrl: result.processedUrl || result.url,
+          gridUrl: result.processedUrl, // For grid display
+          detailUrl: result.processedUrl // For detail display
+        } : null)
       } catch (error) {
         console.error('Error processing image:', error)
+        setProcessingPreview(prev => prev ? {
+          ...prev,
+          error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling'
+        } : null)
       }
     } else {
       console.log('Normal upload without background removal')
@@ -142,7 +130,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
         toast.error('Fejl ved upload af billeder')
       }
     }
-  }, [images, maxImages, uploadImage, onImagesChange, resetUpload, enableBackgroundRemoval, removeBackground, processImage])
+  }, [images, maxImages, uploadImage, onImagesChange, resetUpload, enableBackgroundRemoval, removeBackground])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -193,12 +181,12 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       toast.success('Billede med fjernet baggrund uploadet')
       setShowPreviewDialog(false)
       setProcessingPreview(null)
-      resetProcessing()
+      resetUpload()
     } catch (error) {
       console.error('Error uploading processed image:', error)
       toast.error('Fejl ved upload af behandlet billede')
     }
-  }, [processingPreview, images, onImagesChange, onBackgroundRemovalComplete, resetProcessing])
+  }, [processingPreview, images, onImagesChange, onBackgroundRemovalComplete, resetUpload])
 
   const handleUseOriginal = useCallback(async () => {
     if (!processingPreview?.file) return
@@ -209,12 +197,12 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       toast.success('Originalt billede uploadet')
       setShowPreviewDialog(false)
       setProcessingPreview(null)
-      resetProcessing()
+      resetUpload()
     } catch (error) {
       console.error('Error uploading original:', error)
-      toast.error('Fejl ved upload af billede')
+      toast.error('Fejl ved upload af billeder')
     }
-  }, [processingPreview, uploadImage, images, onImagesChange, resetProcessing])
+  }, [processingPreview, uploadImage, images, onImagesChange, resetUpload])
 
   const handleAddUrl = useCallback(() => {
     if (!urlInput.trim()) return
@@ -407,13 +395,13 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
 
           <div className="space-y-4">
             {/* Progress indicator */}
-            {processing && (
+            {uploading && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span>Behandler billede...</span>
-                  <span>{processingProgress}%</span>
+                  <span>{uploadProgress}%</span>
                 </div>
-                <Progress value={processingProgress} />
+                <Progress value={uploadProgress} />
               </div>
             )}
 
@@ -468,7 +456,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      {processing ? (
+                      {uploading ? (
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                       ) : (
                         <p className="text-muted-foreground">Afventer behandling...</p>
@@ -484,13 +472,13 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
             <Button
               variant="outline"
               onClick={handleUseOriginal}
-              disabled={processing}
+              disabled={uploading}
             >
               Brug original
             </Button>
             <Button
               onClick={handleConfirmProcessed}
-              disabled={processing || !processingPreview?.processedUrl}
+              disabled={uploading || !processingPreview?.processedUrl}
             >
               Brug behandlet billede
             </Button>
