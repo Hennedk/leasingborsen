@@ -23,8 +23,8 @@ async function getOpenAIClient(): Promise<any> {
 
     openaiClient = new OpenAI({ 
       apiKey: openaiApiKey,
-      maxRetries: 2,      // Reduce from default 5 to minimize retry attempts
-      timeout: 30000      // 30 seconds timeout
+      maxRetries: 0,      // Disable OpenAI client's built-in retries completely
+      timeout: 120000     // 120 seconds timeout for larger extractions
     })
   }
   
@@ -82,7 +82,7 @@ const corsHeaders = {
 
 // Retry configuration specifically for AI API calls
 const AI_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 2,        // Fewer retries for expensive AI calls
+  maxRetries: 0,        // TEMPORARY: Disable retries to see first failure
   baseDelayMs: 2000,    // Start with 2 seconds
   maxDelayMs: 20000,    // Cap at 20 seconds
   backoffMultiplier: 2,
@@ -110,6 +110,46 @@ const DEFAULT_EXISTING_LISTINGS = {
   existing_listings: []
 }
 
+// Consolidate existing listings into AI output format to prevent duplicates
+function consolidateExistingListings(listings: any[]): any[] {
+  const vehicleMap = new Map<string, any>()
+  
+  for (const listing of listings) {
+    const vehicleKey = `${listing.make}_${listing.model}_${listing.variant}_${listing.horsepower}`
+    
+    if (!vehicleMap.has(vehicleKey)) {
+      // Create vehicle in expected AI output format
+      vehicleMap.set(vehicleKey, {
+        make: listing.make,
+        model: listing.model,
+        variant: listing.variant,
+        hp: listing.horsepower,
+        ft: listing.fuel_type_id,
+        tr: listing.transmission_id,
+        bt: listing.body_type_id,
+        wltp: listing.wltp_range,
+        co2: listing.co2_emissions,
+        kwh100: listing.kwh_per_100km,
+        l100: listing.fuel_consumption_l_per_100km,
+        tax: listing.tax_amount,
+        offers: []
+      })
+    }
+    
+    // Add offer to existing vehicle
+    const vehicle = vehicleMap.get(vehicleKey)
+    vehicle.offers.push([
+      listing.monthly_price,
+      listing.total_price,
+      listing.period_months,
+      listing.down_payment,
+      listing.total_cost
+    ])
+  }
+  
+  return Array.from(vehicleMap.values())
+}
+
 // Optimize listings for large inventories with intelligent sampling
 function buildOptimizedListingsContext(existingListings: any[], pdfText?: string): string {
   if (!existingListings || existingListings.length === 0) {
@@ -126,72 +166,18 @@ Since no existing listings are available:
 - Be consistent with transmission notation if applicable`
   }
   
-  // More aggressive reduction for large inventories to prevent token limits
-  let listingsToInclude = existingListings
-  const MAX_LISTINGS = 30 // Reduced to stay under token limits
+  // Consolidate listings by vehicle identity to prevent AI from creating duplicates
+  const consolidatedListings = consolidateExistingListings(existingListings)
   
-  if (existingListings.length > MAX_LISTINGS) {
-    // Extract makes/models mentioned in PDF for smarter filtering
-    const pdfMakes = new Set<string>()
-    const pdfModels = new Set<string>()
-    
-    if (pdfText) {
-      const commonMakes = ['Toyota', 'BMW', 'Mercedes', 'Audi', 'Volkswagen', 'Ford', 'Hyundai', 'Kia', 'Skoda', 'Volvo', 'Peugeot', 'Renault', 'Nissan', 'Mazda', 'Honda', 'Subaru', 'Mitsubishi', 'Suzuki', 'Fiat', 'Alfa Romeo', 'Jeep', 'Dodge', 'Chrysler', 'Cadillac', 'Chevrolet', 'GMC', 'Buick', 'Lincoln', 'Acura', 'Infiniti', 'Lexus', 'Genesis', 'Jaguar', 'Land Rover', 'Porsche', 'Bentley', 'Rolls-Royce', 'Ferrari', 'Lamborghini', 'Maserati', 'Aston Martin', 'McLaren', 'Bugatti']
-      
-      const pdfLower = pdfText.toLowerCase()
-      commonMakes.forEach(make => {
-        if (pdfLower.includes(make.toLowerCase())) {
-          pdfMakes.add(make)
-        }
-      })
-    }
-    
-    // Group by make/model and prioritize based on PDF content
-    const grouped = existingListings.reduce((acc, listing) => {
-      const key = `${listing.make}_${listing.model}`
-      if (!acc[key]) acc[key] = []
-      acc[key].push(listing)
-      return acc
-    }, {} as Record<string, any[]>)
-    
-    // Sort groups by relevance (PDF mentions first, then alphabetical)
-    const sortedGroups = Object.entries(grouped).sort(([keyA], [keyB]) => {
-      const [makeA] = keyA.split('_')
-      const [makeB] = keyB.split('_')
-      
-      const aInPDF = pdfMakes.has(makeA)
-      const bInPDF = pdfMakes.has(makeB)
-      
-      if (aInPDF && !bInPDF) return -1
-      if (!aInPDF && bInPDF) return 1
-      return keyA.localeCompare(keyB)
-    })
-    
-    // Take variants from most relevant make/models first
-    listingsToInclude = []
-    let remainingSlots = MAX_LISTINGS
-    
-    for (const [key, group] of sortedGroups) {
-      if (remainingSlots <= 0) break
-      
-      const slotsForThisGroup = Math.min(3, remainingSlots) // Up to 3 variants per make/model
-      const [make] = key.split('_')
-      
-      // Prioritize variants from PDF-mentioned makes
-      if (pdfMakes.has(make)) {
-        listingsToInclude.push(...group.slice(0, slotsForThisGroup))
-      } else {
-        listingsToInclude.push(...group.slice(0, Math.min(2, slotsForThisGroup))) // Fewer for non-PDF makes
-      }
-      
-      remainingSlots -= slotsForThisGroup
-    }
-    
-    // console.log(`[ai-extract-vehicles] Smart reduction: ${existingListings.length} → ${listingsToInclude.length} listings (${pdfMakes.size} PDF makes detected)`)
-  }
+  console.log(`[ai-extract-vehicles] Consolidated listings: ${existingListings.length} → ${consolidatedListings.length} unique vehicles`)
   
-  return `\n\n🚨 CRITICAL: EXISTING DEALER LISTINGS - YOU MUST MATCH THESE EXACTLY 🚨
+  let listingsToInclude = consolidatedListings
+  
+  return `\n\n🚨 CRITICAL: EXISTING DEALER INVENTORY (USE THIS EXACT FORMAT) 🚨
 ${JSON.stringify(listingsToInclude, null, 2)}
+
+📋 INSTRUCTIONS: Return NEW vehicles in the SAME JSON format shown above.
+Each vehicle should have ALL offers consolidated into the offers array.
 
 MANDATORY VARIANT MATCHING RULES – YOU MUST FOLLOW THESE:
 
@@ -361,6 +347,10 @@ async function callOpenAIWithFallback(params: {
       
       // Get the content from the response using the standard output_text property
       const responseContent = response.output_text
+      console.log('[DEBUG] Raw response structure keys:', Object.keys(response))
+      console.log('[DEBUG] Response content length:', responseContent?.length || 0)
+      console.log('[DEBUG] Response content preview (first 500 chars):', responseContent?.substring(0, 500))
+      
       if (!responseContent) {
         console.error('[ai-extract-vehicles] Response structure:', JSON.stringify(response, null, 2))
         const noOutputErrorDetails = categorizeError({
@@ -403,8 +393,12 @@ async function callOpenAIWithFallback(params: {
       }
       
       // Validate the response structure
+      console.log('[DEBUG] Parsed data structure:', JSON.stringify(parsedData, null, 2).substring(0, 1000))
       const validation = validateExtractionResponse(parsedData)
+      console.log('[DEBUG] Validation result:', validation)
+      
       if (!validation.valid) {
+        console.error('[DEBUG] Validation failed with errors:', validation.errors)
         const validationErrorDetails = categorizeError({
           message: `Schema validation failed: ${validation.errors?.join(', ')}`,
           type: 'validation_error'
@@ -999,16 +993,29 @@ Each offer is an array with EXACTLY this sequence:
 
     // Extract cars from response
     const extractedCars: CompactExtractedVehicle[] = aiResponse.cars || []
-    // console.log('[ai-extract-vehicles] Successfully extracted ' + extractedCars.length + ' cars')
+    console.log('[DEBUG] Extracted cars from AI response:', {
+      count: extractedCars.length,
+      firstCar: extractedCars[0] ? {
+        make: extractedCars[0].make,
+        model: extractedCars[0].model,
+        variant: extractedCars[0].variant,
+        hp: extractedCars[0].hp
+      } : 'none'
+    })
 
+    console.log('[DEBUG] Creating variant resolver...')
     // Create variant resolver
     const variantResolver = new VariantResolver(extractionContext)
     
     // Resolve variants and get statistics
+    console.log('[DEBUG] Resolving variants...')
     const variantResolutions = await variantResolver.resolveVariants(extractedCars)
     const resolutionStats = variantResolver.getResolutionStats(variantResolutions)
     
-    // console.log('[ai-extract-vehicles] Variant resolution stats:', resolutionStats)
+    console.log('[DEBUG] Variant resolution completed:', {
+      statsKeys: resolutionStats ? Object.keys(resolutionStats) : 'none',
+      resolvedCount: variantResolutions ? variantResolutions.size : 0
+    })
 
     // Convert from compact format to full format with variant tracking
     const vehicles: ExtractedVehicle[] = extractedCars.map((car: CompactExtractedVehicle, index: number) => {
@@ -1044,10 +1051,32 @@ Each offer is an array with EXACTLY this sequence:
       }
     })
 
-    // console.log('[ai-extract-vehicles] Expanded cars with variant tracking:', vehicles.length)
+    console.log('[DEBUG] Vehicle mapping completed:', {
+      vehicleCount: vehicles.length,
+      firstVehicle: vehicles[0] ? {
+        make: vehicles[0].make,
+        model: vehicles[0].model,
+        variant: vehicles[0].variant,
+        horsepower: vehicles[0].horsepower,
+        variantSource: vehicles[0].variantSource,
+        offersCount: vehicles[0].offers ? vehicles[0].offers.length : 0
+      } : 'none'
+    })
     
-    // console.log('🚗 Processing ' + vehicles.length + ' extracted vehicles for comparison')
+    console.log('[DEBUG] About to call compare-extracted-listings with:', {
+      vehicleCount: vehicles.length,
+      sellerId,
+      sessionName: fileName || `PDF Extraction - ${finalDealerName || 'Unknown'} - ${new Date().toISOString().split('T')[0]}`,
+      firstVehicle: vehicles[0] ? {
+        make: vehicles[0].make,
+        model: vehicles[0].model,
+        variant: vehicles[0].variant,
+        horsepower: vehicles[0].horsepower
+      } : 'none'
+    })
 
+    console.log('[DEBUG] Making comparison call to compare-extracted-listings...')
+    
     // Use the existing compare-extracted-listings edge function with retry logic
     const comparisonResponse = await retryWithBackoff(
       () => fetch(`${supabaseUrl}/functions/v1/compare-extracted-listings`, {
@@ -1066,13 +1095,28 @@ Each offer is an array with EXACTLY this sequence:
       'Comparison service call'
     )
 
+    console.log('[DEBUG] Comparison response received:', {
+      ok: comparisonResponse.ok,
+      status: comparisonResponse.status,
+      statusText: comparisonResponse.statusText
+    })
+
     if (!comparisonResponse.ok) {
-      throw new Error(`Comparison failed: ${comparisonResponse.status} ${await comparisonResponse.text()}`)
+      const errorText = await comparisonResponse.text()
+      console.error('[DEBUG] Comparison failed with error:', errorText)
+      throw new Error(`Comparison failed: ${comparisonResponse.status} ${errorText}`)
     }
 
     const comparisonResult = await comparisonResponse.json()
     
+    console.log('[DEBUG] Comparison result:', {
+      success: comparisonResult.success,
+      summaryKeys: comparisonResult.summary ? Object.keys(comparisonResult.summary) : 'none',
+      errorMessage: comparisonResult.error || 'none'
+    })
+    
     if (!comparisonResult.success) {
+      console.error('[DEBUG] Comparison result failed:', comparisonResult.error)
       throw new Error(`Comparison failed: ${comparisonResult.error}`)
     }
 
