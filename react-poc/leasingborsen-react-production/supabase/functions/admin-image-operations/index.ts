@@ -101,7 +101,7 @@ async function uploadImage(supabase: any, imageData: any): Promise<AdminImageRes
     
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('listing-images')
+      .from('images')
       .upload(storagePath, bytes, {
         contentType: contentType,
         cacheControl: '3600',
@@ -115,7 +115,7 @@ async function uploadImage(supabase: any, imageData: any): Promise<AdminImageRes
     
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('listing-images')
+      .from('images')
       .getPublicUrl(storagePath)
     
     const imageUrl = urlData.publicUrl
@@ -141,7 +141,7 @@ async function deleteImage(supabase: any, imageUrl: string): Promise<AdminImageR
     // Extract storage path from URL
     const url = new URL(imageUrl)
     const pathSegments = url.pathname.split('/')
-    const storageIndex = pathSegments.indexOf('listing-images')
+    const storageIndex = pathSegments.indexOf('images')
     
     if (storageIndex === -1) {
       throw new Error('Ugyldig billede URL')
@@ -151,7 +151,7 @@ async function deleteImage(supabase: any, imageUrl: string): Promise<AdminImageR
     
     // Delete from Supabase Storage
     const { error: deleteError } = await supabase.storage
-      .from('listing-images')
+      .from('images')
       .remove([storagePath])
     
     if (deleteError) {
@@ -250,8 +250,7 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  return rateLimiters.general(req, async (req) => {
-    try {
+  try {
       // Initialize Supabase with service role
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
       const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -303,10 +302,18 @@ serve(async (req) => {
           result = await uploadImage(supabase, imageData)
           
           // If background processing is requested and upload was successful
-          if (result.success && shouldProcessBackground && result.imageUrl) {
-            const bgResult = await processBackground(supabase, result.imageUrl)
-            if (bgResult.success && bgResult.processedImageUrl) {
-              result.processedImageUrl = bgResult.processedImageUrl
+          if (result.success && shouldProcessBackground === true && result.imageUrl) {
+            try {
+              const bgResult = await processBackground(supabase, result.imageUrl)
+              if (bgResult.success && bgResult.processedImageUrl) {
+                result.processedImageUrl = bgResult.processedImageUrl
+              } else {
+                // Background processing failed, but don't fail the entire upload
+                console.warn('Background processing failed but upload succeeded:', bgResult.error)
+              }
+            } catch (bgError) {
+              // Background processing error shouldn't affect the main upload
+              console.warn('Background processing error (ignored):', bgError)
             }
           }
           
@@ -390,18 +397,17 @@ serve(async (req) => {
         }
       )
       
-    } catch (error) {
-      console.error('[admin-image-operations] Unexpected error:', error)
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: errorMessages.generalError 
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-  })
+  } catch (error) {
+    console.error('[admin-image-operations] Unexpected error:', error)
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: errorMessages.generalError 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    )
+  }
 })

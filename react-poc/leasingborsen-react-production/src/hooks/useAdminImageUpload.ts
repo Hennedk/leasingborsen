@@ -62,7 +62,15 @@ export const useAdminImageUpload = () => {
       const base64Data = await fileToBase64(file)
       setUploadProgress(25)
 
-      // Call Edge Function for upload
+      // Call Edge Function for upload with detailed logging
+      console.log('🔄 Calling admin-image-operations with:', {
+        operation: 'upload',
+        fileName: file.name,
+        contentType: file.type,
+        processBackground: options.processBackground,
+        fileSize: file.size
+      })
+
       const { data, error: uploadError } = await supabase.functions.invoke('admin-image-operations', {
         body: {
           operation: 'upload',
@@ -71,16 +79,24 @@ export const useAdminImageUpload = () => {
             fileName: file.name,
             contentType: file.type
           },
-          processBackground: options.processBackground
+          processBackground: options.processBackground === true
         }
       })
 
+      console.log('📥 Edge Function response:', { data, uploadError })
+
       if (uploadError) {
-        console.error('Edge Function error:', uploadError)
+        console.error('Edge Function error details:', {
+          message: uploadError.message,
+          details: uploadError.details,
+          hint: uploadError.hint,
+          code: uploadError.code
+        })
         throw new Error(uploadError.message || errorMessages.uploadError)
       }
 
       if (!data?.success) {
+        console.error('Edge Function returned unsuccessful result:', data)
         throw new Error(data?.error || errorMessages.uploadError)
       }
 
