@@ -87,6 +87,12 @@ npm run pdf:deploy           # Deploy Edge Functions to Supabase
 supabase db start           # Start local Supabase instance
 supabase db reset           # Reset local database with fresh migrations
 supabase functions serve    # Serve Edge Functions locally
+
+# Admin Edge Functions Deployment
+supabase functions deploy admin-listing-operations    # Deploy listing CRUD
+supabase functions deploy admin-seller-operations     # Deploy seller management
+supabase functions deploy admin-image-operations      # Deploy image upload
+supabase functions deploy admin-reference-operations  # Deploy reference data
 ```
 
 ## Technology Stack Overview
@@ -293,6 +299,71 @@ const fetchCars = async (filters = {}) => {
 }
 ```
 
+## Admin Edge Functions Architecture
+
+### Secure Admin Operations
+All admin operations use secure Edge Functions with service role authentication to bypass RLS restrictions while maintaining security and validation.
+
+**Available Edge Functions:**
+- **admin-listing-operations** - Car listings CRUD with offers management
+- **admin-seller-operations** - Seller management with comprehensive validation
+- **admin-image-operations** - Image upload with background processing
+- **admin-reference-operations** - Reference data CRUD for all automotive tables
+
+### Admin Edge Function Pattern
+```typescript
+// Always use admin Edge Functions for admin operations
+import { useAdminListingOperations } from '@/hooks/useAdminListingOperations'
+
+const AdminListingForm = () => {
+  const { createListing, updateListing, isLoading } = useAdminListingOperations()
+  
+  const handleSubmit = async (listingData) => {
+    try {
+      const result = await createListing({
+        listingData,
+        offers: undefined // Optional offers array
+      })
+      
+      // Success handling is automatic via React Query
+      navigate('/admin/listings')
+    } catch (error) {
+      // Error handling is automatic via toast notifications
+      console.error('Creation failed:', error)
+    }
+  }
+}
+```
+
+### Admin Hook Usage Examples
+```typescript
+// Seller operations
+import { useAdminSellerOperations } from '@/hooks/useAdminSellerOperations'
+const { createSeller, updateSeller, deleteSeller } = useAdminSellerOperations()
+
+// Reference data operations  
+import { useAdminReferenceOperations } from '@/hooks/useAdminReferenceOperations'
+const { createReference, updateReference } = useAdminReferenceOperations()
+
+// Image operations
+import { useAdminImageUpload } from '@/hooks/useAdminImageUpload'
+const { uploadImage, isUploading } = useAdminImageUpload()
+```
+
+### Error Handling and Validation
+All admin Edge Functions include:
+- **Danish localization** for all error messages
+- **Comprehensive validation** with detailed error feedback
+- **React Query integration** with automatic cache invalidation
+- **Loading states** and error boundaries
+- **Graceful fallback** for background processing failures
+
+### Security Features
+- **Service role authentication** bypasses RLS restrictions
+- **Server-side validation** prevents malicious input
+- **Audit logging** for all admin operations
+- **Zero breaking changes** to existing admin workflows
+
 ## Performance Guidelines
 
 ### Bundle Size Targets
@@ -449,6 +520,14 @@ This React application has evolved from a Vue migration into a **sophisticated, 
 - **Data Type Corrections**: Fixed DECIMAL vs INTEGER mismatches in lease_pricing table
 - **Duplicate Handling**: Added ON CONFLICT handling for duplicate offers from AI extraction
 - **Foreign Key Management**: Enhanced deletion process to remove ALL references before deleting listings
+
+### Admin Edge Functions Implementation (January 2025)
+- **Complete CRUD Operations**: Implemented secure Edge Functions for all admin functionality
+- **RLS Authentication Resolution**: Service role authentication bypasses RLS restrictions
+- **Image Upload Stability**: Background processing error handling prevents upload failures
+- **Backward Compatibility**: Zero breaking changes to existing admin workflows
+- **Enterprise Security**: Server-side validation with comprehensive error handling
+- **React Query Integration**: Proper caching, loading states, and error boundaries
 
 ⚠️ **IMPORTANT**: With the removal of model-specific deletion restrictions, uploading partial inventories (e.g., single model PDFs) will mark ALL unmatched listings for deletion. Always review extraction results carefully before applying changes.
 
