@@ -42,33 +42,117 @@ const TRUSTED_DOMAINS = [
   'cars4ever.eu'
 ]
 
+// Comprehensive SSRF protection with enhanced IP validation
 function isDomainTrusted(url: string): boolean {
   try {
     const urlObj = new URL(url)
     const hostname = urlObj.hostname.toLowerCase()
     
-    // Additional security checks
-    if (hostname === 'localhost' || 
-        hostname === '127.0.0.1' || 
-        hostname.startsWith('192.168.') || 
-        hostname.startsWith('10.') || 
-        hostname.startsWith('172.')) {
+    // Only allow HTTPS URLs for security
+    if (urlObj.protocol !== 'https:') {
+      console.warn(`[pdf-proxy] Blocked non-HTTPS URL: ${url}`)
       return false
     }
     
-    // Only allow HTTPS URLs for security
-    if (urlObj.protocol !== 'https:') {
+    // Enhanced IP address blocking for SSRF prevention
+    if (isBlockedIP(hostname)) {
+      console.warn(`[pdf-proxy] Blocked suspicious IP/hostname: ${hostname}`)
       return false
     }
     
     // Check against trusted domains
-    return TRUSTED_DOMAINS.some(domain => 
+    const isAllowed = TRUSTED_DOMAINS.some(domain => 
       hostname === domain || 
       hostname.endsWith(`.${domain}`)
     )
-  } catch {
+    
+    if (!isAllowed) {
+      console.warn(`[pdf-proxy] Domain not in allowlist: ${hostname}`)
+    }
+    
+    return isAllowed
+  } catch (error) {
+    console.error(`[pdf-proxy] URL validation error: ${error.message}`)
     return false
   }
+}
+
+// Enhanced IP blocking function with comprehensive CIDR ranges
+function isBlockedIP(hostname: string): boolean {
+  // Block localhost variations
+  if (['localhost', '127.0.0.1', '0.0.0.0', '::1', '0000:0000:0000:0000:0000:0000:0000:0001'].includes(hostname)) {
+    return true
+  }
+  
+  // Check if hostname is an IP address
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  const ipv6Regex = /^([0-9a-f]{0,4}:){2,7}[0-9a-f]{0,4}$/i
+  
+  if (ipv4Regex.test(hostname)) {
+    return isBlockedIPv4(hostname)
+  }
+  
+  if (ipv6Regex.test(hostname)) {
+    return isBlockedIPv6(hostname)
+  }
+  
+  // For domain names, perform additional checks
+  return false
+}
+
+// Comprehensive IPv4 CIDR range blocking
+function isBlockedIPv4(ip: string): boolean {
+  const blockedRanges = [
+    // Private IP ranges (RFC 1918)
+    { network: '10.0.0.0', prefix: 8 },
+    { network: '172.16.0.0', prefix: 12 },
+    { network: '192.168.0.0', prefix: 16 },
+    
+    // Loopback range (RFC 3330)
+    { network: '127.0.0.0', prefix: 8 },
+    
+    // Link-local range (RFC 3927)
+    { network: '169.254.0.0', prefix: 16 },
+    
+    // Cloud metadata services (CRITICAL for AWS, GCP, Azure)
+    { network: '169.254.169.254', prefix: 32 }, // AWS/GCP metadata
+    { network: '100.100.100.200', prefix: 32 }, // Azure metadata
+    
+    // Multicast range (RFC 3171)
+    { network: '224.0.0.0', prefix: 4 },
+    
+    // Reserved/broadcast ranges
+    { network: '0.0.0.0', prefix: 8 },        // "This" network
+    { network: '240.0.0.0', prefix: 4 },      // Reserved for future use
+    { network: '255.255.255.255', prefix: 32 } // Broadcast
+  ]
+  
+  const ipInt = ipToInt(ip)
+  
+  return blockedRanges.some(range => {
+    const networkInt = ipToInt(range.network)
+    const mask = (0xFFFFFFFF << (32 - range.prefix)) >>> 0
+    return (ipInt & mask) === (networkInt & mask)
+  })
+}
+
+// IPv6 blocking (basic implementation)
+function isBlockedIPv6(ip: string): boolean {
+  const blockedPrefixes = [
+    '::1',     // Loopback
+    'fe80:',   // Link-local
+    'fc00:',   // Unique local
+    'fd00:',   // Unique local
+    '::ffff:', // IPv4-mapped IPv6
+  ]
+  
+  const normalizedIP = ip.toLowerCase()
+  return blockedPrefixes.some(prefix => normalizedIP.startsWith(prefix))
+}
+
+// Convert IPv4 to integer for CIDR calculations
+function ipToInt(ip: string): number {
+  return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet, 10), 0) >>> 0
 }
 
 serve(async (req) => {
