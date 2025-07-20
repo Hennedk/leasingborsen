@@ -31,12 +31,17 @@ interface SellerBulkPDFExtractionModalProps {
 interface PDFExtractionStatus {
   url: string
   name: string
-  status: 'pending' | 'downloading' | 'extracting' | 'processing' | 'complete' | 'error'
+  status: 'pending' | 'downloading' | 'extracting' | 'processing' | 'chunking' | 'waiting' | 'complete' | 'error'
   progress: number
   message?: string
   extractionSessionId?: string
   itemsExtracted?: number
   error?: string
+  chunkInfo?: {
+    currentChunk: number
+    totalChunks: number
+    waitTimeMs?: number
+  }
 }
 
 // Helper function to extract variant information from Kia filenames
@@ -86,7 +91,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
 
   // Fetch reference data and existing listings
   const { data: referenceData } = useReferenceData()
-  const { data: sellerListings } = useSellerListings(seller.id, { limit: 500 })
+  const { data: sellerListings, isLoading: isLoadingSellerListings, error: sellerListingsError } = useSellerListings(seller.id, { limit: 500 })
 
   // Initialize selected URLs when modal opens
   React.useEffect(() => {
@@ -226,13 +231,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
 
       console.log(`Combined text length: ${combinedText.length} characters from ${extractedTexts.length} PDFs`)
 
-      // Step 3: Process with AI
-      updatePdfStatus('merged', { 
-        status: 'processing', 
-        progress: 60, 
-        message: 'Processing combined PDFs with AI...' 
-      })
-
+      // Generate batch ID and prepare configuration early for use in both chunked and single processing
       const batchId = `batch_merged_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       const config = {
         makeId: seller.make_id || null,
@@ -260,36 +259,105 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         body_types: []
       };
 
-      const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
+      // Step 2.5: Validate existing listings are loaded before AI processing
+      if (isLoadingSellerListings) {
+        updatePdfStatus('merged', { 
+          status: 'processing', 
+          progress: 55, 
+          message: 'Waiting for dealer listings to load...'
+        })
+        
+        // Wait for listings to load (with timeout)
+        const maxWaitTime = 10000 // 10 seconds
+        const startWait = Date.now()
+        
+        while (isLoadingSellerListings && (Date.now() - startWait) < maxWaitTime) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+        
+        if (isLoadingSellerListings) {
+          throw new Error('Timeout waiting for dealer listings to load. Please try again.')
+        }
+      }
+      
+      if (sellerListingsError) {
+        throw new Error(`Failed to load dealer listings: ${sellerListingsError.message}`)
+      }
+      
+      // Log listings info for debugging
+      console.log(`[AI Extraction] Dealer listings loaded: ${sellerListings?.length || 0} listings for seller ${seller.id}`)
+      console.log(`[AI Extraction] sellerListings data:`, {
+        isArray: Array.isArray(sellerListings),
+        length: sellerListings?.length,
+        type: typeof sellerListings,
+        isNull: sellerListings === null,
+        isUndefined: sellerListings === undefined,
+        data: sellerListings
+      })
+      
+      if (sellerListings && sellerListings.length > 0) {
+        console.log(`[AI Extraction] Sample listings:`, sellerListings.slice(0, 3))
+      } else {
+        console.warn(`[AI Extraction] No existing listings found for dealer ${seller.name} (${seller.id})`)
+        console.warn(`[AI Extraction] Hook state:`, {
+          isLoadingSellerListings,
+          sellerListingsError,
+          sellerListings
+        })
+      }
+
+      // Step 3: Process with AI (always use GPT-4-1106-preview)
+      updatePdfStatus('merged', { 
+        status: 'processing', 
+        progress: 60, 
+        message: 'Processing combined PDFs with AI...'
+      })
+
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`
+      
+      // Log the payload being sent
+      const aiPayload = {
+        text: combinedText,
+        dealerHint: seller.name,
+        fileName: `Merged ${pdfUrls.length} PDFs: ${pdfUrls.map(p => p.name).join(', ')}`,
+        sellerId: seller.id,
+        sellerName: seller.name,
+        batchId,
+        makeId: config.makeId,
+        makeName: config.makeName,
+        includeExistingListings: true,
+        // Add reference data
+        referenceData: transformedReferenceData,
+        // Add existing listings
+        existingListings: sellerListings ? {
+          existing_listings: sellerListings
+        } : { existing_listings: [] },
+        pdfUrl: pdfUrls.map(p => p.url).join(', '),
+        // Add filename hints for better variant detection
+        filenameHints: pdfUrls.map(pdf => ({
+          name: pdf.name,
+          url: pdf.url,
+          variantHint: extractVariantFromFilename(pdf.url)
+        }))
+      }
+      
+      console.log(`[AI Extraction] Sending payload to Edge Function:`, {
+        sellerId: aiPayload.sellerId,
+        sellerName: aiPayload.sellerName,
+        dealerHint: aiPayload.dealerHint,
+        hasExistingListings: !!aiPayload.existingListings,
+        existingListingsCount: aiPayload.existingListings?.existing_listings?.length || 0,
+        existingListingsData: aiPayload.existingListings,
+        sellerInfo: seller
+      })
+      
+      const aiResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          text: combinedText,
-          dealerHint: seller.name,
-          fileName: `Merged ${pdfUrls.length} PDFs: ${pdfUrls.map(p => p.name).join(', ')}`,
-          sellerId: seller.id,
-          sellerName: seller.name,
-          batchId,
-          makeId: config.makeId,
-          makeName: config.makeName,
-          includeExistingListings: true,
-          // Add reference data
-          referenceData: transformedReferenceData,
-          // Add existing listings
-          existingListings: sellerListings ? {
-            existing_listings: sellerListings
-          } : { existing_listings: [] },
-          pdfUrl: pdfUrls.map(p => p.url).join(', '),
-          // Add filename hints for better variant detection
-          filenameHints: pdfUrls.map(pdf => ({
-            name: pdf.name,
-            url: pdf.url,
-            variantHint: extractVariantFromFilename(pdf.url)
-          }))
-        })
+        body: JSON.stringify(aiPayload)
       })
 
       if (!aiResponse.ok) {
@@ -299,10 +367,12 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
 
       const aiResult = await aiResponse.json()
 
+      const completionMessage = 'Merged extraction complete!'
+      
       updatePdfStatus('merged', { 
         status: 'complete', 
         progress: 100, 
-        message: 'Merged extraction complete!',
+        message: completionMessage,
         extractionSessionId: aiResult.extractionSessionId,
         itemsExtracted: aiResult.summary?.totalExtracted || aiResult.itemsProcessed || 0
       })
@@ -619,6 +689,49 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         body_types: []
       };
 
+      // Validate existing listings are loaded before AI processing
+      if (isLoadingSellerListings) {
+        updatePdfStatus(pdfUrl.url, { status: 'processing', progress: 55, message: 'Waiting for dealer listings to load...' })
+        
+        // Wait for listings to load (with timeout)
+        const maxWaitTime = 10000 // 10 seconds
+        const startWait = Date.now()
+        
+        while (isLoadingSellerListings && (Date.now() - startWait) < maxWaitTime) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+        }
+        
+        if (isLoadingSellerListings) {
+          throw new Error('Timeout waiting for dealer listings to load. Please try again.')
+        }
+      }
+      
+      if (sellerListingsError) {
+        throw new Error(`Failed to load dealer listings: ${sellerListingsError.message}`)
+      }
+      
+      // Log listings info for debugging
+      console.log(`[AI Extraction] Dealer listings loaded: ${sellerListings?.length || 0} listings for seller ${seller.id}`)
+      console.log(`[AI Extraction] sellerListings data:`, {
+        isArray: Array.isArray(sellerListings),
+        length: sellerListings?.length,
+        type: typeof sellerListings,
+        isNull: sellerListings === null,
+        isUndefined: sellerListings === undefined,
+        data: sellerListings
+      })
+      
+      if (sellerListings && sellerListings.length > 0) {
+        console.log(`[AI Extraction] Sample listings:`, sellerListings.slice(0, 3))
+      } else {
+        console.warn(`[AI Extraction] No existing listings found for dealer ${seller.name} (${seller.id})`)
+        console.warn(`[AI Extraction] Hook state:`, {
+          isLoadingSellerListings,
+          sellerListingsError,
+          sellerListings
+        })
+      }
+
       // Process with AI
       const aiResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-extract-vehicles`, {
         method: 'POST',
@@ -740,7 +853,8 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
       
       // Show summary
       if (result.status === 'complete') {
-        toast.success(`Successfully extracted ${result.itemsExtracted || 0} vehicles from ${selectedPdfs.length} merged PDFs`)
+        const successMessage = `Successfully extracted ${result.itemsExtracted || 0} vehicles from ${selectedPdfs.length} merged PDFs`
+        toast.success(successMessage)
       } else {
         toast.error(`Failed to extract from merged PDFs: ${result.error}`)
       }
@@ -797,7 +911,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
       case 'downloading':
       case 'extracting':
       case 'processing':
+      case 'chunking':
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+      case 'waiting':
+        return <Clock className="h-4 w-4 text-yellow-500" />
       case 'complete':
         return <CheckCircle className="h-4 w-4 text-green-500" />
       case 'error':
@@ -812,7 +929,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
       case 'downloading':
       case 'extracting':
       case 'processing':
+      case 'chunking':
         return 'bg-blue-100 text-blue-700'
+      case 'waiting':
+        return 'bg-yellow-100 text-yellow-700'
       case 'complete':
         return 'bg-green-100 text-green-700'
       case 'error':
@@ -892,28 +1012,31 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
                   
                   {/* Merge Mode Toggle */}
                   {selectedUrls.length > 1 && (
-                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          id="merge-mode"
-                          checked={mergeMode}
-                          onCheckedChange={(checked) => setMergeMode(checked as boolean)}
-                          className="mt-0.5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                        />
-                        <div className="flex-1">
-                          <label 
-                            htmlFor="merge-mode" 
-                            className="text-sm font-medium cursor-pointer text-blue-900 dark:text-blue-100"
-                          >
-                            Merge PDFs before extraction
-                          </label>
-                          <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                            Combine all selected PDFs into one extraction session. 
-                            Perfect for dealers like Kia with separate PDFs per pricing option.
-                            This will merge identical vehicles and keep all pricing offers.
-                          </p>
+                    <div className="mt-4 space-y-3">
+                      <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <div className="flex items-start space-x-3">
+                          <Checkbox
+                            id="merge-mode"
+                            checked={mergeMode}
+                            onCheckedChange={(checked) => setMergeMode(checked as boolean)}
+                            className="mt-0.5 border-2 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                          />
+                          <div className="flex-1">
+                            <label 
+                              htmlFor="merge-mode" 
+                              className="text-sm font-medium cursor-pointer text-blue-900 dark:text-blue-100"
+                            >
+                              Merge PDFs before extraction
+                            </label>
+                            <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                              Combine all selected PDFs into one extraction session. 
+                              Perfect for dealers like Kia with separate PDFs per pricing option.
+                              This will merge identical vehicles and keep all pricing offers.
+                            </p>
+                          </div>
                         </div>
                       </div>
+                      
                     </div>
                   )}
                 </div>
@@ -963,6 +1086,15 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
                       
                       {status.status !== 'pending' && status.status !== 'error' && (
                         <Progress value={status.progress} className="h-1" />
+                      )}
+                      
+                      {status.chunkInfo && (
+                        <div className="text-xs text-blue-600">
+                          <p>Chunk {status.chunkInfo.currentChunk} of {status.chunkInfo.totalChunks}</p>
+                          {status.chunkInfo.waitTimeMs && (
+                            <p>Waiting {Math.ceil(status.chunkInfo.waitTimeMs / 1000)}s for rate limit...</p>
+                          )}
+                        </div>
                       )}
                       
                       {status.itemsExtracted !== undefined && (

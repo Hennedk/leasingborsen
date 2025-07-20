@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -322,7 +323,9 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  try {
+  // Apply rate limiting for comparison operations
+  return rateLimiters.general(req, async (req) => {
+    try {
     const { extractedCars, sellerId, sessionName }: ComparisonRequest = await req.json()
 
     if (!extractedCars || !Array.isArray(extractedCars)) {
@@ -476,6 +479,9 @@ serve(async (req) => {
     const matches: ListingMatch[] = []
     let exactMatchCount = 0
     let fuzzyMatchCount = 0
+    
+    // Track which existing listings have already been matched to prevent duplicates
+    const alreadyMatchedIds = new Set<string>()
 
     for (const car of enrichedExtractedCars) {
       let matchFound = false
@@ -487,12 +493,13 @@ serve(async (req) => {
       const exactKey = `${car.make}|${car.model}|${car.variant}`.toLowerCase()
       const exactMatch = existingByExactKey.get(exactKey)
       
-      if (exactMatch) {
+      if (exactMatch && !alreadyMatchedIds.has(exactMatch.id)) {
         matchFound = true
         matchMethod = 'exact'
         existingMatch = exactMatch
         confidence = 1.0
         exactMatchCount++
+        alreadyMatchedIds.add(exactMatch.id)
       }
       
       // Level 2: Composite key match (enhanced fuzzy)
@@ -506,12 +513,13 @@ serve(async (req) => {
         )
         const compositeMatch = existingByCompositeKey.get(compositeKey)
         
-        if (compositeMatch) {
+        if (compositeMatch && !alreadyMatchedIds.has(compositeMatch.id)) {
           matchFound = true
           matchMethod = 'fuzzy'
           existingMatch = compositeMatch
           confidence = 0.95
           fuzzyMatchCount++
+          alreadyMatchedIds.add(compositeMatch.id)
         }
       }
       
@@ -522,24 +530,31 @@ serve(async (req) => {
         
         // Check all existing listings for algorithmic match
         for (const [key, existing] of existingByExactKey.entries()) {
+          // Skip if this listing is already matched to prevent duplicates
+          if (alreadyMatchedIds.has(existing.id)) {
+            continue
+          }
+          
           // Only check same make/model
           if (existing.make.toLowerCase() === car.make.toLowerCase() && 
               existing.model.toLowerCase() === car.model.toLowerCase()) {
             
             const calcConfidence = calculateMatchConfidence(car, existing)
-            if (calcConfidence > bestConfidence && calcConfidence >= 0.8) {
+            // Increase threshold from 0.8 to 0.85 to be more selective
+            if (calcConfidence > bestConfidence && calcConfidence >= 0.85) {
               bestConfidence = calcConfidence
               bestMatch = existing
             }
           }
         }
         
-        if (bestMatch && bestConfidence >= 0.8) {
+        if (bestMatch && bestConfidence >= 0.85) {
           matchFound = true
-          matchMethod = 'fuzzy'
+          matchMethod = 'algorithmic'
           existingMatch = bestMatch
           confidence = bestConfidence
           fuzzyMatchCount++
+          alreadyMatchedIds.add(bestMatch.id)
         }
       }
 
@@ -596,12 +611,9 @@ serve(async (req) => {
       }
     }
 
-    // Track which existing listings have been matched
-    const matchedExistingIds = new Set(
-      matches
-        .filter(m => m.existing && m.existing.id)
-        .map(m => m.existing.id)
-    )
+    // Use the alreadyMatchedIds set that was tracked during matching
+    // This prevents the duplicate counting issue we had before
+    const matchedExistingIds = alreadyMatchedIds
 
     // Find existing listings that weren't matched (potential deletes)
     // ALL unmatched listings from the seller will be marked for deletion
@@ -670,12 +682,29 @@ serve(async (req) => {
     // console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
     // console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
 
+    // Validation: Check for mathematical consistency to catch bugs
+    const totalMatches = exactMatchCount + fuzzyMatchCount
+    const uniqueMatchedCount = matchedExistingIds.size
+    const totalNonDeleteMatches = matches.filter(m => m.existing && m.changeType !== 'delete').length
+    
+    // Log validation warnings if inconsistencies detected
+    if (totalMatches > uniqueMatchedCount) {
+      console.warn(`[VALIDATION WARNING] Total matches (${totalMatches}) exceeds unique matched listings (${uniqueMatchedCount}). Possible duplicate matches.`)
+    }
+    
+    if (extractedCars.length > 0 && existingListings && existingListings.length > 0) {
+      const expectedCreates = Math.max(0, extractedCars.length - existingListings.length)
+      if (newCount < expectedCreates / 2) { // Allow some tolerance
+        console.warn(`[VALIDATION WARNING] Very few creates (${newCount}) detected when ${extractedCars.length} extracted vs ${existingListings.length} existing. Possible over-matching.`)
+      }
+    }
+
     const result: ComparisonResult = {
       matches,
       summary: {
         totalExtracted: extractedCars.length,
         totalExisting: existingListings?.length || 0,
-        totalMatched: matches.filter(m => m.existing && m.changeType !== 'delete').length,
+        totalMatched: totalNonDeleteMatches,
         totalNew: newCount,
         totalUpdated: updateCount,
         totalUnchanged: unchangedCount,
@@ -708,4 +737,5 @@ serve(async (req) => {
       }
     )
   }
+  }) // End of rate limiting wrapper
 })

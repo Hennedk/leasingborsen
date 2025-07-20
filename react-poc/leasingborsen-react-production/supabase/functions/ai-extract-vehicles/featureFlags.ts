@@ -13,9 +13,10 @@ export class FeatureFlagManager {
   
   static initialize() {
     // Load configuration from environment
-    const enabled = Deno.env.get('USE_RESPONSES_API') === 'true'
-    const phase = parseInt(Deno.env.get('MIGRATION_PHASE') || '1')
-    const rolloutPercentage = this.ROLLOUT_PHASES[`phase${phase}` as keyof typeof this.ROLLOUT_PHASES] || 0
+    // Now that we have programmatic prompt creation, enable by default
+    const enabled = Deno.env.get('USE_RESPONSES_API') !== 'false' // Enable by default
+    const phase = parseInt(Deno.env.get('MIGRATION_PHASE') || '3') // Default to phase 3 (100%)
+    const rolloutPercentage = this.ROLLOUT_PHASES[`phase${phase}` as keyof typeof this.ROLLOUT_PHASES] || 1.0 // Default to 100%
     
     // Parse dealer overrides
     const dealerOverrides = Deno.env.get('RESPONSES_API_DEALER_OVERRIDES')?.split(',').filter(Boolean) || []
@@ -29,12 +30,12 @@ export class FeatureFlagManager {
     }
     
     // console.log('[FeatureFlags] Initialized:', {
-      enabled,
-      phase,
-      rolloutPercentage,
-      dealerOverrides: dealerOverrides.length,
-      excludedDealers: excludedDealers.length
-    })
+    //   enabled,
+    //   phase,
+    //   rolloutPercentage,
+    //   dealerOverrides: dealerOverrides.length,
+    //   excludedDealers: excludedDealers.length
+    // })
   }
   
   static async shouldUseResponsesAPI(dealerId?: string): Promise<boolean> {
@@ -109,11 +110,11 @@ export class FeatureFlagManager {
   static async logUsage(dealerId: string | undefined, used: boolean, reason: string) {
     // Log feature flag decision for monitoring
     // console.log('[FeatureFlags] Usage:', {
-      dealerId,
-      used,
-      reason,
-      timestamp: new Date().toISOString()
-    })
+    //   dealerId,
+    //   used,
+    //   reason,
+    //   timestamp: new Date().toISOString()
+    // })
     
     // In production, this would send to monitoring service
     // For now, just log to console

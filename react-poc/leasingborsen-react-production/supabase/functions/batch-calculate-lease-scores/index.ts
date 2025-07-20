@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
 
 // Import the calculation function from the other Edge Function
 // In production, you might want to share this code via a shared module
@@ -85,11 +86,13 @@ function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown {
 }
 
 serve(async (req) => {
-  // Create Supabase client with service role key for admin operations
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Apply rate limiting for batch operations
+  return rateLimiters.batch(req, async (req) => {
+    // Create Supabase client with service role key for admin operations
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
   try {
     // Parse request parameters
@@ -204,4 +207,5 @@ serve(async (req) => {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
+  }) // End of rate limiting wrapper
 })

@@ -1,4 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
 
 interface LeaseScoreInput {
   retailPrice: number
@@ -82,9 +83,11 @@ export function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown
 }
 
 serve(async (req) => {
-  try {
-    // Only allow POST requests
-    if (req.method !== 'POST') {
+  // Apply rate limiting for general operations
+  return rateLimiters.general(req, async (req) => {
+    try {
+      // Only allow POST requests
+      if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ error: 'Method not allowed' }),
         { status: 405, headers: { 'Content-Type': 'application/json' } }
@@ -111,4 +114,5 @@ serve(async (req) => {
       { status: 400, headers: { 'Content-Type': 'application/json' } }
     )
   }
+  }) // End of rate limiting wrapper
 })

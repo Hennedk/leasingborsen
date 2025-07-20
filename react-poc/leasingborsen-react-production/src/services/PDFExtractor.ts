@@ -46,6 +46,23 @@ export class PDFExtractor {
   }
 
   /**
+   * Calculate timeout based on file size to prevent large PDF timeouts
+   */
+  private calculateTimeout(fileSize: number): number {
+    const SIZE_MB = fileSize / (1024 * 1024)
+    
+    if (SIZE_MB < 5) {
+      return 30000 // 30 seconds for small files
+    } else if (SIZE_MB < 15) {
+      return 60000 // 1 minute for medium files
+    } else if (SIZE_MB < 30) {
+      return 120000 // 2 minutes for large files
+    } else {
+      return 180000 // 3 minutes for very large files
+    }
+  }
+
+  /**
    * Extract text from PDF with automatic fallback
    */
   public async extractText(
@@ -65,6 +82,12 @@ export class PDFExtractor {
       }
     }
 
+    // Calculate appropriate timeout based on file size
+    const dynamicTimeout = options.timeout || this.calculateTimeout(file.size)
+    const fileSize = (file.size / (1024 * 1024)).toFixed(1)
+    
+    console.log(`📄 Processing ${file.name} (${fileSize}MB) with ${dynamicTimeout/1000}s timeout`)
+
     // Try client-side extraction first
     try {
       console.log(`📄 Attempting client-side PDF extraction: ${file.name}`)
@@ -82,7 +105,7 @@ export class PDFExtractor {
     if (options.useRailwayFallback) {
       try {
         console.log(`🚂 Attempting Railway service extraction: ${file.name}`)
-        const result = await this.extractRailwayService(file, options.timeout)
+        const result = await this.extractRailwayService(file, dynamicTimeout)
         
         if (result.success) {
           console.log(`✅ Railway extraction successful: ${result.text.length} characters`)

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,10 +47,24 @@ function isDomainTrusted(url: string): boolean {
     const urlObj = new URL(url)
     const hostname = urlObj.hostname.toLowerCase()
     
+    // Additional security checks
+    if (hostname === 'localhost' || 
+        hostname === '127.0.0.1' || 
+        hostname.startsWith('192.168.') || 
+        hostname.startsWith('10.') || 
+        hostname.startsWith('172.')) {
+      return false
+    }
+    
+    // Only allow HTTPS URLs for security
+    if (urlObj.protocol !== 'https:') {
+      return false
+    }
+    
+    // Check against trusted domains
     return TRUSTED_DOMAINS.some(domain => 
       hostname === domain || 
-      hostname.endsWith(`.${domain}`) ||
-      hostname.includes(domain)
+      hostname.endsWith(`.${domain}`)
     )
   } catch {
     return false
@@ -57,12 +72,14 @@ function isDomainTrusted(url: string): boolean {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight
+  // Handle CORS preflight (before rate limiting)
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
-  // console.log('[pdf-proxy] Request received')
+  // Apply rate limiting for PDF operations
+  return rateLimiters.pdf(req, async (req) => {
+    // console.log('[pdf-proxy] Request received')
 
   try {
     // Parse request
@@ -111,43 +128,108 @@ serve(async (req) => {
 
     // console.log('[pdf-proxy] Fetching from trusted domain:', targetUrl.hostname)
 
-    // Fetch the PDF
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Accept': 'application/pdf,*/*'
+    // Fetch the PDF with timeout
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'application/pdf,*/*'
+        },
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      // console.log('[pdf-proxy] Response status:', response.status)
+      // console.log('[pdf-proxy] Content-Type:', response.headers.get('content-type'))
+      // console.log('[pdf-proxy] Content-Length:', response.headers.get('content-length'))
+
+      if (!response.ok) {
+        return new Response(
+          JSON.stringify({ 
+            error: `Failed to fetch PDF: ${response.status} ${response.statusText}` 
+          }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
       }
-    })
 
-    // console.log('[pdf-proxy] Response status:', response.status)
-    // console.log('[pdf-proxy] Content-Type:', response.headers.get('content-type'))
-    // console.log('[pdf-proxy] Content-Length:', response.headers.get('content-length'))
+      // Validate content type
+      const contentType = response.headers.get('content-type')
+      if (contentType && !contentType.includes('application/pdf')) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid content type - expected PDF',
+            receivedType: contentType
+          }),
+          { 
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
 
-    if (!response.ok) {
-      return new Response(
-        JSON.stringify({ 
-          error: `Failed to fetch PDF: ${response.status} ${response.statusText}` 
-        }),
-        { 
-          status: response.status,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      // Check file size limit (50MB)
+      const contentLength = response.headers.get('content-length')
+      if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'File too large - maximum 50MB allowed',
+            size: contentLength
+          }),
+          { 
+            status: 413,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Get the content
+      const buffer = await response.arrayBuffer()
+
+      // Double-check buffer size
+      if (buffer.byteLength > 50 * 1024 * 1024) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'File too large - maximum 50MB allowed',
+            size: buffer.byteLength
+          }),
+          { 
+            status: 413,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
+      }
+
+      // Return the PDF with appropriate headers
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': response.headers.get('content-type') || 'application/pdf',
+          'Content-Length': response.headers.get('content-length') || buffer.byteLength.toString(),
+          'Content-Disposition': `inline; filename="${url.split('/').pop()?.split('?')[0] || 'document.pdf'}"`
         }
-      )
-    }
+      })
 
-    // Get the content
-    const buffer = await response.arrayBuffer()
-
-    // Return the PDF with appropriate headers
-    return new Response(buffer, {
-      status: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': response.headers.get('content-type') || 'application/pdf',
-        'Content-Length': response.headers.get('content-length') || buffer.byteLength.toString(),
-        'Content-Disposition': `inline; filename="${url.split('/').pop()?.split('?')[0] || 'document.pdf'}"`
+    } catch (error) {
+      clearTimeout(timeoutId)
+      if (error.name === 'AbortError') {
+        return new Response(
+          JSON.stringify({ error: 'Request timeout - PDF fetch took too long' }),
+          { 
+            status: 408,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        )
       }
-    })
+      throw error
+    }
 
   } catch (error) {
     console.error('[pdf-proxy] Error:', error)
@@ -162,4 +244,5 @@ serve(async (req) => {
       }
     )
   }
+  }) // End of rate limiting wrapper
 })

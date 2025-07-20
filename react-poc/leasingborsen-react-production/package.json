@@ -28,6 +28,12 @@
     "staging:backup": "echo 'Creating staging backup...'",
     "staging:rollback": "echo 'Rolling back staging deployment...'",
     "prompts:test": "npx tsx scripts/prompt-manager/quick-test.ts",
+    "prompts:create": "npx tsx scripts/manage-prompts.ts create",
+    "prompts:list": "npx tsx scripts/manage-prompts.ts list",
+    "prompts:list-openai": "npx tsx scripts/manage-prompts.ts list-openai",
+    "prompts:get": "npx tsx scripts/manage-prompts.ts get",
+    "prompts:sync": "npx tsx scripts/manage-prompts.ts sync",
+    "prompts:update-id": "npx tsx scripts/manage-prompts.ts update-id",
     "prompts:example": "npx tsx scripts/prompt-manager/example-usage.ts",
     "prompts:test:unit": "vitest run scripts/prompt-manager/__tests__/prompt-manager.test.ts",
     "prompts:test:integration": "INTEGRATION_TEST=true vitest run scripts/prompt-manager/__tests__/integration.test.ts"

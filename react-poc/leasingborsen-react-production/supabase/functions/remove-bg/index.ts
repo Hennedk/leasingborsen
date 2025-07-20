@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { Image } from 'https://deno.land/x/imagescript@1.2.15/mod.ts';
+import { rateLimiters } from '../_shared/rateLimitMiddleware.ts';
 
 interface RemoveBgRequest {
   imageData: string; // base64 encoded image
@@ -36,6 +37,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       },
     });
   }
+
+  // Apply rate limiting for general operations
+  return rateLimiters.general(req, async (req) => {
 
   if (req.method !== 'POST') {
     return new Response(
@@ -334,4 +338,5 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     );
   }
+  }); // End of rate limiting wrapper
 });
