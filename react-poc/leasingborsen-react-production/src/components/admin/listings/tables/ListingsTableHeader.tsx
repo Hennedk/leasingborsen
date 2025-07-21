@@ -39,6 +39,7 @@ export const ListingsTableHeader = React.memo<ListingsTableHeaderProps>(({
           <TableHead>År</TableHead>
           <TableHead>Laveste pris</TableHead>
           <TableHead className="w-20">Tilbud</TableHead>
+          <TableHead className="w-20">Score</TableHead>
           <TableHead>Oprettet</TableHead>
           <TableHead>Opdateret</TableHead>
           <TableHead className="w-32">Handlinger</TableHead>

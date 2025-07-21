@@ -17,6 +17,7 @@ import {
   useAdminDeleteListing,
   useAdminDuplicateListing
 } from '@/hooks/useAdminListings'
+import { useBulkLeaseScoreCalculation } from '@/hooks/useBulkLeaseScoreCalculation'
 import { useSellers } from '@/hooks/useSellers'
 import { 
   DataErrorBoundary, 
@@ -59,6 +60,7 @@ const AdminListings: React.FC = () => {
   const bulkDeleteMutation = useBulkDeleteListings()
   const deleteMutation = useAdminDeleteListing()
   const duplicateMutation = useAdminDuplicateListing()
+  const bulkCalculateMutation = useBulkLeaseScoreCalculation()
 
   // Fetch all available sellers dynamically from database
   const { data: sellers = [], isLoading: sellersLoading, error: sellersError } = useSellers()
@@ -183,6 +185,8 @@ const AdminListings: React.FC = () => {
       })
     } else if (action === 'export') {
       toast.info('Export funktionalitet kommer snart')
+    } else if (action === 'calculate-scores') {
+      bulkCalculateMutation.mutate(selectedListings)
     }
   }
 

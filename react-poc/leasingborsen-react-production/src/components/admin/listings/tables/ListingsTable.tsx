@@ -16,11 +16,13 @@ import {
   ChevronDown,
   ChevronRight,
   Loader2,
-  Trash2
+  Trash2,
+  Calculator
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AdminListing } from '@/types/admin'
 import { useListingsTableState } from '@/hooks/useListingsTableState'
+import { LeaseScoreBadge } from '@/components/ui/LeaseScoreBadge'
 import { 
   ListingsTableHeader,
   ListingExpandedRow,
@@ -190,6 +192,15 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
         </Badge>
       </TableCell>
       <TableCell>
+        <LeaseScoreBadge
+          score={listing.lease_score}
+          breakdown={listing.lease_score_breakdown}
+          calculatedAt={listing.lease_score_calculated_at}
+          retailPrice={listing.retail_price}
+          size="sm"
+        />
+      </TableCell>
+      <TableCell>
         <div className="text-sm text-muted-foreground">
           {listing.created_at ? new Date(listing.created_at).toLocaleDateString('da-DK') : '–'}
         </div>
@@ -256,6 +267,16 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
               aria-label={`Eksporter ${tableState.selectedListings.length} valgte annoncer`}
             >
               Eksporter valgte
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => tableState.handleBulkAction('calculate-scores')}
+              className="flex items-center gap-2"
+              aria-label={`Beregn scores for ${tableState.selectedListings.length} valgte annoncer`}
+            >
+              <Calculator className="h-4 w-4" aria-hidden="true" />
+              Beregn scores
             </Button>
           </div>
         )}

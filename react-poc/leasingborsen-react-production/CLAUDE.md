@@ -309,6 +309,8 @@ All admin operations use secure Edge Functions with service role authentication 
 - **admin-seller-operations** - Seller management with comprehensive validation
 - **admin-image-operations** - Image upload with background processing
 - **admin-reference-operations** - Reference data CRUD for all automotive tables
+- **calculate-lease-score** - Individual lease score calculation
+- **batch-calculate-lease-scores** - Bulk lease score processing with specific ID targeting
 
 ### Admin Edge Function Pattern
 ```typescript
@@ -363,6 +365,159 @@ All admin Edge Functions include:
 - **Server-side validation** prevents malicious input
 - **Audit logging** for all admin operations
 - **Zero breaking changes** to existing admin workflows
+
+## Lease Score System
+
+### Overview
+The lease score system provides intelligent scoring of car listings based on value analysis across multiple pricing offers. Each listing can have multiple lease pricing options, and the system calculates the best possible score.
+
+### Scoring Algorithm
+The lease score uses a weighted scoring system (0-100 scale):
+
+```typescript
+// Scoring weights and calculation
+const totalScore = Math.round(
+  (monthlyRateScore * 0.45) +     // 45% - Monthly rate vs retail price
+  (mileageScore * 0.35) +         // 35% - Mileage allowance value  
+  (flexibilityScore * 0.20)       // 20% - Contract term flexibility
+)
+```
+
+### Score Components
+
+**1. Monthly Rate Score (45% weight)**
+- Calculated as `(monthlyPrice / retailPrice) * 100`
+- Score bands:
+  - < 0.9%: 100 points (excellent)
+  - < 1.1%: 90 points (very good)
+  - < 1.3%: 80 points (good)
+  - < 1.5%: 70 points (fair)
+  - < 1.7%: 60 points (below average)
+  - < 1.9%: 50 points (poor)
+  - < 2.1%: 40 points (very poor)
+  - ≥ 2.1%: 25 points (extremely poor)
+
+**2. Mileage Score (35% weight)**
+- Normalized to 15,000 km baseline: `mileagePerYear / 15000`
+- Higher mileage allowance = better value = higher score
+- Linear scaling from 50-100 points
+
+**3. Flexibility Score (20% weight)**
+- Based on contract period length
+- 36 months: 75 points (standard)
+- 24 months: 50 points (less flexible)
+- 48+ months: 100 points (most flexible)
+
+### Multi-Offer Processing
+When a listing has multiple lease offers:
+
+1. **Calculate Individual Scores**: Each pricing option gets its own score
+2. **Select Best Score**: The highest total score becomes the listing's official score
+3. **Store Winner Details**: The winning offer's pricing_id and breakdown are stored
+
+```typescript
+// Multiple offers example
+const scores = listing.lease_pricing.map(pricing => ({
+  pricingId: pricing.id,
+  score: calculateLeaseScore({
+    retailPrice: listing.retail_price,
+    monthlyPrice: pricing.monthly_price,
+    contractMonths: pricing.period_months,
+    mileagePerYear: pricing.mileage_per_year
+  })
+}))
+
+// Use the best score (highest total)
+const bestScore = scores.reduce((best, current) => 
+  current.score.totalScore > best.score.totalScore ? current : best
+)
+```
+
+### Database Schema
+```sql
+-- New fields added to listings table
+ALTER TABLE listings ADD COLUMN lease_score INTEGER;
+ALTER TABLE listings ADD COLUMN lease_score_calculated_at TIMESTAMPTZ;
+ALTER TABLE listings ADD COLUMN lease_score_breakdown JSONB;
+
+-- Updated full_listing_view includes lease score fields
+-- See migration: supabase/migrations/20250721_update_full_listing_view_with_lease_score.sql
+```
+
+### Admin Interface Integration
+
+**Bulk Calculation Hook**
+```typescript
+import { useBulkLeaseScoreCalculation } from '@/hooks/useBulkLeaseScoreCalculation'
+
+const { mutate: calculateScores, isLoading } = useBulkLeaseScoreCalculation()
+
+// Calculate scores for selected listings
+calculateScores(selectedListings) // Passes specific listing IDs
+```
+
+**Score Display Component**
+```typescript
+import { LeaseScoreBadge } from '@/components/ui/LeaseScoreBadge'
+
+<LeaseScoreBadge
+  score={listing.lease_score}
+  breakdown={listing.lease_score_breakdown}
+  calculatedAt={listing.lease_score_calculated_at}
+  retailPrice={listing.retail_price}
+  showTooltip={true}
+/>
+```
+
+**Visual Score Indicators**
+- **Green (≥80)**: Excellent value deals
+- **Yellow (60-79)**: Good value deals  
+- **Red (<60)**: Below-average value deals
+- **Gray**: No score calculated or missing retail price
+
+### Edge Functions
+
+**Individual Calculation**
+- Endpoint: `calculate-lease-score`
+- Input: Raw pricing data (retailPrice, monthlyPrice, etc.)
+- Returns: Complete score breakdown
+
+**Bulk Processing**
+- Endpoint: `batch-calculate-lease-scores?ids=id1,id2&force=true`
+- Features specific listing targeting
+- Processes multiple offers per listing
+- Automatic cache invalidation
+
+### Utilities
+
+**Verification Script**
+```bash
+node scripts/check-lease-score-migration.js  # Verify migration applied
+```
+
+**Database Migration**
+```bash
+# Applied via Supabase Dashboard
+# File: apply-migration-correct.sql (contains the manual migration)
+```
+
+### Troubleshooting
+
+**Score Not Showing**
+1. Check `retail_price` exists on listing
+2. Verify lease pricing options exist
+3. Confirm score calculation succeeded
+4. Hard refresh browser to clear React Query cache
+
+**Calculation Fails**
+1. Check listing has `lease_pricing` records
+2. Verify `retail_price` is not null
+3. Review Edge Function logs for errors
+
+**Cache Issues**
+- Fixed: React Query cache invalidation uses proper query keys
+- Frontend now targets specific listing IDs instead of limit-based processing
+- Immediate UI updates after successful calculation
 
 ## Performance Guidelines
 

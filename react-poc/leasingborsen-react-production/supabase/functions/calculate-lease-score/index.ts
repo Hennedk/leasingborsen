@@ -83,6 +83,18 @@ export function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Max-Age': '86400',
+      },
+    })
+  }
+
   // Apply rate limiting for general operations
   return rateLimiters.general(req, async (req) => {
     try {
@@ -90,7 +102,15 @@ serve(async (req) => {
       if (req.method !== 'POST') {
       return new Response(
         JSON.stringify({ error: 'Method not allowed' }),
-        { status: 405, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 405, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+          } 
+        }
       )
     }
 
@@ -102,7 +122,14 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(scoreBreakdown),
-      { headers: { 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+        } 
+      }
     )
 
   } catch (error) {
@@ -111,7 +138,15 @@ serve(async (req) => {
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Internal server error' 
       }),
-      { status: 400, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 400, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+        } 
+      }
     )
   }
   }) // End of rate limiting wrapper

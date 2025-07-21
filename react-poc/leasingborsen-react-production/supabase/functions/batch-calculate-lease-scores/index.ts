@@ -86,6 +86,18 @@ function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Max-Age': '86400',
+      },
+    })
+  }
+
   // Apply rate limiting for batch operations
   return rateLimiters.batch(req, async (req) => {
     // Create Supabase client with service role key for admin operations
@@ -99,6 +111,7 @@ serve(async (req) => {
     const url = new URL(req.url)
     const limit = parseInt(url.searchParams.get('limit') || '100')
     const forceRecalculate = url.searchParams.get('force') === 'true'
+    const specificIds = url.searchParams.get('ids')?.split(',').filter(id => id.trim())
 
     // Build query for listings that need score calculation
     let query = supabase
@@ -114,7 +127,14 @@ serve(async (req) => {
         )
       `)
       .not('retail_price', 'is', null)
-      .limit(limit)
+
+    // If specific listing IDs are provided, filter to those IDs only
+    if (specificIds && specificIds.length > 0) {
+      query = query.in('id', specificIds)
+    } else {
+      // Otherwise use limit for general batch processing
+      query = query.limit(limit)
+    }
 
     // Only get listings without scores unless force recalculate is set
     if (!forceRecalculate) {
@@ -194,7 +214,14 @@ serve(async (req) => {
         message: `Processed ${processed} listings with ${errors} errors`,
         results: results
       }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+        } 
+      }
     )
 
   } catch (error) {
@@ -204,7 +231,15 @@ serve(async (req) => {
         success: false, 
         error: error instanceof Error ? error.message : 'Internal server error' 
       }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
+        } 
+      }
     )
   }
   }) // End of rate limiting wrapper
