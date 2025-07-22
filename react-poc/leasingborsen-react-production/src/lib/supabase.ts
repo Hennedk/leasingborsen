@@ -176,7 +176,7 @@ export class CarListingQueries {
     const { data, error } = await supabase
       .from('full_listing_view')
       .select('*')
-      .eq('listing_id', id)
+      .eq('id', id)
       .not('monthly_price', 'is', null) // Only show listings with offers
       .order('monthly_price', { ascending: true }) // Get lowest price first
 
