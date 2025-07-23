@@ -190,7 +190,7 @@ const AdminListings: React.FC = () => {
     }
   }
 
-  const executeDelete = () => {
+  const executeDelete = async () => {
     if (deleteConfirmation.isBulk && deleteConfirmation.selectedListings) {
       const listingIds = deleteConfirmation.selectedListings
         .map(l => l.listing_id)
@@ -205,14 +205,12 @@ const AdminListings: React.FC = () => {
         }
       })
     } else if (deleteConfirmation.listing?.listing_id) {
-      deleteMutation.mutate({ listingId: deleteConfirmation.listing.listing_id }, {
-        onSuccess: () => {
-          toast.success('Annonce slettet')
-        },
-        onError: () => {
-          toast.error('Kunne ikke slette annonce')
-        }
-      })
+      try {
+        await deleteMutation.mutateAsync({ listingId: deleteConfirmation.listing.listing_id })
+        toast.success('Annonce slettet')
+      } catch (error) {
+        toast.error('Kunne ikke slette annonce')
+      }
     }
     
     setDeleteConfirmation({ open: false })
