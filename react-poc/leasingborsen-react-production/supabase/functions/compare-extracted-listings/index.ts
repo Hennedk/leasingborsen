@@ -332,7 +332,7 @@ serve(async (req) => {
       throw new Error('extractedCars must be an array')
     }
 
-    // console.log(`[compare-extracted-listings] Processing ${extractedCars.length} extracted cars for seller ${sellerId}`)
+    console.log(`[compare-extracted-listings] Processing ${extractedCars.length} extracted cars for seller ${sellerId}`)
     
     // Track variant sources
     const variantSources = {
@@ -392,13 +392,24 @@ serve(async (req) => {
     const { data: existingListings, error: existingError } = await existingQuery
     if (existingError) throw existingError
 
-    // console.log(`[compare-extracted-listings] Found ${existingListings?.length || 0} existing listings for comparison`)
+    console.log(`[compare-extracted-listings] Found ${existingListings?.length || 0} existing listings for comparison`)
+
+    // Deduplicate existing listings by ID (full_listing_view creates duplicates due to lease_pricing JOIN)
+    const uniqueExistingListings = new Map()
+    existingListings?.forEach((listing: any) => {
+      if (!uniqueExistingListings.has(listing.id)) {
+        uniqueExistingListings.set(listing.id, listing)
+      }
+    })
+    
+    const deduplicatedExistingListings = Array.from(uniqueExistingListings.values())
+    console.log(`[compare-extracted-listings] After deduplication: ${deduplicatedExistingListings.length} unique listings`)
 
     // Create lookup maps for existing listings with enhanced fuzzy matching
     const existingByExactKey = new Map()
     const existingByCompositeKey = new Map()
 
-    existingListings?.forEach((listing: any) => {
+    deduplicatedExistingListings.forEach((listing: any) => {
       // Construct offers array from individual pricing fields if no lease_pricing array exists
       const offers = listing.lease_pricing || (listing.monthly_price ? [{
         monthly_price: listing.monthly_price,
@@ -489,9 +500,12 @@ serve(async (req) => {
       let existingMatch: ExistingListing | null = null
       let confidence = 0
 
+      console.log(`[compare-extracted-listings] Matching car: ${car.make} ${car.model} ${car.variant}`)
+
       // Level 1: Exact variant match
       const exactKey = `${car.make}|${car.model}|${car.variant}`.toLowerCase()
       const exactMatch = existingByExactKey.get(exactKey)
+      console.log(`[compare-extracted-listings] Exact key: "${exactKey}", found: ${!!exactMatch}`)
       
       if (exactMatch && !alreadyMatchedIds.has(exactMatch.id)) {
         matchFound = true
@@ -617,10 +631,10 @@ serve(async (req) => {
 
     // Find existing listings that weren't matched (potential deletes)
     // ALL unmatched listings from the seller will be marked for deletion
-    const unmatchedExistingListings = existingListings?.filter(listing => {
+    const unmatchedExistingListings = deduplicatedExistingListings.filter(listing => {
       // Mark for deletion if this specific listing wasn't matched
-      return !matchedExistingIds.has(listing.listing_id)
-    }) || []
+      return !matchedExistingIds.has(listing.id)
+    })
 
     // console.log(`[compare-extracted-listings] Found ${unmatchedExistingListings.length} unmatched listings to mark for deletion`)
 
@@ -628,7 +642,7 @@ serve(async (req) => {
     // First, deduplicate by listing_id to avoid creating multiple delete records for the same listing
     const uniqueUnmatchedListings = new Map<string, any>()
     for (const unmatchedListing of unmatchedExistingListings) {
-      uniqueUnmatchedListings.set(unmatchedListing.listing_id, unmatchedListing)
+      uniqueUnmatchedListings.set(unmatchedListing.id, unmatchedListing)
     }
     
     // console.log(`[compare-extracted-listings] After deduplication: ${uniqueUnmatchedListings.size} unique unmatched listings`)
@@ -645,7 +659,7 @@ serve(async (req) => {
       matches.push({
         extracted: null as any,
         existing: {
-          id: unmatchedListing.listing_id,
+          id: unmatchedListing.id,
           make: unmatchedListing.make,
           model: unmatchedListing.model,
           variant: unmatchedListing.variant,
@@ -679,8 +693,8 @@ serve(async (req) => {
     const missingModelCount = matches.filter(m => m.changeType === 'missing_model').length
     const deleteCount = matches.filter(m => m.changeType === 'delete').length
 
-    // console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
-    // console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
+    console.log(`[compare-extracted-listings] Comparison complete: ${newCount} new, ${updateCount} updates, ${unchangedCount} unchanged, ${missingModelCount} missing models, ${deleteCount} potential deletes`)
+    console.log(`[compare-extracted-listings] Variant sources: existing=${variantSources.existing}, reference=${variantSources.reference}, inferred=${variantSources.inferred}, unknown=${variantSources.unknown}`)
 
     // Validation: Check for mathematical consistency to catch bugs
     const totalMatches = exactMatchCount + fuzzyMatchCount
@@ -703,7 +717,7 @@ serve(async (req) => {
       matches,
       summary: {
         totalExtracted: extractedCars.length,
-        totalExisting: existingListings?.length || 0,
+        totalExisting: deduplicatedExistingListings.length,
         totalMatched: totalNonDeleteMatches,
         totalNew: newCount,
         totalUpdated: updateCount,
