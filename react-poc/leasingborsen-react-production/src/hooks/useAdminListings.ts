@@ -471,9 +471,16 @@ export function useBulkDeleteListings() {
         queryClient.removeQueries({ queryKey: queryKeys.listingDetail(id) })
       })
       
-      // Invalidate all listings queries
+      // Invalidate all admin-related queries using predicate for more comprehensive invalidation
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
+      
+      // Also invalidate all listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
       
       console.log('🔄 Cache invalidated for', data.deletedIds.length, 'deleted listings')
     },
@@ -526,7 +533,12 @@ export function useBulkUpdateListings() {
       
       // Invalidate all listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to bulk update listings:', error)
@@ -557,7 +569,12 @@ export function useAdminCreateListing() {
     onSuccess: () => {
       // Invalidate all listings and admin queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to create listing:', error)
@@ -633,7 +650,12 @@ export function useAdminUpdateListing() {
       
       // Invalidate listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to update listing:', error)
@@ -713,9 +735,16 @@ export function useAdminDeleteListing() {
       // Remove the listing from cache
       queryClient.removeQueries({ queryKey: queryKeys.listingDetail(id) })
       
-      // Invalidate listings queries
+      // Invalidate all admin-related queries using predicate for more comprehensive invalidation
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
+      
+      // Also invalidate all listings queries
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
       
       console.log('🔄 Cache invalidated for deleted listing')
     },
@@ -823,7 +852,12 @@ export function useAdminDuplicateListing() {
     onSuccess: () => {
       // Invalidate all listings queries to show the new duplicate
       queryClient.invalidateQueries({ queryKey: queryInvalidation.invalidateAllListings() })
-      queryClient.invalidateQueries({ queryKey: ['admin'] })
+      queryClient.invalidateQueries({ 
+        predicate: (query) => {
+          const key = query.queryKey
+          return key.length > 0 && key[0] === 'admin'
+        }
+      })
     },
     onError: (error) => {
       console.error('Failed to duplicate listing:', error)

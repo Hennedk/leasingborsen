@@ -196,7 +196,7 @@ export class CarListingQueries {
     // Get unique listing IDs to count properly (since full_listing_view has duplicates)
     let query = supabase
       .from('full_listing_view')
-      .select('listing_id')
+      .select('id')
       .not('monthly_price', 'is', null) // Only count listings with offers
 
     // Apply same filters using shared function
@@ -213,7 +213,7 @@ export class CarListingQueries {
     }
 
     // Count unique listing IDs
-    const uniqueListingIds = new Set(data.map((item: any) => item.listing_id))
+    const uniqueListingIds = new Set(data.map((item: any) => item.id))
     return { data: uniqueListingIds.size, error: null }
   }
 }

@@ -32,7 +32,9 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
 
   // Fetch real pricing data from database instead of using mock data
-  const { data: offers, isLoading, error } = useOffers(car?.listing_id || '')
+  // Use both possible ID fields for compatibility with different data sources
+  const listingId = car?.listing_id || car?.id || ''
+  const { data: offers, isLoading, error } = useOffers(listingId)
 
   // Convert offers to lease options format
   const leaseOptions = useMemo(() => {

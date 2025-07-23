@@ -1,16 +1,5 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { CarListing } from '@/lib/supabase'
@@ -71,37 +60,16 @@ export const ListingRowActions = React.memo<ListingRowActionsProps>(({
         </Button>
       )}
       
-      {/* Delete button with confirmation dialog */}
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="admin-icon-button text-destructive hover:text-destructive hover:bg-destructive/10"
-            aria-label={`Slet ${listing.make} ${listing.model} annonce`}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden="true" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Denne handling kan ikke fortrydes. Dette vil permanent slette annoncen for 
-              <strong> {listing.make} {listing.model} ({listing.year})</strong> fra databasen.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction 
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={onDelete}
-            >
-              Slet annonce
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Delete button - confirmation handled by parent component */}
+      <Button 
+        variant="ghost" 
+        size="sm"
+        className="admin-icon-button text-destructive hover:text-destructive hover:bg-destructive/10"
+        onClick={onDelete}
+        aria-label={`Slet ${listing.make} ${listing.model} annonce`}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+      </Button>
     </div>
   )
 })

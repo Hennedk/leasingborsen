@@ -294,7 +294,7 @@ async function createListing(supabase: any, listingData: any, offers?: any[]): P
         await supabase
           .from('listings')
           .delete()
-          .eq('listing_id', listingId)
+          .eq('id', listingId)
         
         throw new Error(errorMessages.createError)
       }

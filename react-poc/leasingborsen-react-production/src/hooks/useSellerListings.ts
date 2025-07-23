@@ -35,7 +35,7 @@ export function useSellerListings(sellerId?: string, options?: UseSellerListings
       // Fetch only the fields AI needs (reduced payload)
       const { data, error } = await supabase
         .from('full_listing_view')
-        .select('listing_id, make, model, variant, horsepower')
+        .select('id, make, model, variant, horsepower')
         .eq('seller_id', sellerId)
         .order('make, model, variant')
         .limit(limit)
@@ -50,12 +50,12 @@ export function useSellerListings(sellerId?: string, options?: UseSellerListings
         throw new Error(`Failed to load dealer listings: ${error.message}`)
       }
       
-      // Deduplicate by listing_id (full_listing_view can have duplicates due to multiple pricing options)
+      // Deduplicate by id (full_listing_view can have duplicates due to multiple pricing options)
       const uniqueListings = new Map<string, DealerListing>()
       data?.forEach(listing => {
-        if (listing.listing_id && !uniqueListings.has(listing.listing_id)) {
-          uniqueListings.set(listing.listing_id, {
-            listing_id: listing.listing_id,
+        if (listing.id && !uniqueListings.has(listing.id)) {
+          uniqueListings.set(listing.id, {
+            listing_id: listing.id,
             make: listing.make || '',
             model: listing.model || '',
             variant: listing.variant || '',

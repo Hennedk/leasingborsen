@@ -14,9 +14,9 @@ import {
 import { 
   useAdminListings, 
   useBulkDeleteListings,
-  useAdminDeleteListing,
   useAdminDuplicateListing
 } from '@/hooks/useAdminListings'
+import { useDeleteListing } from '@/hooks/useAdminOperations'
 import { useBulkLeaseScoreCalculation } from '@/hooks/useBulkLeaseScoreCalculation'
 import { useSellers } from '@/hooks/useSellers'
 import { 
@@ -58,7 +58,7 @@ const AdminListings: React.FC = () => {
   
   // Mutations
   const bulkDeleteMutation = useBulkDeleteListings()
-  const deleteMutation = useAdminDeleteListing()
+  const deleteMutation = useDeleteListing()
   const duplicateMutation = useAdminDuplicateListing()
   const bulkCalculateMutation = useBulkLeaseScoreCalculation()
 
@@ -205,7 +205,7 @@ const AdminListings: React.FC = () => {
         }
       })
     } else if (deleteConfirmation.listing?.listing_id) {
-      deleteMutation.mutate(deleteConfirmation.listing.listing_id, {
+      deleteMutation.mutate({ listingId: deleteConfirmation.listing.listing_id }, {
         onSuccess: () => {
           toast.success('Annonce slettet')
         },
