@@ -423,7 +423,7 @@ serve(async (req) => {
       const exactKey = `${listing.make}|${listing.model}|${listing.variant}`.toLowerCase()
       if (!existingByExactKey.has(exactKey)) {
         existingByExactKey.set(exactKey, {
-          id: listing.listing_id,
+          id: listing.id,
           make: listing.make,
           model: listing.model,
           variant: listing.variant,
@@ -453,7 +453,7 @@ serve(async (req) => {
       
       if (!existingByCompositeKey.has(compositeKey)) {
         existingByCompositeKey.set(compositeKey, {
-          id: listing.listing_id,
+          id: listing.id,
           make: listing.make,
           model: listing.model,
           variant: listing.variant,
