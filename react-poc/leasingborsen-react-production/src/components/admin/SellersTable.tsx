@@ -3,17 +3,6 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { DataTable } from './shared/DataTable'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog'
 import { 
   Edit, 
   Trash2, 
@@ -232,39 +221,16 @@ const SellersTable = React.memo<SellersTableProps>(({
               </Link>
             </Button>
             
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  title="Slet sælger"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Denne handling kan ikke fortrydes. Dette vil permanent slette sælgeren 
-                    <strong> {seller.name}</strong> fra databasen.
-                    {seller.company && (
-                      <span> ({seller.company})</span>
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuller</AlertDialogCancel>
-                  <AlertDialogAction 
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => handleDelete(seller)}
-                  >
-                    Slet sælger
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            {/* Delete button - confirmation handled by parent component */}
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => handleDelete(seller)}
+              title="Slet sælger"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         )
       },
