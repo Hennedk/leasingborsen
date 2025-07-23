@@ -42,6 +42,31 @@ For detailed information on specific areas, see:
 - **Hybrid AI Extraction**: See `docs/archive/HYBRID_AI_EXTRACTION_COMPLETE.md` for multi-provider AI setup
 - **Recent Extraction Fixes (July 2025)**: Major improvements to deletion logic and column fixes
 
+### 🚀 AI Prompt Management (Quick Reference)
+**To update AI extraction prompt version:**
+1. **Check current version**: 
+   ```sql
+   SELECT name, openai_prompt_version, model, active 
+   FROM responses_api_configs 
+   WHERE name = 'vehicle-extraction';
+   ```
+2. **Update to new version** (e.g., from v17 to v19):
+   ```sql
+   UPDATE responses_api_configs 
+   SET 
+     openai_prompt_version = '19',
+     model = 'gpt-4.1',  -- Update model if changed
+     updated_at = NOW()
+   WHERE name = 'vehicle-extraction' AND active = true;
+   ```
+3. **Verify update**:
+   ```sql
+   SELECT name, openai_prompt_version, model FROM responses_api_configs WHERE name = 'vehicle-extraction';
+   ```
+4. **No redeployment needed** - changes take effect immediately via database config
+
+**Note**: Prompts must be created in OpenAI Playground first, then version number updated in database.
+
 ### 📊 Admin Interface
 - **Admin Components**: See `docs/archive/ADMIN_COMPONENTS_REVIEW.md` for admin UI patterns
 - **Admin Workflows**: See `docs/archive/ADMIN_REVIEW.md` for administrative processes
@@ -88,11 +113,19 @@ supabase db start           # Start local Supabase instance
 supabase db reset           # Reset local database with fresh migrations
 supabase functions serve    # Serve Edge Functions locally
 
-# Admin Edge Functions Deployment
-supabase functions deploy admin-listing-operations    # Deploy listing CRUD
-supabase functions deploy admin-seller-operations     # Deploy seller management
-supabase functions deploy admin-image-operations      # Deploy image upload
-supabase functions deploy admin-reference-operations  # Deploy reference data
+# Complete Edge Functions Deployment
+supabase functions deploy admin-listing-operations     # Deploy listing CRUD
+supabase functions deploy admin-seller-operations      # Deploy seller management  
+supabase functions deploy admin-image-operations       # Deploy image upload
+supabase functions deploy admin-reference-operations   # Deploy reference data
+supabase functions deploy ai-extract-vehicles          # Deploy AI PDF extraction
+supabase functions deploy apply-extraction-changes     # Deploy extraction application
+supabase functions deploy compare-extracted-listings   # Deploy listing comparison
+supabase functions deploy calculate-lease-score        # Deploy individual lease scoring
+supabase functions deploy batch-calculate-lease-scores # Deploy bulk lease scoring
+supabase functions deploy pdf-proxy                    # Deploy secure PDF proxy
+supabase functions deploy manage-prompts               # Deploy prompt management
+supabase functions deploy remove-bg                    # Deploy background removal
 ```
 
 ## Technology Stack Overview
@@ -305,12 +338,26 @@ const fetchCars = async (filters = {}) => {
 All admin operations use secure Edge Functions with service role authentication to bypass RLS restrictions while maintaining security and validation.
 
 **Available Edge Functions:**
+
+**Admin Operations:**
 - **admin-listing-operations** - Car listings CRUD with offers management
 - **admin-seller-operations** - Seller management with comprehensive validation
 - **admin-image-operations** - Image upload with background processing
 - **admin-reference-operations** - Reference data CRUD for all automotive tables
+
+**AI & Extraction:**
+- **ai-extract-vehicles** - AI-powered PDF extraction with multi-provider support
+- **apply-extraction-changes** - Secure application of extraction changes (bypasses RLS)
+- **compare-extracted-listings** - Compare extracted listings with existing inventory
+- **pdf-proxy** - Secure PDF download proxy with SSRF protection
+
+**Scoring & Analysis:**
 - **calculate-lease-score** - Individual lease score calculation
 - **batch-calculate-lease-scores** - Bulk lease score processing with specific ID targeting
+
+**Utilities:**
+- **manage-prompts** - AI prompt management and versioning
+- **remove-bg** - Background removal for images
 
 ### Admin Edge Function Pattern
 ```typescript
@@ -350,6 +397,10 @@ const { createReference, updateReference } = useAdminReferenceOperations()
 // Image operations
 import { useAdminImageUpload } from '@/hooks/useAdminImageUpload'
 const { uploadImage, isUploading } = useAdminImageUpload()
+
+// Extraction operations
+import { useListingComparison } from '@/hooks/useListingComparison'
+const { applySelectedChanges, isApplyingSelectedChanges } = useListingComparison()
 ```
 
 ### Error Handling and Validation
@@ -365,6 +416,86 @@ All admin Edge Functions include:
 - **Server-side validation** prevents malicious input
 - **Audit logging** for all admin operations
 - **Zero breaking changes** to existing admin workflows
+
+## AI Extraction Edge Functions
+
+### Extraction Workflow Architecture
+The AI extraction system uses multiple Edge Functions for secure, scalable PDF processing:
+
+```
+PDF Upload → ai-extract-vehicles → compare-extracted-listings → apply-extraction-changes
+    ↓              ↓                        ↓                           ↓
+PDF Proxy    AI Processing           Comparison Review           Database Updates
+```
+
+### Key Extraction Edge Functions
+
+#### **apply-extraction-changes**
+- **Purpose**: Secure application of extraction changes with service role permissions
+- **Solves**: RLS policy violations when creating/updating/deleting listings from frontend
+- **Input**: `sessionId`, `selectedChangeIds[]`, `appliedBy`
+- **Features**:
+  - **Full CRUD Support**: CREATE, UPDATE, DELETE operations
+  - **RLS Bypass**: Uses service_role to bypass Row Level Security
+  - **Error Handling**: Per-change error tracking with detailed logging
+  - **Input Validation**: UUID validation, session verification
+  - **Comprehensive Response**: Applied counts, error details, session metadata
+
+```typescript
+// Usage in frontend
+import { useListingComparison } from '@/hooks/useListingComparison'
+
+const { applySelectedChanges } = useListingComparison()
+
+await applySelectedChanges({
+  sessionId: 'uuid-session-id',
+  selectedChangeIds: ['uuid1', 'uuid2', 'uuid3'],
+  appliedBy: 'admin'
+})
+```
+
+#### **pdf-proxy**
+- **Purpose**: Secure PDF download with SSRF protection and dynamic dealer whitelisting
+- **Features**:
+  - **Database-driven whitelisting**: Validates URLs against dealer PDF URLs in database
+  - **Static fallback**: Maintains backward compatibility with hardcoded trusted domains
+  - **SSRF Protection**: Comprehensive IP blocking and DNS validation
+  - **Performance caching**: 5-minute TTL for domain validation
+  - **HTTPS enforcement**: Only allows secure connections
+
+#### **ai-extract-vehicles**
+- **Purpose**: AI-powered vehicle extraction from PDF price lists
+- **Features**:
+  - **Multi-provider support**: OpenAI GPT-3.5/4, Anthropic Claude
+  - **Cost tracking**: Comprehensive usage logging and budget management
+  - **Rate limiting**: Prevents API abuse and cost overruns
+  - **Error recovery**: Intelligent retry with exponential backoff
+
+### Extraction Change Types
+
+The system supports all extraction change types through `apply-extraction-changes`:
+
+**CREATE Operations:**
+- Insert new listings with complete reference lookups (make_id, model_id, etc.)
+- Create lease pricing records from extracted offers
+- Validate required references before insertion
+
+**UPDATE Operations:**
+- Differential updates (only modify changed fields)
+- Reference resolution while preserving existing data
+- Replace lease pricing with new offers
+
+**DELETE Operations:**  
+- Cascaded deletion with proper cleanup order:
+  1. Remove extraction_listing_changes references
+  2. Delete price_change_log entries
+  3. Delete lease_pricing records
+  4. Delete listings record
+
+**Error Handling:**
+- Individual change error tracking
+- Session status management (completed vs partially_applied)
+- Comprehensive error logging with change-specific context
 
 ## Lease Score System
 
