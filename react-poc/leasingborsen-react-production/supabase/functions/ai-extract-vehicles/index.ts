@@ -739,9 +739,9 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
       ...(existingListings || {})
     }
     
-    // Validate listing structure
-    if (safeExistingListings.existing_listings && !Array.isArray(safeExistingListings.existing_listings)) {
-      console.error('Invalid existingListings format - expected array')
+    // Ensure existing_listings is always an array (never null or undefined)
+    if (!safeExistingListings.existing_listings || !Array.isArray(safeExistingListings.existing_listings)) {
+      console.error('Invalid existingListings format - expected array, got:', typeof safeExistingListings.existing_listings)
       safeExistingListings.existing_listings = []
     }
     
