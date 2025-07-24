@@ -29,7 +29,11 @@ export const EXTRACTION_RULES = `EXTRACTION RULES:
 2. Prices as numbers only (no "kr.", ",-")
 3. Always "HK" for horsepower, never "kW"
 4. Normalize brands ("Skoda" not "Škoda")
-5. MERGE transmission variants (they're the same car)`
+5. MERGE transmission variants (they're the same car)
+6. CRITICAL: Group multiple pricing options for the same variant under ONE car entry
+   - Same make/model/variant with different down payments = ONE car with multiple offers
+   - Same make/model/variant with different contract terms = ONE car with multiple offers
+   - Do NOT create separate car entries for different pricing of the same variant`
 
 export const DANISH_TERMS = `DANISH TERMS TO EXTRACT:
 - Monthly payment: "kr./md", "Ydelse pr. md"
