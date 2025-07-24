@@ -238,15 +238,13 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         makeName: seller.make_name || 'Unknown'
       }
 
-      // Transform reference data to only include the dealer's make
-      const transformedReferenceData = referenceData && seller.make_id ? {
+      // Transform reference data - include ALL reference data, not filtered by dealer make
+      const transformedReferenceData = referenceData ? {
         makes_models: referenceData.makes?.reduce((acc, make) => {
-          if (make.id === seller.make_id) {
-            const makeModels = referenceData.models
-              ?.filter(model => model.make_id === make.id)
-              .map(model => model.name) || [];
-            acc[make.name] = makeModels;
-          }
+          const makeModels = referenceData.models
+            ?.filter(model => model.make_id === make.id)
+            .map(model => model.name) || [];
+          acc[make.name] = makeModels;
           return acc;
         }, {} as Record<string, string[]>) || {},
         fuel_types: referenceData.fuelTypes?.map(ft => ft.name) || [],
@@ -258,6 +256,21 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         transmissions: [],
         body_types: []
       };
+
+      // Log reference data for debugging (merged PDFs)
+      console.log(`[AI Extraction] Reference data transformation (merged):`, {
+        hasReferenceData: !!referenceData,
+        referenceDataKeys: referenceData ? Object.keys(referenceData) : [],
+        sellerMakeId: seller.make_id,
+        transformedReferenceData,
+        originalReferenceData: {
+          makesCount: referenceData?.makes?.length || 0,
+          modelsCount: referenceData?.models?.length || 0,
+          fuelTypesCount: referenceData?.fuelTypes?.length || 0,
+          transmissionsCount: referenceData?.transmissions?.length || 0,
+          bodyTypesCount: referenceData?.bodyTypes?.length || 0
+        }
+      });
 
       // Step 2.5: Validate existing listings are loaded before AI processing
       if (isLoadingSellerListings) {
@@ -668,15 +681,13 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         makeName: seller.make_name || 'Unknown'
       }
 
-      // Transform reference data to only include the dealer's make
-      const transformedReferenceData = referenceData && seller.make_id ? {
+      // Transform reference data - include ALL reference data, not filtered by dealer make
+      const transformedReferenceData = referenceData ? {
         makes_models: referenceData.makes?.reduce((acc, make) => {
-          if (make.id === seller.make_id) {
-            const makeModels = referenceData.models
-              ?.filter(model => model.make_id === make.id)
-              .map(model => model.name) || [];
-            acc[make.name] = makeModels;
-          }
+          const makeModels = referenceData.models
+            ?.filter(model => model.make_id === make.id)
+            .map(model => model.name) || [];
+          acc[make.name] = makeModels;
           return acc;
         }, {} as Record<string, string[]>) || {},
         fuel_types: referenceData.fuelTypes?.map(ft => ft.name) || [],
@@ -688,6 +699,21 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         transmissions: [],
         body_types: []
       };
+
+      // Log reference data for debugging (single PDF)
+      console.log(`[AI Extraction] Reference data transformation (single):`, {
+        hasReferenceData: !!referenceData,
+        referenceDataKeys: referenceData ? Object.keys(referenceData) : [],
+        sellerMakeId: seller.make_id,
+        transformedReferenceData,
+        originalReferenceData: {
+          makesCount: referenceData?.makes?.length || 0,
+          modelsCount: referenceData?.models?.length || 0,
+          fuelTypesCount: referenceData?.fuelTypes?.length || 0,
+          transmissionsCount: referenceData?.transmissions?.length || 0,
+          bodyTypesCount: referenceData?.bodyTypes?.length || 0
+        }
+      });
 
       // Validate existing listings are loaded before AI processing
       if (isLoadingSellerListings) {

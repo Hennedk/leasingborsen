@@ -434,20 +434,23 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
 
       let referenceData = null
       try {
+        // Pass NULL to get ALL reference data, not filtered by seller make
         const { data: refData, error: refError } = await supabase
           .rpc('get_extraction_reference_data', {
-            seller_make_id: config.makeId
+            seller_make_id: null  // Changed from config.makeId to null to get all reference data
           })
         
         if (refError) {
           console.warn('Could not fetch reference data:', refError.message)
         } else {
           referenceData = refData
-          console.log('📚 Reference data fetched:', {
+          console.log('📚 Reference data fetched (single PDF):', {
             makesCount: Object.keys(refData.makes_models || {}).length,
             fuelTypesCount: refData.fuel_types?.length || 0,
             transmissionsCount: refData.transmissions?.length || 0,
-            bodyTypesCount: refData.body_types?.length || 0
+            bodyTypesCount: refData.body_types?.length || 0,
+            sellerMakeId: config.makeId,
+            fullReferenceData: refData
           })
         }
       } catch (refError) {
