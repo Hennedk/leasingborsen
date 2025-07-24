@@ -111,6 +111,38 @@ interface ComparisonResult {
 }
 
 /**
+ * Compare two offer arrays to detect if content has changed
+ */
+function compareOfferArrays(extractedOffers: any[], existingOffers: any[]): boolean {
+  if (!extractedOffers || !existingOffers) return true
+  if (extractedOffers.length !== existingOffers.length) return true
+  
+  // Sort both arrays by monthly_price for consistent comparison
+  const sortedExtracted = [...extractedOffers].sort((a, b) => (a.monthly_price || 0) - (b.monthly_price || 0))
+  const sortedExisting = [...existingOffers].sort((a, b) => (a.monthly_price || 0) - (b.monthly_price || 0))
+  
+  // Compare each offer
+  for (let i = 0; i < sortedExtracted.length; i++) {
+    const extracted = sortedExtracted[i]
+    const existing = sortedExisting[i]
+    
+    // Compare key pricing fields
+    if (extracted.monthly_price !== existing.monthly_price) return true
+    if (extracted.first_payment !== existing.first_payment) return true
+    if (extracted.period_months !== existing.period_months) return true
+    if (extracted.mileage_per_year !== existing.mileage_per_year) return true
+    
+    // Also check total_price if available
+    if (extracted.total_price !== existing.total_price && 
+        extracted.total_price !== undefined && existing.total_price !== undefined) {
+      return true
+    }
+  }
+  
+  return false
+}
+
+/**
  * Compare extracted data with existing listing to find actual changes
  */
 function detectFieldChanges(extracted: ExtractedCar, existing: ExistingListing): Record<string, { old: any; new: any }> | null {
@@ -161,25 +193,37 @@ function detectFieldChanges(extracted: ExtractedCar, existing: ExistingListing):
     changes.consumption_kwh_100km = { old: existing.consumption_kwh_100km, new: extracted.consumption_kwh_100km }
   }
   
-  // Compare offers/pricing
+  // Compare offers/pricing - comprehensive comparison
   const extractedHasOffers = extracted.offers && extracted.offers.length > 0
   const existingHasOffers = existing.offers && existing.offers.length > 0
   
   if (extractedHasOffers || existingHasOffers) {
-    // For now, just check if the primary offer has changed
+    // Check if number of offers changed
+    const extractedOfferCount = extracted.offers?.length || 0
+    const existingOfferCount = existing.offers?.length || 0
+    
+    if (extractedOfferCount !== existingOfferCount) {
+      changes.offers = { 
+        old: existingHasOffers ? `${existingOfferCount} tilbud` : 'Ingen tilbud', 
+        new: extractedHasOffers ? `${extractedOfferCount} tilbud` : 'Ingen tilbud' 
+      }
+    } else if (extractedHasOffers && existingHasOffers) {
+      // Same number of offers - compare content
+      const offersChanged = compareOfferArrays(extracted.offers, existing.offers)
+      if (offersChanged) {
+        changes.offers = {
+          old: `${existingOfferCount} tilbud (indhold ændret)`,
+          new: `${extractedOfferCount} tilbud (nye priser/vilkår)`
+        }
+      }
+    }
+    
+    // Also compare primary offer for backward compatibility
     const extractedPrimary = extracted.offers?.[0] || extracted
     const existingPrimary = existing.offers?.[0] || existing
     
     if (extractedPrimary.monthly_price !== existingPrimary.monthly_price && extractedPrimary.monthly_price !== undefined) {
       changes.monthly_price = { old: existingPrimary.monthly_price, new: extractedPrimary.monthly_price }
-    }
-    
-    // Note if offer structure has changed
-    if (extractedHasOffers !== existingHasOffers) {
-      changes.offers = { 
-        old: existingHasOffers ? `${existing.offers.length} tilbud` : 'Ingen tilbud', 
-        new: extractedHasOffers ? `${extracted.offers.length} tilbud` : 'Ingen tilbud' 
-      }
     }
   }
   
