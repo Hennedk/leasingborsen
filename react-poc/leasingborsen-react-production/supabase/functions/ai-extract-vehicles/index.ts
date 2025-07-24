@@ -136,15 +136,27 @@ function consolidateExistingListings(listings: any[]): any[] {
       })
     }
     
-    // Add offer to existing vehicle
+    // Add offers from the database function's offers array
     const vehicle = vehicleMap.get(vehicleKey)
-    vehicle.offers.push([
-      listing.monthly_price,
-      listing.total_price,
-      listing.period_months,
-      listing.down_payment,
-      listing.total_cost
-    ])
+    
+    // Use the offers array from our database function if available
+    if (listing.offers && Array.isArray(listing.offers)) {
+      // Add all offers from the database function
+      for (const offer of listing.offers) {
+        if (Array.isArray(offer) && offer.length >= 5) {
+          vehicle.offers.push(offer) // Already in correct format: [monthly_price, down_payment, months, km_per_year, total_price]
+        }
+      }
+    } else {
+      // Fallback: construct offer from individual listing fields (legacy support)
+      vehicle.offers.push([
+        listing.monthly_price || null,
+        listing.first_payment || listing.down_payment || null,
+        listing.period_months || null,
+        listing.mileage_per_year || null,
+        listing.total_price || listing.total_cost || null
+      ])
+    }
   }
   
   return Array.from(vehicleMap.values())
