@@ -1,8 +1,6 @@
--- Fix get_dealer_existing_listings to return complete offer arrays
--- This fixes the AI extraction issue where offers were being switched around
--- The AI expects offers in format: [monthly_price, down_payment, months, km_per_year]
--- Total price is calculated automatically by the system to ensure consistency
--- Previously the function was returning [monthly_price, null, null, null, null] which confused the AI
+-- Update get_dealer_existing_listings to remove total_price from offers array
+-- This implements the total price calculation consistency fix
+-- Total price is now calculated dynamically by the system instead of being extracted/stored
 
 CREATE OR REPLACE FUNCTION get_dealer_existing_listings(seller_id_param UUID)
 RETURNS JSON AS $$
@@ -31,7 +29,7 @@ BEGIN
     SELECT DISTINCT ON (l.id)
       l.id, l.make, l.model, l.variant, l.horsepower, l.fuel_type, l.transmission, 
       l.body_type, l.year, l.wltp, l.co2_emission,
-      -- Aggregate all offers for this listing from lease_pricing table
+      -- Aggregate all offers for this listing from lease_pricing table (4 elements only)
       COALESCE(
         (
           SELECT json_agg(
@@ -46,7 +44,7 @@ BEGIN
           FROM lease_pricing lp 
           WHERE lp.listing_id = l.id
         ),
-        -- Fallback for direct pricing data from full_listing_view
+        -- Fallback for direct pricing data from full_listing_view (4 elements only)
         json_build_array(
           json_build_array(
             l.monthly_price,
@@ -64,8 +62,5 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant necessary permissions
-GRANT EXECUTE ON FUNCTION get_dealer_existing_listings TO authenticated, service_role;
-
--- Add comment explaining the complete fix
-COMMENT ON FUNCTION get_dealer_existing_listings IS 'Gets all existing listings for a dealer/seller with complete offer arrays. Fixed in 20250723 to return proper offers format [monthly_price, down_payment, months, km_per_year] instead of incomplete data with nulls. Total price is calculated automatically by the system to ensure consistency. This prevents AI from switching around offers during extraction.';
+-- Update comment to reflect the change
+COMMENT ON FUNCTION get_dealer_existing_listings IS 'Gets all existing listings for a dealer/seller with complete offer arrays. Updated in 20250724 to return consistent offers format [monthly_price, down_payment, months, km_per_year] without total_price. Total price is calculated dynamically by the system to ensure consistency and eliminate calculation discrepancies between AI extraction and database.';

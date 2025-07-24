@@ -84,9 +84,9 @@ export const vehicleExtractionSchema = {
               "minItems": 1,
               "items": {
                 "type": "array",
-                "description": "Array with exactly 5 elements: [monthly_price, first_payment, period_months, km_per_year, total_price]",
-                "minItems": 5,
-                "maxItems": 5,
+                "description": "Array with exactly 4 elements: [monthly_price, first_payment, period_months, km_per_year]. Total price will be calculated automatically.",
+                "minItems": 4,
+                "maxItems": 4,
                 "items": {
                   "anyOf": [
                     {
@@ -156,8 +156,8 @@ export function validateExtractionResponse(data: any): { valid: boolean; errors?
       errors.push(`Car ${index}: offers must be a non-empty array`)
     } else {
       car.offers.forEach((offer: any, offerIndex: number) => {
-        if (!Array.isArray(offer) || offer.length !== 5) {
-          errors.push(`Car ${index}, Offer ${offerIndex}: must be an array with exactly 5 elements`)
+        if (!Array.isArray(offer) || offer.length !== 4) {
+          errors.push(`Car ${index}, Offer ${offerIndex}: must be an array with exactly 4 elements`)
         }
       })
     }

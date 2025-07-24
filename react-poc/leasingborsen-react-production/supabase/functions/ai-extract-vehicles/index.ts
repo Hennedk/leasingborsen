@@ -43,6 +43,13 @@ import type {
   ExtractionMonitoringEvent,
   ResponsesAPIError
 } from './types.ts'
+
+/**
+ * Calculate total price consistently using the formula: (period_months × monthly_price) + first_payment
+ */
+function calculateTotalPrice(monthlyPrice: number, periodMonths: number, firstPayment?: number): number {
+  return (periodMonths * monthlyPrice) + (firstPayment || 0)
+}
 import { vehicleExtractionSchema, validateExtractionResponse } from './schema.ts'
 import { VariantResolver } from './variantResolver.ts'
 // FeatureFlagManager removed - always use Responses API
@@ -141,20 +148,19 @@ function consolidateExistingListings(listings: any[]): any[] {
     
     // Use the offers array from our database function if available
     if (listing.offers && Array.isArray(listing.offers)) {
-      // Add all offers from the database function
+      // Add all offers from the database function (now 4 elements without total_price)
       for (const offer of listing.offers) {
-        if (Array.isArray(offer) && offer.length >= 5) {
-          vehicle.offers.push(offer) // Already in correct format: [monthly_price, down_payment, months, km_per_year, total_price]
+        if (Array.isArray(offer) && offer.length >= 4) {
+          vehicle.offers.push(offer) // Already in correct format: [monthly_price, down_payment, months, km_per_year]
         }
       }
     } else {
-      // Fallback: construct offer from individual listing fields (legacy support)
+      // Fallback: construct offer from individual listing fields (legacy support, without total_price)
       vehicle.offers.push([
         listing.monthly_price || null,
         listing.first_payment || listing.down_payment || null,
         listing.period_months || null,
-        listing.mileage_per_year || null,
-        listing.total_price || listing.total_cost || null
+        listing.mileage_per_year || null
       ])
     }
   }
@@ -1033,13 +1039,13 @@ Each offer is an array with EXACTLY this sequence:
     const vehicles: ExtractedVehicle[] = extractedCars.map((car: CompactExtractedVehicle, index: number) => {
       const resolution = variantResolutions.get(index)!
       
-      // Convert offers array to full format
+      // Convert offers array to full format (total_price is calculated dynamically)
       const offers = (car.offers || []).map((offer: any[]) => ({
         monthly_price: offer[0],
         first_payment: offer[1], 
         period_months: offer[2],
         mileage_per_year: offer[3],
-        total_price: offer[4]
+        total_price: offer[0] && offer[2] ? calculateTotalPrice(offer[0], offer[2], offer[1]) : null
       }))
 
       return {

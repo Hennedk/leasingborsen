@@ -233,7 +233,7 @@ Return ONLY a compact JSON object with this exact structure:
       "l100": number or null,
       "tax": number or null,
       "offers": [
-        [monthly_price, down_payment, months, km_per_year, total_price or null]
+        [monthly_price, down_payment, months, km_per_year]
       ]
     }
   ]
@@ -245,9 +245,10 @@ Each offer is an array with EXACTLY this sequence:
   monthly_price,    // Position 0: The RECURRING monthly payment (typically 2,000-8,000 kr)
   down_payment,     // Position 1: The INITIAL/FIRST payment (can be 0-50,000 kr)
   months,           // Position 2: Contract duration (typically 12, 24, 36, 48)
-  km_per_year,      // Position 3: Annual mileage allowance (10000, 15000, 20000, 25000, 30000)
-  total_price       // Position 4: Total contract cost (optional, can be null)
+  km_per_year       // Position 3: Annual mileage allowance (10000, 15000, 20000, 25000, 30000)
 ]
+
+Total price is calculated automatically as (months × monthly_price) + down_payment
 
 ⚠️ COMMON PRICING MISTAKES TO AVOID:
 - DO NOT confuse down_payment (førstegangsydelse) with monthly_price

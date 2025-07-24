@@ -42,12 +42,13 @@ export const DANISH_TERMS = `DANISH TERMS TO EXTRACT:
 
 export const OFFERS_ARRAY_STRUCTURE = `OUTPUT FORMAT & OFFERS ARRAY STRUCTURE:
 
-⚠️ CRITICAL: The "offers" array has EXACTLY 5 elements in this ORDER:
+⚠️ CRITICAL: The "offers" array has EXACTLY 4 elements in this ORDER:
 Position 0: monthly_price (månedlig ydelse) - The RECURRING payment (2,000-8,000 kr typical)
 Position 1: down_payment (førstegangsydelse) - The INITIAL payment (0-50,000 kr typical)
 Position 2: months (periode) - Contract duration (12, 24, 36, 48)
 Position 3: km_per_year (km/år) - Annual mileage (10000, 15000, 20000, 25000, 30000)
-Position 4: total_price (totalpris) - Total contract cost (optional, can be null)`
+
+Note: Total price is calculated automatically as (months × monthly_price) + down_payment`
 
 export const EXAMPLE_OUTPUT = `EXAMPLE:
 {
@@ -66,7 +67,7 @@ export const EXAMPLE_OUTPUT = `EXAMPLE:
       "l100": null,
       "tax": 420,
       "offers": [
-        [4995, 79135, 48, 15000, 259255]
+        [4995, 79135, 48, 15000]
       ]
     }
   ]
@@ -105,14 +106,15 @@ ${existingListings}
 Use this reference data to ensure extracted data matches existing database values.
 
 CRITICAL OFFERS ARRAY STRUCTURE:
-The "offers" array must have EXACTLY 5 elements in this ORDER:
+The "offers" array must have EXACTLY 4 elements in this ORDER:
 [
   monthly_price,    // Position 0: RECURRING monthly payment (2,000-8,000 kr typical)
   down_payment,     // Position 1: INITIAL payment/førstegangsydelse (0-50,000 kr)
   months,           // Position 2: Contract duration (12, 24, 36, 48)
-  km_per_year,      // Position 3: Annual mileage (10000, 15000, 20000, 25000, 30000)
-  total_price       // Position 4: Total cost (optional, can be null)
+  km_per_year       // Position 3: Annual mileage (10000, 15000, 20000, 25000, 30000)
 ]
+
+Total price is calculated automatically as (months × monthly_price) + down_payment
 
 PDF TEXT:
 ${pdfText}`

@@ -29,7 +29,6 @@ interface ExtractedCar {
   first_payment?: number
   period_months?: number
   mileage_per_year?: number
-  total_price?: number
   offers?: Array<{
     monthly_price: number
     first_payment?: number
@@ -111,6 +110,13 @@ interface ComparisonResult {
 }
 
 /**
+ * Calculate total price consistently using the formula: (period_months × monthly_price) + first_payment
+ */
+function calculateTotalPrice(monthlyPrice: number, periodMonths: number, firstPayment?: number): number {
+  return (periodMonths * monthlyPrice) + (firstPayment || 0)
+}
+
+/**
  * Compare two offer arrays to detect if content has changed
  */
 function compareOfferArrays(extractedOffers: any[], existingOffers: any[]): boolean {
@@ -132,11 +138,7 @@ function compareOfferArrays(extractedOffers: any[], existingOffers: any[]): bool
     if (extracted.period_months !== existing.period_months) return true
     if (extracted.mileage_per_year !== existing.mileage_per_year) return true
     
-    // Also check total_price if available
-    if (extracted.total_price !== existing.total_price && 
-        extracted.total_price !== undefined && existing.total_price !== undefined) {
-      return true
-    }
+    // Note: total_price is now calculated dynamically and not compared directly
   }
   
   return false
@@ -460,7 +462,7 @@ serve(async (req) => {
         first_payment: listing.first_payment,
         period_months: listing.period_months || 36, // Default to 36 months if not specified
         mileage_per_year: listing.mileage_per_year || 15000, // Default to 15000 km/year if not specified
-        total_price: listing.total_lease_cost
+        total_price: calculateTotalPrice(listing.monthly_price, listing.period_months || 36, listing.first_payment)
       }] : [])
 
       // Exact key for Level 1 matching
@@ -697,7 +699,7 @@ serve(async (req) => {
         first_payment: unmatchedListing.first_payment,
         period_months: unmatchedListing.period_months || 36,
         mileage_per_year: unmatchedListing.mileage_per_year || 15000,
-        total_price: unmatchedListing.total_lease_cost
+        total_price: calculateTotalPrice(unmatchedListing.monthly_price, unmatchedListing.period_months || 36, unmatchedListing.first_payment)
       }] : [])
 
       matches.push({

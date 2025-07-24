@@ -6,7 +6,7 @@ export interface VehicleOffer {
   first_payment?: number
   period_months?: number
   mileage_per_year?: number
-  total_price?: number | null
+  total_price?: number | null  // Calculated dynamically, not extracted
 }
 
 // Individual extracted vehicle interface with variant tracking
@@ -51,7 +51,6 @@ export interface CompactVehicleOffer extends Array<any> {
   1: number  // first_payment
   2: number  // period_months
   3: number  // mileage_per_year
-  4: number | null  // total_price
 }
 
 export interface CompactExtractedVehicle {
