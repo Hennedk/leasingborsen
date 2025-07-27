@@ -40,7 +40,6 @@ import type {
   CompactExtractedVehicle,
   CompactExtractionResponse,
   ExtractionContext,
-  ExtractionMonitoringEvent,
   ResponsesAPIError
 } from './types.ts'
 
@@ -562,31 +561,8 @@ async function callOpenAIWithFallback(params: {
   }
 }
 
-// Log monitoring event
-async function logMonitoringEvent(supabase: any, event: ExtractionMonitoringEvent) {
-  try {
-    const { error } = await supabase
-      .from('migration_metrics')
-      .insert({
-        created_at: event.timestamp,
-        api_version: event.apiVersion,
-        variant_source: 'mixed', // Will be updated with actual distribution
-        confidence_score: event.inferenceRate,
-        dealer_id: event.dealerId,
-        session_id: event.sessionId,
-        tokens_used: event.tokensUsed,
-        processing_time_ms: event.processingTimeMs,
-        error_occurred: event.errorOccurred,
-        error_message: event.errorMessage
-      })
-    
-    if (error) {
-      console.error('[Monitoring] Failed to log event:', error)
-    }
-  } catch (err) {
-    console.error('[Monitoring] Error logging event:', err)
-  }
-}
+// Log monitoring event function removed - migration_metrics table no longer exists
+// Core monitoring continues via api_call_logs in responsesConfigManager.ts
 
 // Handle chunked requests - Phase 2: Chunked request support
 async function handleChunkedRequest(chunk: ChunkedExtractionRequest, req: Request): Promise<Response> {
@@ -1246,22 +1222,8 @@ Each offer is an array with EXACTLY this sequence:
     
     // console.log('✅ Successfully stored extraction changes:', changes.length)
     
-    // Log monitoring event
-    await logMonitoringEvent(supabase, {
-      timestamp: new Date(),
-      dealerId: sellerId,
-      sessionId: extractionSessionId,
-      apiVersion,
-      variantSourceDistribution: {
-        existing: resolutionStats.existing,
-        reference: resolutionStats.reference,
-        inferred: resolutionStats.inferred
-      },
-      inferenceRate: resolutionStats.inferenceRate,
-      tokensUsed,
-      processingTimeMs: endTime - startTime,
-      errorOccurred: false
-    })
+    // Monitoring event logging removed - migration_metrics table no longer exists
+    // Core monitoring continues via api_call_logs in responsesConfigManager.ts
     
     // Use the comparison results for statistics
     const totalNew = comparisonResult.summary.totalNew
@@ -1311,25 +1273,8 @@ Each offer is an array with EXACTLY this sequence:
       errorResponse = createErrorResponse(extractionError)
     }
     
-    // Log error event for monitoring
-    if (error instanceof Error) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      const supabase = createClient(supabaseUrl, supabaseServiceKey)
-      
-      await logMonitoringEvent(supabase, {
-        timestamp: new Date(),
-        dealerId: undefined,
-        sessionId: 'error',
-        apiVersion: 'unknown' as any,
-        variantSourceDistribution: { existing: 0, reference: 0, inferred: 0 },
-        inferenceRate: 0,
-        tokensUsed: 0,
-        processingTimeMs: 0,
-        errorOccurred: true,
-        errorMessage: error.message
-      })
-    }
+    // Error monitoring event logging removed - migration_metrics table no longer exists
+    // Core error monitoring continues via api_call_logs in responsesConfigManager.ts
     
     return new Response(
       JSON.stringify(errorResponse),

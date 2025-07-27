@@ -77,17 +77,7 @@ serve(async (req) => {
 
           if (updateError) throw updateError
 
-          // Add to version history
-          await supabase.rpc('create_config_version', {
-            p_config_name: configName,
-            p_openai_prompt_id: promptId,
-            p_openai_prompt_version: promptVersion,
-            p_model: model,
-            p_temperature: temperature,
-            p_max_completion_tokens: maxOutputTokens,
-            p_changelog: 'Updated via manage-prompts API',
-            p_created_by: 'api'
-          })
+          // Version history removed - simplified configuration management
 
           console.log(`[manage-prompts] Updated configuration for: ${configName}`)
         } else {
@@ -381,17 +371,7 @@ serve(async (req) => {
 
         if (error) throw error
 
-        // Also update version history
-        await supabase.rpc('create_config_version', {
-          p_config_name: configName,
-          p_openai_prompt_id: promptId,
-          p_openai_prompt_version: promptVersion || '1',
-          p_model: model || 'gpt-4-1106-preview',
-          p_temperature: temperature || 0.1,
-          p_max_completion_tokens: maxOutputTokens || 16384,
-          p_changelog: `Updated prompt ID to ${promptId} from OpenAI Playground`,
-          p_created_by: 'manual-update'
-        })
+        // Version history removed - simplified configuration management
 
         return new Response(
           JSON.stringify({ 

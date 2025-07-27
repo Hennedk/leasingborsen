@@ -1,29 +1,15 @@
 import { supabase } from '@/lib/supabase'
-import type { AIUsageLog, CostLimits } from './types'
+import type { CostLimits } from './types'
 
 export class AICostTracker {
   private static readonly DEFAULT_MONTHLY_BUDGET = 50 // $50 USD
   private static readonly DEFAULT_PER_PDF_LIMIT = 0.25 // $0.25 per PDF
   
-  async trackUsage(usage: Omit<AIUsageLog, 'id' | 'created_at'>): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('ai_usage_log')
-        .insert({
-          batch_id: usage.batch_id,
-          model: usage.model,
-          tokens_used: usage.tokens_used,
-          cost: usage.cost,
-          success: usage.success,
-          error_message: usage.error_message
-        })
-      
-      if (error) {
-        console.error('Failed to log AI usage:', error)
-      }
-    } catch (err) {
-      console.error('AI usage tracking error:', err)
-    }
+  // Usage tracking now handled by api_call_logs via responsesConfigManager
+  // This method is kept for backward compatibility but logs a deprecation notice
+  async trackUsage(usage: any): Promise<void> {
+    console.warn('[AICostTracker] trackUsage is deprecated - use responsesConfigManager.logAPICall instead')
+    // No-op - tracking handled by Edge Functions via api_call_logs
   }
   
   async getMonthlyUsage(): Promise<{
@@ -38,19 +24,23 @@ export class AICostTracker {
       startOfMonth.setHours(0, 0, 0, 0)
       
       const { data, error } = await supabase
-        .from('ai_usage_log')
-        .select('cost, tokens_used, success')
+        .from('api_call_logs')
+        .select('total_tokens, response_status')
         .gte('created_at', startOfMonth.toISOString())
       
       if (error) throw error
       
       const summary = data.reduce(
-        (acc, record) => ({
-          total_cost: acc.total_cost + (record.cost || 0),
-          total_tokens: acc.total_tokens + (record.tokens_used || 0),
-          request_count: acc.request_count + 1,
-          success_count: acc.success_count + (record.success ? 1 : 0)
-        }),
+        (acc, record) => {
+          // Estimate cost based on tokens (GPT-3.5-turbo pricing: ~$0.002/1K tokens)
+          const estimatedCost = record.total_tokens ? (record.total_tokens / 1000) * 0.002 : 0
+          return {
+            total_cost: acc.total_cost + estimatedCost,
+            total_tokens: acc.total_tokens + (record.total_tokens || 0),
+            request_count: acc.request_count + 1,
+            success_count: acc.success_count + (record.response_status === 'success' ? 1 : 0)
+          }
+        },
         { total_cost: 0, total_tokens: 0, request_count: 0, success_count: 0 }
       )
       

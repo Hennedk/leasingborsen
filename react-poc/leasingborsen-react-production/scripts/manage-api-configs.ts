@@ -28,10 +28,6 @@ async function listConfigs() {
         format_type,
         format_name,
         strict
-      ),
-      config_versions (
-        version,
-        created_at
       )
     `)
     .order('created_at', { ascending: false })
@@ -100,17 +96,10 @@ async function updateConfig(
   changelog: string
 ) {
   try {
-    const { data, error } = await supabase
-      .rpc('create_config_version', {
-        p_config_name: name,
-        p_openai_prompt_id: promptId,
-        p_openai_prompt_version: promptVersion,
-        p_model: model,
-        p_temperature: temperature,
-        p_max_completion_tokens: maxTokens,
-        p_changelog: changelog,
-        p_created_by: 'cli'
-      })
+    // Note: Version creation removed - configurations now managed directly
+    console.log('⚠️  Version tracking has been simplified - update the configuration directly instead')
+    const data = null // No-op for backward compatibility
+    const error = null // No-op for backward compatibility
 
     if (error) {
       console.error('❌ Error updating configuration:', error)

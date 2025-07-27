@@ -110,7 +110,8 @@ export class ResponsesConfigManager {
   }
   
   /**
-   * Create a new version of a configuration
+   * Version management removed - configurations are now managed directly
+   * This method is kept for backward compatibility but does nothing
    */
   async createVersion(
     configName: string,
@@ -122,29 +123,8 @@ export class ResponsesConfigManager {
     changelog: string,
     created_by: string = 'system'
   ): Promise<number | null> {
-    try {
-      const { data, error } = await this.supabase
-        .rpc('create_config_version', {
-          p_config_name: configName,
-          p_openai_prompt_id: openai_prompt_id,
-          p_openai_prompt_version: openai_prompt_version,
-          p_model: model,
-          p_temperature: temperature,
-          p_max_completion_tokens: max_completion_tokens,
-          p_changelog: changelog,
-          p_created_by: created_by
-        })
-      
-      if (error) {
-        console.error('[ResponsesConfigManager] Error creating version:', error)
-        return null
-      }
-      
-      return data
-    } catch (error) {
-      console.error('[ResponsesConfigManager] Failed to create version:', error)
-      return null
-    }
+    console.warn('[ResponsesConfigManager] createVersion is deprecated - version management simplified')
+    return null
   }
   
   /**

@@ -151,23 +151,8 @@ export interface FeatureFlagConfig {
   excludedDealers?: string[]
 }
 
-// Monitoring event
-export interface ExtractionMonitoringEvent {
-  timestamp: Date
-  dealerId?: string
-  sessionId: string
-  apiVersion: 'chat-completions' | 'responses-api'
-  variantSourceDistribution: {
-    existing: number
-    reference: number
-    inferred: number
-  }
-  inferenceRate: number
-  tokensUsed: number
-  processingTimeMs: number
-  errorOccurred: boolean
-  errorMessage?: string
-}
+// Monitoring interface removed - migration_metrics table no longer exists
+// Core monitoring continues via api_call_logs in responsesConfigManager.ts
 
 // Error types specific to Responses API
 export interface ResponsesAPIError {
