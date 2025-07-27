@@ -212,11 +212,12 @@ async function callOpenAIWithFallback(params: {
   context: Record<string, any>
   systemPrompt: string
   userPrompt: string
+  chatCompletionsPrompt: string
   useResponsesAPI: boolean
   sessionId: string
   dealerId?: string
 }): Promise<{ response: any; apiVersion: 'responses-api' | 'chat-completions'; tokensUsed: number }> {
-  const { context, systemPrompt, userPrompt, useResponsesAPI, sessionId, dealerId } = params
+  const { context, systemPrompt, userPrompt, chatCompletionsPrompt, useResponsesAPI, sessionId, dealerId } = params
   
   // Get OpenAI client using lazy loading
   const openai = await getOpenAIClient()
@@ -431,7 +432,7 @@ async function callOpenAIWithFallback(params: {
         },
         {
           role: 'user',
-          content: userPrompt
+          content: chatCompletionsPrompt
         }
       ],
       temperature: 0.1,
@@ -775,7 +776,16 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
 - Extract numbers only (remove "kr.", ",-")
 - Each car needs ≥1 offer`
 
-    const userPrompt = buildChatCompletionsContext({
+    // Build different prompts for different APIs
+    const responsesApiPrompt = buildExtractionContext({
+      dealerName: finalDealerName,
+      fileName,
+      pdfText: finalText,
+      referenceData: referenceContext,
+      existingListings: existingListingsContext + variantExamplesContext
+    })
+
+    const chatCompletionsPrompt = buildChatCompletionsContext({
       dealerName: finalDealerName,
       fileName,
       pdfText: finalText,
@@ -807,7 +817,8 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
       existingListings: existingListingsContext.length,
       variantExamples: variantExamplesContext.length,
       pdfText: finalText.length,
-      total: userPrompt.length
+      responsesApi: responsesApiPrompt.length,
+      chatCompletions: chatCompletionsPrompt.length
     }
     
     // Log context size analysis
@@ -815,13 +826,14 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
       referenceData: `${Math.round(contextSizes.referenceData/1024)}KB`,
       existingListings: `${Math.round(contextSizes.existingListings/1024)}KB`,
       pdfText: `${Math.round(contextSizes.pdfText/1024)}KB`,
-      totalPrompt: `${Math.round(contextSizes.total/1024)}KB`,
+      responsesApiPrompt: `${Math.round(contextSizes.responsesApi/1024)}KB`,
+      chatCompletionsPrompt: `${Math.round(contextSizes.chatCompletions/1024)}KB`,
       existingListingsCount: safeExistingListings.existing_listings.length
     })
     
     // Warn about potentially problematic context sizes
-    if (contextSizes.total > 100 * 1024) { // 100KB
-      console.warn(`[ai-extract-vehicles] LARGE CONTEXT WARNING: ${Math.round(contextSizes.total/1024)}KB prompt may cause timeout`)
+    if (contextSizes.responsesApi > 100 * 1024) { // 100KB
+      console.warn(`[ai-extract-vehicles] LARGE CONTEXT WARNING: ${Math.round(contextSizes.responsesApi/1024)}KB prompt may cause timeout`)
     }
     
     if (contextSizes.pdfText > 200 * 1024) { // 200KB
@@ -835,7 +847,8 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
     const apiParams = {
       context: dynamicContext,
       systemPrompt,
-      userPrompt,
+      userPrompt: responsesApiPrompt,      // Use minimal prompt for Responses API
+      chatCompletionsPrompt,               // Full prompt for Chat Completions fallback
       useResponsesAPI: useResponsesAPI,
       sessionId: batchId || 'unknown',
       dealerId: sellerId
