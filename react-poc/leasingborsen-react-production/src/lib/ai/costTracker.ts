@@ -7,7 +7,7 @@ export class AICostTracker {
   
   // Usage tracking now handled by api_call_logs via responsesConfigManager
   // This method is kept for backward compatibility but logs a deprecation notice
-  async trackUsage(usage: any): Promise<void> {
+  async trackUsage(_usage: any): Promise<void> {
     console.warn('[AICostTracker] trackUsage is deprecated - use responsesConfigManager.logAPICall instead')
     // No-op - tracking handled by Edge Functions via api_call_logs
   }
