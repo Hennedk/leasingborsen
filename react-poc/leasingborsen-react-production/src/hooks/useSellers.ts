@@ -32,36 +32,25 @@ export const useSellers = () => {
     queryKey: ['sellers'],
     queryFn: async (): Promise<Seller[]> => {
       try {
-        // Get sellers with make information - fallback for backward compatibility
-        let sellersData, sellersError
+        // Use sellers table with manual join (sellers_with_make view was removed in Phase 3 cleanup)
+        console.log('Using sellers table with make join')
+        const result = await supabase
+          .from('sellers')
+          .select(`
+            *,
+            makes!sellers_make_id_fkey(name)
+          `)
+          .order('name')
         
-        try {
-          // Try new view first (after migration)
-          const result = await supabase
-            .from('sellers_with_make')
-            .select('*')
-            .order('name')
-          sellersData = result.data
-          sellersError = result.error
-        } catch (viewError) {
-          // Fallback to old table with manual join (before migration)
-          console.log('Using fallback query - sellers_with_make view not available yet')
-          const result = await supabase
-            .from('sellers')
-            .select(`
-              *,
-              makes!sellers_make_id_fkey(name)
-            `)
-            .order('name')
-          
-          // Transform the data to match expected format
-          if (result.data) {
-            sellersData = result.data.map(seller => ({
-              ...seller,
-              make_name: seller.makes?.name || null
-            }))
-          }
-          sellersError = result.error
+        let sellersData, sellersError
+        sellersError = result.error
+        
+        // Transform the data to match expected format
+        if (result.data) {
+          sellersData = result.data.map(seller => ({
+            ...seller,
+            make_name: seller.makes?.name || null
+          }))
         }
 
         if (sellersError) {
@@ -133,10 +122,13 @@ export const useSeller = (sellerId: string) => {
       if (!sellerId) return null
 
       try {
-        // Get seller data with make information
-        const { data: sellerData, error: sellerError } = await supabase
-          .from('sellers_with_make')
-          .select('*')
+        // Get seller data with make information (sellers_with_make view was removed in Phase 3 cleanup)
+        const { data: sellerDataRaw, error: sellerError } = await supabase
+          .from('sellers')
+          .select(`
+            *,
+            makes!sellers_make_id_fkey(name)
+          `)
           .eq('id', sellerId)
           .single()
 
@@ -145,7 +137,13 @@ export const useSeller = (sellerId: string) => {
           throw new Error('Der opstod en fejl ved hentning af sælger')
         }
 
-        if (!sellerData) return null
+        if (!sellerDataRaw) return null
+
+        // Transform the data to match expected format
+        const sellerData = {
+          ...sellerDataRaw,
+          make_name: sellerDataRaw.makes?.name || null
+        }
 
         // Get listings count for this seller
         const { data: listingsData, error: listingsError } = await supabase

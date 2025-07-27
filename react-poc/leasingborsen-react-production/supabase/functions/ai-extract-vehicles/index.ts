@@ -116,7 +116,7 @@ const DEFAULT_EXISTING_LISTINGS = {
   existing_listings: []
 }
 
-// Consolidate existing listings into AI output format to prevent duplicates
+// Consolidate existing listings with essential fields only for variant matching
 function consolidateExistingListings(listings: any[]): any[] {
   const vehicleMap = new Map<string, any>()
   
@@ -124,114 +124,31 @@ function consolidateExistingListings(listings: any[]): any[] {
     const vehicleKey = `${listing.make}_${listing.model}_${listing.variant}_${listing.horsepower}`
     
     if (!vehicleMap.has(vehicleKey)) {
-      // Create vehicle in expected AI output format
+      // Create vehicle with minimal essential data for variant matching
       vehicleMap.set(vehicleKey, {
         make: listing.make,
         model: listing.model,
         variant: listing.variant,
-        hp: listing.horsepower,
-        ft: listing.fuel_type_id,
-        tr: listing.transmission_id,
-        bt: listing.body_type_id,
-        wltp: listing.wltp_range,
-        co2: listing.co2_emissions,
-        kwh100: listing.kwh_per_100km,
-        l100: listing.fuel_consumption_l_per_100km,
-        tax: listing.tax_amount,
-        offers: []
+        hp: listing.horsepower
       })
-    }
-    
-    // Add offers from the database function's offers array
-    const vehicle = vehicleMap.get(vehicleKey)
-    
-    // Use the offers array from our database function if available
-    if (listing.offers && Array.isArray(listing.offers)) {
-      // Add all offers from the database function (now 4 elements without total_price)
-      for (const offer of listing.offers) {
-        if (Array.isArray(offer) && offer.length >= 4) {
-          vehicle.offers.push(offer) // Already in correct format: [monthly_price, down_payment, months, km_per_year]
-        }
-      }
-    } else {
-      // Fallback: construct offer from individual listing fields (legacy support, without total_price)
-      vehicle.offers.push([
-        listing.monthly_price || null,
-        listing.first_payment || listing.down_payment || null,
-        listing.period_months || null,
-        listing.mileage_per_year || null
-      ])
     }
   }
   
   return Array.from(vehicleMap.values())
 }
 
-// Optimize listings for large inventories with intelligent sampling
+// Optimize listings for variant matching (essential data only)
 function buildOptimizedListingsContext(existingListings: any[], pdfText?: string): string {
   if (!existingListings || existingListings.length === 0) {
-    return `
-
-🚨 EXISTING DEALER LISTINGS STATUS 🚨
-No existing listings found for this dealer. All extracted vehicles will be treated as new listings.
-
-MANDATORY VARIANT MATCHING RULES – FOLLOW THESE:
-Since no existing listings are available:
-- Create appropriate variant names following Danish market conventions
-- Use consistent naming patterns across similar vehicles
-- Include horsepower in variant names (e.g., "Advanced 231 HK")
-- Be consistent with transmission notation if applicable`
+    return `\nEXISTING LISTINGS: None found. Create appropriate variant names using Danish conventions.`
   }
   
-  // Consolidate listings by vehicle identity to prevent AI from creating duplicates
+  // Consolidate listings by vehicle identity with minimal data
   const consolidatedListings = consolidateExistingListings(existingListings)
   
   console.log(`[ai-extract-vehicles] Consolidated listings: ${existingListings.length} → ${consolidatedListings.length} unique vehicles`)
   
-  let listingsToInclude = consolidatedListings
-  
-  return `\n\n🚨 CRITICAL: EXISTING DEALER INVENTORY (USE THIS EXACT FORMAT) 🚨
-${JSON.stringify(listingsToInclude, null, 2)}
-
-📋 INSTRUCTIONS: Return NEW vehicles in the SAME JSON format shown above.
-Each vehicle should have ALL offers consolidated into the offers array.
-
-MANDATORY VARIANT MATCHING RULES – YOU MUST FOLLOW THESE:
-
-**Step 1 (Match):**
-- For each brochure car, find an existing listing (same make, model, ±5 HP).
-- If found, copy its **variant** name **exactly**, character for character.
-- Do **not** add or remove "Automatik" unless it already exists.
-- Do **not** add a transmission suffix if none exists; keep it if it does.
-
-**Step 2 (When to Create New Variant):**
-Only create a new variant name if the brochure shows a **truly new configuration**, i.e.:
-- Horsepower differs by **> 10 HP**
-- It's a **different trim level** not in the existing listings
-- The **fuel type** is fundamentally different
-- The **same powertrain/trim** now has **distinct factory options** (e.g., larger wheels, panoramic sunroof, BOSE audio)
-- **Transmission type** changes (Automatic vs Manual)
-- **Drivetrain** changes (AWD vs RWD)
-
-**Step 3 (How to Name New Variant):**
-When you do need to create a new name:
-1. **Identify** the **closest existing** variant (same make/model, closest HP).
-2. **Adopt exactly** its naming **template**—word order, spacing, punctuation, suffix style.
-3. If adding **equipment**, append it with " – " immediately after that base name.
-   Example:
-   - Base existing: "Ultimate 325 HK 4WD"
-   - New with wheels: "Ultimate 325 HK 4WD – 20\" alufælge, soltag"
-
-**Step 4 (Align with Existing Naming Patterns):**
-Before finalizing any new variant name, ensure it **mirrors** your dealer's canonical format:
-- **Word order** (e.g., HP before drivetrain)
-- **Spacing & capitalization** (e.g., "217 HK", not "217HK")
-- **Suffix style** (e.g., "aut." vs "Automatik")
-- **Drivetrain & transmission** exactly where they appear in the reference
-
-**Validation:**
-For each extracted car:
-> "Does this match an existing listing above? If yes, am I using the EXACT variant name?"`
+  return `\nEXISTING LISTINGS:\n${JSON.stringify(consolidatedListings)}`
 }
 
 // Helper function to generate a summary of changes (like original function)
@@ -807,14 +724,15 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
     
     console.log('[ai-extract-vehicles] Using Responses API with corrected OpenAI format')
 
-    // Prepare reference data context (like original function)
+    // Prepare reference data context (optimized format)
     let referenceContext = ''
     if (safeReferenceData) {
-      referenceContext = `\n\nDATABASE REFERENCE DATA FOR CONTEXT:
-MAKES & MODELS: ${JSON.stringify(safeReferenceData.makes_models || {})}
-FUEL TYPES: ${JSON.stringify(safeReferenceData.fuel_types || [])}
-TRANSMISSIONS: ${JSON.stringify(safeReferenceData.transmissions || [])}
-BODY TYPES: ${JSON.stringify(safeReferenceData.body_types || [])}`
+      referenceContext = `\nREF: ${JSON.stringify({
+        makes: safeReferenceData.makes_models || {},
+        ft: safeReferenceData.fuel_types || [],
+        tr: safeReferenceData.transmissions || [],
+        bt: safeReferenceData.body_types || []
+      })}`
     }
 
     // Prepare existing listings context with optimization for large inventories
@@ -832,87 +750,30 @@ BODY TYPES: ${JSON.stringify(safeReferenceData.body_types || [])}`
     // Skip loading variant examples file since it's not deployed with the function
     // The examples are better provided through existing listings anyway
 
-    // System and user prompts (from original function)
-    const systemPrompt = `You are a Danish vehicle leasing data extractor with a CRITICAL requirement: You MUST match extracted vehicles to the dealer's existing inventory following MANDATORY VARIANT MATCHING RULES.
+    // Optimized system prompt (reduced from ~2500 to ~1000 tokens)
+    const systemPrompt = `Extract vehicle data from Danish leasing brochures. Match variants to existing inventory when possible.
 
-Your task is to parse car leasing brochures and return structured JSON, while STRICTLY following the 4-step variant matching process.
+## VARIANT MATCHING RULES
+1. **Match existing**: For same make/model (±5 HP) → copy variant name EXACTLY
+2. **Create new only if**: >10 HP difference, different trim, new fuel type, transmission change, or distinct equipment
+3. **Name new variants**: Copy closest existing naming pattern + " – equipment" if applicable  
+4. **Validate format**: Match dealer's word order, spacing, suffix style
 
-## MANDATORY VARIANT MATCHING PROCESS
+## OUTPUT FORMAT
+Return JSON only:
+{"cars":[{"make":"string","model":"string","variant":"string","hp":number,"ft":number,"tr":number,"bt":number,"wltp":number,"co2":number,"kwh100":number,"l100":number,"tax":number,"offers":[[monthly_price,down_payment,months,km_per_year]]}]}
 
-**Step 1 (Match Existing):**
-- For EVERY car in the brochure, FIRST check existing inventory (same make, model, ±5 HP)
-- If match found → Copy the variant name EXACTLY, character for character
-- NEVER modify existing variant names (don't add/remove "Automatik", transmission suffixes, etc.)
+## FIELD CODES
+ft: 1=Electric,2=Hybrid-Petrol,3=Petrol,4=Diesel,5=Hybrid-Diesel,6=Plug-in-Petrol,7=Plug-in-Diesel
+tr: 1=Automatic,2=Manual  
+bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Minibus,9=Mikro
 
-**Step 2 (When to Create New):**
-Create new variant ONLY when brochure shows truly different configuration:
-- Horsepower differs by >10 HP
-- Different trim level not in existing listings
-- Fundamentally different fuel type
-- Same powertrain with distinct factory options (larger wheels, sunroof, BOSE, etc.)
-- Transmission type changes (Automatic vs Manual)
-- Drivetrain changes (AWD vs RWD)
-
-**Step 3 (How to Name New):**
-When creating new variant:
-1. Find closest existing variant (same make/model, closest HP)
-2. Copy its naming template EXACTLY (word order, spacing, punctuation)
-3. For equipment variants: append " – " + equipment list
-   Example: "Ultimate 325 HK 4WD" → "Ultimate 325 HK 4WD – 20\" alufælge, soltag"
-
-**Step 4 (Validate):**
-Before finalizing, ensure new names match dealer's format:
-- Word order (HP before/after drivetrain)
-- Spacing ("217 HK" not "217HK")
-- Suffix style ("aut." vs "Automatik")
-- Drivetrain position in name
-
-## Output Format
-Return ONLY a compact JSON object with this exact structure:
-{
-  "cars": [
-    {
-      "make": "string",
-      "model": "string", 
-      "variant": "string with HK if applicable",
-      "hp": number or null,
-      "ft": number,  // fuel_type: 1=Electric, 2=Hybrid-Petrol, 3=Petrol, 4=Diesel, 5=Hybrid-Diesel, 6=Plug-in-Petrol, 7=Plug-in-Diesel
-      "tr": number,  // transmission: 1=Automatic, 2=Manual
-      "bt": number,  // body_type: 1=SUV, 2=Hatchback, 3=Sedan, 4=Stationcar, 5=Coupe, 6=Cabriolet, 7=Crossover, 8=Minibus, 9=Mikro
-      "wltp": number or null,
-      "co2": number or null,
-      "kwh100": number or null,
-      "l100": number or null,
-      "tax": number or null,
-      "offers": [
-        [monthly_price, down_payment, months, km_per_year, total_price or null]
-      ]
-    }
-  ]
-}
-
-## CRITICAL: Understanding the "offers" Array Structure
-Each offer is an array with EXACTLY this sequence:
-[
-  monthly_price,    // Position 0: The RECURRING monthly payment (typically 2,000-8,000 kr)
-  down_payment,     // Position 1: The INITIAL/FIRST payment (can be 0-50,000 kr)
-  months,           // Position 2: Contract duration (typically 12, 24, 36, 48)
-  km_per_year,      // Position 3: Annual mileage allowance (10000, 15000, 20000, 25000, 30000)
-  total_price       // Position 4: Total contract cost (optional, can be null)
-]
-
-⚠️ COMMON PRICING MISTAKES TO AVOID:
-- DO NOT confuse down_payment (førstegangsydelse) with monthly_price
-- Monthly lease payments are typically between 2,000-8,000 kr/month
-- If you see prices like 14,995 or 29,995 as "monthly", they're likely down payments
-- Down payments (førstegangsydelse) can range from 0 to 50,000+ kr
-
-## Important Rules
-- Extract prices as numbers only (remove "kr.", ",-" etc.)
-- Each car MUST have at least one offer
-- Use the numeric codes, not string values for ft, tr, bt
-- Omit optional fields if not present (use null)
-- Return ONLY the JSON object, no explanatory text`
+## PRICING RULES
+- offers array: [monthly_price, down_payment, months, km_per_year]
+- Monthly payments typically 2,000-8,000 kr
+- Down payments can be 0-50,000+ kr
+- Extract numbers only (remove "kr.", ",-")
+- Each car needs ≥1 offer`
 
     const userPrompt = buildChatCompletionsContext({
       dealerName: finalDealerName,

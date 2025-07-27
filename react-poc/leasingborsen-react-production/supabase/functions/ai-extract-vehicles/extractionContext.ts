@@ -78,7 +78,7 @@ export const EXAMPLE_OUTPUT = `EXAMPLE:
 }`
 
 /**
- * Build the complete extraction context message
+ * Build the extraction context with essential data only (instructions now in system prompt)
  */
 export function buildExtractionContext(params: {
   dealerName?: string
@@ -89,36 +89,10 @@ export function buildExtractionContext(params: {
 }): string {
   const { dealerName, fileName, pdfText, referenceData, existingListings } = params
   
-  return `Extract all vehicles from this Danish PDF following the MANDATORY VARIANT MATCHING RULES.
-
-${VARIANT_MATCHING_RULES}
-
-${EXTRACTION_RULES}
-
-${DANISH_TERMS}
-
-${OFFERS_ARRAY_STRUCTURE}
-
-${EXAMPLE_OUTPUT}
-
-Dealer: ${dealerName || 'Unknown'}
+  return `Dealer: ${dealerName || 'Unknown'}
 File: ${fileName || 'PDF Upload'}
-
 ${referenceData}
 ${existingListings}
-
-Use this reference data to ensure extracted data matches existing database values.
-
-CRITICAL OFFERS ARRAY STRUCTURE:
-The "offers" array must have EXACTLY 4 elements in this ORDER:
-[
-  monthly_price,    // Position 0: RECURRING monthly payment (2,000-8,000 kr typical)
-  down_payment,     // Position 1: INITIAL payment/førstegangsydelse (0-50,000 kr)
-  months,           // Position 2: Contract duration (12, 24, 36, 48)
-  km_per_year       // Position 3: Annual mileage (10000, 15000, 20000, 25000, 30000)
-]
-
-Total price is calculated automatically as (months × monthly_price) + down_payment
 
 PDF TEXT:
 ${pdfText}`
@@ -126,6 +100,7 @@ ${pdfText}`
 
 /**
  * Build the context for Chat Completions API (fallback)
+ * Note: Chat Completions still needs full instructions since it doesn't use stored prompts
  */
 export function buildChatCompletionsContext(params: {
   dealerName?: string
@@ -134,6 +109,22 @@ export function buildChatCompletionsContext(params: {
   referenceData: string
   existingListings: string
 }): string {
-  // For now, use the same context
-  return buildExtractionContext(params)
+  const { dealerName, fileName, pdfText, referenceData, existingListings } = params
+  
+  // Chat Completions needs the full context with instructions
+  return `Extract vehicles from this PDF. Match variants to existing inventory when possible.
+
+Dealer: ${dealerName || 'Unknown'}
+File: ${fileName || 'PDF Upload'}
+${referenceData}
+${existingListings}
+
+RULES:
+1. Match existing variants exactly (±5 HP)
+2. Create new variants only if >10 HP difference or different trim/equipment
+3. Extract all offers per vehicle
+4. Output JSON: {"cars":[{"make","model","variant","hp","ft","tr","bt","wltp","co2","kwh100","l100","tax","offers":[[monthly,down,months,km]]}]}
+
+PDF TEXT:
+${pdfText}`
 }
