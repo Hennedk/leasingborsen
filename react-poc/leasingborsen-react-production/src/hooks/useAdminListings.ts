@@ -421,17 +421,7 @@ export function useBulkDeleteListings() {
         console.warn('⚠️ Could not delete extraction changes:', extractionError.message)
       }
       
-      // 2. Delete listing offers for all listings
-      const { error: offersError } = await supabase
-        .from('listing_offers')
-        .delete()
-        .in('listing_id', listingIds)
-      
-      if (offersError) {
-        console.warn('⚠️ Could not delete listing offers:', offersError.message)
-      }
-      
-      // 3. Delete price change logs for all listings
+      // 2. Delete price change logs for all listings
       const { error: priceLogError } = await supabase
         .from('price_change_log')
         .delete()
@@ -441,7 +431,7 @@ export function useBulkDeleteListings() {
         console.warn('⚠️ Could not delete price change logs:', priceLogError.message)
       }
       
-      // 4. Delete lease pricing for all listings
+      // 3. Delete lease pricing for all listings
       const { error: pricingError } = await supabase
         .from('lease_pricing')
         .delete()
@@ -451,7 +441,7 @@ export function useBulkDeleteListings() {
         console.warn('⚠️ Could not delete lease pricing:', pricingError.message)
       }
       
-      // 5. Finally, delete all listings
+      // 4. Finally, delete all listings
       const { error: listingsError } = await supabase
         .from('listings')
         .delete()
@@ -684,29 +674,7 @@ export function useAdminDeleteListing() {
         // Continue anyway as this might not exist
       }
       
-      // 2. Delete listing offers
-      const { error: offersError } = await supabase
-        .from('listing_offers')
-        .delete()
-        .eq('listing_id', id)
-      
-      if (offersError) {
-        console.warn('⚠️ Could not delete listing offers:', offersError.message)
-        // Continue anyway as this might not exist
-      }
-      
-      // 3. Delete price change log
-      const { error: priceLogError } = await supabase
-        .from('price_change_log')
-        .delete()
-        .eq('listing_id', id)
-      
-      if (priceLogError) {
-        console.warn('⚠️ Could not delete price change log:', priceLogError.message)
-        // Continue anyway as this might not exist
-      }
-      
-      // 4. Delete lease pricing (should cascade already, but explicit for safety)
+      // 2. Delete lease pricing (should cascade already, but explicit for safety)
       const { error: pricingError } = await supabase
         .from('lease_pricing')
         .delete()
@@ -717,7 +685,7 @@ export function useAdminDeleteListing() {
         // Continue anyway as this should cascade
       }
       
-      // 5. Finally, delete the listing itself
+      // 3. Finally, delete the listing itself
       const { error: listingError } = await supabase
         .from('listings')
         .delete()

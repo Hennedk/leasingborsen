@@ -177,7 +177,7 @@ async function testDealerSpecificReferenceData() {
     
     // Check if the extraction correctly identified the make
     const { data: extractedItems } = await supabase
-      .from('listing_changes')
+      .from('extraction_listing_changes')
       .select('new_data')
       .eq('extraction_session_id', result.extractionSessionId)
       .eq('change_type', 'create');

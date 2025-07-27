@@ -188,7 +188,7 @@ Førstegangsydelse: 35.000 kr
     
     // Check extraction results
     const { data: extractedChanges } = await supabase
-      .from('listing_changes')
+      .from('extraction_listing_changes')
       .select('*')
       .eq('extraction_session_id', result.extractionSessionId);
       

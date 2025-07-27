@@ -17,6 +17,7 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **Performance Issues**: `docs/archive/OPTIMIZATION-SESSION.md`
 - **Deployment Tasks**: `docs/archive/PRODUCTION_MONITORING_DEPLOYMENT_SUMMARY.md`
 - **Build Problems**: `docs/archive/BUILD_ISSUES.md`
+- **Database Cleanup**: `docs/DATABASE_CLEANUP_COMPREHENSIVE_PLAN.md` (Phase 2 completed July 2025)
 
 ### Key Source Files to Review
 ```
@@ -764,7 +765,15 @@ VITE_PERFORMANCE_MONITORING=true             # Enable performance tracking
 - **Primary Data Source**: `full_listing_view` (denormalized for performance)
 - **Core Tables**: `listings`, `lease_pricing`, `sellers`, comprehensive reference data
 - **AI Integration Tables**: `ai_usage_log` (comprehensive tracking), `monthly_ai_usage` (cost view)
-- **Workflow Tables**: `processing_jobs`, `listing_changes`, `batch_imports`
+- **AI Configuration Tables**: `responses_api_configs`, `config_versions`, `api_call_logs`, `input_schemas`, `text_format_configs`
+- **Workflow Tables**: `processing_jobs`, `extraction_listing_changes`, `batch_imports`
+
+### Database Cleanup (July 2025)
+- **Phase 1 COMPLETED**: Removed 3 unused integration tables (`integration_run_logs`, `integration_runs`, `integrations`)
+- **Phase 2 COMPLETED**: Removed 4 legacy tables (`listing_offers`, `price_change_log`, `listing_changes`, `import_logs`)
+- **Total Result**: ~25-30% database complexity reduction with zero functional impact
+- **Documentation**: See `docs/DATABASE_CLEANUP_COMPREHENSIVE_PLAN.md` for complete analysis
+- **Migrations**: `20250725_cleanup_phase1_remove_integration_tables.sql`, `20250727_cleanup_phase2_remove_legacy_tables.sql`
 
 ### Query Patterns
 - **Performance queries** use `full_listing_view` with intelligent deduplication
