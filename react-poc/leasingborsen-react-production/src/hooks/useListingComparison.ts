@@ -408,21 +408,24 @@ export const useListingComparison = () => {
       selectedChangeIds: string[]
       appliedBy?: string
     }) => {
-      console.log('Calling apply_selected_extraction_changes with:', {
+      console.log('Calling apply-extraction-changes Edge Function with:', {
         sessionId,
         selectedChangeIds,
         appliedBy
       })
       
-      const { data, error } = await supabase
-        .rpc('apply_selected_extraction_changes', {
-          p_session_id: sessionId,
-          p_selected_change_ids: selectedChangeIds,
-          p_applied_by: appliedBy
-        })
+      const { data, error } = await supabase.functions.invoke('apply-extraction-changes', {
+        body: {
+          sessionId,
+          selectedChangeIds,
+          appliedBy
+        }
+      })
 
       if (error) throw error
-      return data
+      if (!data.success) throw new Error(data.error || 'Unknown error from Edge Function')
+      
+      return data.result
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['extraction-sessions'] })
