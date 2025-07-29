@@ -9,14 +9,16 @@ const isPreviewEnvironment = () => {
   
   // Browser-based detection for client-side
   if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
     return (
       // Vercel preview URLs contain 'git-' in hostname
-      window.location.hostname.includes('-git-') ||
-      window.location.hostname.includes('git-') ||
+      hostname.includes('-git-') ||
+      hostname.includes('git-') ||
       // Or staging subdomain
-      window.location.hostname.includes('staging') ||
-      // Or random hash pattern (preview deployments)
-      /leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(window.location.hostname)
+      hostname.includes('staging') ||
+      // Or random hash pattern (preview deployments) - not production domain
+      (/leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(hostname) && 
+       hostname !== 'leasingborsen-react-production.vercel.app')
     )
   }
   

@@ -16,6 +16,11 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   const isTest = process.env.VITEST === 'true';
   const isVercelPreview = import.meta.env.VERCEL_ENV === 'preview';
   
+  // Additional check for Vercel preview based on hostname pattern
+  const isVercelPreviewByHostname = typeof window !== 'undefined' && 
+    /leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(window.location.hostname) &&
+    window.location.hostname !== 'leasingborsen-react-production.vercel.app';
+  
   // Testing environment (for test suite) - uses mocks
   if (isTest) {
     return {
@@ -32,7 +37,7 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   }
   
   // Vercel Preview environment - uses staging database
-  if (isVercelPreview || env === 'staging' || process.env.VITE_ENVIRONMENT === 'staging') {
+  if (isVercelPreview || isVercelPreviewByHostname || env === 'staging' || process.env.VITE_ENVIRONMENT === 'staging') {
     return {
       name: 'staging',
       supabase: {
