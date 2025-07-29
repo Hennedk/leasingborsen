@@ -14,6 +14,7 @@ export interface EnvironmentConfig {
 export const getEnvironmentConfig = (): EnvironmentConfig => {
   const env = process.env.NODE_ENV;
   const isTest = process.env.VITEST === 'true';
+  const isVercelPreview = import.meta.env.VERCEL_ENV === 'preview';
   
   // Testing environment (for test suite) - uses mocks
   if (isTest) {
@@ -30,53 +31,34 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
     };
   }
   
-  // Staging environment - explicitly set via NODE_ENV=staging
-  if (env === 'staging' || process.env.VITE_ENVIRONMENT === 'staging') {
+  // Vercel Preview environment - uses staging database
+  if (isVercelPreview || env === 'staging' || process.env.VITE_ENVIRONMENT === 'staging') {
     return {
       name: 'staging',
       supabase: {
-        url: process.env.VITE_SUPABASE_URL || 
-             process.env.VITE_SUPABASE_STAGING_URL!,
-        anonKey: process.env.VITE_SUPABASE_ANON_KEY || 
-                 process.env.VITE_SUPABASE_STAGING_ANON_KEY!,
+        url: import.meta.env.VITE_SUPABASE_URL!,
+        anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY!,
       },
       features: {
-        aiExtractionEnabled: true,
-        debugMode: true,
+        aiExtractionEnabled: import.meta.env.VITE_AI_EXTRACTION_ENABLED === 'true',
+        debugMode: import.meta.env.VITE_DEBUG_MODE === 'true',
       },
     };
   }
   
   // Local development - currently uses production but with safety guards
-  if (env === 'development' && !process.env.VERCEL) {
+  if (env === 'development' && !import.meta.env.VERCEL) {
     return {
       name: 'local',
       supabase: {
-        url: process.env.VITE_SUPABASE_LOCAL_URL || 
-             process.env.VITE_SUPABASE_URL!,
-        anonKey: process.env.VITE_SUPABASE_LOCAL_ANON_KEY || 
-                 process.env.VITE_SUPABASE_ANON_KEY!,
+        url: import.meta.env.VITE_SUPABASE_LOCAL_URL || 
+             import.meta.env.VITE_SUPABASE_URL!,
+        anonKey: import.meta.env.VITE_SUPABASE_LOCAL_ANON_KEY || 
+                 import.meta.env.VITE_SUPABASE_ANON_KEY!,
       },
       features: {
-        aiExtractionEnabled: true,
-        debugMode: true,
-      },
-    };
-  }
-  
-  // Vercel preview deployments - would use staging if available
-  if (process.env.VERCEL_ENV === 'preview') {
-    return {
-      name: 'staging',
-      supabase: {
-        url: process.env.VITE_SUPABASE_STAGING_URL || 
-             process.env.VITE_SUPABASE_URL!,
-        anonKey: process.env.VITE_SUPABASE_STAGING_ANON_KEY || 
-                 process.env.VITE_SUPABASE_ANON_KEY!,
-      },
-      features: {
-        aiExtractionEnabled: true,
-        debugMode: true,
+        aiExtractionEnabled: import.meta.env.VITE_AI_EXTRACTION_ENABLED === 'true',
+        debugMode: import.meta.env.VITE_DEBUG_MODE === 'true',
       },
     };
   }
@@ -85,11 +67,11 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   return {
     name: 'production',
     supabase: {
-      url: process.env.VITE_SUPABASE_URL!,
-      anonKey: process.env.VITE_SUPABASE_ANON_KEY!,
+      url: import.meta.env.VITE_SUPABASE_URL!,
+      anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY!,
     },
     features: {
-      aiExtractionEnabled: true,
+      aiExtractionEnabled: import.meta.env.VITE_AI_EXTRACTION_ENABLED === 'true',
       debugMode: false,
     },
   };

@@ -4,15 +4,21 @@ import { Info } from 'lucide-react'
 
 // Detect if running in Vercel preview environment
 const isPreviewEnvironment = () => {
-  if (typeof window === 'undefined') return false
+  // Check Vercel environment variable first
+  if (import.meta.env.VERCEL_ENV === 'preview') return true
   
-  return (
-    // Vercel preview URLs contain 'git-' in hostname
-    window.location.hostname.includes('-git-') ||
-    window.location.hostname.includes('git-') ||
-    // Or check for Vercel environment variable
-    import.meta.env.VERCEL_ENV === 'preview'
-  )
+  // Browser-based detection for client-side
+  if (typeof window !== 'undefined') {
+    return (
+      // Vercel preview URLs contain 'git-' in hostname
+      window.location.hostname.includes('-git-') ||
+      window.location.hostname.includes('git-') ||
+      // Or staging subdomain
+      window.location.hostname.includes('staging')
+    )
+  }
+  
+  return false
 }
 
 export const PreviewBanner: React.FC = () => {
