@@ -137,10 +137,10 @@ function consolidateExistingListings(listings: any[]): any[] {
   return Array.from(vehicleMap.values())
 }
 
-// Optimize listings for variant matching (essential data only)
+// Optimize listings for variant matching (essential data only, proper JSON formatting)
 function buildOptimizedListingsContext(existingListings: any[], pdfText?: string): string {
   if (!existingListings || existingListings.length === 0) {
-    return `\nEXISTING LISTINGS: None found. Create appropriate variant names using Danish conventions.`
+    return '[]'
   }
   
   // Consolidate listings by vehicle identity with minimal data
@@ -148,7 +148,7 @@ function buildOptimizedListingsContext(existingListings: any[], pdfText?: string
   
   console.log(`[ai-extract-vehicles] Consolidated listings: ${existingListings.length} → ${consolidatedListings.length} unique vehicles`)
   
-  return `\nEXISTING LISTINGS:\n${JSON.stringify(consolidatedListings)}`
+  return JSON.stringify(consolidatedListings, null, 2)
 }
 
 // Helper function to generate a summary of changes (like original function)
@@ -173,38 +173,7 @@ function generateChangeSummary(match: any): string {
   return 'Ingen ændringer'
 }
 
-// Build dynamic context for Responses API
-function buildDynamicContext(params: {
-  finalText: string
-  finalDealerName?: string
-  fileName?: string
-  referenceContext: string
-  existingListingsContext: string
-  variantExamplesContext: string
-}): Record<string, any> {
-  const { finalText, finalDealerName, fileName, referenceContext, existingListingsContext, variantExamplesContext } = params
-  
-  return {
-    dealerName: finalDealerName,
-    fileName: fileName,
-    pdfText: finalText,
-    referenceData: referenceContext,
-    existingListings: existingListingsContext,
-    variantExamples: variantExamplesContext,
-    extractionInstructions: {
-      prioritizeExistingVariants: true,
-      mergeTransmissionVariants: true,
-      rangeHandling: fileName?.toLowerCase().includes('standard-range') ? 'use-lower' : 
-                     fileName?.toLowerCase().includes('long-range') ? 'use-higher' : 'use-context',
-      variantMatchingRules: {
-        hpMatchThreshold: 5,    // Step 1: ±5 HP for matching
-        hpCreateThreshold: 10,  // Step 2: >10 HP for new variant
-        equipmentSeparator: ' – ',  // Step 3: Equipment separator
-        strictMatching: true    // Enforce exact variant copying
-      }
-    }
-  }
-}
+// buildDynamicContext function removed - using simplified context object directly
 
 
 // Call Responses API with fallback to Chat Completions
@@ -725,15 +694,28 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
     
     console.log('[ai-extract-vehicles] Using Responses API with corrected OpenAI format')
 
-    // Prepare reference data context (optimized format)
-    let referenceContext = ''
-    if (safeReferenceData) {
-      referenceContext = `\nREF: ${JSON.stringify({
-        makes: safeReferenceData.makes_models || {},
-        ft: safeReferenceData.fuel_types || [],
-        tr: safeReferenceData.transmissions || [],
-        bt: safeReferenceData.body_types || []
-      })}`
+    // Prepare allowed models context (dealer's make only, simplified format)
+    let allowedModelsContext = '{}'
+    if (safeReferenceData && makeName) {
+      // Filter makes_models to only include the dealer's specific make
+      let filteredMakes = {}
+      if (safeReferenceData.makes_models && safeReferenceData.makes_models[makeName]) {
+        filteredMakes[makeName] = safeReferenceData.makes_models[makeName]
+      } else {
+        console.warn(`[ai-extract-vehicles] Make '${makeName}' not found in reference data`)
+      }
+      
+      allowedModelsContext = JSON.stringify(filteredMakes)
+      
+      console.log(`[ai-extract-vehicles] Allowed models filtering results:`, {
+        dealerMake: makeName || 'Not provided',
+        originalMakesCount: Object.keys(safeReferenceData.makes_models || {}).length,
+        filteredMakesCount: Object.keys(filteredMakes).length,
+        filteredModelsCount: filteredMakes[makeName] ? filteredMakes[makeName].length : 0,
+        hasValidMake: !!filteredMakes[makeName]
+      })
+    } else if (!makeName) {
+      console.warn('[ai-extract-vehicles] No makeName provided - using empty models list')
     }
 
     // Prepare existing listings context with optimization for large inventories
@@ -746,12 +728,10 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
       contextPreview: existingListingsContext.substring(0, 100) + '...'
     })
 
-    // Load variant examples for AI guidance
-    let variantExamplesContext = ''
-    // Skip loading variant examples file since it's not deployed with the function
-    // The examples are better provided through existing listings anyway
+    // Variant examples removed - existing listings provide better context for the new format
 
-    // Optimized system prompt (reduced from ~2500 to ~1000 tokens)
+    // System prompt for Chat Completions API fallback only
+    // Note: Responses API uses stored prompts in OpenAI Playground, no system prompt needed here
     const systemPrompt = `Extract vehicle data from Danish leasing brochures. Match variants to existing inventory when possible.
 
 ## VARIANT MATCHING RULES
@@ -776,21 +756,23 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
 - Extract numbers only (remove "kr.", ",-")
 - Each car needs ≥1 offer`
 
-    // Build different prompts for different APIs
+    // Build different inputs for different APIs
+    // Responses API: Data only with improved structured format (instructions are in stored OpenAI prompt)
     const responsesApiPrompt = buildExtractionContext({
       dealerName: finalDealerName,
       fileName,
       pdfText: finalText,
-      referenceData: referenceContext,
-      existingListings: existingListingsContext + variantExamplesContext
+      allowedModels: allowedModelsContext,
+      existingListings: existingListingsContext
     })
 
+    // Chat Completions API: Full instructions + data (fallback when Responses API fails)
     const chatCompletionsPrompt = buildChatCompletionsContext({
       dealerName: finalDealerName,
       fileName,
       pdfText: finalText,
-      referenceData: referenceContext,
-      existingListings: existingListingsContext + variantExamplesContext
+      allowedModels: allowedModelsContext,
+      existingListings: existingListingsContext
     })
 
     // Create extraction context
@@ -801,21 +783,19 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
       existingListings
     }
 
-    // Build dynamic context for Responses API
-    const dynamicContext = buildDynamicContext({
-      finalText,
-      finalDealerName,
+    // Build dynamic context for Responses API (updated for new format)
+    const dynamicContext = {
+      dealerName: finalDealerName,
       fileName,
-      referenceContext,
-      existingListingsContext,
-      variantExamplesContext
-    })
+      pdfText: finalText,
+      allowedModels: allowedModelsContext,
+      existingListings: existingListingsContext
+    }
 
     // Monitor context size to identify potential timeout issues
     const contextSizes = {
-      referenceData: referenceContext.length,
+      allowedModels: allowedModelsContext.length,
       existingListings: existingListingsContext.length,
-      variantExamples: variantExamplesContext.length,
       pdfText: finalText.length,
       responsesApi: responsesApiPrompt.length,
       chatCompletions: chatCompletionsPrompt.length
@@ -823,7 +803,7 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
     
     // Log context size analysis
     console.log(`[ai-extract-vehicles] Context analysis:`, {
-      referenceData: `${Math.round(contextSizes.referenceData/1024)}KB`,
+      allowedModels: `${Math.round(contextSizes.allowedModels/1024)}KB`,
       existingListings: `${Math.round(contextSizes.existingListings/1024)}KB`,
       pdfText: `${Math.round(contextSizes.pdfText/1024)}KB`,
       responsesApiPrompt: `${Math.round(contextSizes.responsesApi/1024)}KB`,

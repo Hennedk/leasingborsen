@@ -144,11 +144,11 @@ export class CarListingQueries {
       return { data: [], error: null }
     }
 
-    // Deduplicate by listing_id, keeping the one with lowest monthly_price (already sorted ascending)
+    // Deduplicate by id, keeping the one with lowest monthly_price (already sorted ascending)
     const uniqueListings = new Map<string, CarListing>()
     allData.forEach((listing: CarListing) => {
-      if (listing.listing_id && !uniqueListings.has(listing.listing_id)) {
-        uniqueListings.set(listing.listing_id, listing)
+      if (listing.id && !uniqueListings.has(listing.id)) {
+        uniqueListings.set(listing.id, listing)
       }
     })
 

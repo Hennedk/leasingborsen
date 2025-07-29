@@ -123,9 +123,41 @@ function compareOfferArrays(extractedOffers: any[], existingOffers: any[]): bool
   if (!extractedOffers || !existingOffers) return true
   if (extractedOffers.length !== existingOffers.length) return true
   
-  // Sort both arrays by monthly_price for consistent comparison
-  const sortedExtracted = [...extractedOffers].sort((a, b) => (a.monthly_price || 0) - (b.monthly_price || 0))
-  const sortedExisting = [...existingOffers].sort((a, b) => (a.monthly_price || 0) - (b.monthly_price || 0))
+  // Handle both array format [monthly_price, first_payment, period_months, mileage_per_year] 
+  // and object format {monthly_price, first_payment, period_months, mileage_per_year}
+  const normalizeOffer = (offer: any) => {
+    if (Array.isArray(offer)) {
+      return {
+        monthly_price: offer[0] || 0,
+        first_payment: offer[1] || 0,
+        period_months: offer[2] || 36,
+        mileage_per_year: offer[3] || 15000
+      }
+    }
+    return {
+      monthly_price: offer.monthly_price || 0,
+      first_payment: offer.first_payment || 0,
+      period_months: offer.period_months || 36,
+      mileage_per_year: offer.mileage_per_year || 15000
+    }
+  }
+  
+  // Normalize both arrays to object format
+  const normalizedExtracted = extractedOffers.map(normalizeOffer)
+  const normalizedExisting = existingOffers.map(normalizeOffer)
+  
+  // Sort both arrays by multiple fields for consistent comparison
+  const sortComparator = (a: any, b: any) => {
+    // Primary sort: monthly_price
+    if (a.monthly_price !== b.monthly_price) return a.monthly_price - b.monthly_price
+    // Secondary sort: first_payment (for same monthly price)
+    if (a.first_payment !== b.first_payment) return a.first_payment - b.first_payment
+    // Tertiary sort: mileage_per_year (for same monthly price and down payment)
+    return a.mileage_per_year - b.mileage_per_year
+  }
+  
+  const sortedExtracted = [...normalizedExtracted].sort(sortComparator)
+  const sortedExisting = [...normalizedExisting].sort(sortComparator)
   
   // Compare each offer
   for (let i = 0; i < sortedExtracted.length; i++) {
@@ -137,8 +169,6 @@ function compareOfferArrays(extractedOffers: any[], existingOffers: any[]): bool
     if (extracted.first_payment !== existing.first_payment) return true
     if (extracted.period_months !== existing.period_months) return true
     if (extracted.mileage_per_year !== existing.mileage_per_year) return true
-    
-    // Note: total_price is now calculated dynamically and not compared directly
   }
   
   return false
@@ -220,13 +250,10 @@ function detectFieldChanges(extracted: ExtractedCar, existing: ExistingListing):
       }
     }
     
-    // Also compare primary offer for backward compatibility
-    const extractedPrimary = extracted.offers?.[0] || extracted
-    const existingPrimary = existing.offers?.[0] || existing
-    
-    if (extractedPrimary.monthly_price !== existingPrimary.monthly_price && extractedPrimary.monthly_price !== undefined) {
-      changes.monthly_price = { old: existingPrimary.monthly_price, new: extractedPrimary.monthly_price }
-    }
+    // REMOVED: Primary offer comparison for backward compatibility
+    // This was causing false positives when offer arrays had different ordering
+    // but identical content. The comprehensive compareOfferArrays function above
+    // already handles all offer comparisons correctly with proper sorting.
   }
   
   // Return null if no changes, otherwise return the changes object
