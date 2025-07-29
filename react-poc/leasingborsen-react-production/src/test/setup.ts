@@ -1,4 +1,29 @@
 import '@testing-library/jest-dom'
+import { beforeAll, afterEach, afterAll, beforeEach, vi } from 'vitest'
+import { server } from './mocks/server'
+import { setupSupabaseMocks, resetSupabaseMocks } from './mocks/supabase'
+
+// Set VITEST environment variable to ensure proper environment detection
+process.env.VITEST = 'true'
+
+// Setup MSW server
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'warn' })
+})
+
+afterEach(() => {
+  server.resetHandlers()
+  resetSupabaseMocks()
+})
+
+afterAll(() => {
+  server.close()
+})
+
+// Setup Supabase mocks
+beforeAll(() => {
+  setupSupabaseMocks()
+})
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {

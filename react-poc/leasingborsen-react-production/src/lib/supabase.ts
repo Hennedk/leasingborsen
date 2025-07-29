@@ -11,15 +11,21 @@ import type {
   SupabaseResponse,
   SupabaseSingleResponse
 } from '@/types'
+import { getEnvironmentConfig } from '@/config/environments'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const config = getEnvironmentConfig()
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Show current environment in development/debug mode
+if (config.features.debugMode) {
+  console.log(`🔧 Supabase Environment: ${config.name}`)
+  console.log(`📍 Supabase URL: ${config.supabase.url}`)
+}
+
+if (!config.supabase.url || !config.supabase.anonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(config.supabase.url, config.supabase.anonKey)
 
 
 // Body type mapping - maps consolidated categories to database values

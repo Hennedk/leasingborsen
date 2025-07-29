@@ -1,6 +1,7 @@
 import React from 'react'
 import ModernHeader from '@/components/ModernHeader'
 import Footer from '@/components/Footer'
+import { PreviewBanner } from '@/components/PreviewBanner'
 
 interface BaseLayoutProps {
   children: React.ReactNode
@@ -20,6 +21,9 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      {/* Preview Environment Banner */}
+      <PreviewBanner />
+      
       {/* Header */}
       {showHeader && <ModernHeader />}
       
