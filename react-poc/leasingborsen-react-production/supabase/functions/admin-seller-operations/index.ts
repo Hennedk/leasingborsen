@@ -332,6 +332,9 @@ serve(async (req) => {
     const { operation, sellerData, sellerId, sellerIds } = request
     
     console.log(`[admin-seller-operations] Processing ${operation} operation`)
+    console.log(`[DEBUG] Full request:`, JSON.stringify(request, null, 2))
+    console.log(`[DEBUG] sellerId:`, sellerId)
+    console.log(`[DEBUG] sellerData:`, JSON.stringify(sellerData, null, 2))
     
     // Validate request
     if (!operation) {
@@ -417,8 +420,10 @@ serve(async (req) => {
         }
         
         const validationErrors = validateSellerData(sellerData)
+        console.log(`[DEBUG] Update validation errors:`, validationErrors)
         
         if (validationErrors.length > 0) {
+          console.log(`[ERROR] Update validation failed:`, validationErrors)
           return new Response(
             JSON.stringify({ 
               success: false, 

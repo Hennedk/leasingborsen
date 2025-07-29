@@ -116,13 +116,17 @@ export const useAdminSellerOperations = () => {
         sellerId,
         updates: Object.keys(sellerData)
       })
+      console.log('📊 Full sellerData being sent:', sellerData)
+      
+      const requestBody = { 
+        operation: 'update', 
+        sellerId, 
+        sellerData 
+      }
+      console.log('📤 Complete request body:', requestBody)
 
       const { data, error } = await supabase.functions.invoke('admin-seller-operations', {
-        body: { 
-          operation: 'update', 
-          sellerId, 
-          sellerData 
-        }
+        body: requestBody
       })
 
       if (error) {
