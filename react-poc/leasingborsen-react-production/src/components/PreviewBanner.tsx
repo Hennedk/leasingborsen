@@ -14,7 +14,9 @@ const isPreviewEnvironment = () => {
       window.location.hostname.includes('-git-') ||
       window.location.hostname.includes('git-') ||
       // Or staging subdomain
-      window.location.hostname.includes('staging')
+      window.location.hostname.includes('staging') ||
+      // Or random hash pattern (preview deployments)
+      /leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(window.location.hostname)
     )
   }
   
