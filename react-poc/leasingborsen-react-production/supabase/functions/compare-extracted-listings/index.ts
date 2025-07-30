@@ -492,7 +492,7 @@ serve(async (req) => {
         total_price: calculateTotalPrice(listing.monthly_price, listing.period_months || 36, listing.first_payment)
       }] : [])
 
-      // Exact key for Level 1 matching
+      // Exact key for Level 1 matching - based on make, model, variant only
       const exactKey = `${listing.make}|${listing.model}|${listing.variant}`.toLowerCase()
       if (!existingByExactKey.has(exactKey)) {
         existingByExactKey.set(exactKey, {
@@ -573,9 +573,9 @@ serve(async (req) => {
       let existingMatch: ExistingListing | null = null
       let confidence = 0
 
-      console.log(`[compare-extracted-listings] Matching car: ${car.make} ${car.model} ${car.variant}`)
+      console.log(`[compare-extracted-listings] Matching car: ${car.make} ${car.model} ${car.variant} ${car.transmission}`)
 
-      // Level 1: Exact variant match
+      // Level 1: Exact variant match - based on make, model, variant only
       const exactKey = `${car.make}|${car.model}|${car.variant}`.toLowerCase()
       const exactMatch = existingByExactKey.get(exactKey)
       console.log(`[compare-extracted-listings] Exact key: "${exactKey}", found: ${!!exactMatch}`)
