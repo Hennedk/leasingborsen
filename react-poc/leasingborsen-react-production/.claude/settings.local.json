@@ -38,7 +38,9 @@
       "Bash(supabase status:*)",
       "Bash(supabase branches:*)",
       "Bash(npm run test:comparison:*)",
-      "WebFetch(domain:supabase.com)"
+      "WebFetch(domain:supabase.com)",
+      "Bash(deno test:*)",
+      "Bash(PATH=\"$HOME/.deno/bin:$PATH\" deno test --allow-all __tests__/)"
     ]
   },
   "enableAllProjectMcpServers": true,
