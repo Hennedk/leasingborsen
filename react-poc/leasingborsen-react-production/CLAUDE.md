@@ -14,10 +14,13 @@ This file provides essential guidance to Claude Code (claude.ai/code) when worki
 - **AI/PDF Work**: `docs/archive/AI_EXTRACTION_SYSTEM.md`
 - **Admin Features**: `docs/archive/ADMIN_COMPONENTS_REVIEW.md` 
 - **Testing Work**: `docs/archive/TESTING_INSTRUCTIONS.md`
+- **AI Extraction Testing**: `docs/AI_EXTRACTION_TESTING_PLAN.md` and `docs/TESTING_EXTRACTION_IMPLEMENTATION.md` (Phase 1 Complete - January 2025)
 - **Performance Issues**: `docs/archive/OPTIMIZATION-SESSION.md`
 - **Deployment Tasks**: `docs/archive/PRODUCTION_MONITORING_DEPLOYMENT_SUMMARY.md`
 - **Build Problems**: `docs/archive/BUILD_ISSUES.md`
 - **Database Cleanup**: `docs/DATABASE_CLEANUP_COMPREHENSIVE_PLAN.md` (Complete - July 2025)
+- **Extraction DELETE Fixes**: `docs/archive/EXTRACTION_DELETE_FIX_2025.md` (January 2025)
+- **Extraction Tests**: `src/services/extraction/__tests__/README.md`
 
 ### Key Source Files to Review
 ```
@@ -92,6 +95,10 @@ npm run dev          # Start development server with instant HMR (default port)
 npm run build        # TypeScript check + Vite build for production
 npm run preview      # Preview production build on port 4173
 npm run lint         # ESLint code quality checking
+
+# Prerequisites for Edge Function testing:
+# - Deno runtime required (https://deno.land/manual/getting_started/installation)
+# - Install: curl -fsSL https://deno.land/install.sh | sh
 ```
 
 ### Testing Commands
@@ -101,6 +108,23 @@ npm run test:run             # Run all tests once (CI mode)
 npm run test:coverage        # Generate coverage reports (90% functions, 80% branches)
 npm run test:refactored      # Run tests for Phase 1 refactored components
 npm run build:test           # Test + Build pipeline for CI/CD integration
+
+# Extraction-specific tests
+npm run test:extraction              # Run extraction CRUD tests
+npm run test:extraction:watch        # Watch mode for extraction tests
+npm run test:extraction:coverage     # Coverage report for extraction
+npm run test:extraction:ui           # Interactive UI for extraction tests
+
+# AI Extraction Edge Function tests (requires Deno runtime)
+npm run test:edge                    # Run all Edge Function tests
+npm run test:edge:apply-changes      # Run apply-extraction-changes tests
+npm run test:edge:compare            # Run compare-extracted-listings tests
+npm run test:edge:coverage           # Run with coverage report
+npm run test:all                     # Run all tests (frontend + edge functions)
+
+# Comparison utility tests (Phase 1 Complete)
+npm run test:comparison              # Run comparison utility tests (27 tests)
+npm run test:comparison:watch        # Watch mode for comparison tests
 ```
 
 ### Specialized Operations
@@ -867,6 +891,13 @@ This React application has evolved from a Vue migration into a **sophisticated, 
 - **Duplicate Handling**: Added ON CONFLICT handling for duplicate offers from AI extraction
 - **Foreign Key Management**: Enhanced deletion process to remove ALL references before deleting listings
 
+### Extraction DELETE Fix (January 2025)
+- **Fixed Ambiguous Column Reference**: Renamed variable to `v_existing_listing_id` in database function
+- **Fixed Foreign Key Violations**: Changed DELETE logic to clear ALL references (not just current session)
+- **Fixed Toyota bZ4X Duplicates**: Removed transmission from exact key generation (now uses make|model|variant only)
+- **Complete Test Suite**: Created comprehensive tests for extraction CRUD operations
+- **Documentation**: See `docs/archive/EXTRACTION_DELETE_FIX_2025.md` for technical details
+
 ### Admin Edge Functions Implementation (January 2025)
 - **Complete CRUD Operations**: Implemented secure Edge Functions for all admin functionality
 - **RLS Authentication Resolution**: Service role authentication bypasses RLS restrictions
@@ -874,6 +905,17 @@ This React application has evolved from a Vue migration into a **sophisticated, 
 - **Backward Compatibility**: Zero breaking changes to existing admin workflows
 - **Enterprise Security**: Server-side validation with comprehensive error handling
 - **React Query Integration**: Proper caching, loading states, and error boundaries
+
+### AI Extraction Testing Implementation - Phase 1 Complete (January 2025)
+- **✅ Edge Function Test Infrastructure**: Complete mock Supabase system for `apply-extraction-changes`
+- **✅ Comparison Utility Tests**: 27 comprehensive unit tests (100% passing) for matching algorithms
+- **✅ Deno Runtime Setup**: Successfully configured for Edge Function test execution
+- **✅ Bug Prevention Validation**: Toyota bZ4X transmission matching tests implemented
+- **✅ Danish Variant Support**: Full test coverage for Danish automotive terminology
+- **✅ Test Execution**: Unit tests run locally with mocks (no staging/production connection needed)
+- **📚 Documentation**: See `docs/AI_EXTRACTION_TESTING_PLAN.md` and `docs/TESTING_EXTRACTION_IMPLEMENTATION.md`
+
+**Important Note**: These are unit tests designed to run locally with mock data. Integration tests against staging/production would be Phase 2 work.
 
 ⚠️ **IMPORTANT**: With the removal of model-specific deletion restrictions, uploading partial inventories (e.g., single model PDFs) will mark ALL unmatched listings for deletion. Always review extraction results carefully before applying changes.
 

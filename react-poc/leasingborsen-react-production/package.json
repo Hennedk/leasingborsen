@@ -13,7 +13,6 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
-    "test:comparison": "vitest run src/services/comparison/__tests__/",
     "test:refactored": "vitest run src/hooks/useBatchReviewState.simple.test.ts src/components/admin/batch/BatchReviewHeader.simple.test.tsx",
     "build:test": "npm run test:refactored && npm run build",
     "env:check": "npx tsx scripts/verify-environment.ts",
@@ -43,7 +42,18 @@
     "prompts:update-id": "npx tsx scripts/manage-prompts.ts update-id",
     "prompts:example": "npx tsx scripts/prompt-manager/example-usage.ts",
     "prompts:test:unit": "vitest run scripts/prompt-manager/__tests__/prompt-manager.test.ts",
-    "prompts:test:integration": "INTEGRATION_TEST=true vitest run scripts/prompt-manager/__tests__/integration.test.ts"
+    "prompts:test:integration": "INTEGRATION_TEST=true vitest run scripts/prompt-manager/__tests__/integration.test.ts",
+    "test:extraction": "vitest --config vitest.config.extraction.ts",
+    "test:extraction:watch": "vitest --config vitest.config.extraction.ts --watch",
+    "test:extraction:coverage": "vitest run --config vitest.config.extraction.ts --coverage",
+    "test:extraction:ui": "vitest --config vitest.config.extraction.ts --ui",
+    "test:edge": "cd supabase/functions && deno test --allow-all",
+    "test:edge:apply-changes": "cd supabase/functions/apply-extraction-changes && deno test --allow-all __tests__/",
+    "test:edge:compare": "cd supabase/functions/compare-extracted-listings && deno test --allow-all __tests__/",
+    "test:edge:coverage": "cd supabase/functions && deno test --allow-all --coverage=cov_profile && deno coverage cov_profile",
+    "test:all": "npm run test && npm run test:edge",
+    "test:comparison": "vitest run src/services/comparison/__tests__/",
+    "test:comparison:watch": "vitest watch src/services/comparison/__tests__/"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",
