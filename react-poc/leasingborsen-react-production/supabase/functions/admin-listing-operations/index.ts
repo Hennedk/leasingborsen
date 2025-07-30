@@ -395,13 +395,29 @@ async function deleteListing(supabase: any, listingId: string): Promise<AdminLis
       }
     }
     
-    // Delete offers first (foreign key constraint)
-    await supabase
+    // Delete all related records in the correct order to handle foreign key constraints
+    
+    // 1. Delete extraction_listing_changes references
+    const { error: extractionError } = await supabase
+      .from('extraction_listing_changes')
+      .delete()
+      .eq('existing_listing_id', listingId)
+    
+    if (extractionError) {
+      console.error('Error deleting extraction listing changes:', extractionError)
+    }
+    
+    // 2. Delete lease_pricing records
+    const { error: pricingError } = await supabase
       .from('lease_pricing')
       .delete()
       .eq('listing_id', listingId)
     
-    // Delete listing
+    if (pricingError) {
+      console.error('Error deleting lease pricing:', pricingError)
+    }
+    
+    // 3. Finally delete the listing
     const { error: listingError } = await supabase
       .from('listings')
       .delete()
