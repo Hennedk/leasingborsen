@@ -916,8 +916,17 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
   }
 
   const handleViewAllResults = () => {
-    // Navigate to extraction sessions filtered by seller
-    navigate(`/admin/extraction-sessions?seller=${seller.id}`)
+    // If there's only one PDF or merged PDFs, navigate directly to the extraction session
+    const completedExtractions = extractionStatuses.filter(s => s.status === 'complete' && s.extractionSessionId)
+    
+    if (completedExtractions.length === 1 && completedExtractions[0].extractionSessionId) {
+      // Single extraction or merged - go directly to the session
+      navigate(`/admin/extraction-sessions/${completedExtractions[0].extractionSessionId}`)
+    } else {
+      // Multiple separate extractions - go to the filtered list
+      navigate(`/admin/extraction-sessions?seller=${seller.id}`)
+    }
+    
     onOpenChange(false)
   }
 
