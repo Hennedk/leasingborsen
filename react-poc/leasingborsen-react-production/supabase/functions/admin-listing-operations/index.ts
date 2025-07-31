@@ -379,6 +379,88 @@ async function updateListing(supabase: any, listingId: string, listingData: any,
   }
 }
 
+async function duplicateListing(supabase: any, listingId: string): Promise<AdminListingResponse> {
+  try {
+    // Fetch the original listing with all data
+    const { data: originalListing, error: fetchError } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('id', listingId)
+      .single()
+    
+    if (fetchError || !originalListing) {
+      return {
+        success: false,
+        error: errorMessages.notFound
+      }
+    }
+    
+    // Remove fields that shouldn't be duplicated
+    const { id, created_at, updated_at, ...listingData } = originalListing
+    
+    // Modify variant to indicate it's a copy
+    const duplicatedListing = {
+      ...listingData,
+      variant: listingData.variant ? `${listingData.variant} (Kopi)` : 'Kopi',
+      description: listingData.description 
+        ? `${listingData.description}\n\n[Kopieret fra original annonce]` 
+        : '[Kopieret fra original annonce]'
+    }
+    
+    // Create the new listing
+    const { data: newListing, error: insertError } = await supabase
+      .from('listings')
+      .insert(duplicatedListing)
+      .select()
+      .single()
+    
+    if (insertError) {
+      console.error('Error creating duplicate listing:', insertError)
+      throw new Error(errorMessages.createError)
+    }
+    
+    // Fetch and duplicate lease pricing
+    const { data: originalPricing, error: pricingFetchError } = await supabase
+      .from('lease_pricing')
+      .select('*')
+      .eq('listing_id', listingId)
+    
+    if (!pricingFetchError && originalPricing && originalPricing.length > 0) {
+      const pricingData = originalPricing.map(pricing => {
+        const { id, listing_id, created_at, updated_at, ...pricingFields } = pricing
+        return {
+          ...pricingFields,
+          listing_id: newListing.id
+        }
+      })
+      
+      const { error: pricingError } = await supabase
+        .from('lease_pricing')
+        .insert(pricingData)
+      
+      if (pricingError) {
+        console.error('Error duplicating pricing:', pricingError)
+        // Don't fail the whole operation if pricing fails
+      }
+    }
+    
+    console.log('✅ Listing duplicated successfully:', newListing.id)
+    
+    return {
+      success: true,
+      listing: newListing,
+      listingId: newListing.id
+    }
+    
+  } catch (error) {
+    console.error('Error in duplicateListing:', error)
+    return {
+      success: false,
+      error: error.message || errorMessages.createError
+    }
+  }
+}
+
 async function deleteListing(supabase: any, listingId: string): Promise<AdminListingResponse> {
   try {
     // Check if listing exists
@@ -592,6 +674,25 @@ serve(async (req) => {
           }
           
           result = await deleteListing(supabase, listingId)
+          break
+        }
+        
+        case 'duplicate': {
+          if (!listingId) {
+            return new Response(
+              JSON.stringify({ 
+                success: false, 
+                error: errorMessages.validationError,
+                validationErrors: ['Listing ID er påkrævet for kopiering']
+              }),
+              { 
+                status: 400, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              }
+            )
+          }
+          
+          result = await duplicateListing(supabase, listingId)
           break
         }
         
