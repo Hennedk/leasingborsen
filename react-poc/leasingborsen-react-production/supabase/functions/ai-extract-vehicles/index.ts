@@ -551,6 +551,9 @@ async function handleChunkedRequest(chunk: ChunkedExtractionRequest, req: Reques
 }
 
 async function handleRegularRequest(requestBody: any): Promise<Response> {
+  // Track processing start time for AI metadata
+  const processingStartTime = Date.now()
+  
   try {
     
     const { 
@@ -838,6 +841,33 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
 
     const endTime = Date.now()
     // console.log(`[ai-extract-vehicles] AI extraction completed in ${endTime - startTime}ms using ${apiVersion}`)
+    
+    // Get AI metadata for tracking
+    let aiMetadata = {
+      provider: null as string | null,
+      model: null as string | null,
+      costCents: null as number | null
+    }
+    
+    try {
+      const configManager = getResponsesConfigManager()
+      const config = await configManager.getConfigWithFallback('vehicle-extraction')
+      
+      // Determine provider from model name
+      aiMetadata.provider = config.model.startsWith('gpt-') ? 'openai' : 
+                           config.model.startsWith('claude-') ? 'anthropic' : 
+                           'openai' // default
+      aiMetadata.model = config.model
+      
+      // Estimate cost in cents (rough approximation)
+      if (tokensUsed > 0) {
+        // GPT-3.5-turbo: ~$0.002 per 1K tokens, GPT-4: ~$0.03 per 1K tokens
+        const costPerToken = config.model.includes('gpt-4') ? 0.00003 : 0.000002
+        aiMetadata.costCents = Math.round(tokensUsed * costPerToken * 100)
+      }
+    } catch (configError) {
+      console.warn('[ai-extract-vehicles] Could not retrieve AI metadata:', configError)
+    }
 
     // Extract cars from response
     const extractedCars: CompactExtractedVehicle[] = aiResponse.cars || []
@@ -991,6 +1021,11 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
           extraction_type: 'update', // Use 'update' like original
           status: 'processing',
           started_at: new Date().toISOString(),
+          // Add AI metadata fields
+          ai_provider: aiMetadata.provider,
+          model_version: aiMetadata.model,
+          tokens_used: tokensUsed,
+          cost_cents: aiMetadata.costCents,
           // Add new fields for migration tracking
           api_version: apiVersion,
           inference_rate: resolutionStats.inferenceRate,
@@ -1026,7 +1061,8 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
           total_updated: comparisonResult.summary.totalUpdated,
           total_unchanged: comparisonResult.summary.totalUnchanged,
           total_deleted: comparisonResult.summary.totalDeleted,
-          completed_at: new Date().toISOString()
+          completed_at: new Date().toISOString(),
+          processing_time_ms: Date.now() - processingStartTime
         })
         .eq('id', extractionSessionId),
       DB_RETRY_CONFIG,

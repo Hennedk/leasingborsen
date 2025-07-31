@@ -73,15 +73,15 @@ export const useSellers = () => {
           console.error('Error fetching listings count:', listingsError)
         }
 
-        // Get last import dates from batch_imports table
-        const { data: batchData, error: batchError } = await supabase
-          .from('batch_imports')
+        // Get last import dates from extraction_sessions table
+        const { data: extractionData, error: extractionError } = await supabase
+          .from('extraction_sessions')
           .select('seller_id, created_at')
           .in('seller_id', sellerIds)
           .order('created_at', { ascending: false })
 
-        if (batchError) {
-          console.error('Error fetching batch imports:', batchError)
+        if (extractionError) {
+          console.error('Error fetching extraction sessions:', extractionError)
         }
 
         // Aggregate data
@@ -90,9 +90,9 @@ export const useSellers = () => {
           return acc
         }, {} as Record<string, number>) || {}
 
-        const lastImportDates = batchData?.reduce((acc, batch) => {
-          if (!acc[batch.seller_id]) {
-            acc[batch.seller_id] = batch.created_at
+        const lastImportDates = extractionData?.reduce((acc, extraction) => {
+          if (!acc[extraction.seller_id]) {
+            acc[extraction.seller_id] = extraction.created_at
           }
           return acc
         }, {} as Record<string, string>) || {}
@@ -155,23 +155,23 @@ export const useSeller = (sellerId: string) => {
           console.error('Error fetching listings count:', listingsError)
         }
 
-        // Get last import date from batch_imports table
-        const { data: batchData, error: batchError } = await supabase
-          .from('batch_imports')
+        // Get last import date from extraction_sessions table
+        const { data: extractionData, error: extractionError } = await supabase
+          .from('extraction_sessions')
           .select('created_at')
           .eq('seller_id', sellerId)
           .order('created_at', { ascending: false })
           .limit(1)
 
-        if (batchError) {
-          console.error('Error fetching batch imports:', batchError)
+        if (extractionError) {
+          console.error('Error fetching extraction sessions:', extractionError)
         }
 
         // Combine seller data with import information
         const enrichedSeller: Seller = {
           ...sellerData,
           total_listings: listingsData?.length || 0,
-          last_import_date: batchData?.[0]?.created_at || null,
+          last_import_date: extractionData?.[0]?.created_at || null,
           batch_config: null // TODO: Add batch config if needed
         }
 

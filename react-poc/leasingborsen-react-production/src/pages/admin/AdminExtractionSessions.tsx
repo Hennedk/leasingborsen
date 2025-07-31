@@ -152,14 +152,9 @@ export const AdminExtractionSessions: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-primary">Extraction Sessions</h1>
             <p className="text-muted-foreground">
-              Manage PDF extraction sessions and review changes
+              Manage PDF extraction sessions and review changes. Start new extractions from individual seller pages.
             </p>
           </div>
-          
-          <Button onClick={() => navigate('/admin/pdf-extraction')}>
-            <GitCompare className="h-4 w-4 mr-2" />
-            New Extraction
-          </Button>
         </div>
 
         {/* Filters */}
@@ -401,11 +396,11 @@ export const AdminExtractionSessions: React.FC = () => {
               <GitCompare className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-medium mb-2">No extraction sessions found</h3>
               <p className="text-muted-foreground mb-4">
-                Start by creating a new PDF extraction session.
+                Extraction sessions are created automatically when processing PDFs from seller pages.
               </p>
-              <Button onClick={() => navigate('/admin/pdf-extraction')}>
+              <Button onClick={() => navigate('/admin/sellers')}>
                 <Plus className="h-4 w-4 mr-2" />
-                Create First Session
+                Go to Sellers
               </Button>
             </CardContent>
           </Card>

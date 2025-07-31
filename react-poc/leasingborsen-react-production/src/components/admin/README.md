@@ -6,7 +6,7 @@ This directory contains the comprehensive administrative interface for the leasi
 
 The admin interface is a sophisticated enterprise-grade system that handles:
 - **Car listing management** with advanced forms and validation
-- **Batch processing workflows** for bulk operations
+- **AI extraction workflows** for intelligent processing
 - **AI extraction review** with comparison and approval interfaces
 - **Seller management** with multi-tenant capabilities
 - **Offer comparison** with intelligent matching algorithms
@@ -15,11 +15,10 @@ The admin interface is a sophisticated enterprise-grade system that handles:
 
 ```
 admin/
-├── batch/                    # Batch processing components
-│   ├── BatchReviewPage.tsx          # Main batch review interface
-│   ├── BatchReviewHeader.tsx        # Header with actions and status
-│   ├── ComparisonView.tsx           # Side-by-side comparison interface
-│   └── BatchImportDialog.tsx        # Bulk import workflow
+├── extraction/               # AI extraction components
+│   ├── ExtractionReviewPage.tsx     # AI extraction review interface
+│   ├── ComparisonDialog.tsx          # Side-by-side comparison interface
+│   └── ExtractionSessionTable.tsx   # Session management
 │
 ├── sellers/                  # Seller management system
 │   ├── SellersTable.tsx             # Main sellers listing with actions
@@ -40,34 +39,34 @@ admin/
 │   └── BulkEditDialog.tsx           # Bulk editing capabilities
 │
 └── __tests__/                # Comprehensive test coverage
-    ├── BatchReviewHeader.test.tsx
+    ├── ExtractionReview.test.tsx
     ├── AdminListingFormNew.integration.test.tsx
     └── [component].test.tsx
 ```
 
 ## 🔧 Key Components
 
-### **Batch Processing System**
+### **AI Extraction System**
 
-#### `BatchReviewPage.tsx`
-- **Purpose**: Main interface for reviewing AI-extracted car data
-- **Features**: Side-by-side comparison, approval workflow, bulk actions
-- **Dependencies**: `useBatchReviewState`, React Query mutations
-- **Performance**: Optimized with React.memo and virtualization for large datasets
+#### `ExtractionReviewPage.tsx`
+- **Purpose**: Modern interface for reviewing AI-extracted car data
+- **Features**: Real-time comparison, intelligent approval workflow, bulk operations
+- **Dependencies**: `useListingComparison`, React Query integration
+- **Performance**: Optimized with server-side processing and Edge Functions
 
 ```tsx
 // Usage example
-<BatchReviewPage 
-  batchId={batchId}
-  onApprove={handleBatchApproval}
-  onReject={handleBatchRejection}
+<ExtractionReviewPage 
+  sessionId={sessionId}
+  onApprove={handleApproval}
+  onReject={handleRejection}
 />
 ```
 
-#### `ComparisonView.tsx`
-- **Purpose**: Detailed comparison between original and extracted data
-- **Features**: Field-by-field diff, confidence scoring, manual editing
-- **Validation**: Danish market business rules integration
+#### `ComparisonDialog.tsx`
+- **Purpose**: Advanced comparison between extracted and existing data
+- **Features**: Field-level diff highlighting, confidence scoring, smart recommendations
+- **Validation**: Comprehensive Danish market validation with Edge Functions
 
 ### **Seller Management System**
 
@@ -126,14 +125,14 @@ admin/
 6. Error: Show validation errors with Danish messages
 ```
 
-### **Batch Processing Flow**
+### **AI Extraction Workflow**
 ```
-1. Admin uploads PDF files via BatchImportDialog
-2. Files processed by AI extraction service
-3. Results appear in BatchReviewPage for review
-4. Admin compares original vs extracted data
-5. Approve/reject individual items or entire batch
-6. Approved items become active listings
+1. Admin initiates PDF extraction via AI extraction interface
+2. Files processed by secure Edge Functions with multi-provider AI
+3. Results appear in ExtractionReviewPage with intelligent comparison
+4. Admin reviews side-by-side diff with confidence scoring
+5. Apply selected changes using secure server-side operations
+6. Approved changes automatically update active listings
 ```
 
 ## 🧪 Testing Strategy

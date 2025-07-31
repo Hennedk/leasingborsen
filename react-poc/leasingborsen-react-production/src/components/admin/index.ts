@@ -2,7 +2,6 @@
 export * from './listings'
 export * from './shared' 
 export * from './offers'
-export * from './batch'
 export * from './sellers'
 
 // Top-level admin components

@@ -29,7 +29,6 @@ hooks/
 │
 ├── Admin Management Hooks
 │   ├── useAdminListings.ts         # Admin CRUD operations
-│   ├── useBatchReviewState.ts      # Complex batch workflow state
 │   ├── useListingComparison.ts    # AI-powered comparison logic
 │   ├── useSellerManagement.ts     # Seller CRUD operations
 │   └── useOfferComparison.ts      # Offer matching algorithms
@@ -218,66 +217,6 @@ export const useImageLazyLoading = (
 - **Error Recovery**: Automatic retry mechanism with exponential backoff
 - **Memory Cleanup**: Proper cleanup prevents memory leaks
 
-### **Complex State Management (`useBatchReviewState.ts`)**
-
-#### Advanced Workflow State Management
-```typescript
-export const useBatchReviewState = (batchId: string) => {
-  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set())
-  const [comparisonMode, setComparisonMode] = useState<'side-by-side' | 'overlay'>('side-by-side')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
-  
-  // Complex data transformations with memoization
-  const processedItems = useMemo(() => {
-    return batchItems.map(item => ({
-      ...item,
-      confidence: calculateConfidence(item.original, item.extracted),
-      changes: detectChanges(item.original, item.extracted),
-      recommendation: getApprovalRecommendation(item)
-    }))
-  }, [batchItems])
-  
-  // Bulk operations
-  const approveSelected = useCallback(async () => {
-    const items = Array.from(selectedItems)
-    await batchMutation.mutateAsync({
-      action: 'approve',
-      itemIds: items
-    })
-    setSelectedItems(new Set())
-  }, [selectedItems, batchMutation])
-  
-  // Advanced filtering logic
-  const filteredItems = useMemo(() => {
-    return processedItems.filter(item => {
-      if (filterStatus === 'all') return true
-      return item.status === filterStatus
-    })
-  }, [processedItems, filterStatus])
-  
-  return {
-    selectedItems: Array.from(selectedItems),
-    processedItems: filteredItems,
-    comparisonMode,
-    bulkActions: {
-      approveSelected,
-      rejectSelected,
-      clearSelection
-    },
-    utilities: {
-      formatPrice,
-      getConfidenceColor,
-      getStatusIcon
-    }
-  }
-}
-```
-
-**Advanced Features:**
-- **Complex State Logic**: Manages multiple related state pieces
-- **Performance Optimization**: Extensive use of useMemo and useCallback
-- **Utility Functions**: Reusable helpers for UI formatting
-- **Bulk Operations**: Efficient batch processing with optimistic updates
 
 ## 🎨 Hook Patterns
 

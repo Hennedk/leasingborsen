@@ -46,7 +46,7 @@ describe('useSellers hook with make data', () => {
       country: 'Denmark',
       logo_url: 'https://example.com/toyota-logo.png',
       make_id: 'make-1',
-      make_name: 'Toyota',
+      makes: { name: 'Toyota' },
       created_at: '2024-01-15T10:00:00Z',
       updated_at: '2024-01-15T10:00:00Z'
     },
@@ -60,7 +60,7 @@ describe('useSellers hook with make data', () => {
       country: 'Denmark',
       logo_url: null,
       make_id: null,
-      make_name: null,
+      makes: null,
       created_at: '2024-01-20T14:30:00Z',
       updated_at: '2024-01-20T14:30:00Z'
     },
@@ -74,7 +74,7 @@ describe('useSellers hook with make data', () => {
       country: 'Denmark',
       logo_url: 'https://example.com/bmw-logo.png',
       make_id: 'make-2',
-      make_name: 'BMW',
+      makes: { name: 'BMW' },
       created_at: '2024-02-01T09:15:00Z',
       updated_at: '2024-02-01T09:15:00Z'
     }
@@ -89,23 +89,27 @@ describe('useSellers hook with make data', () => {
     { seller_id: 'seller-3' }
   ]
 
-  const mockBatchData = [
-    { seller_id: 'seller-1', created_at: '2024-06-15T12:00:00Z' },
-    { seller_id: 'seller-2', created_at: '2024-06-20T08:30:00Z' },
-    { seller_id: 'seller-3', created_at: '2024-06-25T16:45:00Z' }
+  const mockExtractionData = [
+    { seller_id: 'seller-1', created_at: '2024-07-15T12:00:00Z' },
+    { seller_id: 'seller-2', created_at: '2024-07-20T08:30:00Z' },
+    { seller_id: 'seller-3', created_at: '2024-07-25T16:45:00Z' }
   ]
 
-  beforeEach(() => {
+  let mockSupabase: any
+
+  beforeEach(async () => {
     vi.clearAllMocks()
+    const { supabase } = await import('@/lib/supabase')
+    mockSupabase = vi.mocked(supabase)
   })
 
   describe('useSellers - with make data', () => {
-    it('fetches sellers with make information from sellers_with_make view', async () => {
+    it('fetches sellers with make information from sellers table with join', async () => {
       const { supabase } = await import('@/lib/supabase')
       const mockSupabase = vi.mocked(supabase)
       
       mockSupabase.from.mockImplementation((table) => {
-        if (table === 'sellers_with_make') {
+        if (table === 'sellers') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({
@@ -129,7 +133,7 @@ describe('useSellers hook with make data', () => {
             }))
           }
         }
-        if (table === 'batch_imports') {
+        if (table === 'extraction_sessions') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({
@@ -137,7 +141,7 @@ describe('useSellers hook with make data', () => {
               in: vi.fn(() => ({
                 ...mockSupabase,
                 order: vi.fn(() => Promise.resolve({
-                  data: mockBatchData,
+                  data: mockExtractionData,
                   error: null
                 }))
               }))
@@ -160,8 +164,9 @@ describe('useSellers hook with make data', () => {
       const toyotaDealer = result.current.data?.find(s => s.id === 'seller-1')
       expect(toyotaDealer).toEqual({
         ...mockSellersData[0],
+        make_name: 'Toyota',
         total_listings: 2,
-        last_import_date: '2024-06-15T12:00:00Z',
+        last_import_date: '2024-07-15T12:00:00Z',
         batch_config: null
       })
 
@@ -178,7 +183,7 @@ describe('useSellers hook with make data', () => {
       expect(bmwDealer?.total_listings).toBe(3)
     })
 
-    it('uses sellers_with_make view instead of sellers table', async () => {
+    it('uses sellers table with make join', async () => {
       mockSupabase.from.mockReturnValue({
         ...mockSupabase,
         select: vi.fn(() => ({
@@ -194,28 +199,22 @@ describe('useSellers hook with make data', () => {
       renderHook(() => useSellers(), { wrapper: Wrapper })
 
       await waitFor(() => {
-        expect(mockSupabase.from).toHaveBeenCalledWith('sellers_with_make')
+        expect(mockSupabase.from).toHaveBeenCalledWith('sellers')
       })
-
-      expect(mockSupabase.from).not.toHaveBeenCalledWith('sellers')
     })
 
     it('handles sellers with and without make assignments', async () => {
       const mixedSellersData = [
         {
-          ...mockSellersData[0],
-          make_id: 'make-1',
-          make_name: 'Toyota'
+          ...mockSellersData[0]
         },
         {
-          ...mockSellersData[1],
-          make_id: null,
-          make_name: null
+          ...mockSellersData[1]
         }
       ]
 
       mockSupabase.from.mockImplementation((table) => {
-        if (table === 'sellers_with_make') {
+        if (table === 'sellers') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({
@@ -288,7 +287,7 @@ describe('useSellers hook with make data', () => {
 
     it('fetches individual seller with make information', async () => {
       mockSupabase.from.mockImplementation((table) => {
-        if (table === 'sellers_with_make') {
+        if (table === 'sellers') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({
@@ -315,7 +314,7 @@ describe('useSellers hook with make data', () => {
             }))
           }
         }
-        if (table === 'batch_imports') {
+        if (table === 'extraction_sessions') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({
@@ -325,7 +324,7 @@ describe('useSellers hook with make data', () => {
                 order: vi.fn(() => ({
                   ...mockSupabase,
                   limit: vi.fn(() => Promise.resolve({
-                    data: [{ created_at: '2024-06-15T12:00:00Z' }],
+                    data: [{ created_at: '2024-07-15T12:00:00Z' }],
                     error: null
                   }))
                 }))
@@ -345,8 +344,9 @@ describe('useSellers hook with make data', () => {
 
       expect(result.current.data).toEqual({
         ...singleSellerData,
+        make_name: 'Toyota',
         total_listings: 2,
-        last_import_date: '2024-06-15T12:00:00Z',
+        last_import_date: '2024-07-15T12:00:00Z',
         batch_config: null
       })
 
@@ -355,7 +355,7 @@ describe('useSellers hook with make data', () => {
       expect(result.current.data?.make_name).toBe('Toyota')
     })
 
-    it('uses sellers_with_make view for individual seller lookup', async () => {
+    it('uses sellers table with make join for individual seller lookup', async () => {
       mockSupabase.from.mockReturnValue({
         ...mockSupabase,
         select: vi.fn(() => ({
@@ -374,19 +374,17 @@ describe('useSellers hook with make data', () => {
       renderHook(() => useSeller('seller-1'), { wrapper: Wrapper })
 
       await waitFor(() => {
-        expect(mockSupabase.from).toHaveBeenCalledWith('sellers_with_make')
+        expect(mockSupabase.from).toHaveBeenCalledWith('sellers')
       })
     })
 
     it('handles seller without make assignment', async () => {
       const sellerWithoutMake = {
-        ...mockSellersData[1],
-        make_id: null,
-        make_name: null
+        ...mockSellersData[1]
       }
 
       mockSupabase.from.mockImplementation((table) => {
-        if (table === 'sellers_with_make') {
+        if (table === 'sellers') {
           return {
             ...mockSupabase,
             select: vi.fn(() => ({

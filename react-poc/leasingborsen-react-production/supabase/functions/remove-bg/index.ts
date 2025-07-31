@@ -85,10 +85,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     // console.log('Environment check:', {
-      hasSupabaseUrl: !!supabaseUrl,
-      hasServiceKey: !!supabaseServiceKey,
-      hasApi4aiKey: !!Deno.env.get('API4AI_KEY')
-    });
+    //   hasSupabaseUrl: !!supabaseUrl,
+    //   hasServiceKey: !!supabaseServiceKey,
+    //   hasApi4aiKey: !!Deno.env.get('API4AI_KEY')
+    // });
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing Supabase environment variables');
@@ -124,20 +124,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     formData.append('image', blob, fileName);
     
     // console.log('FormData prepared:', {
-      blobSize: blob.size,
-      blobType: blob.type,
-      fileName: fileName
-    });
+    //   blobSize: blob.size,
+    //   blobType: blob.type,
+    //   fileName: fileName
+    // });
 
     // Call API4.ai background removal service via RapidAPI
     // console.log('Calling API4.ai background removal via RapidAPI...');
     // console.log('Request details:', {
-      url: 'https://api4ai-background-removal.p.rapidapi.com/v1/results',
-      method: 'POST',
-      hasApiKey: !!api4aiKey,
-      apiKeyLength: api4aiKey?.length,
-      formDataSize: formData.get('image') ? 'has image' : 'no image'
-    });
+    //   url: 'https://api4ai-background-removal.p.rapidapi.com/v1/results',
+    //   method: 'POST',
+    //   hasApiKey: !!api4aiKey,
+    //   apiKeyLength: api4aiKey?.length,
+    //   formDataSize: formData.get('image') ? 'has image' : 'no image'
+    // });
 
     const api4Response = await fetch('https://cars-image-background-removal.p.rapidapi.com/v1/results', {
       method: 'POST',
@@ -159,15 +159,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const result = await api4Response.json();
     // console.log('API4.ai response structure:', {
-      hasResults: 'results' in result,
-      resultsLength: result.results?.length,
-      // Don't log full response as it contains large base64 data
-      firstResultStatus: result.results?.[0]?.status,
-      originalDimensions: {
-        width: result.results?.[0]?.width,
-        height: result.results?.[0]?.height
-      }
-    });
+    //   hasResults: 'results' in result,
+    //   resultsLength: result.results?.length,
+    //   // Don't log full response as it contains large base64 data
+    //   firstResultStatus: result.results?.[0]?.status,
+    //   originalDimensions: {
+    //     width: result.results?.[0]?.width,
+    //     height: result.results?.[0]?.height
+    //   }
+    // });
 
     if (!result.results || result.results.length === 0) {
       console.error('API4.ai processing failed - no results:', result);
@@ -185,11 +185,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const processedImageBase64 = imageEntity?.image;
     
     // console.log('Processed image info:', {
-      hasImageEntity: !!imageEntity,
-      hasProcessedImage: !!processedImageBase64,
-      imageLength: processedImageBase64?.length,
-      imageStart: processedImageBase64?.substring(0, 50)
-    });
+    //   hasImageEntity: !!imageEntity,
+    //   hasProcessedImage: !!processedImageBase64,
+    //   imageLength: processedImageBase64?.length,
+    //   imageStart: processedImageBase64?.substring(0, 50)
+    // });
 
     if (!processedImageBase64) {
       console.error('No processed image found in entities. Result structure:', firstResult);
