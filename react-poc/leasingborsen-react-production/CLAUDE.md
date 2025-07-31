@@ -80,6 +80,7 @@ For detailed information on specific areas, see:
 ### 🚀 Deployment
 - **Production Deployment**: See `docs/archive/PRODUCTION_MONITORING_DEPLOYMENT_SUMMARY.md`
 - **Staging Setup**: See `docs/archive/staging-deployment/STAGING_SETUP.md`
+- **Solo Developer Workflow**: See `docs/SOLO_DEVELOPER_WORKFLOW.md` for streamlined Git + Supabase deployment practices
 
 ---
 
