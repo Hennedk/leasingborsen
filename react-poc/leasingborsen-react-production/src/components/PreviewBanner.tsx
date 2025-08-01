@@ -16,9 +16,10 @@ const isPreviewEnvironment = () => {
       hostname.includes('git-') ||
       // Or staging subdomain
       hostname.includes('staging') ||
-      // Or random hash pattern (preview deployments) - not production domain
-      (/leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(hostname) && 
-       hostname !== 'leasingborsen-react-production.vercel.app')
+      // Any Vercel app that's not the main production domain
+      (hostname.includes('vercel.app') && hostname !== 'leasingborsen-react-production.vercel.app') ||
+      // Or if we're using staging Supabase URL (definitive check)
+      (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL.includes('lpbtgtpgbnybjqcpsrrf'))
     )
   }
   
@@ -32,10 +33,10 @@ export const PreviewBanner: React.FC = () => {
   }
 
   return (
-    <Alert className="border-orange-200 bg-orange-50 text-orange-800 rounded-none">
-      <Info className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-center text-sm font-medium">
-        🚧 Preview Environment - Using Staging Database - Changes won't affect production
+    <Alert className="border-orange-400 bg-orange-100 text-orange-900 rounded-none border-2 shadow-sm">
+      <Info className="h-5 w-5 text-orange-600" />
+      <AlertDescription className="flex items-center justify-center text-base font-bold">
+        🚧 STAGING ENVIRONMENT - Using Staging Database - Safe for Testing - No Production Impact 🚧
       </AlertDescription>
     </Alert>
   )

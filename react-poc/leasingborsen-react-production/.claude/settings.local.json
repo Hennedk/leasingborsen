@@ -40,7 +40,9 @@
       "Bash(npm run test:comparison:*)",
       "WebFetch(domain:supabase.com)",
       "Bash(touch:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(deno test:*)",
+      "Bash(PATH=\"$HOME/.deno/bin:$PATH\" deno test --allow-all __tests__/)"
     ]
   },
   "enableAllProjectMcpServers": true,

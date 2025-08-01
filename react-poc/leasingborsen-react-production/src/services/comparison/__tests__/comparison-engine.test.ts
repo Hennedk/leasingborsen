@@ -3,6 +3,29 @@ import { setupSupabaseMocks, resetSupabaseMocks } from '@/test/mocks/supabase';
 import { vehicleFactory } from '@/test/factories/vehicles';
 import { extractionFactory } from '@/test/factories/extraction';
 import { dealerFactory } from '@/test/factories/dealers';
+import { 
+  createTestVehicle, 
+  createTestListing, 
+  testVehicles,
+  assertChangeTypes,
+  scenarioTestData 
+} from '@/test/utils/comparison-helpers';
+import { 
+  toyotaTransmissionScenario,
+  vwMultipleOffersScenario,
+  fuzzyMatchingScenario,
+  partialInventoryUploadScenario 
+} from '@/test/fixtures/comparison-data';
+
+// Import actual comparison logic utilities for testing
+import { 
+  generateExactKey,
+  detectFieldChanges,
+  createExistingListingMaps,
+  findBestMatch
+} from '../comparison-utils';
+import { compareOfferArrays } from '../offer-utils';
+import type { ExtractedCar, ExistingListing, ListingMatch } from '@/types';
 
 // Mock comparison logic - this would be replaced with actual implementation
 class ComparisonEngine {
@@ -213,14 +236,14 @@ class ComparisonEngine {
   }
 
   // Ford-specific logic for expanding merpris offers
-  expandFordMerpris(baseVehicle: any, merprисOptions: any[]): any {
+  expandFordMerpris(baseVehicle: any, merprisOptions: any[]): any {
     const expandedVehicle = { ...baseVehicle };
     
-    if (merprісOptions && merprісOptions.length > 0) {
+    if (merprisOptions && merprisOptions.length > 0) {
       const baseOffers = expandedVehicle.offers || [];
       const expandedOffers = [...baseOffers];
       
-      merprісOptions.forEach(option => {
+      merprisOptions.forEach(option => {
         const basePriceOffer = baseOffers[0];
         if (basePriceOffer) {
           expandedOffers.push({
@@ -248,6 +271,79 @@ describe('ComparisonEngine - Critical Business Logic', () => {
   
   afterEach(() => {
     resetSupabaseMocks();
+  });
+  
+  describe('Real Comparison Logic Tests', () => {
+    test('Updated matching logic - listings with same make/model/variant match regardless of transmission', () => {
+      const { existing, extracted, expectedResult } = toyotaTransmissionScenario;
+      
+      // Test exact key generation - transmission is no longer part of the key
+      const manualKey = generateExactKey(
+        existing[0].make, 
+        existing[0].model, 
+        existing[0].variant
+      );
+      const autoKey = generateExactKey(
+        extracted[0].make,
+        extracted[0].model,
+        extracted[0].variant
+      );
+      
+      expect(manualKey).toBe(autoKey);
+      expect(manualKey).toBe('toyota|aygo x|pulse');
+      expect(autoKey).toBe('toyota|aygo x|pulse');
+      
+      // Test actual matching
+      const { existingByExactKey } = createExistingListingMaps(existing);
+      const alreadyMatchedIds = new Set<string>();
+      
+      const { existingMatch } = findBestMatch(
+        extracted[0],
+        existingByExactKey,
+        new Map(),
+        alreadyMatchedIds
+      );
+      
+      expect(existingMatch).not.toBe(null); // Should match now
+      expect(existingMatch?.id).toBe(existing[0].id);
+    });
+    
+    test('VW multiple offers - should detect as unchanged despite order', () => {
+      const { existing, extracted } = vwMultipleOffersScenario;
+      
+      const offersChanged = compareOfferArrays(
+        extracted[0].offers!,
+        existing[0].offers
+      );
+      
+      expect(offersChanged).toBe(false);
+      
+      const changes = detectFieldChanges(extracted[0], existing[0]);
+      expect(changes).toBe(null);
+    });
+    
+    test('Fuzzy matching - should match despite minor variant differences', () => {
+      const { existing, extracted, expectedResult } = fuzzyMatchingScenario;
+      
+      // This would use the real composite key matching
+      const { existingByExactKey, existingByCompositeKey } = createExistingListingMaps(existing);
+      const alreadyMatchedIds = new Set<string>();
+      
+      const { existingMatch, matchMethod } = findBestMatch(
+        extracted[0],
+        existingByExactKey,
+        existingByCompositeKey,
+        alreadyMatchedIds
+      );
+      
+      expect(existingMatch).not.toBe(null);
+      expect(matchMethod).toBe('fuzzy');
+      
+      // Check that price change is detected
+      const changes = detectFieldChanges(extracted[0], existingMatch!);
+      expect(changes).not.toBe(null);
+      expect(changes!.monthly_price).toBeDefined();
+    });
   });
   
   describe('Change Detection Accuracy', () => {

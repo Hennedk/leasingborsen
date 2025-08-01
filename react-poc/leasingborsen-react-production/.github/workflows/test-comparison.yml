@@ -1,0 +1,133 @@
+name: Comparison Engine Tests
+
+on:
+  push:
+    branches: [ main, test/staging ]
+    paths:
+      - 'supabase/functions/compare-extracted-listings/**'
+      - 'src/services/comparison/**'
+      - 'src/hooks/useListingComparison.ts'
+      - '.github/workflows/test-comparison.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/compare-extracted-listings/**'
+      - 'src/services/comparison/**'
+      - 'src/hooks/useListingComparison.ts'
+
+jobs:
+  test-edge-function:
+    name: Edge Function Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v2
+      with:
+        deno-version: v1.x
+    
+    - name: Run Edge Function Tests
+      run: |
+        cd supabase/functions/compare-extracted-listings
+        deno test --allow-read --allow-env __tests__/*.test.ts
+    
+    - name: Generate Coverage Report
+      run: |
+        cd supabase/functions/compare-extracted-listings
+        deno test --allow-read --allow-env --coverage=coverage __tests__/*.test.ts
+        deno coverage coverage --lcov > coverage.lcov
+    
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./supabase/functions/compare-extracted-listings/coverage.lcov
+        flags: edge-functions
+        name: comparison-edge-function
+
+  test-frontend:
+    name: Frontend Integration Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run Comparison Tests
+      run: npm run test:comparison
+      env:
+        CI: true
+    
+    - name: Run Integration Tests
+      run: npm run test -- src/services/comparison/__tests__/comparison-integration.test.ts
+      env:
+        CI: true
+    
+    - name: Generate Coverage Report
+      run: npm run test:coverage -- --coverage.include='**/comparison/**'
+    
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        flags: frontend
+        name: comparison-frontend
+
+  performance-test:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Deno
+      uses: denoland/setup-deno@v2
+      with:
+        deno-version: v1.x
+    
+    - name: Run Performance Tests
+      run: |
+        cd supabase/functions/compare-extracted-listings
+        deno test --allow-read --allow-env __tests__/performance.test.ts
+    
+    - name: Save Performance Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results
+        path: performance-results.json
+        retention-days: 30
+
+  lint-and-type-check:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run ESLint
+      run: npm run lint -- src/services/comparison/**
+    
+    - name: Run TypeScript Check
+      run: npm run build
