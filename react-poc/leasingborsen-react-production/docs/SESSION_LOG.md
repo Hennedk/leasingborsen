@@ -66,6 +66,57 @@ archive/
 
 ---
 
+## Session: 2025-08-01 - Test Branch Merge and Cleanup
+
+### What Changed:
+- [x] Created comprehensive cleanup recommendations for project files
+- [x] Archived 40+ miscellaneous SQL and JS test scripts
+- [x] Moved deprecated documentation to docs/archive/
+- [x] Successfully merged test/preview-system branch with extensive test infrastructure
+- [x] Successfully merged test/staging-banner-verification branch with extraction testing
+- [x] Resolved multiple merge conflicts across key files
+- [x] Updated package.json scripts to reference archived files
+- [x] Verified all documentation references point to correct archive locations
+
+### Key Merge Additions:
+- **Test Infrastructure**: Added comprehensive testing setup with MSW mocking
+- **Extraction Testing**: Full test suite for PDF extraction system (27 tests)
+- **Edge Function Tests**: Added tests for apply-extraction-changes and compare-extracted-listings
+- **Comparison Engine**: Added comparison utilities and integration tests
+- **Preview System**: Added PreviewBanner and DebugInfo components for staging/preview detection
+- **GitHub Workflows**: Added test-comparison.yml for automated testing
+
+### Known Issues:
+- Some unit tests failing due to missing dependencies (faker) and mocking issues
+- Deno not available in environment for Edge Function tests
+- Test failures expected after complex merge - need dependency updates
+
+### Next Steps:
+- Update test dependencies (install @faker-js/faker)
+- Fix test mocking issues after merge
+- Merge integration branch back to main
+- Delete obsolete test branches after successful merge
+- Run full test suite after dependency fixes
+
+### Files Modified:
+- `package.json` - Updated archived script references, merged all test scripts
+- `CLAUDE.md` - Merged session management info with extraction testing details
+- `.claude/settings.local.json` - Merged permissions from both branches
+- `src/hooks/useAdminSellerOperations.ts` - Resolved duplication conflict
+- `supabase/functions/admin-seller-operations/index.ts` - Resolved duplication
+- `supabase/functions/compare-extracted-listings/index.ts` - Resolved duplication
+- `tsconfig.app.json` - Added __tests__ to exclude patterns
+- `src/components/BaseLayout.tsx` - Added preview banner components
+- `src/lib/supabase.ts` - Added environment configuration
+- `vitest.config.ts` - Added test environment variables
+
+### Branch Status:
+- Created backup branches: test/preview-system-backup, test/staging-banner-verification-backup
+- Working branch: integration/merge-test-branches (ready to merge to main)
+- Test branches can be deleted after successful main merge
+
+---
+
 ## Template for Future Sessions
 
 ## Session: [YYYY-MM-DD] - [Primary Task Description]
