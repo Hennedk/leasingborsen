@@ -1,7 +1,0 @@
-2360 + 25mm højde venstre
-
-2368 + 25mm højde højre
-
-2892 bredde høj
-
-2881 bredde lav

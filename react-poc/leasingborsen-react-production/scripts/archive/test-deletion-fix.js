@@ -1,129 +1,159 @@
 #!/usr/bin/env node
 
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { createClient } from '@supabase/supabase-js'
+import { config } from 'dotenv'
 
-// Load environment variables
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '../.env.local') });
+config()
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
+/**
+ * Test the deletion fix by attempting to apply a deletion change
+ */
 async function testDeletionFix() {
-  const sessionId = '91d57eee-517b-4a22-8185-7fa000d584c0';
-  const listingId = 'e5841862-1d46-4450-9710-6f7c037741ba';
-  const changeId = 'bb3496e0-df99-4c5d-b99b-e796a507f1d6';
+  console.log('🧪 Testing Phase 1 deletion fix...\n')
   
-  console.log('🧪 TESTING DELETION FIX');
-  console.log('=' .repeat(80));
-  console.log(`Session ID: ${sessionId}`);
-  console.log(`Listing ID: ${listingId}`);
-  console.log(`Change ID: ${changeId}`);
-  console.log('=' .repeat(80));
-
   try {
-    // 1. Reset the deletion to pending status
-    console.log('\n1️⃣ Resetting deletion to pending status...\n');
+    // Find a recent extraction session with deletion changes
+    console.log('1. Looking for recent extraction sessions with deletions...')
     
-    const { error: resetError } = await supabase
-      .from('extraction_listing_changes')
-      .update({ 
-        change_status: 'pending',
-        review_notes: null,
-        reviewed_at: null,
-        applied_by: null
-      })
-      .eq('id', changeId);
-
-    if (resetError) {
-      console.error('Error resetting status:', resetError);
-      return;
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('extraction_sessions')
+      .select('id, session_name, created_at, status')
+      .order('created_at', { ascending: false })
+      .limit(5)
+    
+    if (sessionsError) {
+      throw sessionsError
     }
     
-    console.log('✅ Reset successful!');
+    console.log(`Found ${sessions.length} recent sessions:`)
+    sessions.forEach(session => {
+      console.log(`   ${session.id} - ${session.session_name} (${session.status})`)
+    })
     
-    // 2. Check how many references exist before
-    console.log('\n2️⃣ Checking references before deletion...\n');
-    
-    const { data: referencesBefore } = await supabase
-      .from('extraction_listing_changes')
-      .select('id, session_id, change_type, change_status')
-      .eq('existing_listing_id', listingId);
+    // Find a session with pending deletion changes
+    for (const session of sessions) {
+      const { data: changes, error: changesError } = await supabase
+        .from('extraction_listing_changes')
+        .select('id, change_type, existing_listing_id')
+        .eq('session_id', session.id)
+        .eq('change_type', 'delete')
+        .eq('change_status', 'pending')
+        .limit(1)
       
-    console.log(`Found ${referencesBefore?.length || 0} references to this listing:`);
-    referencesBefore?.forEach(ref => {
-      console.log(`  - ${ref.id} (${ref.change_type}, ${ref.change_status})`);
-    });
-    
-    // 3. Test the apply function
-    console.log('\n3️⃣ Testing apply_selected_extraction_changes...\n');
-    
-    const { data: applyResult, error: applyError } = await supabase
-      .rpc('apply_selected_extraction_changes', {
-        p_session_id: sessionId,
-        p_selected_change_ids: [changeId],
-        p_applied_by: 'test_fix_script'
-      });
-
-    if (applyError) {
-      console.error('❌ Apply error:', applyError);
-      return;
-    }
-    
-    console.log('✅ Apply function result:', JSON.stringify(applyResult, null, 2));
-    
-    // 4. Check if listing was deleted
-    console.log('\n4️⃣ Checking if listing was deleted...\n');
-    
-    const { data: listingCheck } = await supabase
-      .from('listings')
-      .select('id')
-      .eq('id', listingId)
-      .single();
+      if (changesError) {
+        console.log(`   Error checking changes for ${session.id}: ${changesError.message}`)
+        continue
+      }
       
-    if (!listingCheck) {
-      console.log('🎉 SUCCESS: Listing was deleted!');
-    } else {
-      console.log('❌ FAILURE: Listing still exists');
+      if (changes.length > 0) {
+        console.log(`\n2. Found session ${session.id} with ${changes.length} pending deletion(s)`)
+        console.log(`   Change ID: ${changes[0].id}`)
+        console.log(`   Listing to delete: ${changes[0].existing_listing_id}`)
+        
+        // Test the apply function
+        console.log('\n3. Testing apply_selected_extraction_changes...')
+        
+        const { data: result, error: applyError } = await supabase.functions.invoke('apply-extraction-changes', {
+          body: {
+            sessionId: session.id,
+            selectedChangeIds: [changes[0].id],
+            appliedBy: 'test_script'
+          }
+        })
+        
+        if (applyError) {
+          console.log(`❌ Apply function failed: ${applyError.message}`)
+          return false
+        }
+        
+        console.log('\n4. Apply function result:')
+        console.log(`   Creates applied: ${result.applied_creates}`)
+        console.log(`   Updates applied: ${result.applied_updates}`)
+        console.log(`   Deletes applied: ${result.applied_deletes}`)
+        console.log(`   Errors encountered: ${result.error_count}`)
+        
+        if (result.applied_deletes > 0) {
+          console.log('\n✅ SUCCESS: Deletion was applied successfully!')
+          console.log('   Phase 1 fix appears to be working.')
+          return true
+        } else {
+          console.log('\n❌ FAILURE: Deletion was not applied.')
+          if (result.error_details && result.error_details.length > 0) {
+            console.log('   Error details:')
+            result.error_details.forEach((error, i) => {
+              console.log(`     ${i + 1}. ${error.error}`)
+            })
+          }
+          return false
+        }
+      }
     }
     
-    // 5. Check remaining references
-    console.log('\n5️⃣ Checking references after deletion...\n');
+    console.log('\n⚠️  No sessions with pending deletions found.')
+    console.log('   Phase 1 fix cannot be tested without pending deletion changes.')
+    return null
     
-    const { data: referencesAfter } = await supabase
-      .from('extraction_listing_changes')
-      .select('id, session_id, change_type, change_status')
-      .eq('existing_listing_id', listingId);
-      
-    console.log(`Found ${referencesAfter?.length || 0} references remaining`);
-    if (referencesAfter && referencesAfter.length > 0) {
-      console.log('⚠️  References still exist after deletion:');
-      referencesAfter.forEach(ref => {
-        console.log(`  - ${ref.id} (${ref.change_type}, ${ref.change_status})`);
-      });
-    }
-    
-    // 6. Summary
-    console.log('\n6️⃣ SUMMARY:\n');
-    
-    if (!listingCheck && (!referencesAfter || referencesAfter.length === 0)) {
-      console.log('✅ The fix works! Deletion succeeded and all references were cleaned up.');
-    } else {
-      console.log('❌ The fix needs more work:');
-      if (listingCheck) console.log('  - Listing was not deleted');
-      if (referencesAfter && referencesAfter.length > 0) console.log('  - References were not cleaned up');
-    }
-
   } catch (error) {
-    console.error('\n❌ Unexpected error:', error);
+    console.error('❌ Test failed:', error.message)
+    return false
   }
 }
 
-// Run the test
-testDeletionFix().catch(console.error);
+/**
+ * Verify the function changes are deployed
+ */
+async function verifyFunctionUpdate() {
+  console.log('🔍 Verifying function deployment...\n')
+  
+  try {
+    // Test that the function exists and basic structure is correct
+    const { data, error } = await supabase
+      .rpc('apply_selected_extraction_changes', {
+        p_session_id: '00000000-0000-0000-0000-000000000000', // Non-existent ID
+        p_selected_change_ids: [],
+        p_applied_by: 'test'
+      })
+    
+    // We expect this to return error details about "Could not find session", which means function is deployed
+    if (data && data.error_details && data.error_details[0] && data.error_details[0].error.includes('Could not find session')) {
+      console.log('✅ Function is deployed and responding correctly')
+      return true
+    } else {
+      console.log('❌ Function response unexpected:', error?.message || JSON.stringify(data, null, 2))
+      return false
+    }
+    
+  } catch (error) {
+    console.error('❌ Function verification failed:', error.message)
+    return false
+  }
+}
+
+// Run the tests
+async function runTests() {
+  console.log('🚀 Phase 1 Deletion Fix Test Suite\n')
+  
+  const functionOk = await verifyFunctionUpdate()
+  if (!functionOk) {
+    console.log('❌ Function verification failed. Cannot proceed with tests.')
+    return
+  }
+  
+  const testResult = await testDeletionFix()
+  
+  console.log('\n📊 Test Summary:')
+  if (testResult === true) {
+    console.log('✅ Phase 1 deletion fix is working correctly')
+  } else if (testResult === false) {
+    console.log('❌ Phase 1 deletion fix has issues that need investigation')
+  } else {
+    console.log('⚠️  Could not test deletion fix (no pending deletions available)')
+  }
+}
+
+runTests().catch(console.error)

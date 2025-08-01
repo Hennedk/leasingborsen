@@ -1,880 +1,449 @@
-# CLAUDE.md - React Migration (Streamlined)
+# CLAUDE.md - React Leasingborsen Platform
 
-This file provides essential guidance to Claude Code (claude.ai/code) when working with the React migration of the Vue leasingborsen application.
+Essential guidance for Claude Code (claude.ai/code) when working with the Danish car leasing comparison platform.
 
-## 🔄 Starting a New Session
+## 🎯 Project Vision
 
-**Claude should read these files when beginning work:**
+Building Denmark's premier car leasing comparison platform for consumers.
 
-### Essential Reading (Always)
-1. **This file (CLAUDE.md)** - Core development patterns and architecture
-2. **README.md** - Project overview and quick start guide
+- **MVP Goal**: Validate that Danish consumers want centralized leasing offer comparisons
+- **Core Value**: Automated PDF extraction of dealer inventories for real-time pricing
+- **Success Metrics**: User engagement, dealer inquiries, listing accuracy
+- **Target Users**: Danish consumers seeking transparent car leasing deals
 
-### Context-Specific Reading (Based on Task)
-- **AI/PDF Work**: `docs/archive/AI_EXTRACTION_SYSTEM.md`
-- **Admin Features**: `docs/archive/ADMIN_COMPONENTS_REVIEW.md` 
-- **Testing Work**: `docs/archive/TESTING_INSTRUCTIONS.md`
-- **Performance Issues**: `docs/archive/OPTIMIZATION-SESSION.md`
-- **Deployment Tasks**: `docs/archive/PRODUCTION_MONITORING_DEPLOYMENT_SUMMARY.md`
-- **Build Problems**: `docs/archive/BUILD_ISSUES.md`
-- **Database Cleanup**: `docs/DATABASE_CLEANUP_COMPREHENSIVE_PLAN.md` (Complete - July 2025)
+## 🔄 Session Management & Handover
 
-### Key Source Files to Review
+### Session Strategy
+- **Prefer short sessions** (2-4 hours max) for focused work
+- **Clear context regularly** to maintain Claude's performance
+- **Document all changes** before ending session
+
+### End of Session Protocol
+
+1. **Create Session Summary**
+   ```markdown
+   ## Session: [Date] - [Primary Task]
+   
+   ### What Changed:
+   - [ ] Fixed PDF extraction column mapping issues
+   - [ ] Updated apply-extraction-changes Edge Function
+   - [ ] Added RLS bypass for admin operations
+   
+   ### Known Issues:
+   - Extraction fails for dealer Y PDF format
+   - Cache invalidation delay on listing updates
+   
+   ### Next Steps:
+   - Test with dealer Y's latest PDF
+   - Implement extraction retry logic
+   
+   ### Files Modified:
+   - `src/hooks/useListingComparison.ts`
+   - `supabase/functions/apply-extraction-changes/index.ts`
+   ```
+
+2. **Update Documentation**
+   - Add summary to `docs/SESSION_LOG.md`
+   - Update this file if patterns change
+   - Commit with descriptive message
+
+3. **Git Commit Convention**
+   ```bash
+   git add -A
+   git commit -m "fix: PDF extraction RLS violations
+   
+   - Updated apply-extraction-changes to use service_role
+   - Fixed cascade deletion for lease_pricing
+   - See docs/SESSION_LOG.md for session details"
+   ```
+
+### Starting Next Session
+1. Read last 2-3 entries in `docs/SESSION_LOG.md`
+2. Check recent git commits: `git log --oneline -10`
+3. Review any TODO comments in code
+4. Read this file for context
+
+## 🚀 Quick Start
+
+```bash
+# Setup
+npm install              # Install dependencies
+npm run dev              # Start dev server (hot reload)
+
+# Key URLs
+http://localhost:5173    # Development server
+/admin/listings          # Admin interface
+/admin/ai-extractions    # PDF extraction review
+
+# Essential Files
+src/hooks/useListings.ts # Core data fetching
+src/components/ListingCard.tsx # Main UI pattern
+docs/SESSION_LOG.md      # Recent changes
 ```
-src/lib/supabase.ts              # Database client and query patterns
-src/hooks/useListings.ts         # Core data fetching logic
-src/components/ListingCard.tsx   # Main component patterns
-src/stores/consolidatedFilterStore.ts # State management architecture
-src/types/index.ts               # TypeScript definitions
+
+## 🚨 Critical: PDF Extraction Workflow
+
+**This is the CORE MVP feature** - automated dealer inventory updates via PDF extraction.
+
+### Extraction Pipeline
+```
+PDF Upload → ai-extract-vehicles → compare-extracted-listings → apply-extraction-changes
+    ↓              ↓                        ↓                           ↓
+Validation    AI Processing          Change Preview              Database Update
 ```
 
-## 📚 Quick Navigation to Specialized Documentation
+### Common Issues & Solutions
 
-For detailed information on specific areas, see:
+**"No changes applied"**
+```sql
+-- Check extraction session
+SELECT status, error_message FROM extraction_sessions WHERE id = 'session-id';
+```
 
-### 🚡 Advanced Development
-- **Serena Integration**: See `docs/archive/SERENA_SETUP.md` for semantic code analysis setup
-- **Performance Optimization**: See `docs/archive/OPTIMIZATION-SESSION.md` for detailed optimization strategies
-- **Development History**: See `docs/archive/DEVELOPMENT_HISTORY.md` for project evolution
+**"Column doesn't exist"** 
+- Fixed in July 2025: `engine_info` → `engine_size_cm3`, `duration_months` → `period_months`
 
-### 🤖 AI Features  
-- **AI PDF Extraction System**: See `docs/archive/AI_EXTRACTION_SYSTEM.md` for complete AI implementation
-- **Batch Processing**: See `docs/archive/BATCH_PROCESSING_FEATURE_PLAN.md` for batch workflow details
-- **Hybrid AI Extraction**: See `docs/archive/HYBRID_AI_EXTRACTION_COMPLETE.md` for multi-provider AI setup
-- **Recent Extraction Fixes (July 2025)**: Major improvements to deletion logic and column fixes
+**"RLS policy violation"**
+- Must use `apply-extraction-changes` Edge Function (uses service_role)
 
-### 🚀 AI Prompt Management (Quick Reference)
-**To update AI extraction prompt version:**
-1. **Check current version**: 
-   ```sql
-   SELECT name, openai_prompt_version, model, active 
-   FROM responses_api_configs 
-   WHERE name = 'vehicle-extraction';
-   ```
-2. **Update to new version** (e.g., from v17 to v19):
-   ```sql
-   UPDATE responses_api_configs 
-   SET 
-     openai_prompt_version = '19',
-     model = 'gpt-4.1',  -- Update model if changed
-     updated_at = NOW()
-   WHERE name = 'vehicle-extraction' AND active = true;
-   ```
-3. **Verify update**:
-   ```sql
-   SELECT name, openai_prompt_version, model FROM responses_api_configs WHERE name = 'vehicle-extraction';
-   ```
-4. **No redeployment needed** - changes take effect immediately via database config
+### Testing Extraction Locally
+```bash
+# 1. Upload test PDF
+curl -X POST http://localhost:54321/functions/v1/ai-extract-vehicles \
+  -H "Authorization: Bearer $ANON_KEY" \
+  -F "file=@dealer-inventory.pdf" \
+  -F "sellerId=dealer-uuid"
 
-**Note**: Prompts must be created in OpenAI Playground first, then version number updated in database.
+# 2. Review in admin UI
+http://localhost:5173/admin/ai-extractions
+```
 
-### 📊 Admin Interface
-- **Admin Components**: See `docs/archive/ADMIN_COMPONENTS_REVIEW.md` for admin UI patterns
-- **Admin Workflows**: See `docs/archive/ADMIN_REVIEW.md` for administrative processes
-- **Admin Listings**: See `docs/archive/ADMIN_LISTINGS_REVIEW.md` for listing management
+⚠️ **CRITICAL**: Uploading partial inventory (e.g., single model PDF) marks ALL unmatched listings for deletion. Always review before applying!
 
-### 🧪 Testing & Quality
-- **Testing Guidelines**: See `docs/archive/TESTING_INSTRUCTIONS.md` for comprehensive testing setup
-- **Build Issues**: See `docs/archive/BUILD_ISSUES.md` for troubleshooting build problems
+**Detailed documentation**: `docs/archive/AI_EXTRACTION_SYSTEM.md`
 
-### 🚀 Deployment
-- **Production Deployment**: See `docs/archive/PRODUCTION_MONITORING_DEPLOYMENT_SUMMARY.md`
-- **Staging Setup**: See `docs/archive/staging-deployment/STAGING_SETUP.md`
-- **Solo Developer Workflow**: See `docs/SOLO_DEVELOPER_WORKFLOW.md` for streamlined Git + Supabase deployment practices
+## 💼 Development Workflow
 
----
+### Git Strategy
+```
+main (production) ← feature/fix branches
+  ↓
+staging (auto-deploy for testing)
+```
+
+- Create feature branches from `main`
+- Test thoroughly before merging
+- Squash commits for clean history
+
+### Deployment Pipeline
+```
+Local Dev → Feature Branch → PR Review → Staging → Production
+    ↓            ↓              ↓           ↓          ↓
+npm run dev   Push to Git   Auto-tests  Auto-deploy  Manual
+```
+
+### Pre-deployment Checklist
+- [ ] Tests pass: `npm run test:run`
+- [ ] Lint clean: `npm run lint`
+- [ ] PDF extraction tested with sample files
+- [ ] Database migrations reviewed
+- [ ] Session documented in `docs/SESSION_LOG.md`
+
+## 🧪 Testing Strategy
+
+### What to Test (Priority Order)
+1. **PDF Extraction** - Edge cases, format variations
+2. **Admin CRUD** - Listing create/update/delete
+3. **Filters & Search** - User-facing functionality
+4. **Error States** - Danish error messages
+
+### When to Write Tests
+- Before fixing extraction bugs
+- New admin features
+- User-reported issues
+
+### Test Example
+```typescript
+// Always test extraction deletion logic
+it('marks ALL unmatched listings for deletion on partial upload', async () => {
+  const result = await extractVehicles(partialInventoryPDF)
+  expect(result.deletions).toHaveLength(existingListings.length - matchedCount)
+})
+```
+
+**Full testing guide**: `docs/archive/TESTING_INSTRUCTIONS.md`
+
+## 📝 Coding Principles
+
+### Component Strategy
+- Use shadcn/ui components always (no custom styling)
+- Extract components at 300+ lines
+- Memoize expensive list renders
+
+### State Management
+```typescript
+// Global state (Zustand)
+const { filters, setFilter } = useFilterStore()
+
+// Server state (React Query)
+const { data, isLoading } = useListings(filters)
+
+// URL state (custom hook)
+const { syncedFilters } = useUrlSync()
+```
+
+### Error Handling
+```typescript
+// Always Danish user messages
+catch (error) {
+  setError('Der opstod en fejl ved indlæsning af biler')
+  console.error('Listing fetch error:', error) // English for logs
+}
+```
 
 ## Development Commands
 
-### Core Development Workflow
 ```bash
-npm install          # Install dependencies (Node.js 18+ required)
-npm run dev          # Start development server with instant HMR (default port)
-npm run build        # TypeScript check + Vite build for production
-npm run preview      # Preview production build on port 4173
-npm run lint         # ESLint code quality checking
+# Core Development
+npm install              # Install dependencies
+npm run dev              # Start dev server
+npm run build            # Production build
+npm run preview          # Preview prod build
+npm run lint             # Check code quality
+
+# Testing
+npm run test             # Watch mode
+npm run test:run         # Single run (CI)
+npm run test:coverage    # Coverage report
+
+# Edge Functions Deployment (14 functions)
+supabase functions deploy admin-listing-operations
+supabase functions deploy admin-seller-operations
+supabase functions deploy admin-image-operations
+supabase functions deploy admin-reference-operations
+supabase functions deploy ai-extract-vehicles
+supabase functions deploy apply-extraction-changes
+supabase functions deploy compare-extracted-listings
+supabase functions deploy calculate-lease-score
+supabase functions deploy batch-calculate-lease-scores
+supabase functions deploy pdf-proxy
+supabase functions deploy manage-prompts
+supabase functions deploy remove-bg
+supabase functions deploy staging-check
+supabase functions deploy test-function
 ```
 
-### Testing Commands
-```bash
-npm run test                  # Interactive test mode with watch
-npm run test:run             # Run all tests once (CI mode)
-npm run test:coverage        # Generate coverage reports (90% functions, 80% branches)
-npm run test:refactored      # Run tests for Phase 1 refactored components
-npm run build:test           # Test + Build pipeline for CI/CD integration
-```
+## Technology Stack
 
-### Specialized Operations
-```bash
-# AI PDF Processing
-npm run pdf:test             # Test PDF processing with sample files
-npm run pdf:deploy           # Deploy Edge Functions to Supabase
+- **Frontend**: React 19.1.0 + TypeScript 5.8.3 + Vite 6.3.5
+- **UI**: Tailwind CSS 4 + shadcn/ui components
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **State**: Zustand + React Query 5
+- **Testing**: Vitest + React Testing Library
+- **Language**: Danish UI (da-DK)
 
-# Database Operations
-supabase db start           # Start local Supabase instance
-supabase db reset           # Reset local database with fresh migrations
-supabase functions serve    # Serve Edge Functions locally
+**Full stack details**: `docs/archive/TECHNOLOGY_STACK.md`
 
-# Complete Edge Functions Deployment
-supabase functions deploy admin-listing-operations     # Deploy listing CRUD
-supabase functions deploy admin-seller-operations      # Deploy seller management  
-supabase functions deploy admin-image-operations       # Deploy image upload
-supabase functions deploy admin-reference-operations   # Deploy reference data
-supabase functions deploy ai-extract-vehicles          # Deploy AI PDF extraction
-supabase functions deploy apply-extraction-changes     # Deploy extraction application
-supabase functions deploy compare-extracted-listings   # Deploy listing comparison
-supabase functions deploy calculate-lease-score        # Deploy individual lease scoring
-supabase functions deploy batch-calculate-lease-scores # Deploy bulk lease scoring
-supabase functions deploy pdf-proxy                    # Deploy secure PDF proxy
-supabase functions deploy manage-prompts               # Deploy prompt management
-supabase functions deploy remove-bg                    # Deploy background removal
-```
+## Project Structure
 
-## Technology Stack Overview
-
-### Enterprise-Grade Stack
-- **Frontend**: React 19.1.0 with modern hooks and Suspense
-- **Build System**: Vite 6.3.5 with optimized HMR and code splitting
-- **Styling**: Tailwind CSS 4.1.8 + shadcn/ui (40+ components) with Radix UI primitives
-- **Backend**: Supabase with PostgreSQL, Row Level Security, and Edge Functions
-- **Routing**: React Router 7.6.2 with lazy loading and nested routes
-- **State Management**: Zustand 5.0.5 + React Query 5.80.7 for optimal caching
-- **AI Integration**: Multi-provider system (OpenAI GPT-3.5/4, Anthropic Claude) via secure Edge Functions
-- **Testing**: Vitest 3.2.4 + React Testing Library 16.3.0 + MSW 2.10.2
-- **Type Safety**: TypeScript 5.8.3 with strict configuration
-- **Icons**: Lucide React 0.513.0 (513+ icons)
-- **Language**: Danish-first interface (da-DK localization)
-
-### Project Structure
 ```
 src/
-├── components/           # Comprehensive React component system
-│   ├── ui/              # shadcn/ui component library (40+ components)
-│   ├── admin/           # Comprehensive admin interface
-│   ├── mobile-filters/  # Mobile-optimized filter system
-│   ├── shared/filters/  # Reusable filter components
-│   ├── layout/          # Application layout system
-│   ├── listings/        # Car listing display components
-│   └── error/           # Error handling components
-├── pages/               # Route components with lazy loading
-├── hooks/               # Advanced custom React hooks (35+ hooks)
-├── services/            # Business logic and external integrations
-│   └── ai-extraction/   # AI-powered PDF extraction system
-├── stores/              # Global state management
-├── lib/                 # Core utilities and configurations
-├── types/               # Comprehensive TypeScript definitions
-├── test/                # Testing infrastructure
-└── styles/              # Global styles and themes
+├── components/ui/       # shadcn/ui components
+├── pages/              # Route components
+├── hooks/              # Custom React hooks
+├── services/           # Business logic
+├── stores/             # Zustand stores
+├── lib/                # Utilities
+└── types/              # TypeScript types
 ```
 
-## Core Development Patterns
+## Edge Functions Reference
 
-### shadcn/ui + Tailwind CSS Best Practices
-**CRITICAL**: Always use shadcn/ui components for consistent styling
+### Admin Operations
+- **admin-listing-operations** - CRUD for car listings with RLS bypass
+- **admin-seller-operations** - Dealer/seller management
+- **admin-image-operations** - Image upload with background processing
+- **admin-reference-operations** - Manage makes, models, body types, etc.
 
+### AI & Extraction
+- **ai-extract-vehicles** - Extract car data from PDFs (OpenAI/Claude)
+- **apply-extraction-changes** - Apply reviewed changes (bypasses RLS)
+- **compare-extracted-listings** - Preview extraction changes
+- **pdf-proxy** - Secure PDF download with SSRF protection
+
+### Scoring & Analysis
+- **calculate-lease-score** - Score individual listings
+- **batch-calculate-lease-scores** - Bulk scoring with specific IDs
+
+### Utilities
+- **manage-prompts** - AI prompt version management
+- **remove-bg** - Remove image backgrounds
+- **staging-check** - Verify staging environment
+- **test-function** - Development testing
+
+**Detailed specs**: `docs/EDGE_FUNCTIONS.md`
+
+## Core Patterns
+
+### Component Pattern
 ```tsx
-// ✅ Correct approach - Use shadcn/ui components
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-<Card className="shadow-md border border-border">
-  <CardHeader>
-    <CardTitle className="text-primary">{car.make} {car.model}</CardTitle>
-  </CardHeader>
-  <CardContent>
-    <Button variant="default" size="lg">View Details</Button>
-  </CardContent>
-</Card>
-
-// ❌ Avoid custom CSS classes - use shadcn/ui components instead
-<div className="custom-card">  <!-- Use shadcn/ui Card component -->
-```
-
-### State Management Pattern
-```typescript
-// Global state with Zustand
-import { useFilterStore } from '@/stores/consolidatedFilterStore'
-
-const { filters, setFilter, clearFilters } = useFilterStore()
-
-// Local component state with React hooks
-const [loading, setLoading] = useState(false)
-const [error, setError] = useState<string | null>(null)
-```
-
-### Standard React Component Structure
-```tsx
-import React, { useState, useEffect } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase'
-import { Car } from '@/types'
-
-interface ListingCardProps {
-  carId: string
-  showActions?: boolean
-  onCarUpdated?: (car: Car) => void
-  onError?: (error: string) => void
-}
-
-export const ListingCard: React.FC<ListingCardProps> = ({
-  carId,
-  showActions = true,
-  onCarUpdated,
-  onError
-}) => {
-  // State
-  const [car, setCar] = useState<Car | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  // Computed values
-  const displayPrice = car?.monthly_price?.toLocaleString('da-DK') || '–'
-
-  // Effects
-  useEffect(() => {
-    fetchCar()
-  }, [carId])
-
-  // Methods
-  const fetchCar = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const { data, error: fetchError } = await supabase
-        .from('full_listing_view')
-        .select('*')
-        .eq('listing_id', carId)
-        .single()
-      
-      if (fetchError) throw fetchError
-      
-      setCar(data)
-      onCarUpdated?.(data)
-    } catch (err) {
-      console.error('Error fetching car:', err)
-      const errorMessage = 'Der opstod en fejl ved indlæsning'
-      setError(errorMessage)
-      onError?.(errorMessage)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Loading state
-  if (loading) {
-    return (
-      <Card className="animate-pulse">
-        <div className="bg-muted rounded-lg h-48" />
-      </Card>
-    )
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="p-6">
-          <p className="text-destructive">{error}</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // Content
-  if (!car) return null
-
+export const ListingCard: React.FC<Props> = ({ listing }) => {
+  const [loading, setLoading] = useState(false)
+  const price = listing.monthly_price?.toLocaleString('da-DK') || '–'
+  
+  if (loading) return <Card className="animate-pulse">...</Card>
+  
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-primary">{car.make} {car.model}</CardTitle>
-      </CardHeader>
       <CardContent>
-        <p className="text-2xl font-bold">{displayPrice} kr/md</p>
-        {showActions && (
-          <div className="mt-4 flex gap-2">
-            <Button variant="default">Se detaljer</Button>
-            <Button variant="outline">Kontakt</Button>
-          </div>
-        )}
+        <h3>{listing.make} {listing.model}</h3>
+        <p className="text-2xl font-bold">{price} kr/md</p>
+        <Button>Se detaljer</Button>
       </CardContent>
     </Card>
   )
 }
 ```
 
-### Supabase Query Patterns
+### Query Pattern
 ```typescript
-// Standard query with filtering
-const fetchCars = async (filters = {}) => {
-  try {
-    let query = supabase.from('full_listing_view').select('*')
-    
-    // Apply filters conditionally
-    if (filters.make) query = query.eq('make', filters.make)
-    if (filters.bodyType) query = query.eq('body_type', filters.bodyType)
-    if (filters.priceRange) {
-      query = query
-        .gte('monthly_price', filters.priceRange.min)
-        .lte('monthly_price', filters.priceRange.max)
-    }
-    
-    const { data, error } = await query
-      .order('created_at', { ascending: false })
-      .limit(20)
-    
-    if (error) throw error
-    return data || []
-    
-  } catch (err) {
-    console.error('Error fetching cars:', err)
-    throw new Error('Der opstod en fejl ved hentning af biler')
-  }
-}
-```
-
-## Admin Edge Functions Architecture
-
-### Secure Admin Operations
-All admin operations use secure Edge Functions with service role authentication to bypass RLS restrictions while maintaining security and validation.
-
-**Available Edge Functions:**
-
-**Admin Operations:**
-- **admin-listing-operations** - Car listings CRUD with offers management
-- **admin-seller-operations** - Seller management with comprehensive validation
-- **admin-image-operations** - Image upload with background processing
-- **admin-reference-operations** - Reference data CRUD for all automotive tables
-
-**AI & Extraction:**
-- **ai-extract-vehicles** - AI-powered PDF extraction with multi-provider support
-- **apply-extraction-changes** - Secure application of extraction changes (bypasses RLS)
-- **compare-extracted-listings** - Compare extracted listings with existing inventory
-- **pdf-proxy** - Secure PDF download proxy with SSRF protection
-
-**Scoring & Analysis:**
-- **calculate-lease-score** - Individual lease score calculation
-- **batch-calculate-lease-scores** - Bulk lease score processing with specific ID targeting
-
-**Utilities:**
-- **manage-prompts** - AI prompt management and versioning
-- **remove-bg** - Background removal for images
-
-### Admin Edge Function Pattern
-```typescript
-// Always use admin Edge Functions for admin operations
-import { useAdminListingOperations } from '@/hooks/useAdminListingOperations'
-
-const AdminListingForm = () => {
-  const { createListing, updateListing, isLoading } = useAdminListingOperations()
+const fetchListings = async (filters: Filters) => {
+  let query = supabase
+    .from('full_listing_view')
+    .select('*')
   
-  const handleSubmit = async (listingData) => {
-    try {
-      const result = await createListing({
-        listingData,
-        offers: undefined // Optional offers array
-      })
-      
-      // Success handling is automatic via React Query
-      navigate('/admin/listings')
-    } catch (error) {
-      // Error handling is automatic via toast notifications
-      console.error('Creation failed:', error)
-    }
-  }
+  if (filters.make) query = query.eq('make', filters.make)
+  if (filters.maxPrice) query = query.lte('monthly_price', filters.maxPrice)
+  
+  const { data, error } = await query.order('created_at', { ascending: false })
+  
+  if (error) throw new Error('Der opstod en fejl')
+  return data
 }
 ```
 
-### Admin Hook Usage Examples
-```typescript
-// Seller operations
-import { useAdminSellerOperations } from '@/hooks/useAdminSellerOperations'
-const { createSeller, updateSeller, deleteSeller } = useAdminSellerOperations()
-
-// Reference data operations  
-import { useAdminReferenceOperations } from '@/hooks/useAdminReferenceOperations'
-const { createReference, updateReference } = useAdminReferenceOperations()
-
-// Image operations
-import { useAdminImageUpload } from '@/hooks/useAdminImageUpload'
-const { uploadImage, isUploading } = useAdminImageUpload()
-
-// Extraction operations
-import { useListingComparison } from '@/hooks/useListingComparison'
-const { applySelectedChanges, isApplyingSelectedChanges } = useListingComparison()
-```
-
-### Error Handling and Validation
-All admin Edge Functions include:
-- **Danish localization** for all error messages
-- **Comprehensive validation** with detailed error feedback
-- **React Query integration** with automatic cache invalidation
-- **Loading states** and error boundaries
-- **Graceful fallback** for background processing failures
-
-### Security Features
-- **Service role authentication** bypasses RLS restrictions
-- **Server-side validation** prevents malicious input
-- **Audit logging** for all admin operations
-- **Zero breaking changes** to existing admin workflows
-
-## AI Extraction Edge Functions
-
-### Extraction Workflow Architecture
-The AI extraction system uses multiple Edge Functions for secure, scalable PDF processing:
-
-```
-PDF Upload → ai-extract-vehicles → compare-extracted-listings → apply-extraction-changes
-    ↓              ↓                        ↓                           ↓
-PDF Proxy    AI Processing           Comparison Review           Database Updates
-```
-
-### Key Extraction Edge Functions
-
-#### **apply-extraction-changes**
-- **Purpose**: Secure application of extraction changes with service role permissions
-- **Solves**: RLS policy violations when creating/updating/deleting listings from frontend
-- **Input**: `sessionId`, `selectedChangeIds[]`, `appliedBy`
-- **Features**:
-  - **Full CRUD Support**: CREATE, UPDATE, DELETE operations
-  - **RLS Bypass**: Uses service_role to bypass Row Level Security
-  - **Error Handling**: Per-change error tracking with detailed logging
-  - **Input Validation**: UUID validation, session verification
-  - **Comprehensive Response**: Applied counts, error details, session metadata
-
-```typescript
-// Usage in frontend
-import { useListingComparison } from '@/hooks/useListingComparison'
-
-const { applySelectedChanges } = useListingComparison()
-
-await applySelectedChanges({
-  sessionId: 'uuid-session-id',
-  selectedChangeIds: ['uuid1', 'uuid2', 'uuid3'],
-  appliedBy: 'admin'
-})
-```
-
-#### **pdf-proxy**
-- **Purpose**: Secure PDF download with SSRF protection and dynamic dealer whitelisting
-- **Features**:
-  - **Database-driven whitelisting**: Validates URLs against dealer PDF URLs in database
-  - **Static fallback**: Maintains backward compatibility with hardcoded trusted domains
-  - **SSRF Protection**: Comprehensive IP blocking and DNS validation
-  - **Performance caching**: 5-minute TTL for domain validation
-  - **HTTPS enforcement**: Only allows secure connections
-
-#### **ai-extract-vehicles**
-- **Purpose**: AI-powered vehicle extraction from PDF price lists
-- **Features**:
-  - **Multi-provider support**: OpenAI GPT-3.5/4, Anthropic Claude
-  - **Cost tracking**: Comprehensive usage logging and budget management
-  - **Rate limiting**: Prevents API abuse and cost overruns
-  - **Error recovery**: Intelligent retry with exponential backoff
-
-### Extraction Change Types
-
-The system supports all extraction change types through `apply-extraction-changes`:
-
-**CREATE Operations:**
-- Insert new listings with complete reference lookups (make_id, model_id, etc.)
-- Create lease pricing records from extracted offers
-- Validate required references before insertion
-
-**UPDATE Operations:**
-- Differential updates (only modify changed fields)
-- Reference resolution while preserving existing data
-- Replace lease pricing with new offers
-
-**DELETE Operations:**  
-- Cascaded deletion with proper cleanup order:
-  1. Remove extraction_listing_changes references
-  2. Delete price_change_log entries
-  3. Delete lease_pricing records
-  4. Delete listings record
-
-**Error Handling:**
-- Individual change error tracking
-- Session status management (completed vs partially_applied)
-- Comprehensive error logging with change-specific context
-
-## Lease Score System
-
-### Overview
-The lease score system provides intelligent scoring of car listings based on value analysis across multiple pricing offers. Each listing can have multiple lease pricing options, and the system calculates the best possible score.
-
-### Scoring Algorithm
-The lease score uses a weighted scoring system (0-100 scale):
-
-```typescript
-// Scoring weights and calculation
-const totalScore = Math.round(
-  (monthlyRateScore * 0.45) +     // 45% - Monthly rate vs retail price
-  (mileageScore * 0.35) +         // 35% - Mileage allowance value  
-  (flexibilityScore * 0.20)       // 20% - Contract term flexibility
-)
-```
-
-### Score Components
-
-**1. Monthly Rate Score (45% weight)**
-- Calculated as `(monthlyPrice / retailPrice) * 100`
-- Score bands:
-  - < 0.9%: 100 points (excellent)
-  - < 1.1%: 90 points (very good)
-  - < 1.3%: 80 points (good)
-  - < 1.5%: 70 points (fair)
-  - < 1.7%: 60 points (below average)
-  - < 1.9%: 50 points (poor)
-  - < 2.1%: 40 points (very poor)
-  - ≥ 2.1%: 25 points (extremely poor)
-
-**2. Mileage Score (35% weight)**
-- Normalized to 15,000 km baseline: `mileagePerYear / 15000`
-- Higher mileage allowance = better value = higher score
-- Linear scaling from 50-100 points
-
-**3. Flexibility Score (20% weight)**
-- Based on contract period length
-- 36 months: 75 points (standard)
-- 24 months: 50 points (less flexible)
-- 48+ months: 100 points (most flexible)
-
-### Multi-Offer Processing
-When a listing has multiple lease offers:
-
-1. **Calculate Individual Scores**: Each pricing option gets its own score
-2. **Select Best Score**: The highest total score becomes the listing's official score
-3. **Store Winner Details**: The winning offer's pricing_id and breakdown are stored
-
-```typescript
-// Multiple offers example
-const scores = listing.lease_pricing.map(pricing => ({
-  pricingId: pricing.id,
-  score: calculateLeaseScore({
-    retailPrice: listing.retail_price,
-    monthlyPrice: pricing.monthly_price,
-    contractMonths: pricing.period_months,
-    mileagePerYear: pricing.mileage_per_year
-  })
-}))
-
-// Use the best score (highest total)
-const bestScore = scores.reduce((best, current) => 
-  current.score.totalScore > best.score.totalScore ? current : best
-)
-```
-
-### Database Schema
-```sql
--- New fields added to listings table
-ALTER TABLE listings ADD COLUMN lease_score INTEGER;
-ALTER TABLE listings ADD COLUMN lease_score_calculated_at TIMESTAMPTZ;
-ALTER TABLE listings ADD COLUMN lease_score_breakdown JSONB;
-
--- Updated full_listing_view includes lease score fields
--- See migration: supabase/migrations/20250721_update_full_listing_view_with_lease_score.sql
-```
-
-### Admin Interface Integration
-
-**Bulk Calculation Hook**
-```typescript
-import { useBulkLeaseScoreCalculation } from '@/hooks/useBulkLeaseScoreCalculation'
-
-const { mutate: calculateScores, isLoading } = useBulkLeaseScoreCalculation()
-
-// Calculate scores for selected listings
-calculateScores(selectedListings) // Passes specific listing IDs
-```
-
-**Score Display Component**
-```typescript
-import { LeaseScoreBadge } from '@/components/ui/LeaseScoreBadge'
-
-<LeaseScoreBadge
-  score={listing.lease_score}
-  breakdown={listing.lease_score_breakdown}
-  calculatedAt={listing.lease_score_calculated_at}
-  retailPrice={listing.retail_price}
-  showTooltip={true}
-/>
-```
-
-**Visual Score Indicators**
-- **Green (≥80)**: Excellent value deals
-- **Yellow (60-79)**: Good value deals  
-- **Red (<60)**: Below-average value deals
-- **Gray**: No score calculated or missing retail price
-
-### Edge Functions
-
-**Individual Calculation**
-- Endpoint: `calculate-lease-score`
-- Input: Raw pricing data (retailPrice, monthlyPrice, etc.)
-- Returns: Complete score breakdown
-
-**Bulk Processing**
-- Endpoint: `batch-calculate-lease-scores?ids=id1,id2&force=true`
-- Features specific listing targeting
-- Processes multiple offers per listing
-- Automatic cache invalidation
-
-### Utilities
-
-**Verification Script**
-```bash
-node scripts/check-lease-score-migration.js  # Verify migration applied
-```
-
-**Database Migration**
-```bash
-# Applied via Supabase Dashboard
-# File: apply-migration-correct.sql (contains the manual migration)
-```
-
-### Troubleshooting
-
-**Score Not Showing**
-1. Check `retail_price` exists on listing
-2. Verify lease pricing options exist
-3. Confirm score calculation succeeded
-4. Hard refresh browser to clear React Query cache
-
-**Calculation Fails**
-1. Check listing has `lease_pricing` records
-2. Verify `retail_price` is not null
-3. Review Edge Function logs for errors
-
-**Cache Issues**
-- Fixed: React Query cache invalidation uses proper query keys
-- Frontend now targets specific listing IDs instead of limit-based processing
-- Immediate UI updates after successful calculation
-
-## Performance Guidelines
-
-### Bundle Size Targets
-- **CSS**: ~109KB (achieved with shadcn/ui tree-shaking)
-- **JavaScript**: ~292KB (achieved with strategic code splitting)
-- **Images**: Lazy loading with intersection observer optimization
-- **Critical Path**: Minimized with route-based code splitting
-
-### React Performance Patterns
-- **Always** memoize expensive listing components with React.memo
-- **Use** custom hooks for complex state logic (useUrlSync, useImageLazyLoading)
-- **Implement** shared intersection observers for image loading
-- **Break down** components over 300 lines into focused pieces
-- **Optimize** with useCallback and useMemo for stable references
-
-### Custom Hooks for Optimization
-```typescript
-// URL synchronization
-import { useUrlSync } from '@/hooks/useUrlSync'
-const { currentFilters, sortOrder } = useUrlSync()
-
-// Optimized image loading
-import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
-const { imageRef, imageLoaded, imageError, retryImage, canRetry } = useImageLazyLoading(imageUrl)
-
-// Component memoization
-const ListingCard = React.memo(({ car, loading }) => {
-  // Implementation with memoized callbacks
-})
-```
-
-## Danish Localization Requirements
-
-### Utilities
-```typescript
-// lib/utils.ts
-export const formatPrice = (price?: number): string => 
-  price ? `${price.toLocaleString('da-DK')} kr/md` : '–'
-
-export const formatDate = (date: string | Date): string => 
-  new Date(date).toLocaleDateString('da-DK')
-
-export const errorMessages = {
-  fetchError: 'Der opstod en fejl ved hentning af data',
-  saveError: 'Kunne ikke gemme ændringerne',
-  notFound: 'Ressourcen blev ikke fundet',
-  networkError: 'Netværksfejl - prøv igen senere'
-} as const
-```
-
-### Localization Standards
-- All UI text must be in Danish
-- Use `toLocaleString('da-DK')` for number formatting
-- Error messages in Danish: "Der opstod en fejl ved..."
-
-## Code Quality Requirements
-
-### Mandatory Standards
-- **Always** use TypeScript with proper typing
-- **Always** include loading and error states
-- **Always** use Danish error messages
-- **Always** format prices with da-DK locale  
-- **Always** use shadcn/ui components instead of custom styling
-- **Never** use console.log (use console.error for actual errors only)
-- **Always** implement proper accessibility with shadcn/ui
-- **Always** use React.memo for expensive components when appropriate
-- **Extract** complex logic to custom hooks for reusability
-- **Break down** large components (>300 lines) into focused pieces
-- **Use** shared components for common patterns (headers, search inputs)
-- **Optimize** with useCallback and useMemo for performance-critical paths
-
-### File Naming Conventions
-- **Components**: PascalCase with .tsx extension (`ListingCard.tsx`)
-- **Pages**: PascalCase with Page suffix (`ListingsPage.tsx`)
-- **Hooks**: camelCase with "use" prefix (`useUrlSync.ts`, `useImageLazyLoading.ts`)
-- **Types**: PascalCase in types file (`types/index.ts`)
-- **Utilities**: camelCase (`utils.ts`)
-- **Mobile Components**: Group in subdirectories (`mobile-filters/MobileViewHeader.tsx`)
-- **Shared Components**: Organize by feature or functionality
+**More patterns**: `docs/PATTERNS.md`
 
 ## Environment Configuration
 
-### Core Environment Variables
 ```bash
-# Supabase Configuration (Required)
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# AI Integration (Feature Flag Only - API keys stored securely in Edge Functions)
-# Note: Actual API keys are stored server-side in Supabase Edge Functions for security
+# Required
+VITE_SUPABASE_URL=your_project_url
+VITE_SUPABASE_ANON_KEY=your_anon_key
 
 # Feature Flags
-VITE_AI_EXTRACTION_ENABLED=false             # Enable AI PDF extraction features
-VITE_BATCH_PROCESSING_ENABLED=true           # Enable batch processing workflows
-VITE_MOBILE_FILTERS_ENABLED=true             # Enable mobile filter enhancements
-
-# Development & Debugging
-VITE_DEBUG_MODE=false                        # Enable debug logging
-VITE_PERFORMANCE_MONITORING=true             # Enable performance tracking
+VITE_AI_EXTRACTION_ENABLED=true
+VITE_MOBILE_FILTERS_ENABLED=true
 ```
 
-### Security Best Practices
-- **All API keys** stored in environment variables (never in code)
-- **Local development** uses `.env.local` (gitignored)
-- **Production secrets** managed through Vercel environment variables
-- **Staging environment** uses separate API keys and databases
-- **Feature flags** enable safe deployment of new features
+**Security note**: API keys stored in Edge Functions, not client
 
-## Database Architecture
+## Database Overview
 
-### Complete Database Schema (Updated July 27, 2025) - Phase 3 Simplified
+### Core Tables
+- **listings** - Car inventory with pricing
+- **lease_pricing** - Multiple offers per listing
+- **sellers** - Dealers and importers
+- **extraction_sessions** - PDF processing history
+- **makes, models, etc.** - Reference data
 
-#### Core Business Tables (10 tables)
-- **listings** (33 columns) - Primary car listings with lease scores and pricing
-- **lease_pricing** (6 columns) - Lease pricing offers for listings
-- **sellers** (15 columns) - Car dealers and sellers
-- **makes** (2 columns) - Car manufacturers
-- **models** (3 columns) - Car models by manufacturer
-- **body_types** (2 columns) - Vehicle body type reference
-- **fuel_types** (2 columns) - Fuel type reference  
-- **transmissions** (2 columns) - Transmission type reference
-- **colours** (2 columns) - Color reference data
-- **body_type_mapping** (2 columns) - Body type mapping for imports
+### Primary View
+- **full_listing_view** - Denormalized data for performance
 
-#### AI & Extraction System (6 tables)
-- **api_call_logs** (14 columns) - Unified monitoring for all AI API calls and cost tracking
-- **responses_api_configs** (11 columns) - Simplified AI configuration management
-- **input_schemas** (6 columns) - Input schema definitions
-- **text_format_configs** (7 columns) - Text formatting configurations
-- **extraction_sessions** (28 columns) - AI extraction session tracking
-- **extraction_listing_changes** (20 columns) - Changes from AI extractions
-- **processing_jobs** (22 columns) - Background job processing
+**Complete schema**: `docs/DATABASE_SCHEMA.md`
 
-#### Dealer Configuration (1 table)
-- **dealers** (7 columns) - Dealer configuration and settings
+## Common Tasks
 
-#### Views (2 views)
-- **full_listing_view** - Complete denormalized listing data with lease scores (PRIMARY DATA SOURCE)
-- **extraction_session_summary** - Extraction session summary statistics
+### Add New Listing
+1. Navigate to `/admin/listings`
+2. Click "Ny bil" 
+3. Fill required fields
+4. Add lease offers
 
-#### Database Functions (15 functions)
-- **apply_extraction_session_changes** - Apply extraction session changes
-- **apply_selected_extraction_changes** - Apply selected extraction changes
-- **check_inference_rate_alert** - Monitor inference rate alerts
-- **config_exists** - Check if configuration exists
-- **create_responses_config** - Create new responses configuration
-- **detect_extraction_deletions** - Detect deletions in extractions
-- **get_current_month_ai_spending** - Get current month AI spending
-- **get_dealer_existing_listings** - Get dealer's existing listings
-- **get_extraction_reference_data** - Get extraction reference data
-- **get_responses_api_config** - Get responses API configuration
-- **is_admin** - Check admin permissions
-- **log_api_call** - Log API calls for monitoring
-- **mark_lease_score_stale** - Mark lease scores as needing recalculation
-- **set_config_active** - Set configuration as active
-- **update_updated_at_column** - Update timestamp trigger
+### Test PDF Extraction
+1. Go to `/admin/sellers`
+2. Select dealer
+3. Upload PDF via "Upload PDF"
+4. Review at `/admin/ai-extractions`
 
-**Total Schema**: 18 tables + 2 views + 15 functions = Maximally streamlined, efficient database
+### Deploy to Staging
+```bash
+npm run staging:deploy
+# Check https://staging.leasingborsen.dk
+```
 
-### Database Cleanup & Simplification (July 2025) ✅ COMPLETED
-- **Phase 1 COMPLETED**: Removed 3 unused integration tables (`integration_run_logs`, `integration_runs`, `integrations`)
-- **Phase 2 COMPLETED**: Removed 4 legacy tables (`listing_offers`, `price_change_log`, `listing_changes`, `import_logs`)
-- **Simplification Phase 1**: Removed 2 legacy AI tables (`prompts`, `prompt_versions`)
-- **Simplification Phase 2**: Removed 3 analytics objects (`migration_metrics` table, `variant_source_distribution` view, `dealer_migration_metrics` view)
-- **Simplification Phase 3A+3B**: Removed 5 additional objects (`sellers_with_make` view, `monthly_ai_usage` view, `dealer_configs` table, `ai_usage_log` table, `config_versions` table)
-- **Phase 3C COMPLETED**: Removed 2 legacy batch import tables (`batch_imports`, `batch_import_items`) and associated frontend components
-- **Edge Functions Updated**: All functions updated to use simplified architecture
-- **Code Updates**: `useSellers.ts` updated to use `extraction_sessions`, legacy batch review system removed
-- **Total Result**: ~55-60% database complexity reduction with zero functional impact
-- **Unified Monitoring**: All AI monitoring now consolidated in `api_call_logs` table
-- **Documentation**: See `docs/DATABASE_CLEANUP_COMPREHENSIVE_PLAN.md` for complete analysis
-- **Final State**: 18 tables + 2 views + 15 functions (down from original ~30+ tables + 6+ views)
-- **Complete Migration**: Legacy batch import workflow fully replaced by modern AI extraction system
+### Debug Extraction Failure
+1. Check session in Supabase dashboard
+2. Review `api_call_logs` for AI errors
+3. Verify PDF format matches expected structure
 
-### Query Patterns
-- **Performance queries** use `full_listing_view` with intelligent deduplication
-- **Admin operations** use direct table access with proper filtering
-- **AI services** use specialized views for extraction workflows
+## Danish Localization
 
-### Security
-- **Advanced Row Level Security (RLS)** with multi-role policies
-- **admin** role: Full access to all data and operations
-- **service_role**: Backend service access for Edge Functions
-- **authenticated**: Limited read access for public features
+```typescript
+// Price formatting
+const formatPrice = (price?: number) => 
+  price ? `${price.toLocaleString('da-DK')} kr/md` : '–'
 
----
+// Common messages
+const messages = {
+  loading: 'Indlæser...',
+  error: 'Der opstod en fejl',
+  noResults: 'Ingen resultater fundet',
+  save: 'Gem',
+  cancel: 'Annuller'
+}
+```
 
-## 🎯 Enterprise Application Summary
+## Troubleshooting
 
-This React application has evolved from a Vue migration into a **sophisticated, enterprise-grade car leasing platform** with:
+### PDF Extraction Issues
 
-### Key Achievements
-- **🚀 Technology Excellence**: React 19.1.0 + TypeScript 5.8.3 + Vite 6.3.5
-- **🤖 AI-Powered Innovation**: Secure Edge Function-based AI system with comprehensive cost controls
-- **📊 Admin Interface Sophistication**: Complete CRUD operations and batch workflows
-- **⚡ Performance & Quality**: Bundle optimization meeting production targets
-- **🧪 Professional Testing**: 90% function coverage with comprehensive testing
-- **📱 Mobile-First Design**: Dedicated mobile components and touch optimization
-- **🔒 Enterprise Security**: Multi-role RLS and comprehensive audit trails
+**Problem**: "Failed to extract vehicles"
+- Check `api_call_logs` for AI provider errors
+- Verify PDF is text-based, not scanned image
+- Confirm dealer_id exists in sellers table
 
-### Development Experience
-- **Professional tooling** with instant HMR and TypeScript integration
-- **Comprehensive testing** with high coverage requirements
-- **Danish localization** throughout the entire application
-- **Error recovery** with intelligent retry mechanisms
-- **Performance monitoring** with bundle analysis and optimization
-- **AI cost tracking** with budget management and usage analytics
+**Problem**: "Changes not applying"
+- Ensure using admin role (`is_admin()` must return true)
+- Check browser console for RLS errors
+- Verify extraction_session status is 'pending_review'
 
-### Recent Critical Improvements (July 2025)
-- **Extraction System Fixes**: Resolved column reference issues (removed `engine_info`, `colour`, fixed `duration_months` → `period_months`)
-- **Deletion Logic Overhaul**: Removed model-specific deletion restrictions - now ALL unmatched listings are marked for deletion
-- **Data Type Corrections**: Fixed DECIMAL vs INTEGER mismatches in lease_pricing table
-- **Duplicate Handling**: Added ON CONFLICT handling for duplicate offers from AI extraction
-- **Foreign Key Management**: Enhanced deletion process to remove ALL references before deleting listings
+### Performance Issues
 
-### Admin Edge Functions Implementation (January 2025)
-- **Complete CRUD Operations**: Implemented secure Edge Functions for all admin functionality
-- **RLS Authentication Resolution**: Service role authentication bypasses RLS restrictions
-- **Image Upload Stability**: Background processing error handling prevents upload failures
-- **Backward Compatibility**: Zero breaking changes to existing admin workflows
-- **Enterprise Security**: Server-side validation with comprehensive error handling
-- **React Query Integration**: Proper caching, loading states, and error boundaries
+**Slow listing load**
+- Use `full_listing_view` instead of joins
+- Add `.limit(20)` to queries
+- Check for missing database indexes
 
-⚠️ **IMPORTANT**: With the removal of model-specific deletion restrictions, uploading partial inventories (e.g., single model PDFs) will mark ALL unmatched listings for deletion. Always review extraction results carefully before applying changes.
+### Cache Problems
+- Hard refresh: Ctrl+Shift+R
+- Clear React Query cache in dev tools
+- Check `lease_score_calculated_at` timestamp
 
-This application represents a **successful Vue to React migration** that has resulted in a feature-rich, performant, and maintainable enterprise platform ready for commercial deployment in the Danish car leasing market.
+**More solutions**: `docs/TROUBLESHOOTING.md`
+
+## Quick Links
+
+### Documentation
+- Session Log: `docs/SESSION_LOG.md`
+- AI System: `docs/archive/AI_EXTRACTION_SYSTEM.md`
+- Testing: `docs/archive/TESTING_INSTRUCTIONS.md`
+- Database: `docs/DATABASE_SCHEMA.md`
+
+### External Resources
+- [Supabase Dashboard](https://app.supabase.com)
+- [Vercel Deployments](https://vercel.com)
+- [shadcn/ui Docs](https://ui.shadcn.com)
+
+## Summary
+
+This platform automates Danish car leasing comparisons through:
+- **AI-powered PDF extraction** for dealer inventory updates
+- **Comprehensive admin interface** for data management
+- **Danish-first UX** with proper localization
+- **Secure Edge Functions** bypassing RLS for admin operations
+
+**Remember**: Always document your session before closing!
