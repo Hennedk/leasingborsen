@@ -3,8 +3,8 @@ import { aiVehicleExtractor } from '../aiExtractor'
 import { supabase } from '@/lib/supabase'
 
 // Mock fetch for Edge Function calls
-global.fetch = vi.fn()
-const mockFetch = fetch as Mock
+const mockFetch = vi.fn()
+global.fetch = mockFetch
 
 // Mock Supabase
 vi.mock('@/lib/supabase', () => ({
@@ -37,6 +37,7 @@ vi.mock('../costTracker', () => ({
 describe('AIVehicleExtractor - Edge Function Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockFetch.mockClear()
   })
 
   describe('Authentication', () => {
@@ -77,32 +78,45 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should call Edge Function with correct parameters', async () => {
-      const mockResponse = {
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          success: true,
-          vehicles: [{
-            make: 'Volkswagen',
-            model: 'ID.3',
-            variant: 'Life+',
-            horsepower: 170,
-            specifications: {
-              is_electric: true,
-              fuel_type: 'Elektrisk'
-            },
-            offers: [{
-              duration_months: 48,
-              mileage_km: 10000,
-              monthly_price: 3295
-            }],
-            confidence: 0.95
+      const mockResponseData = {
+        success: true,
+        vehicles: [{
+          make: 'Volkswagen',
+          model: 'ID.3',
+          variant: 'Life+',
+          horsepower: 170,
+          specifications: {
+            is_electric: true,
+            fuel_type: 'Elektrisk'
+          },
+          offers: [{
+            duration_months: 48,
+            mileage_km: 10000,
+            monthly_price: 3295
           }],
-          tokens_used: 150,
-          cost_estimate: 0.003,
-          confidence_score: 0.95
-        })
+          confidence: 0.95
+        }],
+        tokens_used: 150,
+        cost_estimate: 0.003,
+        confidence_score: 0.95
       }
 
+      // Create a proper mock response with all required properties
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: vi.fn().mockResolvedValue(mockResponseData),
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockResponseData)),
+        clone: vi.fn().mockReturnThis(),
+        body: null,
+        bodyUsed: false,
+        type: 'default' as ResponseType,
+        url: '/functions/v1/ai-extract-vehicles',
+        redirected: false
+      }
+      
       mockFetch.mockResolvedValue(mockResponse)
 
       const result = await aiVehicleExtractor.extractVehicles(
@@ -112,6 +126,9 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
         'seller-123',
         true
       )
+
+      // Debug: Log what calls were made
+      console.log('Mock fetch calls:', mockFetch.mock.calls)
 
       // Verify fetch was called correctly
       expect(mockFetch).toHaveBeenCalledWith('/functions/v1/ai-extract-vehicles', {
@@ -144,13 +161,16 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should handle 401 authentication errors', async () => {
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: false,
         status: 401,
-        json: vi.fn().mockResolvedValue({
-          error: 'Unauthorized'
-        })
-      })
+        statusText: 'Unauthorized',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: vi.fn().mockResolvedValue({ error: 'Unauthorized' }),
+        text: vi.fn().mockResolvedValue(JSON.stringify({ error: 'Unauthorized' })),
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       await expect(
         aiVehicleExtractor.extractVehicles('test text', undefined, undefined, undefined, false)
@@ -158,14 +178,22 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should handle 429 budget limit errors', async () => {
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: false,
         status: 429,
+        statusText: 'Too Many Requests',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: vi.fn().mockResolvedValue({
           error: 'Budget limit exceeded',
           details: 'Monthly budget exceeded'
-        })
-      })
+        }),
+        text: vi.fn().mockResolvedValue(JSON.stringify({
+          error: 'Budget limit exceeded',
+          details: 'Monthly budget exceeded'
+        })),
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       await expect(
         aiVehicleExtractor.extractVehicles('test text', undefined, undefined, undefined, false)
@@ -173,13 +201,20 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should handle generic server errors', async () => {
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: false,
         status: 500,
+        statusText: 'Internal Server Error',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
         json: vi.fn().mockResolvedValue({
           error: 'Internal server error'
-        })
-      })
+        }),
+        text: vi.fn().mockResolvedValue(JSON.stringify({
+          error: 'Internal server error'
+        })),
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       await expect(
         aiVehicleExtractor.extractVehicles('test text', undefined, undefined, undefined, false)
@@ -195,10 +230,16 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should handle malformed JSON responses', async () => {
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: true,
-        json: vi.fn().mockRejectedValue(new Error('Invalid JSON'))
-      })
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: vi.fn().mockRejectedValue(new Error('Invalid JSON')),
+        text: vi.fn().mockResolvedValue('invalid json'),
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       await expect(
         aiVehicleExtractor.extractVehicles('test text', undefined, undefined, undefined, false)
@@ -215,17 +256,23 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
     })
 
     it('should respect rate limiting for multiple requests', async () => {
+      const mockResponseData = {
+        success: true,
+        vehicles: [],
+        tokens_used: 100,
+        cost_estimate: 0.002,
+        confidence_score: 0.8
+      }
+      
       const mockResponse = {
         ok: true,
-        json: vi.fn().mockResolvedValue({
-          success: true,
-          vehicles: [],
-          tokens_used: 100,
-          cost_estimate: 0.002,
-          confidence_score: 0.8
-        })
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        json: vi.fn().mockResolvedValue(mockResponseData),
+        text: vi.fn().mockResolvedValue(JSON.stringify(mockResponseData)),
+        clone: vi.fn().mockReturnThis()
       }
-
       mockFetch.mockResolvedValue(mockResponse)
 
       // Test that multiple quick requests don't break the system
@@ -280,10 +327,13 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
         error: null
       })
 
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: true,
-        status: 200
-      })
+        status: 200,
+        statusText: 'OK',
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       const result = await aiVehicleExtractor.testConnection()
       expect(result).toBe(true)
@@ -295,10 +345,13 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
         error: null
       })
 
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: false,
-        status: 400
-      })
+        status: 400,
+        statusText: 'Bad Request',
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       const result = await aiVehicleExtractor.testConnection()
       expect(result).toBe(true) // 400 means endpoint exists
@@ -310,10 +363,13 @@ describe('AIVehicleExtractor - Edge Function Integration', () => {
         error: null
       })
 
-      mockFetch.mockResolvedValue({
+      const mockResponse = {
         ok: false,
-        status: 500
-      })
+        status: 500,
+        statusText: 'Internal Server Error',
+        clone: vi.fn().mockReturnThis()
+      }
+      mockFetch.mockResolvedValue(mockResponse)
 
       const result = await aiVehicleExtractor.testConnection()
       expect(result).toBe(false)

@@ -2,30 +2,48 @@ import { vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 // Mock response builders for Supabase queries
-export const mockQueryBuilder = () => ({
-  select: vi.fn().mockReturnThis(),
-  insert: vi.fn().mockReturnThis(),
-  update: vi.fn().mockReturnThis(),
-  delete: vi.fn().mockReturnThis(),
-  upsert: vi.fn().mockReturnThis(),
-  eq: vi.fn().mockReturnThis(),
-  neq: vi.fn().mockReturnThis(),
-  gt: vi.fn().mockReturnThis(),
-  gte: vi.fn().mockReturnThis(),
-  lt: vi.fn().mockReturnThis(),
-  lte: vi.fn().mockReturnThis(),
-  like: vi.fn().mockReturnThis(),
-  ilike: vi.fn().mockReturnThis(),
-  in: vi.fn().mockReturnThis(),
-  contains: vi.fn().mockReturnThis(),
-  not: vi.fn().mockReturnThis(),
-  order: vi.fn().mockReturnThis(),
-  limit: vi.fn().mockReturnThis(),
-  range: vi.fn().mockReturnThis(),
-  single: vi.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-  then: vi.fn((callback) => callback({ data: [], error: null })),
-});
+export const mockQueryBuilder = () => {
+  const builder = {
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    like: vi.fn().mockReturnThis(),
+    ilike: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
+    contains: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: null, error: null }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    // Make then method properly chainable and always return a promise
+    then: vi.fn((onResolve, onReject) => {
+      const result = { data: [], error: null };
+      return Promise.resolve(result).then(onResolve, onReject);
+    }),
+    // Add Promise-like methods for better compatibility
+    catch: vi.fn((onReject) => Promise.resolve({ data: [], error: null }).catch(onReject)),
+    finally: vi.fn((onFinally) => Promise.resolve({ data: [], error: null }).finally(onFinally)),
+  };
+  
+  // Ensure all methods return the builder for chaining
+  Object.keys(builder).forEach(key => {
+    if (key !== 'then' && key !== 'catch' && key !== 'finally' && key !== 'single' && key !== 'maybeSingle') {
+      builder[key] = vi.fn(() => builder);
+    }
+  });
+  
+  return builder;
+};
 
 // Mock Supabase client with all required methods
 export const mockSupabaseClient: Partial<SupabaseClient> = {

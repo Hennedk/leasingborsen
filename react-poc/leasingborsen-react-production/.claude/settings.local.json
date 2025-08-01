@@ -42,7 +42,8 @@
       "Bash(touch:*)",
       "Bash(grep:*)",
       "Bash(deno test:*)",
-      "Bash(PATH=\"$HOME/.deno/bin:$PATH\" deno test --allow-all __tests__/)"
+      "Bash(PATH=\"$HOME/.deno/bin:$PATH\" deno test --allow-all __tests__/)",
+      "Bash(git fetch:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -6,9 +6,29 @@ import { setupSupabaseMocks, resetSupabaseMocks } from './mocks/supabase'
 // Set VITEST environment variable to ensure proper environment detection
 process.env.VITEST = 'true'
 
+// Fix Response.clone() issue for MSW compatibility
+global.Response = class extends Response {
+  constructor(body?: BodyInit | null, init?: ResponseInit) {
+    super(body, init)
+  }
+
+  clone(): Response {
+    // Create a new response with the same body and init
+    return new Response(this.body, {
+      status: this.status,
+      statusText: this.statusText,
+      headers: this.headers,
+    })
+  }
+}
+
 // Setup MSW server
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'warn' })
+  server.listen({ 
+    onUnhandledRequest: 'warn',
+    // Add timeout to prevent hanging tests
+    waitUntilReady: true
+  })
 })
 
 afterEach(() => {

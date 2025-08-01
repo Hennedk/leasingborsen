@@ -8,7 +8,15 @@ import type { Seller } from '../useSellers'
 // Mock supabase
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: vi.fn(),
+    from: vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      single: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      then: vi.fn((callback) => callback({ data: [], error: null }))
+    })),
     select: vi.fn(),
     eq: vi.fn(),
     in: vi.fn(),

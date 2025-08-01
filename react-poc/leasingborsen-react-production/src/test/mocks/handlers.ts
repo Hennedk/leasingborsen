@@ -2,6 +2,57 @@ import { http, HttpResponse } from 'msw';
 
 // Define handlers for external APIs and services
 export const handlers = [
+  // Mock Supabase Edge Functions
+  http.post('*/functions/v1/ai-extract-vehicles', () => {
+    return HttpResponse.json({
+      success: true,
+      vehicles: [{
+        make: 'Volkswagen',
+        model: 'ID.3',
+        variant: 'Life+',
+        horsepower: 170,
+        specifications: {
+          is_electric: true,
+          fuel_type: 'Elektrisk'
+        },
+        offers: [{
+          duration_months: 48,
+          mileage_km: 10000,
+          monthly_price: 3295
+        }],
+        confidence: 0.95
+      }],
+      tokens_used: 150,
+      cost_estimate: 0.003,
+      confidence_score: 0.95
+    });
+  }),
+
+  http.post('*/functions/v1/compare-extracted-listings', () => {
+    return HttpResponse.json({
+      success: true,
+      matches: [],
+      summary: {
+        totalExtracted: 0,
+        totalExisting: 0,
+        totalMatched: 0,
+        totalNew: 0,
+        totalUpdated: 0,
+        totalUnchanged: 0,
+        totalDeleted: 0,
+        exactMatches: 0,
+        fuzzyMatches: 0
+      }
+    });
+  }),
+
+  http.post('*/functions/v1/apply-extraction-changes', () => {
+    return HttpResponse.json({
+      success: true,
+      applied: { created: 0, updated: 0, deleted: 0 },
+      errors: []
+    });
+  }),
   // Mock PDF downloads from dealer websites
   http.get('https://vw-dealer.dk/catalogs/*', () => {
     return new HttpResponse('Mock VW PDF content', {

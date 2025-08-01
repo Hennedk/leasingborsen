@@ -10,6 +10,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Fix MSW compatibility issues
+    pool: 'forks',
+    testTimeout: 10000,
+    hookTimeout: 10000,
     env: {
       // Force test environment detection
       VITEST: 'true',
