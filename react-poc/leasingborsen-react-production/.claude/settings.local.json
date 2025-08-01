@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__serena__check_onboarding_performed",
+      "mcp__serena__read_memory",
+      "mcp__serena__find_file",
+      "mcp__serena__list_dir",
+      "mcp__serena__get_symbols_overview",
+      "mcp__serena__find_symbol",
+      "Bash(node:*)",
+      "Bash(supabase functions logs:*)",
+      "Bash(supabase functions:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(npm run build:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__get_anon_key",
+      "mcp__supabase__get_logs",
+      "mcp__supabase__list_edge_functions",
+      "mcp__serena__initial_instructions",
+      "mcp__supabase__apply_migration",
+      "Bash(psql:*)",
+      "Bash(find:*)",
+      "mcp__supabase__list_tables",
+      "Bash(supabase db reset:*)",
+      "Bash(supabase db pull:*)",
+      "Bash(supabase db reset:*)",
+      "Bash(supabase db:*)",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__get_project",
+      "Bash(source:*)",
+      "Bash(set -a)",
+      "Bash(set +a)",
+      "mcp__serena__think_about_task_adherence",
+      "Bash(ls:*)",
+      "Bash(supabase status:*)",
+      "Bash(supabase branches:*)",
+      "Bash(npm run test:comparison:*)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(touch:*)",
+      "Bash(grep:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "supabase"
+  ]
+}

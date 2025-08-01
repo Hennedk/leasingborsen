@@ -1,6 +1,8 @@
 import React from 'react'
 import ModernHeader from '@/components/ModernHeader'
 import Footer from '@/components/Footer'
+import { PreviewBanner } from '@/components/PreviewBanner'
+import { DebugInfo } from '@/components/DebugInfo'
 
 interface BaseLayoutProps {
   children: React.ReactNode
@@ -20,6 +22,9 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      {/* Preview Environment Banner */}
+      <PreviewBanner />
+      
       {/* Header */}
       {showHeader && <ModernHeader />}
       
@@ -30,8 +35,10 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({
       
       {/* Footer */}
       {showFooter && <Footer />}
+      
+      {/* Debug Info - only shows in non-production */}
+      <DebugInfo />
     </div>
   )
 }
-
 export default BaseLayout

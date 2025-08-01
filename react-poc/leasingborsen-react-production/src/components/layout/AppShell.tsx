@@ -2,6 +2,8 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import { AppSidebar } from './AppSidebar'
 import { AppHeader } from './AppHeader'
+import { PreviewBanner } from '@/components/PreviewBanner'
+import { DebugInfo } from '@/components/DebugInfo'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -16,6 +18,9 @@ export const AppShell: React.FC<AppShellProps> = ({
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Preview Environment Banner */}
+      <PreviewBanner />
+      
       {/* Sidebar */}
       <AppSidebar 
         open={sidebarOpen} 
@@ -42,6 +47,9 @@ export const AppShell: React.FC<AppShellProps> = ({
           onClick={() => setSidebarOpen(false)}
         />
       )}
+      
+      {/* Debug Info - only shows in non-production */}
+      <DebugInfo />
     </div>
   )
 }

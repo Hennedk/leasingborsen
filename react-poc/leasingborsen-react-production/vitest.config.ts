@@ -10,6 +10,14 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    env: {
+      // Force test environment detection
+      VITEST: 'true',
+      NODE_ENV: 'test',
+      // Test-specific Supabase configuration
+      VITE_SUPABASE_TEST_URL: 'http://localhost:54321',
+      VITE_SUPABASE_TEST_ANON_KEY: 'test-anon-key',
+    },
     coverage: {
       reporter: ['text', 'json', 'html'],
       exclude: [
