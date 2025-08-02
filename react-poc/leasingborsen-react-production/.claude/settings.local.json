@@ -44,7 +44,8 @@
       "Bash(deno test:*)",
       "Bash(PATH=\"$HOME/.deno/bin:$PATH\" deno test --allow-all __tests__/)",
       "Bash(git fetch:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "mcp__serena__replace_regex"
     ]
   },
   "enableAllProjectMcpServers": true,

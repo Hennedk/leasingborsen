@@ -181,6 +181,8 @@ class ConfigManagerSingleton {
   private static instance: ResponsesConfigManager | null = null
   private static configCache: Map<string, {config: ResponsesAPIConfig, timestamp: number}> = new Map()
   private static readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+  // Force cache refresh timestamp - Update this to force all instances to refresh
+  private static readonly CACHE_REFRESH_VERSION = '2025-08-02-v33' // Update when config changes
 
   static getInstance(): ResponsesConfigManager {
     if (!this.instance) {
