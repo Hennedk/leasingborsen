@@ -18,7 +18,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
         variant: "Executive Panorama",
         transmission: "automatic", // Electric cars are typically automatic
         fuel_type: "el",
-        body_type: "suv",
         horsepower: 204,
         offers: []
       }
@@ -31,7 +30,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
       variant: "Executive Panorama",
       transmission: "automatic",
       fuel_type: "el",
-      body_type: "suv",
       horsepower: 204
     }
     
@@ -78,7 +76,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
       variant: "Executive Panorama",
       transmission: "automatic",
       fuel_type: "el",
-      body_type: "suv",
       offers: []
     }
     
@@ -88,7 +85,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
       variant: "Executive Panorama",
       transmission: "automatic",
       fuel_type: "el",
-      body_type: "suv"
     }
     
     // Keys should still match due to toLowerCase()
@@ -117,7 +113,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
       variant: "Executive Panorama",
       transmission: null as any, // Null transmission
       fuel_type: "el",
-      body_type: "suv",
       offers: []
     }
     
@@ -127,7 +122,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
       variant: "Executive Panorama",
       transmission: "automatic",
       fuel_type: "el",
-      body_type: "suv"
     }
     
     const existingKey = generateExactKey(
@@ -159,7 +153,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
         variant: "Executive Panorama",
         transmission: "", // Empty transmission
         fuel_type: "el",
-        body_type: "suv",
         offers: []
       }
     ]
@@ -171,7 +164,6 @@ describe("Toyota bZ4X Duplicate Create/Delete Bug", () => {
         variant: "Executive Panorama",
         transmission: "automatic",
         fuel_type: "el",
-        body_type: "suv"
       }
     ]
     

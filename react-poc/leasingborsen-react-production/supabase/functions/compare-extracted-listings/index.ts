@@ -16,7 +16,6 @@ interface ExtractedCar {
   engine_info?: string
   fuel_type: string
   transmission: string
-  body_type: string
   seats?: number
   doors?: number
   year?: number
@@ -53,7 +52,6 @@ interface ExistingListing {
   horsepower?: number
   fuel_type: string
   transmission: string
-  body_type: string
   year?: number
   wltp?: number
   co2_emission?: number
@@ -197,9 +195,6 @@ function detectFieldChanges(extracted: ExtractedCar, existing: ExistingListing):
     changes.transmission = { old: existing.transmission, new: extracted.transmission }
   }
   
-  if (extracted.body_type !== existing.body_type && extracted.body_type) {
-    changes.body_type = { old: existing.body_type, new: extracted.body_type }
-  }
   
   if (extracted.year !== existing.year && extracted.year !== undefined) {
     changes.year = { old: existing.year, new: extracted.year }
@@ -503,7 +498,6 @@ serve(async (req) => {
           horsepower: listing.horsepower,
           fuel_type: listing.fuel_type,
           transmission: listing.transmission,
-          body_type: listing.body_type,
           year: listing.year,
           wltp: listing.wltp,
           co2_emission: listing.co2_emission,
@@ -533,7 +527,6 @@ serve(async (req) => {
           horsepower: listing.horsepower,
           fuel_type: listing.fuel_type,
           transmission: listing.transmission,
-          body_type: listing.body_type,
           year: listing.year,
           wltp: listing.wltp,
           co2_emission: listing.co2_emission,

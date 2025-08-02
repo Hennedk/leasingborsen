@@ -7,7 +7,6 @@ export interface ExtractedCar {
   engine_info?: string
   fuel_type: string
   transmission: string
-  body_type: string
   seats?: number
   doors?: number
   year?: number
@@ -47,7 +46,6 @@ export interface ExistingListing {
   horsepower?: number
   fuel_type: string
   transmission: string
-  body_type: string
   year?: number
   wltp?: number
   co2_emission?: number

@@ -34,7 +34,7 @@ export const EXTRACTION_RULES = `EXTRACTION RULES:
   * For the base version, use the variant name as-is
   * For versions with additional equipment, append " - " followed by a comma-separated list of all equipment items
   * If equipment formatting is inconsistent (e.g., slashes, semicolons, or line breaks), extract all as listed and join with commas. Remove duplicate equipment items
-- Never invent or guess makes, models, or body types. Only use those provided in the dynamic data blocks (ALLOWED_MODELS, etc.)
+- Never invent or guess makes or models. Only use those provided in the dynamic data blocks (ALLOWED_MODELS, etc.)
 
 **OFFER EXTRACTION & EXPANSION:**
 - Extract all leasing offers for each car
@@ -61,7 +61,7 @@ export const EXTRACTION_RULES = `EXTRACTION RULES:
 - Do not create separate car entries for different pricing options
 
 **FORMATTING AND CODES:**
-- Use numeric codes for fuel type (ft), transmission (tr), and body type (bt) as defined below
+- Use numeric codes for fuel type (ft) and transmission (tr) as defined below
 - Always use "HK" for horsepower
 - For all currency or price fields, use integers without thousands separators or currency symbols (e.g., 4500 not 4.500 kr.)
 - Use a period (.) as the decimal separator
@@ -107,7 +107,6 @@ export const EXAMPLE_OUTPUT = `EXAMPLE:
       "hp": 229,
       "ft": 1,  // 1=Electric
       "tr": 1,  // 1=Automatic
-      "bt": 3,  // 3=Sedan
       "wltp": 614,
       "co2": null,
       "kwh100": 14.3,
@@ -233,7 +232,7 @@ EXTRACTION RULES:
 - Merge transmission variants—never split "X" from "X Automatik"
 - If both "X" and "X Automatik" variants are present for otherwise identical cars, merge into a single entry and use the base variant name (without "Automatik"). Transmission differences must be indicated using the tr field only
 - Equipment differentiation: For base version, use variant name as-is. For versions with additional equipment, append " - " followed by comma-separated equipment items
-- Never invent or guess makes, models, or body types. Only use those provided in ALLOWED_MODELS
+- Never invent or guess makes or models. Only use those provided in ALLOWED_MODELS
 
 **OFFER EXTRACTION & EXPANSION:**
 - Extract all leasing offers for each car
@@ -254,7 +253,7 @@ EXTRACTION RULES:
 - Always "HK" for horsepower
 - Use null for missing fields
 
-Output JSON: {"cars":[{"make","model","variant","hp","ft","tr","bt","wltp","co2","kwh100","l100","tax","offers":[[monthly,down,months,km]]}]}
+Output JSON: {"cars":[{"make","model","variant","hp","ft","tr","wltp","co2","kwh100","l100","tax","offers":[[monthly,down,months,km]]}]}
 
 BROCHURE_TEXT:
 ${pdfText}`

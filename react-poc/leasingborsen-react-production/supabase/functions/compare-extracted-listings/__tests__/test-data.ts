@@ -9,7 +9,6 @@ export const toyotaTestData = {
     variant: "Pulse",
     transmission: "manual",
     fuel_type: "benzin",
-    body_type: "hatchback",
     horsepower: 72,
     monthly_price: 2195,
     offers: [
@@ -23,7 +22,6 @@ export const toyotaTestData = {
     variant: "Pulse",
     transmission: "automatic",
     fuel_type: "benzin",
-    body_type: "hatchback",
     horsepower: 72,
     monthly_price: 2395,
     offers: [
@@ -37,7 +35,6 @@ export const toyotaTestData = {
     variant: "Pulse Automatik",
     transmission: "automatic",
     fuel_type: "benzin",
-    body_type: "hatchback",
     horsepower: 72
   } as ExtractedCar
 }
@@ -51,7 +48,7 @@ export const vwTestData = {
     variant: "GTX",
     transmission: "automatic",
     fuel_type: "el",
-    body_type: "suv",
+     "suv",
     horsepower: 299,
     offers: [
       { monthly_price: 4999, first_payment: 0, period_months: 36, mileage_per_year: 15000 },
@@ -66,7 +63,7 @@ export const vwTestData = {
     variant: "GTX",
     transmission: "automatic",
     fuel_type: "el",
-    body_type: "suv",
+     "suv",
     horsepower: 299,
     offers: [
       { monthly_price: 5999, first_payment: 0, period_months: 36, mileage_per_year: 25000 },
@@ -81,7 +78,7 @@ export const vwTestData = {
     variant: "GTX",
     transmission: "automatic",
     fuel_type: "el",
-    body_type: "suv",
+     "suv",
     horsepower: 299,
     offers: [
       { monthly_price: 5299, first_payment: 0, period_months: 36, mileage_per_year: 15000 }, // Price changed
@@ -101,8 +98,7 @@ export const partialInventoryTestData = {
       variant: "GTI",
       transmission: "automatic",
       fuel_type: "benzin",
-      body_type: "hatchback",
-      offers: []
+        offers: []
     },
     {
       id: "vw-passat-1",
@@ -111,8 +107,7 @@ export const partialInventoryTestData = {
       variant: "Elegance",
       transmission: "automatic",
       fuel_type: "diesel",
-      body_type: "stationcar",
-      offers: []
+       offers: []
     },
     {
       id: "vw-tiguan-1",
@@ -121,8 +116,7 @@ export const partialInventoryTestData = {
       variant: "R-Line",
       transmission: "automatic",
       fuel_type: "benzin",
-      body_type: "suv",
-      offers: []
+       offers: []
     }
   ] as ExistingListing[],
 
@@ -133,8 +127,7 @@ export const partialInventoryTestData = {
       variant: "GTI",
       transmission: "automatic",
       fuel_type: "benzin",
-      body_type: "hatchback"
-    }
+     }
   ] as ExtractedCar[]
 }
 
@@ -148,8 +141,7 @@ export const fuzzyMatchTestData = {
       variant: "xDrive30d M Sport",
       transmission: "automatic",
       fuel_type: "diesel",
-      body_type: "suv",
-      horsepower: 286,
+       horsepower: 286,
       offers: []
     } as ExistingListing,
     
@@ -159,8 +151,7 @@ export const fuzzyMatchTestData = {
       variant: "xDrive 30d M-Sport", // Minor formatting differences
       transmission: "automatic",
       fuel_type: "diesel",
-      body_type: "suv",
-      horsepower: 286
+       horsepower: 286
     } as ExtractedCar
   },
 
@@ -172,8 +163,7 @@ export const fuzzyMatchTestData = {
       variant: "300 d 4MATIC",
       transmission: "automatic",
       fuel_type: "diesel",
-      body_type: "suv",
-      horsepower: 245,
+       horsepower: 245,
       offers: []
     } as ExistingListing,
     
@@ -183,8 +173,7 @@ export const fuzzyMatchTestData = {
       variant: "300d 4MATIC",
       transmission: "automatic",
       fuel_type: "diesel",
-      body_type: "suv",
-      horsepower: 243 // Close HP (rounding difference)
+       horsepower: 243 // Close HP (rounding difference)
     } as ExtractedCar
   }
 }
@@ -197,8 +186,7 @@ export const hyundaiTestData = {
     variant: "Ultimate 325 HK 4WD",
     transmission: "automatic",
     fuel_type: "el",
-    body_type: "suv"
-  } as ExtractedCar,
+   } as ExtractedCar,
 
   equipmentVariant: {
     make: "Hyundai",
@@ -206,8 +194,7 @@ export const hyundaiTestData = {
     variant: "Ultimate 325 HK 4WD – 20\" alufælge, soltag",
     transmission: "automatic",
     fuel_type: "el",
-    body_type: "suv"
-  } as ExtractedCar
+   } as ExtractedCar
 }
 
 // Test data for performance testing
@@ -233,8 +220,7 @@ export function generateLargeDataset(count: number): { existing: ExistingListing
       variant: variants[variantIndex],
       transmission: transmissions[transmissionIndex],
       fuel_type: "benzin",
-      body_type: "sedan",
-      monthly_price: 3000 + (i * 10),
+       monthly_price: 3000 + (i * 10),
       offers: []
     }
     
@@ -249,7 +235,6 @@ export function generateLargeDataset(count: number): { existing: ExistingListing
         variant: listing.variant,
         transmission: listing.transmission,
         fuel_type: listing.fuel_type,
-        body_type: listing.body_type
       })
     } else if (i < count * 0.75) {
       // 25% with price updates
@@ -259,7 +244,6 @@ export function generateLargeDataset(count: number): { existing: ExistingListing
         variant: listing.variant,
         transmission: listing.transmission,
         fuel_type: listing.fuel_type,
-        body_type: listing.body_type,
         monthly_price: listing.monthly_price! + 100
       })
     }
@@ -274,8 +258,7 @@ export function generateLargeDataset(count: number): { existing: ExistingListing
       variant: `Variant ${i}`,
       transmission: "automatic",
       fuel_type: "el",
-      body_type: "sedan"
-    })
+     })
   }
   
   return { existing, extracted }

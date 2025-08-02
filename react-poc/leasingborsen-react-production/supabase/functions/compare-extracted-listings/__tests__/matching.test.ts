@@ -108,7 +108,6 @@ describe("Matching Utilities", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback"
       }
       
       const listing: ExistingListing = {
@@ -119,7 +118,6 @@ describe("Matching Utilities", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         offers: []
       }
       
@@ -134,7 +132,6 @@ describe("Matching Utilities", () => {
         variant: "GTI",
         transmission: "manual",
         fuel_type: "benzin",
-        body_type: "hatchback"
       }
       
       const listing: ExistingListing = {
@@ -144,7 +141,6 @@ describe("Matching Utilities", () => {
         variant: "GTI",
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         offers: []
       }
       
@@ -161,7 +157,6 @@ describe("Matching Utilities", () => {
         horsepower: 285, // Close to 286
         transmission: "automatic",
         fuel_type: "diesel",
-        body_type: "suv"
       }
       
       const listing: ExistingListing = {
@@ -172,7 +167,6 @@ describe("Matching Utilities", () => {
         horsepower: 286,
         transmission: "automatic",
         fuel_type: "diesel",
-        body_type: "suv",
         offers: []
       }
       

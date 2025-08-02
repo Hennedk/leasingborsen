@@ -17,7 +17,6 @@ export interface ExtractedVehicle {
   horsepower?: number
   fuel_type: string
   transmission: string
-  body_type: string
   wltp?: number
   co2_emission?: number
   consumption_l_100km?: number
@@ -60,7 +59,6 @@ export interface CompactExtractedVehicle {
   hp?: number
   ft: number  // fuel_type code
   tr: number  // transmission code
-  bt: number  // body_type code
   wltp?: number
   co2?: number
   l100?: number
@@ -89,17 +87,8 @@ export const TRANSMISSION_MAP = {
   2: 'Manual'
 } as const
 
-export const BODY_TYPE_MAP = {
-  1: 'SUV',
-  2: 'Hatchback',
-  3: 'Sedan',
-  4: 'Stationcar',
-  5: 'Coupe',
-  6: 'Cabriolet',
-  7: 'Crossover (CUV)',
-  8: 'Minibus (MPV)',
-  9: 'Mikro'
-} as const
+// BODY_TYPE_MAP removed - body type no longer extracted from PDFs
+// Body types can still be set manually through admin interface
 
 // Responses API specific types
 export interface ResponsesAPIConfig {
@@ -116,7 +105,6 @@ export interface ExtractionContext {
     makes_models?: Record<string, any>
     fuel_types?: string[]
     transmissions?: string[]
-    body_types?: string[]
   }
   existingListings?: {
     existing_listings: Array<{

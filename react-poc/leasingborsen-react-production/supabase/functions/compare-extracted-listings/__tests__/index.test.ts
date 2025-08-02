@@ -23,7 +23,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
           variant: "Pulse", 
           transmission: "manual",
           fuel_type: "benzin",
-          body_type: "hatchback",
           monthly_price: 2195,
           offers: []
         }
@@ -36,7 +35,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
           variant: "Pulse", 
           transmission: "automatic",
           fuel_type: "benzin",
-          body_type: "hatchback",
           monthly_price: 2395
         }
       ]
@@ -90,7 +88,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         variant: "GTX",
         transmission: "automatic",
         fuel_type: "el",
-        body_type: "suv",
         offers: [
           { monthly_price: 4999, mileage_per_year: 15000, first_payment: 0, period_months: 36 },
           { monthly_price: 5499, mileage_per_year: 20000, first_payment: 0, period_months: 36 }
@@ -103,7 +100,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         variant: "GTX",
         transmission: "automatic",
         fuel_type: "el",
-        body_type: "suv",
         offers: [
           { monthly_price: 5499, mileage_per_year: 20000, first_payment: 0, period_months: 36 }, // Same offers, different order
           { monthly_price: 4999, mileage_per_year: 15000, first_payment: 0, period_months: 36 }
@@ -215,7 +211,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback"
       }
       
       const existing: ExistingListing = {
@@ -226,7 +221,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         offers: []
       }
       
@@ -241,7 +235,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         variant: "GTI",
         transmission: "manual",
         fuel_type: "benzin",
-        body_type: "hatchback"
       }
       
       const existing: ExistingListing = {
@@ -251,7 +244,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         variant: "GTI",
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         offers: []
       }
       
@@ -270,7 +262,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         year: 2024,
         monthly_price: 3999,
         offers: []
@@ -283,7 +274,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         year: 2024
       }
       
@@ -300,7 +290,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 245,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         year: 2023,
         wltp: 180,
         co2_emission: 150,
@@ -314,7 +303,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
         horsepower: 265,
         transmission: "automatic",
         fuel_type: "benzin",
-        body_type: "hatchback",
         year: 2024,
         wltp: 190,
         co2_emission: 155
@@ -341,7 +329,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
           variant: "Ultimate 325 HK 4WD",
           transmission: "automatic",
           fuel_type: "el",
-          body_type: "suv"
         },
         { 
           make: "Hyundai",
@@ -349,7 +336,6 @@ describe("Comparison Engine - Critical Bug Prevention Tests", () => {
           variant: "Ultimate 325 HK 4WD – 20\" alufælge, soltag",
           transmission: "automatic",
           fuel_type: "el",
-          body_type: "suv"
         }
       ]
       

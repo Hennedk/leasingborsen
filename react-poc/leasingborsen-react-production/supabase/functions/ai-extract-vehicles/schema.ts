@@ -43,11 +43,6 @@ export const vehicleExtractionSchema = {
               "description": "Transmission code: 1=Automatic, 2=Manual",
               "enum": [1, 2]
             },
-            "bt": {
-              "type": "integer",
-              "description": "Body type code: 1=SUV, 2=Hatchback, 3=Sedan, 4=Stationcar, 5=Coupe, 6=Cabriolet, 7=Crossover, 8=Minibus, 9=Mikro",
-              "enum": [1, 2, 3, 4, 5, 6, 7, 8, 9]
-            },
             "wltp": {
               "type": ["integer", "null"],
               "description": "WLTP range in km (for electric) or fuel efficiency",
@@ -108,7 +103,6 @@ export const vehicleExtractionSchema = {
             "hp",
             "ft",
             "tr",
-            "bt",
             "wltp",
             "co2",
             "kwh100",

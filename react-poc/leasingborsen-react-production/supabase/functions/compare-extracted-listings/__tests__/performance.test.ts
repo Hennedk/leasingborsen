@@ -123,7 +123,6 @@ describe("Performance Tests", () => {
           variant: `Variant${i % 25}`,
           transmission: i % 2 === 0 ? 'manual' : 'automatic',
           fuel_type: 'benzin',
-          body_type: 'sedan',
           offers: []
         })
       }
@@ -164,7 +163,6 @@ describe("Performance Tests", () => {
           variant: `Variant${i % 3}`,
           transmission: 'automatic',
           fuel_type: 'benzin',
-          body_type: 'sedan',
           monthly_price: 3000 + i,
           offers: []
         }
@@ -209,7 +207,6 @@ describe("Performance Tests", () => {
           variant: `NewVariant${i}`,
           transmission: 'automatic',
           fuel_type: 'el',
-          body_type: 'suv'
         })
       }
       
@@ -251,7 +248,6 @@ describe("Performance Tests", () => {
           variant: `Variant${i}`,
           transmission: 'manual',
           fuel_type: 'benzin',
-          body_type: 'sedan',
           offers: []
         })
       }
