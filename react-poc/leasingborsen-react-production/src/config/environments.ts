@@ -17,9 +17,24 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   const isVercelPreview = import.meta.env.VERCEL_ENV === 'preview';
   
   // Additional check for Vercel preview based on hostname pattern
-  const isVercelPreviewByHostname = typeof window !== 'undefined' && 
-    /leasingborsen-react-production-[a-z0-9]+\.vercel\.app/.test(window.location.hostname) &&
-    window.location.hostname !== 'leasingborsen-react-production.vercel.app';
+  const isVercelPreviewByHostname = typeof window !== 'undefined' && (() => {
+    const hostname = window.location.hostname;
+    
+    // Explicitly check if we're on production domains
+    const isProduction = hostname === 'leasingborsen-react-production-henrik-thomsens-projects.vercel.app' ||
+                        hostname === 'leasingborsen-react-production.vercel.app' ||
+                        hostname === 'leasingborsen.dk' ||
+                        hostname === 'www.leasingborsen.dk';
+    
+    // If we're on production, definitely not a preview
+    if (isProduction) return false;
+    
+    // Check for preview patterns
+    return hostname.includes('-git-') || 
+           hostname.includes('git-') ||
+           hostname.includes('staging') ||
+           /leasingborsen-react-production-[a-z0-9]+-[a-z0-9]+\.vercel\.app/.test(hostname);
+  })();
   
   // Testing environment (for test suite) - uses mocks
   if (isTest) {

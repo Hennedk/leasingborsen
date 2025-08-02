@@ -10,14 +10,26 @@ const isPreviewEnvironment = () => {
   // Browser-based detection for client-side
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname
+    
+    // Explicitly check if we're on the production domain
+    const isProduction = hostname === 'leasingborsen-react-production-henrik-thomsens-projects.vercel.app' ||
+                        hostname === 'leasingborsen-react-production.vercel.app' ||
+                        hostname === 'leasingborsen.dk' ||
+                        hostname === 'www.leasingborsen.dk'
+    
+    // If we're on production, never show the preview banner
+    if (isProduction) {
+      return false
+    }
+    
     return (
       // Vercel preview URLs contain 'git-' in hostname
       hostname.includes('-git-') ||
       hostname.includes('git-') ||
       // Or staging subdomain
       hostname.includes('staging') ||
-      // Any Vercel app that's not the main production domain
-      (hostname.includes('vercel.app') && hostname !== 'leasingborsen-react-production.vercel.app') ||
+      // Any Vercel app that's not production
+      hostname.includes('vercel.app') ||
       // Or if we're using staging Supabase URL (definitive check)
       (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL.includes('lpbtgtpgbnybjqcpsrrf'))
     )

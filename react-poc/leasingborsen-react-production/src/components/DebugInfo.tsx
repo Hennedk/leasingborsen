@@ -2,8 +2,22 @@ import React from 'react'
 
 // Debug component to show environment info - only in development/preview
 export const DebugInfo: React.FC = () => {
-  // Only show in non-production
-  if (import.meta.env.PROD && import.meta.env.VERCEL_ENV === 'production') {
+  // Check if we're on production domain
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    const isProduction = hostname === 'leasingborsen-react-production-henrik-thomsens-projects.vercel.app' ||
+                        hostname === 'leasingborsen-react-production.vercel.app' ||
+                        hostname === 'leasingborsen.dk' ||
+                        hostname === 'www.leasingborsen.dk'
+    
+    // Never show debug info on production domains
+    if (isProduction) {
+      return null
+    }
+  }
+  
+  // Also hide if VERCEL_ENV is explicitly set to production
+  if (import.meta.env.VERCEL_ENV === 'production') {
     return null
   }
 
