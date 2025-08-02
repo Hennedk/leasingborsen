@@ -48,6 +48,36 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 - **JavaScript Scripts**: investigate-session-f6bbd219.js, test-array-comparison.js, test-ford-capri-consistency.js, test-deletion-fix.js, deploy-fix.js
 - **Reports**: WEEK1_SECURITY_MIGRATION_COMPLETE.md, DUPLICATE_DATA_FIXES_IMPLEMENTED.md, TECHNICAL_REVIEW_REPORT.md, deploy-deletion-fix.md, DATABASE_CLEANUP_PHASE1_SUMMARY.md, DELETION_FIX_RESOLUTION.md, EXTRACTION_INVESTIGATION_FINDINGS.md, CODEBASE_REVIEW_REPORT_2025_07_31.md, UPDATED_DOCUMENTATION_SUMMARY.md, BACKGROUND_REMOVAL_POC_GUIDE.md
 - **Deprecated Code**: persistentFilterStore.ts.deprecated, filterStore.ts.deprecated, useListingMutations.ts.deprecated, IntelligenceDashboard.tsx.disabled, PatternLearningManager.tsx.disabled
+
+---
+
+## Session: 2025-08-02 - Fix Staging Banner on Production
+
+### What Changed:
+- [x] Fixed staging banner incorrectly showing on production environment
+- [x] Updated PreviewBanner.tsx to include explicit production domain checks
+- [x] Fixed DebugInfo.tsx to properly hide on production domains
+- [x] Updated environments.ts preview detection logic to exclude production URLs
+
+### Root Cause:
+- Production hostname was 'leasingborsen-react-production-henrik-thomsens-projects.vercel.app'
+- Code was checking for exact match 'leasingborsen-react-production.vercel.app'
+- VERCEL_ENV was undefined in production environment
+
+### Solution:
+- Added explicit production domain whitelist including all known production URLs
+- Changed logic to check production domains first, then apply preview detection
+- No longer relies solely on VERCEL_ENV which can be undefined
+
+### Files Modified:
+- `src/components/PreviewBanner.tsx` - Added production domain checks
+- `src/components/DebugInfo.tsx` - Added hostname-based hiding for production
+- `src/config/environments.ts` - Updated preview detection to exclude production
+
+### Testing:
+- Build completed successfully without errors
+- Staging banner will only show on actual staging/preview environments
+- Production domains now properly identified and excluded
 - **Deleted**: dev.log, højde skydedør.txt, test-deno.ts
 
 ### Archive Structure Created:
