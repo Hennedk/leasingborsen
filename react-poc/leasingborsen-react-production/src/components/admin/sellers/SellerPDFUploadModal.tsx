@@ -1012,7 +1012,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
           </div>
 
           {/* File Upload / URL Input Area */}
-          {!state.file && !state.isProcessing && (
+          {state.files.length === 0 && !state.isProcessing && (
             <Tabs 
               value={state.inputMode} 
               onValueChange={(value) => setState(prev => ({ ...prev, inputMode: value as 'file' | 'url' }))}
