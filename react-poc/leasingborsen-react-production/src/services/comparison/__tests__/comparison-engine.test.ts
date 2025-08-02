@@ -166,6 +166,8 @@ class ComparisonEngine {
         // Price changes are significant if they differ by more than 1%
         const oldPrice = existing[field] || 0;
         const newPrice = extracted[field] || 0;
+        if (oldPrice === 0 && newPrice === 0) return false;
+        if (oldPrice === 0) return true; // New price where there was none
         const percentChange = Math.abs((newPrice - oldPrice) / oldPrice);
         return percentChange > 0.01;
       }
@@ -203,26 +205,23 @@ class ComparisonEngine {
           tr: 1, // Toyota automatic code
         };
         
-        // Look for manual version with same clean variant
-        const manualMatch = existing.find(e => 
-          e.make === 'Toyota' && 
-          e.variant === cleanVariant && 
-          e.tr === 2 // Manual code
-        );
-        
-        if (manualMatch) {
-          // Update existing manual with transmission info if needed
-          changes.push(extractionFactory.change.update(manualMatch, {
-            transmission: 'Manual'
-          }));
-        }
-        
         // Create automatic version
         changes.push(extractionFactory.change.create({
           extracted_data: processedItem,
         }));
+      } else if (extractedItem.make === 'Toyota') {
+        // Non-automatic Toyota variant - create as manual
+        const processedItem = {
+          ...extractedItem,
+          transmission: 'Manual',
+          tr: 2, // Toyota manual code
+        };
+        
+        changes.push(extractionFactory.change.create({
+          extracted_data: processedItem,
+        }));
       } else {
-        // Standard comparison logic
+        // Standard comparison logic for non-Toyota
         const match = this.findBestMatch(extractedItem, existing);
         if (!match) {
           changes.push(extractionFactory.change.create({
@@ -387,27 +386,30 @@ describe('ComparisonEngine - Critical Business Logic', () => {
     test('should handle CREATE + UPDATE + DELETE in same batch', () => {
       // This addresses the "fix one thing, break another" issue
       const existing = [
-        vehicleFactory.generic({ 
+        { 
           id: '1', 
           make: 'Volkswagen', 
           model: 'Golf', 
           variant: 'GTI',
-          monthly_price: 3500 
-        }),
-        vehicleFactory.generic({ 
+          monthly_price: 3500,
+          year: 2024
+        },
+        { 
           id: '2', 
           make: 'Volkswagen', 
           model: 'Passat', 
           variant: 'Elegance',
-          monthly_price: 4500 
-        }),
-        vehicleFactory.generic({ 
+          monthly_price: 4500,
+          year: 2024
+        },
+        { 
           id: '3', 
           make: 'Volkswagen', 
           model: 'Tiguan', 
           variant: 'R-Line',
-          monthly_price: 5500 
-        }),
+          monthly_price: 5500,
+          year: 2024
+        },
       ];
       
       const extracted = [
@@ -415,19 +417,22 @@ describe('ComparisonEngine - Critical Business Logic', () => {
           make: 'Volkswagen', 
           model: 'Golf', 
           variant: 'GTI', 
-          monthly_price: 3999 // Price update
+          monthly_price: 3999, // Price update
+          year: 2024
         },
         { 
           make: 'Volkswagen', 
           model: 'ID.5', 
-          variant: 'GTX' // New car
+          variant: 'GTX', // New car
+          year: 2024
         },
         // Passat missing = DELETE
         { 
           make: 'Volkswagen', 
           model: 'Tiguan', 
           variant: 'R-Line',
-          monthly_price: 5500 // No change
+          monthly_price: 5500, // No change
+          year: 2024
         },
       ];
       

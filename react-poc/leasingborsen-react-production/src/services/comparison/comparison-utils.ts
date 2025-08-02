@@ -1,6 +1,7 @@
 // This file exports the same utilities as the Edge Function for use in frontend tests
 // Import types from the hook where they're defined
 import type { ExtractedCar } from '@/hooks/useListingComparison'
+import { compareOfferArrays } from './offer-utils'
 
 // Re-export for test usage
 export type { ExtractedCar }
@@ -118,7 +119,14 @@ export function calculateMatchConfidence(extracted: ExtractedCar, existing: Exis
     confidence += 0.4
   } else if (extractedSpecs.coreVariant.toLowerCase().includes(existingSpecs.coreVariant.toLowerCase()) ||
              existingSpecs.coreVariant.toLowerCase().includes(extractedSpecs.coreVariant.toLowerCase())) {
-    confidence += 0.2
+    confidence += 0.3  // Increased from 0.2 to catch more partial matches
+  } else {
+    // Check for similar variants with minor differences (e.g. "M Sport" vs "M-Sport")
+    const normalizedExtracted = extractedSpecs.coreVariant.toLowerCase().replace(/[\s-_]/g, '')
+    const normalizedExisting = existingSpecs.coreVariant.toLowerCase().replace(/[\s-_]/g, '')
+    if (normalizedExtracted === normalizedExisting) {
+      confidence += 0.35
+    }
   }
 
   // Horsepower match (critical differentiator)
@@ -190,10 +198,19 @@ export function detectFieldChanges(extracted: ExtractedCar, existing: ExistingLi
     changes.co2_emission = { old: existing.co2_emission, new: extracted.co2_emission }
   }
   
-  // Check offers for price changes (ExtractedCar doesn't have monthly_price directly)
-  const extractedPrice = extracted.offers?.[0]?.monthly_price
-  if (extractedPrice !== existing.monthly_price && extractedPrice !== undefined) {
-    changes.monthly_price = { old: existing.monthly_price, new: extractedPrice }
+  // Compare offers arrays if both exist
+  if (extracted.offers && existing.offers) {
+    const offersChanged = compareOfferArrays(extracted.offers, existing.offers)
+    if (offersChanged) {
+      changes.offers = { old: existing.offers, new: extracted.offers }
+    }
+  } else if (extracted.offers?.[0]?.monthly_price !== undefined) {
+    // Handle legacy case where existing might have monthly_price directly
+    const extractedPrice = extracted.offers[0].monthly_price
+    const existingPrice = existing.monthly_price || existing.offers?.[0]?.monthly_price
+    if (extractedPrice !== existingPrice && extractedPrice !== undefined) {
+      changes.monthly_price = { old: existingPrice, new: extractedPrice }
+    }
   }
   
   // Return null if no changes, otherwise return the changes object
@@ -290,15 +307,15 @@ export function findBestMatch(
         existing.model.toLowerCase() === car.model.toLowerCase()) {
       
       const calcConfidence = calculateMatchConfidence(car, existing)
-      // Threshold of 0.85 to be selective
-      if (calcConfidence > bestConfidence && calcConfidence >= 0.85) {
+      // Threshold of 0.75 to catch more legitimate matches
+      if (calcConfidence > bestConfidence && calcConfidence >= 0.75) {
         bestConfidence = calcConfidence
         bestMatch = existing
       }
     }
   }
   
-  if (bestMatch && bestConfidence >= 0.85) {
+  if (bestMatch && bestConfidence >= 0.75) {
     return {
       existingMatch: bestMatch,
       matchMethod: 'algorithmic',
