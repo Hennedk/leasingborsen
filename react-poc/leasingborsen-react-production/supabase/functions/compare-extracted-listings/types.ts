@@ -4,7 +4,6 @@ export interface ExtractedCar {
   model: string
   variant: string
   horsepower?: number
-  engine_info?: string
   fuel_type: string
   transmission: string
   seats?: number

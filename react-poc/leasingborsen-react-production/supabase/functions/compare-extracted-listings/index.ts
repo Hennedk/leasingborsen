@@ -13,7 +13,6 @@ interface ExtractedCar {
   model: string
   variant: string
   horsepower?: number
-  engine_info?: string
   fuel_type: string
   transmission: string
   seats?: number
@@ -732,7 +731,6 @@ serve(async (req) => {
           horsepower: unmatchedListing.horsepower,
           fuel_type: unmatchedListing.fuel_type,
           transmission: unmatchedListing.transmission,
-          body_type: unmatchedListing.body_type,
           year: unmatchedListing.year,
           wltp: unmatchedListing.wltp,
           co2_emission: unmatchedListing.co2_emission,
