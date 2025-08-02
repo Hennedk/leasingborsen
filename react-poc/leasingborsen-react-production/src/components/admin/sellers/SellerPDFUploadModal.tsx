@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Upload, FileText, CheckCircle, AlertCircle, Info, Settings, ExternalLink, Link } from 'lucide-react'
+import { Upload, FileText, CheckCircle, AlertCircle, Info, Settings, ExternalLink, Link, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useJobProgress } from '@/hooks/useJobProgress'
 import { toast } from 'sonner'
@@ -48,7 +48,8 @@ interface UploadState {
   
   // Upload states
   isDragOver: boolean
-  file: File | null
+  files: File[]
+  mergeMode: boolean
   
   // Processing states
   isProcessing: boolean
@@ -78,7 +79,8 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     inputMode: 'file',
     fileUrl: '',
     isDragOver: false,
-    file: null,
+    files: [],
+    mergeMode: true,
     isProcessing: false,
     currentStep: 'idle',
     progress: 0,
@@ -101,7 +103,8 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         inputMode: hasPdfUrls || hasLegacyUrl ? 'url' : 'file',
         fileUrl: hasPdfUrls ? '' : (seller?.pdf_url || ''), // Don't auto-populate if multiple URLs
         isDragOver: false,
-        file: null,
+        files: [],
+        mergeMode: true,
         isProcessing: false,
         currentStep: 'idle',
         progress: 0,
@@ -226,29 +229,40 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     setState(prev => ({ ...prev, isDragOver: false }))
     
     const files = Array.from(e.dataTransfer.files)
-    const pdfFile = files.find(file => file.type === 'application/pdf')
+    const pdfFiles = files.filter(file => file.type === 'application/pdf')
     
-    if (pdfFile) {
-      handleFile(pdfFile)
+    if (pdfFiles.length > 0) {
+      handleFiles(pdfFiles)
     }
   }, [])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file && file.type === 'application/pdf') {
-      handleFile(file)
+    const files = e.target.files ? Array.from(e.target.files) : []
+    const pdfFiles = files.filter(file => file.type === 'application/pdf')
+    
+    if (pdfFiles.length > 0) {
+      handleFiles(pdfFiles)
     }
   }, [])
 
-  const handleFile = useCallback((file: File) => {
+  const handleFiles = useCallback((newFiles: File[]) => {
     setState(prev => ({
       ...prev,
-      file,
+      files: newFiles,
       error: null,
       extractionResult: null,
       railwayResult: null,
       aiResult: null,
-      currentStep: 'idle'
+      currentStep: 'idle',
+      // Auto-enable merge mode if multiple files selected
+      mergeMode: newFiles.length > 1 ? true : prev.mergeMode
+    }))
+  }, [])
+  
+  const removeFile = useCallback((index: number) => {
+    setState(prev => ({
+      ...prev,
+      files: prev.files.filter((_, i) => i !== index)
     }))
   }, [])
 
@@ -288,10 +302,10 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     }, 500)
   }, [seller, isUrlAlreadySaved, updateSeller])
 
-  const processWithRailwayAndAI = useCallback(async (fileToProcess?: File) => {
-    // Use provided file or fall back to state.file
-    const file = fileToProcess || state.file
-    if (!file) return
+  const processWithRailwayAndAI = useCallback(async (filesToProcess?: File[]) => {
+    // Use provided files or fall back to state.files
+    const files = filesToProcess || state.files
+    if (!files || files.length === 0) return
 
     const config = getExtractionConfig()
     
@@ -305,116 +319,207 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     }))
 
     try {
-      // Step 1: Extract text using Railway service
-      setState(prev => ({
-        ...prev,
-        progress: 20,
-        progressMessage: 'Extracting text with Railway service...'
-      }))
-
-      // Use Railway service for text extraction
-      let extractedText = ''
-      let railwayDebugInfo = null
+      let combinedExtractedText = ''
       
-      try {
-        const railwayUrl = 'https://leasingborsen-production.up.railway.app'
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('profile', 'automotive')
-
-        console.log('🚂 Railway: Starting PDF extraction...', {
-          file: file.name,
-          fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
-          url: `${railwayUrl}/extract/structured`
-        })
-
-        const railwayResponse = await fetch(`${railwayUrl}/extract/structured`, {
-          method: 'POST',
-          body: formData
-        })
-
-        console.log('🚂 Railway: Response received', {
-          status: railwayResponse.status,
-          statusText: railwayResponse.statusText,
-          ok: railwayResponse.ok
-        })
-
-        if (!railwayResponse.ok) {
-          const errorText = await railwayResponse.text()
-          console.error('🚂 Railway: Error response', { errorText })
-          throw new Error(`Railway extraction failed: ${railwayResponse.status} ${errorText}`)
-        }
-
-        const railwayResult = await railwayResponse.json()
+      // Handle multiple files with merge mode
+      if (files.length > 1 && state.mergeMode) {
+        // Step 1: Extract text from each file and combine
+        const extractedTexts: { name: string; text: string }[] = []
         
-        // Try multiple possible locations for the extracted text
-        extractedText = railwayResult.extracted_text || 
-                       railwayResult.text || 
-                       railwayResult.data?.extracted_text ||
-                       railwayResult.data?.text ||
-                       railwayResult.data ||
-                       ''
-        
-        railwayDebugInfo = {
-          responseKeys: Object.keys(railwayResult),
-          dataKeys: railwayResult.data ? Object.keys(railwayResult.data) : null,
-          textLength: extractedText.length,
-          hasExtractedText: !!railwayResult.extracted_text,
-          hasText: !!railwayResult.text,
-          hasDataExtractedText: !!(railwayResult.data?.extracted_text),
-          hasDataText: !!(railwayResult.data?.text),
-          dataType: typeof railwayResult.data,
-          preview: extractedText.substring(0, 200) + (extractedText.length > 200 ? '...' : '')
-        }
-
-        console.log('🚂 Railway: Extraction successful', railwayDebugInfo)
-        console.log('🚂 Railway: Full response structure', {
-          fullResponse: railwayResult,
-          dataContent: railwayResult.data,
-          extractedTextSources: {
-            'railwayResult.extracted_text': railwayResult.extracted_text,
-            'railwayResult.text': railwayResult.text,
-            'railwayResult.data?.extracted_text': railwayResult.data?.extracted_text,
-            'railwayResult.data?.text': railwayResult.data?.text,
-            'railwayResult.data (direct)': typeof railwayResult.data === 'string' ? railwayResult.data?.substring(0, 100) + '...' : railwayResult.data
-          }
-        })
-
-        // Final fallback - if still no text, try to stringify the data
-        if (!extractedText || extractedText.length < 10) {
-          if (railwayResult.data && typeof railwayResult.data === 'object') {
-            // If data is an object, try to extract any string values
-            const dataString = JSON.stringify(railwayResult.data, null, 2)
-            console.log('🚂 Railway: Trying data object as string:', dataString.substring(0, 200))
-            extractedText = dataString
-          }
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i]
+          const progress = 20 + (i / files.length) * 30 // Progress from 20 to 50
           
-          if (!extractedText || extractedText.length < 10) {
-            throw new Error(`Railway extraction produced insufficient text: ${extractedText.length} characters. Response structure: ${JSON.stringify(Object.keys(railwayResult))}`)
+          setState(prev => ({
+            ...prev,
+            progress,
+            progressMessage: `Extracting text from PDF ${i + 1} of ${files.length}: ${file.name}...`
+          }))
+          
+          let extractedText = ''
+          
+          try {
+            const railwayUrl = 'https://leasingborsen-production.up.railway.app'
+            const formData = new FormData()
+            formData.append('file', file)
+            formData.append('profile', 'automotive')
+
+            console.log(`🚂 Railway: Extracting PDF ${i + 1}/${files.length}:`, {
+              file: file.name,
+              fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+              url: `${railwayUrl}/extract/structured`
+            })
+
+            const railwayResponse = await fetch(`${railwayUrl}/extract/structured`, {
+              method: 'POST',
+              body: formData
+            })
+
+            if (!railwayResponse.ok) {
+              const errorText = await railwayResponse.text()
+              console.error(`🚂 Railway: Error for ${file.name}:`, errorText)
+              throw new Error(`Railway extraction failed: ${railwayResponse.status}`)
+            }
+
+            const railwayResult = await railwayResponse.json()
+            
+            // Try multiple possible locations for the extracted text
+            extractedText = railwayResult.extracted_text || 
+                           railwayResult.text || 
+                           railwayResult.data?.extracted_text ||
+                           railwayResult.data?.text ||
+                           railwayResult.data ||
+                           ''
+            
+            if (extractedText && extractedText.length > 10) {
+              extractedTexts.push({
+                name: file.name,
+                text: extractedText
+              })
+              console.log(`✅ Extracted ${extractedText.length} chars from ${file.name}`)
+            }
+
+          } catch (railwayError) {
+            console.error(`🚂 Railway: Failed to extract ${file.name}:`, railwayError)
+            // Continue with other files even if one fails
           }
         }
-
-      } catch (railwayError) {
-        console.error('🚂 Railway: Extraction failed', railwayError)
-        // Fallback to basic text extraction
-        const errorMessage = railwayError instanceof Error ? railwayError.message : String(railwayError)
-        extractedText = `PDF file: ${file.name}\nFallback extraction - content not available\nError: ${errorMessage}`
         
-        // Show error in UI
+        if (extractedTexts.length === 0) {
+          throw new Error('No text could be extracted from any PDF')
+        }
+        
+        // Combine all extracted texts with separators
+        combinedExtractedText = extractedTexts
+          .map(({ name, text }) => `\n=== PDF: ${name} ===\n${text}`)
+          .join('\n\n')
+        
+        console.log(`📑 Combined text from ${extractedTexts.length} PDFs: ${combinedExtractedText.length} chars`)
+        
         setState(prev => ({
           ...prev,
-          progress: 25,
-          progressMessage: `Railway extraction failed: ${errorMessage}. Using fallback...`
+          railwayResult: { extracted_text: combinedExtractedText },
+          progress: 50,
+          progressMessage: `Combined text from ${extractedTexts.length} PDFs, starting AI processing...`,
+          currentStep: 'ai'
+        }))
+        
+      } else {
+        // Single file processing (existing logic)
+        const file = files[0]
+        
+        setState(prev => ({
+          ...prev,
+          progress: 20,
+          progressMessage: 'Extracting text with Railway service...'
+        }))
+
+        // Use Railway service for text extraction
+        let extractedText = ''
+        let railwayDebugInfo = null
+        
+        try {
+          const railwayUrl = 'https://leasingborsen-production.up.railway.app'
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('profile', 'automotive')
+
+          console.log('🚂 Railway: Starting PDF extraction...', {
+            file: file.name,
+            fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+            url: `${railwayUrl}/extract/structured`
+          })
+
+          const railwayResponse = await fetch(`${railwayUrl}/extract/structured`, {
+            method: 'POST',
+            body: formData
+          })
+
+          console.log('🚂 Railway: Response received', {
+            status: railwayResponse.status,
+            statusText: railwayResponse.statusText,
+            ok: railwayResponse.ok
+          })
+
+          if (!railwayResponse.ok) {
+            const errorText = await railwayResponse.text()
+            console.error('🚂 Railway: Error response', { errorText })
+            throw new Error(`Railway extraction failed: ${railwayResponse.status} ${errorText}`)
+          }
+
+          const railwayResult = await railwayResponse.json()
+          
+          // Try multiple possible locations for the extracted text
+          extractedText = railwayResult.extracted_text || 
+                         railwayResult.text || 
+                         railwayResult.data?.extracted_text ||
+                         railwayResult.data?.text ||
+                         railwayResult.data ||
+                         ''
+          
+          railwayDebugInfo = {
+            responseKeys: Object.keys(railwayResult),
+            dataKeys: railwayResult.data ? Object.keys(railwayResult.data) : null,
+            textLength: extractedText.length,
+            hasExtractedText: !!railwayResult.extracted_text,
+            hasText: !!railwayResult.text,
+            hasDataExtractedText: !!(railwayResult.data?.extracted_text),
+            hasDataText: !!(railwayResult.data?.text),
+            dataType: typeof railwayResult.data,
+            preview: extractedText.substring(0, 200) + (extractedText.length > 200 ? '...' : '')
+          }
+
+          console.log('🚂 Railway: Extraction successful', railwayDebugInfo)
+          console.log('🚂 Railway: Full response structure', {
+            fullResponse: railwayResult,
+            dataContent: railwayResult.data,
+            extractedTextSources: {
+              'railwayResult.extracted_text': railwayResult.extracted_text,
+              'railwayResult.text': railwayResult.text,
+              'railwayResult.data?.extracted_text': railwayResult.data?.extracted_text,
+              'railwayResult.data?.text': railwayResult.data?.text,
+              'railwayResult.data (direct)': typeof railwayResult.data === 'string' ? railwayResult.data?.substring(0, 100) + '...' : railwayResult.data
+            }
+          })
+
+          // Final fallback - if still no text, try to stringify the data
+          if (!extractedText || extractedText.length < 10) {
+            if (railwayResult.data && typeof railwayResult.data === 'object') {
+              // If data is an object, try to extract any string values
+              const dataString = JSON.stringify(railwayResult.data, null, 2)
+              console.log('🚂 Railway: Trying data object as string:', dataString.substring(0, 200))
+              extractedText = dataString
+            }
+            
+            if (!extractedText || extractedText.length < 10) {
+              throw new Error(`Railway extraction produced insufficient text: ${extractedText.length} characters. Response structure: ${JSON.stringify(Object.keys(railwayResult))}`)
+            }
+          }
+
+        } catch (railwayError) {
+          console.error('🚂 Railway: Extraction failed', railwayError)
+          // Fallback to basic text extraction
+          const errorMessage = railwayError instanceof Error ? railwayError.message : String(railwayError)
+          extractedText = `PDF file: ${file.name}\nFallback extraction - content not available\nError: ${errorMessage}`
+          
+          // Show error in UI
+          setState(prev => ({
+            ...prev,
+            progress: 25,
+            progressMessage: `Railway extraction failed: ${errorMessage}. Using fallback...`
+          }))
+        }
+        
+        combinedExtractedText = extractedText
+        
+        setState(prev => ({
+          ...prev,
+          railwayResult: { extracted_text: extractedText },
+          progress: 50,
+          progressMessage: 'Railway extraction successful, starting AI processing...',
+          currentStep: 'ai'
         }))
       }
-
-      setState(prev => ({
-        ...prev,
-        railwayResult: { extracted_text: extractedText },
-        progress: 50,
-        progressMessage: 'Railway extraction successful, starting AI processing...',
-        currentStep: 'ai'
-      }))
 
       // Step 2: Process with AI using the extracted text
       const batchId = `batch-${Date.now()}-${seller.id}`
@@ -492,9 +597,9 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
 
       // Use the extracted text from Railway for AI processing with reference data
       const aiRequestPayload = {
-        text: extractedText,  // Changed from textContent to text
+        text: combinedExtractedText,  // Use combined text for single or merged PDFs
         dealerHint: seller.name,  // Changed from dealerName to dealerHint
-        fileName: file.name,
+        fileName: files.length > 1 ? `Merged ${files.length} PDFs: ${files.map(f => f.name).join(', ')}` : files[0].name,
         sellerId: seller.id,
         sellerName: seller.name,
         batchId,
@@ -506,14 +611,15 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
         includeExistingListings: true,
         existingListings: existingListings,  // Add the actual existing listings data
         // Add PDF URL (can be a placeholder since we're not storing the actual PDF)
-        pdfUrl: state.fileUrl || `local://${file.name}`
+        pdfUrl: state.fileUrl || (files.length > 1 ? `local://merged-${files.length}-pdfs` : `local://${files[0].name}`)
       }
 
       console.log('🤖 AI: Starting extraction with payload', {
-        textContentLength: extractedText.length,
-        textPreview: extractedText.substring(0, 200) + (extractedText.length > 200 ? '...' : ''),
+        textContentLength: combinedExtractedText.length,
+        textPreview: combinedExtractedText.substring(0, 200) + (combinedExtractedText.length > 200 ? '...' : ''),
         dealerName: seller.name,
-        fileName: file.name,
+        fileName: files.length > 1 ? `Merged ${files.length} PDFs` : files[0].name,
+        filesCount: files.length,
         makeId: config.makeId,
         makeName: config.makeName,
         batchId,
@@ -724,7 +830,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       
       toast.error('PDF processing failed')
     }
-  }, [seller, getExtractionConfig, startPolling, state.fileUrl, state.inputMode, promptToSaveUrl])
+  }, [seller, getExtractionConfig, startPolling, state.fileUrl, state.files, state.mergeMode, state.inputMode, promptToSaveUrl])
 
   // Handle URL submit
   const handleURLSubmit = useCallback(async () => {
@@ -797,7 +903,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       // Update state with file
       setState(prev => ({
         ...prev,
-        file,
+        files: [file],
         progress: 10,
         progressMessage: 'PDF downloaded successfully, starting extraction...'
       }))
@@ -807,7 +913,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
 
       // Continue with existing processing pipeline
       // Pass the file directly to avoid state timing issues
-      await processWithRailwayAndAI(file)
+      await processWithRailwayAndAI([file])
 
     } catch (error) {
       console.error('Error downloading PDF:', error)
@@ -828,7 +934,8 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
       inputMode: 'file',
       fileUrl: '',
       isDragOver: false,
-      file: null,
+      files: [],
+      mergeMode: true,
       isProcessing: false,
       currentStep: 'idle',
       progress: 0,
@@ -942,6 +1049,7 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
                     id="pdf-upload-input"
                     type="file"
                     accept="application/pdf"
+                    multiple
                     className="hidden"
                     onChange={handleFileSelect}
                   />
@@ -1038,33 +1146,74 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
             </Tabs>
           )}
 
-          {/* Selected File */}
-          {state.file && !state.isProcessing && !state.extractionResult && (
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-primary" />
-                <div>
-                  <p className="font-medium">{state.file.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {(state.file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
+          {/* Selected Files */}
+          {state.files.length > 0 && !state.isProcessing && !state.extractionResult && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">
+                  Selected Files ({state.files.length})
+                </h3>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleReset}
                 >
-                  Change File
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => processWithRailwayAndAI()}
-                >
-                  Extract with AI
+                  Clear All
                 </Button>
               </div>
+              
+              {/* File list */}
+              <div className="space-y-2">
+                {state.files.map((file, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-6 w-6 text-primary" />
+                      <div>
+                        <p className="font-medium text-sm">{file.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Merge mode toggle for multiple files */}
+              {state.files.length > 1 && (
+                <div className="flex items-center space-x-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="merge-mode"
+                    checked={state.mergeMode}
+                    onChange={(e) => setState(prev => ({ ...prev, mergeMode: e.target.checked }))}
+                    className="h-4 w-4"
+                  />
+                  <label htmlFor="merge-mode" className="text-sm font-medium cursor-pointer">
+                    Merge PDFs before extraction
+                  </label>
+                  <p className="text-xs text-muted-foreground ml-auto">
+                    Combines all PDFs into one extraction session
+                  </p>
+                </div>
+              )}
+              
+              {/* Extract button */}
+              <Button
+                onClick={() => processWithRailwayAndAI()}
+                className="w-full"
+              >
+                Extract with AI
+                {state.files.length > 1 && state.mergeMode && ` (Merged)`}
+              </Button>
             </div>
           )}
 
