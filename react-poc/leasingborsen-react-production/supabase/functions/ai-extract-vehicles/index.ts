@@ -52,7 +52,7 @@ function calculateTotalPrice(monthlyPrice: number, periodMonths: number, firstPa
 import { vehicleExtractionSchema, validateExtractionResponse } from './schema.ts'
 import { VariantResolver } from './variantResolver.ts'
 // FeatureFlagManager removed - always use Responses API
-import { FUEL_TYPE_MAP, TRANSMISSION_MAP, BODY_TYPE_MAP } from './types.ts'
+import { FUEL_TYPE_MAP, TRANSMISSION_MAP } from './types.ts'
 import { 
   estimateTokens, 
   estimateTokensForMultiplePDFs, 
@@ -914,8 +914,7 @@ bt: 1=SUV,2=Hatchback,3=Sedan,4=Stationcar,5=Coupe,6=Cabriolet,7=Crossover,8=Min
         variant: resolution.suggestedVariant || car.variant, // Use suggested variant if available
         horsepower: car.hp,
         fuel_type: FUEL_TYPE_MAP[car.ft as keyof typeof FUEL_TYPE_MAP] || 'Petrol',
-        transmission: TRANSMISSION_MAP[car.tr as keyof typeof TRANSMISSION_MAP] || 'Manual', 
-        body_type: BODY_TYPE_MAP[car.bt as keyof typeof BODY_TYPE_MAP] || 'Hatchback',
+        transmission: TRANSMISSION_MAP[car.tr as keyof typeof TRANSMISSION_MAP] || 'Manual',
         wltp: car.wltp,
         co2_emission: car.co2,
         consumption_l_100km: car.l100,
