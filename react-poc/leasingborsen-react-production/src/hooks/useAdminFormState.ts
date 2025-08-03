@@ -71,7 +71,8 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     seller_id: listing?.seller_id || '',
     
     // Media
-    images: listing?.image ? [listing.image] : [],
+    // Load images from the JSONB array field 'images' if available, otherwise fall back to single 'image' field
+    images: listing?.images && Array.isArray(listing.images) ? listing.images : (listing?.image ? [listing.image] : []),
     image_urls: [],
     processed_image_grid: listing?.processed_image_grid || '',
     processed_image_detail: listing?.processed_image_detail || '',
@@ -178,12 +179,19 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
     }
   }, [currentListingId, isEditing, form, referenceData, processedImages])
 
-  // Auto-save hook for images
+  // Auto-save hook for images - also watches processedImages for changes
   const autoSaveEnabled = isEditing && !!currentListingId && !!referenceData
   
-  const imageAutoSave = useAutoSave(currentImages, {
+  // Combine currentImages and processedImages into a single dependency for auto-save
+  const autoSaveDependency = useMemo(() => ({
+    images: currentImages,
+    processedGrid: processedImages.grid,
+    processedDetail: processedImages.detail
+  }), [currentImages, processedImages.grid, processedImages.detail])
+  
+  const imageAutoSave = useAutoSave(autoSaveDependency, {
     delay: 1500,
-    onSave: performImageAutoSave,
+    onSave: () => performImageAutoSave(currentImages),
     enabled: autoSaveEnabled
   })
 
@@ -307,6 +315,16 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
         processed_image_grid: processedImages.grid || null,
         processed_image_detail: processedImages.detail || null,
       }
+      
+      console.log('📸 Saving listing with images:', {
+        primaryImage: listingData.image,
+        allImages: listingData.images,
+        processedGrid: listingData.processed_image_grid,
+        processedDetail: listingData.processed_image_detail,
+        processedImagesState: processedImages,
+        formImages: data.images,
+        currentImagesState: currentImages
+      })
 
       if (isEditing && currentListingId) {
         console.log('🔍 Updating listing with data:', { 

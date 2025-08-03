@@ -167,6 +167,14 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       // Use the detail URL as the main image (it's higher quality)
       const mainImageUrl = processingPreview.detailUrl || processingPreview.processedUrl
       
+      console.log('🖼️ Confirming processed image:', {
+        mainImageUrl,
+        processedUrl: processingPreview.processedUrl,
+        gridUrl: processingPreview.gridUrl,
+        detailUrl: processingPreview.detailUrl,
+        currentImages: images
+      })
+      
       onImagesChange([...images, mainImageUrl])
       
       if (onBackgroundRemovalComplete) {

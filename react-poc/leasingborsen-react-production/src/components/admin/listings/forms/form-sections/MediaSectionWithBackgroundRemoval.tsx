@@ -23,6 +23,7 @@ export const MediaSectionWithBackgroundRemoval = React.memo<MediaSectionProps>((
   enableBackgroundRemoval = true,
   onProcessedImagesChange
 }) => {
+  
   return (
     <TooltipProvider>
       <div className="space-y-3">
