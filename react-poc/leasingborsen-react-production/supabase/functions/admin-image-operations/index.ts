@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import "jsr:@supabase/functions-js/edge-runtime.d.ts"
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
 
 // CORS headers
@@ -248,15 +248,24 @@ async function processBackground(supabase: any, imageUrl: string): Promise<Admin
     console.log('📤 Calling remove-bg with:', {
       fileName,
       dataLength: imageData.length,
-      contentType
+      contentType,
+      imageDataPreview: imageData.substring(0, 100) + '...'
     })
     
     // Call remove-bg with correct format
+    const requestBody = { 
+      imageData,
+      fileName 
+    };
+    
+    console.log('📤 Request body structure:', {
+      hasImageData: !!requestBody.imageData,
+      hasFileName: !!requestBody.fileName,
+      bodyKeys: Object.keys(requestBody)
+    });
+    
     const { data: bgData, error: bgError } = await supabase.functions.invoke('remove-bg', {
-      body: { 
-        imageData,
-        fileName 
-      }
+      body: requestBody
     })
     
     if (bgError) {
@@ -292,7 +301,7 @@ async function processBackground(supabase: any, imageUrl: string): Promise<Admin
 }
 
 // Main handler
-serve(async (req) => {
+Deno.serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })

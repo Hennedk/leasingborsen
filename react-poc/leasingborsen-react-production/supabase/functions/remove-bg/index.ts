@@ -57,19 +57,30 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     // console.log('Starting remove-bg function...');
     
-    const { imageData, fileName }: RemoveBgRequest = await req.json();
-    // console.log('Received request with fileName:', fileName);
+    const requestBody = await req.json();
+    console.log('Received request body keys:', Object.keys(requestBody));
     
-    // Detect image type from base64 data
-    const imageTypeMatch = imageData.match(/^data:image\/([a-z]+);base64,/);
-    const imageType = imageTypeMatch ? imageTypeMatch[1] : 'jpeg';
-    const contentType = `image/${imageType}`;
-    // console.log('Detected image type:', imageType, 'contentType:', contentType);
-
+    const { imageData, fileName }: RemoveBgRequest = requestBody;
+    console.log('Received request with fileName:', fileName);
+    console.log('ImageData type:', typeof imageData);
+    console.log('ImageData length:', imageData?.length || 0);
+    
+    // Validate inputs early
     if (!imageData || !fileName) {
-      console.error('Missing imageData or fileName');
+      console.error('Missing required fields:', {
+        hasImageData: !!imageData,
+        hasFileName: !!fileName,
+        imageDataType: typeof imageData,
+        fileNameType: typeof fileName
+      });
       return new Response(
-        JSON.stringify({ error: 'Missing imageData or fileName' }),
+        JSON.stringify({ 
+          error: 'Missing imageData or fileName',
+          details: {
+            hasImageData: !!imageData,
+            hasFileName: !!fileName
+          }
+        }),
         { 
           status: 400,
           headers: { 
@@ -79,6 +90,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
       );
     }
+    
+    // Detect image type from base64 data
+    const imageTypeMatch = imageData.match(/^data:image\/([a-z]+);base64,/);
+    const imageType = imageTypeMatch ? imageTypeMatch[1] : 'jpeg';
+    const contentType = `image/${imageType}`;
+    console.log('Detected image type:', imageType, 'contentType:', contentType);
 
     // Initialize Supabase client with service role key for storage operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
