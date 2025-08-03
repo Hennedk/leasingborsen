@@ -126,6 +126,11 @@ archive/
 - Verify processedImageUrl is returned in response
 - Confirm background is removed in preview dialog
 
+### Additional Fix:
+- Added missing API4AI_KEY to Supabase secrets
+- Redeployed both edge functions to access the new secret
+- The API key was missing from production environment which caused silent failures
+
 ---
 
 ## Session: 2025-08-01 - Test Branch Merge and Cleanup
