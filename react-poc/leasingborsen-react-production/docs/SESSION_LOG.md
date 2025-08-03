@@ -140,6 +140,18 @@ archive/
   - `background-removal/detail/` - detail size variants
 - This ensures images persist after page refresh as listings expect images in 'images' bucket
 
+### Next Steps:
+- Investigate why background-removed images don't persist after save
+- Check AdminListingFormNew.tsx for how images are saved
+- Verify if updateListingImages is being called with the correct URLs
+- May need to trace the form submission flow to see where images are lost
+
+### Known Issues:
+- Background removal works correctly now
+- Images are uploaded to correct 'images' bucket
+- BUT: Images disappear after page refresh despite being saved
+- Console shows successful processing but database may not be updated
+
 ---
 
 ## Session: 2025-08-01 - Test Branch Merge and Cleanup
