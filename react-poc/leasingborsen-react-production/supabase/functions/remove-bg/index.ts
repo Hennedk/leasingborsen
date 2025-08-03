@@ -117,9 +117,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const imageBuffer = Uint8Array.from(atob(imageData.replace(/^data:image\/[a-z]+;base64,/, '')), c => c.charCodeAt(0));
 
     // Upload original image to Supabase Storage
-    const originalFileName = `original-${Date.now()}-${fileName}`;
+    const timestamp = Date.now();
+    const originalFileName = `background-removal/originals/${timestamp}-${fileName}`;
     const { data: originalUpload, error: uploadError } = await supabase.storage
-      .from('poc-originals')
+      .from('images')
       .upload(originalFileName, imageBuffer, {
         contentType: contentType,
       });
@@ -217,9 +218,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
 
     // Upload processed image to Supabase Storage
-    const processedFileName = `processed-${Date.now()}-${fileName}.png`;
+    const processedFileName = `background-removal/processed/${timestamp}-${fileName}.png`;
     const { data: processedUpload, error: processedError } = await supabase.storage
-      .from('poc-processed')
+      .from('images')
       .upload(processedFileName, processedBuffer, {
         contentType: 'image/png',
       });
@@ -277,9 +278,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         const standardizedBuffer = await targetImage.encode();
         
         // Upload standardized image
-        const standardizedFileName = `${variant}/${variant}-${Date.now()}-${fileName}.png`;
+        const standardizedFileName = `background-removal/${variant}/${timestamp}-${fileName}.png`;
         const { data: standardizedUpload, error: uploadError } = await supabase.storage
-          .from('poc-processed')
+          .from('images')
           .upload(standardizedFileName, standardizedBuffer, {
             contentType: 'image/png',
           });
@@ -291,7 +292,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         
         // Get public URL
         const { data: { publicUrl } } = supabase.storage
-          .from('poc-processed')
+          .from('images')
           .getPublicUrl(standardizedFileName);
         
         standardizedImages[variant as 'grid' | 'detail'] = {
@@ -310,11 +311,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Get public URLs
     const { data: { publicUrl: originalUrl } } = supabase.storage
-      .from('poc-originals')
+      .from('images')
       .getPublicUrl(originalFileName);
 
     const { data: { publicUrl: processedUrl } } = supabase.storage
-      .from('poc-processed')
+      .from('images')
       .getPublicUrl(processedFileName);
 
     // Return success response

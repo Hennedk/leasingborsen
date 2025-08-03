@@ -131,6 +131,15 @@ archive/
 - Redeployed both edge functions to access the new secret
 - The API key was missing from production environment which caused silent failures
 
+### Image Persistence Fix:
+- Updated remove-bg function to use production 'images' bucket instead of POC buckets
+- Images now stored in organized subdirectories:
+  - `background-removal/originals/` - original uploads
+  - `background-removal/processed/` - background removed images
+  - `background-removal/grid/` - grid size variants
+  - `background-removal/detail/` - detail size variants
+- This ensures images persist after page refresh as listings expect images in 'images' bucket
+
 ---
 
 ## Session: 2025-08-01 - Test Branch Merge and Cleanup
