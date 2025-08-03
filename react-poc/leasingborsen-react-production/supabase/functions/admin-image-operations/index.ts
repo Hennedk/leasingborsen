@@ -213,29 +213,77 @@ async function updateListingImages(supabase: any, listingId: string, imageUrls: 
 
 async function processBackground(supabase: any, imageUrl: string): Promise<AdminImageResponse> {
   try {
-    // Call the existing remove-bg Edge Function
+    console.log('🎨 Starting background removal for:', imageUrl)
+    
+    // Fetch the image from URL
+    const imageResponse = await fetch(imageUrl)
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status} ${imageResponse.statusText}`)
+    }
+    
+    // Get the array buffer
+    const arrayBuffer = await imageResponse.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
+    
+    // Robust base64 conversion for large files
+    let base64String = ''
+    const chunkSize = 32768 // 32KB chunks to avoid call stack issues
+    
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize)
+      base64String += String.fromCharCode.apply(null, Array.from(chunk))
+    }
+    
+    // Use Deno's btoa for final encoding
+    base64String = btoa(base64String)
+    
+    // Get content type and create data URL
+    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+    const imageData = `data:${contentType};base64,${base64String}`
+    
+    // Extract filename from URL
+    const urlPath = new URL(imageUrl).pathname
+    const fileName = urlPath.split('/').pop() || 'image.jpg'
+    
+    console.log('📤 Calling remove-bg with:', {
+      fileName,
+      dataLength: imageData.length,
+      contentType
+    })
+    
+    // Call remove-bg with correct format
     const { data: bgData, error: bgError } = await supabase.functions.invoke('remove-bg', {
-      body: { imageUrl }
+      body: { 
+        imageData,
+        fileName 
+      }
     })
     
     if (bgError) {
-      console.error('Background removal error:', bgError)
-      throw new Error('Der opstod en fejl ved baggrunds behandling')
+      console.error('❌ Background removal Edge Function error:', bgError)
+      throw new Error(`Baggrunds fjernelse fejlede: ${bgError.message}`)
     }
     
     if (!bgData?.success) {
+      console.error('❌ Background removal failed:', bgData)
       throw new Error(bgData?.error || 'Baggrunds behandling fejlede')
     }
     
-    console.log('✅ Background processing completed')
+    console.log('✅ Background removal completed:', {
+      processed: bgData.processed,
+      standardized: bgData.standardizedImages
+    })
+    
+    // Return the high-quality detail image if available, otherwise processed
+    const processedUrl = bgData.standardizedImages?.detail?.url || bgData.processed
     
     return {
       success: true,
-      processedImageUrl: bgData.processedUrl
+      processedImageUrl: processedUrl
     }
     
   } catch (error) {
-    console.error('Error in processBackground:', error)
+    console.error('❌ Error in processBackground:', error)
     return {
       success: false,
       error: error.message || 'Der opstod en fejl ved baggrunds behandling'
@@ -303,17 +351,18 @@ serve(async (req) => {
           
           // If background processing is requested and upload was successful
           if (result.success && shouldProcessBackground === true && result.imageUrl) {
-            try {
-              const bgResult = await processBackground(supabase, result.imageUrl)
-              if (bgResult.success && bgResult.processedImageUrl) {
-                result.processedImageUrl = bgResult.processedImageUrl
-              } else {
-                // Background processing failed, but don't fail the entire upload
-                console.warn('Background processing failed but upload succeeded:', bgResult.error)
-              }
-            } catch (bgError) {
-              // Background processing error shouldn't affect the main upload
-              console.warn('Background processing error (ignored):', bgError)
+            console.log('🎨 Background processing requested')
+            const bgResult = await processBackground(supabase, result.imageUrl)
+            
+            if (bgResult.success && bgResult.processedImageUrl) {
+              result.processedImageUrl = bgResult.processedImageUrl
+              console.log('✅ Background removed successfully')
+            } else {
+              // Make error more visible
+              console.error('⚠️ Background processing failed:', bgResult.error)
+              // Still return success but with a flag
+              result.backgroundProcessingFailed = true
+              result.backgroundProcessingError = bgResult.error
             }
           }
           

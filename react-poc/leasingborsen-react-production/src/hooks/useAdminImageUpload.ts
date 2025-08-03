@@ -245,13 +245,24 @@ export const useAdminImageUpload = () => {
   const validateImageUrl = useCallback((url: string): boolean => {
     try {
       const urlObj = new URL(url)
-      // Check if it's a valid URL and has an image extension
-      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
+      
+      // More flexible validation
+      const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff']
       const hasImageExtension = imageExtensions.some(ext => 
-        urlObj.pathname.toLowerCase().endsWith(ext)
+        urlObj.pathname.toLowerCase().includes(ext) // includes instead of endsWith
       )
       
-      return hasImageExtension || urlObj.hostname.includes('supabase') // Allow Supabase URLs
+      // Common image hosting patterns
+      const imagePatterns = [
+        'supabase', 'cloudinary', 'imgur', 'unsplash', 
+        '/image', '/photo', '/img', '/media', '/assets'
+      ]
+      const hasImagePattern = imagePatterns.some(pattern => 
+        url.toLowerCase().includes(pattern)
+      )
+      
+      // Accept if has extension OR matches common patterns
+      return hasImageExtension || hasImagePattern
     } catch {
       return false
     }

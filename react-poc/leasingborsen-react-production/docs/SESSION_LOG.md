@@ -96,6 +96,38 @@ archive/
 
 ---
 
+## Session: 2025-08-03 - Fix Background Removal for Listing Images
+
+### What Changed:
+- [x] Fixed API mismatch between admin-image-operations and remove-bg edge functions
+- [x] Implemented robust base64 conversion for large image files
+- [x] Added detailed logging for background removal process
+- [x] Improved error visibility with emojis and clear messages
+- [x] Made URL validation more flexible for various image hosting services
+
+### Root Cause:
+- `admin-image-operations` was passing `{ imageUrl }` to `remove-bg`
+- `remove-bg` expected `{ imageData, fileName }` causing silent failure
+- Errors were being caught but only logged as warnings
+
+### Solution:
+- Modified `processBackground` to fetch image from URL and convert to base64
+- Used chunked conversion to handle large files without stack overflow
+- Added comprehensive error logging throughout the process
+- Returns high-quality detail image when available
+
+### Files Modified:
+- `supabase/functions/admin-image-operations/index.ts` - Fixed processBackground function
+- `src/hooks/useAdminImageUpload.ts` - Improved URL validation
+
+### Testing:
+- Upload image with background removal checkbox enabled
+- Check console for new logging messages (🎨, 📤, ✅, ❌)
+- Verify processedImageUrl is returned in response
+- Confirm background is removed in preview dialog
+
+---
+
 ## Session: 2025-08-01 - Test Branch Merge and Cleanup
 
 ### What Changed:
@@ -214,6 +246,45 @@ archive/
 - Exact key matching should NOT include transmission for business logic
 - Fuzzy matching threshold of 0.75 catches legitimate variants better
 - Proper Vitest fetch mocking requires `vi.stubGlobal()` not direct assignment
+
+---
+
+## Session: 2025-08-02 - Multiple PDF Upload with Merge Feature
+
+### What Changed:
+- [x] Extended SellerPDFUploadModal to support multiple file uploads
+- [x] Added merge mode toggle for combining PDFs before extraction
+- [x] Implemented file list UI with remove buttons
+- [x] Fixed TypeScript build error (state.file → state.files)
+- [x] Deployed ai-extract-vehicles Edge Function to staging and production
+- [x] Successfully deployed feature to production
+
+### Implementation Details:
+- Modified state from `file: File | null` to `files: File[]`
+- Added `mergeMode: boolean` state for toggling merge behavior
+- Reused existing merge pattern from URL-based bulk extraction: `\n=== PDF: ${name} ===\n${text}`
+- Sequential text extraction from each PDF using Railway service
+- Combined text sent to AI extraction endpoint when merge mode is enabled
+
+### Technical Notes:
+- CORS was already properly configured in ai-extract-vehicles (OPTIONS handled before rate limiting)
+- Edge Function deployment refreshed the function code on both staging and production
+- No changes needed to the Edge Function code itself
+
+### Files Modified:
+- `src/components/admin/sellers/SellerPDFUploadModal.tsx` - Main implementation
+- Deployed: `supabase/functions/ai-extract-vehicles` (no code changes, just deployment)
+
+### Commits:
+- 63a4b8d feat: add multiple PDF upload with merge support
+- 1f6d7d3 fix: correct state.file reference to state.files for build error
+
+### Known Issues:
+- None - feature is working correctly in production
+
+### Next Steps:
+- Write tests for multiple file upload functionality (marked as low priority)
+- Monitor usage and gather user feedback
 
 ---
 
