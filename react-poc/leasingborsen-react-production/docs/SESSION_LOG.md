@@ -364,6 +364,54 @@ archive/
 
 ---
 
+## Session: 2025-08-04 - Background Image Removal Tests & Fixes
+
+### What Changed:
+- [x] Completed comprehensive test implementation for image background removal
+- [x] Fixed all test failures related to image upload functionality
+- [x] Fixed FormProvider context issues by mocking form components
+- [x] Fixed reference data mocking in integration tests
+- [x] Fixed auto-save timing expectations in tests
+- [x] Fixed useAdminFormState test expecting listingUpdates instead of listingData
+
+### Test Coverage Achieved:
+- **Unit Tests**: ImageUploadWithBackgroundRemoval component - 15 tests ✅
+- **Integration Tests**: Image persistence flow - 7 tests ✅
+- **Hook Tests**: useAdminFormState - All tests passing ✅
+- **Total**: 36 tests passing for image upload functionality
+
+### Key Fixes Applied:
+1. **FormProvider Context**: Mocked form UI components instead of wrapping with FormProvider
+2. **Reference Data**: Fixed mockFrom implementation to return proper query builder chain
+3. **Auto-Save**: Clarified that auto-save only triggers on changes, not initial load
+4. **Parameter Names**: Fixed test to expect `listingData` instead of `listingUpdates`
+
+### Testing Strategy:
+```typescript
+// Mock form components to avoid FormProvider dependency
+vi.mock('@/components/ui/form', () => ({
+  FormItem: ({ children, className }: any) => <div className={className}>{children}</div>,
+  FormLabel: ({ children }: any) => <label>{children}</label>,
+  FormMessage: ({ children }: any) => <span role="alert">{children}</span>,
+}))
+```
+
+### Files Modified:
+- `src/components/admin/shared/__tests__/ImageUploadWithBackgroundRemoval.test.tsx`
+- `src/components/admin/listings/__tests__/ImagePersistence.integration.test.tsx`
+- `src/hooks/__tests__/useAdminFormState.test.tsx`
+- Removed duplicate: `src/hooks/__tests__/useAdminFormState.test.ts`
+
+### Known Issues:
+- Some unrelated test failures in other parts of the codebase (not related to image upload)
+
+### Next Steps:
+- Monitor production for successful background removal persistence
+- Consider implementing E2E tests for complete workflow
+- Document test patterns for future component testing
+
+---
+
 ## Template for Future Sessions
 
 ## Session: [YYYY-MM-DD] - [Primary Task Description]

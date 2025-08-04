@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@/test/test-utils'
 import { useAdminFormState } from '../useAdminFormState'
 import { mockReferenceData, mockListing, mockCreateMutation, mockUpdateMutation, mockUseReferenceData } from '@/test/test-utils'
+import { toast } from 'sonner'
 
 // Mock the dependencies
 const mockNavigate = vi.fn()
@@ -20,7 +21,7 @@ vi.mock('@/hooks/useReferenceData', () => ({
   useReferenceData: () => mockUseReferenceData
 }))
 
-vi.mock('@/hooks/mutations', () => ({
+vi.mock('@/hooks/useAdminOperations', () => ({
   useCreateListingWithOffers: () => mockCreateMutation,
   useUpdateListingWithOffers: () => mockUpdateMutation
 }))
@@ -192,7 +193,7 @@ describe('useAdminFormState', () => {
 
       expect(mockUpdateMutation.mutateAsync).toHaveBeenCalledWith({
         listingId: mockListing.listing_id,
-        listingUpdates: expect.objectContaining({
+        listingData: expect.objectContaining({
           make_id: '2', // BMW ID
           model_id: '3', // X3 ID
           body_type_id: '3', // SUV ID
@@ -220,12 +221,12 @@ describe('useAdminFormState', () => {
         seller_id: 'seller-1'
       }
 
+      // handleSubmit catches errors internally, so we don't await rejection
       await act(async () => {
         await result.current.handleSubmit(formData as any)
       })
 
-      // Import the mocked toast
-      const { toast } = await import('sonner')
+      // Verify the error was handled by showing a toast
       expect(toast.error).toHaveBeenCalledWith(errorMessage)
     })
 
