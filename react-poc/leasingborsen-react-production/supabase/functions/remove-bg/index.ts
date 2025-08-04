@@ -2,10 +2,12 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { Image } from 'https://deno.land/x/imagescript@1.2.15/mod.ts';
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts';
+import { autoCropToContent, type AutoCropOptions } from './auto-crop.ts';
 
 interface RemoveBgRequest {
   imageData: string; // base64 encoded image
   fileName: string;
+  skipAutoCrop?: boolean; // Optional flag to skip auto-crop
 }
 
 interface StandardizedImage {
@@ -24,6 +26,16 @@ interface RemoveBgResponse {
   };
   error?: string;
 }
+
+// Auto-crop configuration - tighter cropping like LeaseLoco
+const AUTO_CROP_OPTIONS: AutoCropOptions = {
+  alphaThreshold: 25,
+  paddingRatio: 0.05,  // Reduced from 0.15 to 0.05 (5% padding)
+  minPadding: 20,      // Reduced from 50 to 20px
+  maxCropRatio: 0.9,   // Increased from 0.8 to 0.9 (allow 90% crop)
+  maxAspectRatio: 3,
+  minAspectRatio: 0.33
+};
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS
@@ -215,7 +227,65 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // Convert processed image to buffer
-    const processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
+    let processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
+    console.log('Processed image base64 start:', processedImageBase64.substring(0, 50));
+    console.log('Is PNG signature:', processedBuffer[0] === 0x89 && processedBuffer[1] === 0x50);
+
+    // Apply auto-crop to remove whitespace
+    try {
+      console.log('Starting auto-crop process...');
+      console.log('Buffer length before decode:', processedBuffer.length);
+      
+      const processedImage = await Image.decode(processedBuffer);
+      console.log('Decoded image properties:', { 
+        width: processedImage.width, 
+        height: processedImage.height,
+        hasData: !!processedImage,
+        type: typeof processedImage,
+        constructor: processedImage?.constructor?.name
+      });
+      
+      // Validate the decoded image
+      if (!processedImage || processedImage.width <= 0 || processedImage.height <= 0) {
+        throw new Error(`Invalid decoded image: width=${processedImage?.width}, height=${processedImage?.height}`);
+      }
+      
+      const { image: croppedImage, metadata: cropMetadata } = await autoCropToContent(
+        processedImage, 
+        AUTO_CROP_OPTIONS
+      );
+      
+      // Encode the manually cropped image
+      try {
+        processedBuffer = await croppedImage.encode();
+        console.log('✅ Successfully encoded manually cropped image');
+      } catch (encodeError) {
+        console.error('❌ Failed to encode manually cropped image:', encodeError);
+        // Fallback to uncropped image if encoding still fails
+        console.log('⚠️ Falling back to uncropped processed image');
+        processedBuffer = await processedImage.encode();
+      }
+      
+      console.log('Auto-crop applied:', {
+        originalDimensions: cropMetadata.originalDimensions,
+        croppedDimensions: {
+          width: croppedImage.width,
+          height: croppedImage.height
+        },
+        whitespaceReduction: Math.round(
+          (1 - (croppedImage.width * croppedImage.height) / 
+          (cropMetadata.originalDimensions.width * cropMetadata.originalDimensions.height)) * 100
+        ) + '%'
+      });
+    } catch (cropError) {
+      console.error('Auto-crop failed, using original processed image:', cropError);
+      console.error('Error details:', {
+        name: cropError.name,
+        message: cropError.message,
+        stack: cropError.stack
+      });
+      // Continue with original processed image if crop fails
+    }
 
     // Upload processed image to Supabase Storage
     const processedFileName = `background-removal/processed/${timestamp}-${fileName}.png`;
@@ -236,10 +306,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     try {
       // console.log('Starting image standardization...');
       
-      // Define standard sizes with higher resolution
+      // Define standard sizes with higher resolution and tighter aspect ratio
       const sizes = {
-        grid: { width: 800, height: 500 },     // Doubled from 400x250
-        detail: { width: 1600, height: 800 }   // Doubled from 800x400
+        grid: { width: 800, height: 450 },     // 16:9 aspect ratio for tighter crop
+        detail: { width: 1920, height: 1080 }  // Full HD 16:9 aspect ratio
       };
       
       // Load the processed image for standardization
@@ -251,8 +321,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         // Create new image with transparent background
         const targetImage = new Image(dimensions.width, dimensions.height);
         
-        // Calculate scale to fit image with 5% padding
-        const padding = 0.05;
+        // Calculate scale to fit image with minimal padding for tight crop
+        const padding = 0.02;  // Only 2% padding for very tight crop
         const maxWidth = dimensions.width * (1 - padding * 2);
         const maxHeight = dimensions.height * (1 - padding * 2);
         

@@ -46,7 +46,10 @@
       "Bash(git fetch:*)",
       "Bash(npm test:*)",
       "mcp__serena__replace_regex",
-      "Bash(deno check:*)"
+      "Bash(deno check:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

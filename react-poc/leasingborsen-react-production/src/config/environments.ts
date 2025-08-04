@@ -12,8 +12,8 @@ export interface EnvironmentConfig {
 }
 
 export const getEnvironmentConfig = (): EnvironmentConfig => {
-  const env = process.env.NODE_ENV;
-  const isTest = process.env.VITEST === 'true';
+  const env = import.meta.env.MODE;
+  const isTest = import.meta.env.VITEST === 'true';
   const isVercelPreview = import.meta.env.VERCEL_ENV === 'preview';
   
   // Additional check for Vercel preview based on hostname pattern
@@ -52,7 +52,7 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   }
   
   // Vercel Preview environment - uses staging database
-  if (isVercelPreview || isVercelPreviewByHostname || env === 'staging' || process.env.VITE_ENVIRONMENT === 'staging') {
+  if (isVercelPreview || isVercelPreviewByHostname || env === 'staging' || import.meta.env.VITE_ENVIRONMENT === 'staging') {
     return {
       name: 'staging',
       supabase: {
