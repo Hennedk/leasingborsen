@@ -37,6 +37,7 @@ class ImageMetadata(BaseModel):
     final_size: List[int]
     has_background_removed: bool
     has_shadow: bool
+    shadow_type: Optional[str] = None  # 'api_shadow' when using API shadow
     was_cropped: bool
     processing_time_ms: int
     format: str
