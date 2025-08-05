@@ -303,7 +303,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
                       </Button>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      PNG, JPG, GIF op til 5MB
+                      PNG, JPG, WebP op til 5MB
                     </p>
                   </div>
                 </div>
