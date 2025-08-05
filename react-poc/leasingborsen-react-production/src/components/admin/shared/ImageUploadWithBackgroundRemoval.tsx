@@ -64,6 +64,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     uploadProgress, 
     error: uploadError, 
     uploadImage, 
+    processBackground,
     validateImageUrl, 
     reset: resetUpload
   } = useAdminImageUpload()
@@ -161,7 +162,7 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
   }, [handleFiles])
 
   const handleConfirmProcessed = useCallback(async () => {
-    if (!processingPreview?.processedUrl || !processingPreview.file) return
+    if (!processingPreview?.processedUrl) return
 
     try {
       // Use the detail URL as the main image (it's higher quality)
@@ -172,7 +173,8 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
         processedUrl: processingPreview.processedUrl,
         gridUrl: processingPreview.gridUrl,
         detailUrl: processingPreview.detailUrl,
-        currentImages: images
+        currentImages: images,
+        isUrlImage: !processingPreview.file
       })
       
       onImagesChange([...images, mainImageUrl])
@@ -186,38 +188,47 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
         )
       }
       
-      toast.success('Billede med fjernet baggrund uploadet')
+      toast.success('Billede med fjernet baggrund tilføjet')
       setShowPreviewDialog(false)
       setProcessingPreview(null)
       resetUpload()
     } catch (error) {
-      console.error('Error uploading processed image:', error)
-      toast.error('Fejl ved upload af behandlet billede')
+      console.error('Error adding processed image:', error)
+      toast.error('Fejl ved tilføjelse af behandlet billede')
     }
   }, [processingPreview, images, onImagesChange, onBackgroundRemovalComplete, resetUpload])
 
   const handleUseOriginal = useCallback(async () => {
-    if (!processingPreview?.file) return
+    if (!processingPreview) return
 
     try {
-      const uploadedImage = await uploadImage(processingPreview.file)
-      onImagesChange([...images, uploadedImage.publicUrl])
-      toast.success('Originalt billede uploadet')
+      // If it's a URL image (no file), just add the URL
+      if (!processingPreview.file) {
+        onImagesChange([...images, processingPreview.originalUrl])
+        toast.success('Originalt billede tilføjet')
+      } else {
+        // Upload the file
+        const uploadedImage = await uploadImage(processingPreview.file)
+        onImagesChange([...images, uploadedImage.publicUrl])
+        toast.success('Originalt billede uploadet')
+      }
+      
       setShowPreviewDialog(false)
       setProcessingPreview(null)
       resetUpload()
     } catch (error) {
-      console.error('Error uploading original:', error)
-      toast.error('Fejl ved upload af billeder')
+      console.error('Error adding original:', error)
+      toast.error('Fejl ved tilføjelse af billede')
     }
   }, [processingPreview, uploadImage, images, onImagesChange, resetUpload])
 
-  const handleAddUrl = useCallback(() => {
+  const handleAddUrl = useCallback(async () => {
     if (!urlInput.trim()) return
 
     console.log('🔗 handleAddUrl called with URL:', urlInput.trim())
     console.log('🔗 Current images:', images)
     console.log('🔗 Max images:', maxImages)
+    console.log('🔗 Remove background enabled:', enableBackgroundRemoval, removeBackground)
 
     if (!validateImageUrl(urlInput)) {
       toast.error('Ugyldig billede URL')
@@ -229,12 +240,46 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
       return
     }
 
-    const newImages = [...images, urlInput.trim()]
-    console.log('🔗 Calling onImagesChange with:', newImages)
-    onImagesChange(newImages)
-    setUrlInput('')
-    toast.success('Billede URL tilføjet')
-  }, [urlInput, images, maxImages, validateImageUrl, onImagesChange])
+    const imageUrl = urlInput.trim()
+    
+    // If background removal is enabled and checked, process the URL
+    if (enableBackgroundRemoval && removeBackground) {
+      console.log('🔗 Starting background removal process for URL...')
+      
+      setProcessingPreview({
+        file: null as any, // URL doesn't have a file
+        originalUrl: imageUrl
+      })
+      setShowPreviewDialog(true)
+      setUrlInput('')
+      
+      // Start processing with admin image operations
+      try {
+        const processedUrl = await processBackground(imageUrl)
+        
+        // Update preview with processed URL
+        setProcessingPreview(prev => prev ? {
+          ...prev,
+          processedUrl: processedUrl,
+          gridUrl: processedUrl,
+          detailUrl: processedUrl
+        } : null)
+      } catch (error) {
+        console.error('Error processing URL image:', error)
+        setProcessingPreview(prev => prev ? {
+          ...prev,
+          error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling'
+        } : null)
+      }
+    } else {
+      // Normal URL add without background removal
+      const newImages = [...images, imageUrl]
+      console.log('🔗 Calling onImagesChange with:', newImages)
+      onImagesChange(newImages)
+      setUrlInput('')
+      toast.success('Billede URL tilføjet')
+    }
+  }, [urlInput, images, maxImages, validateImageUrl, onImagesChange, enableBackgroundRemoval, removeBackground, processBackground])
 
   const handleRemoveImage = useCallback((index: number) => {
     const newImages = images.filter((_, i) => i !== index)

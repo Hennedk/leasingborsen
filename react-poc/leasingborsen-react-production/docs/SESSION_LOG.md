@@ -48,6 +48,52 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 - ✅ Multiple sizes generated correctly (grid, detail, full)
 - ✅ Cache working to prevent duplicate processing
 
+---
+
+## Session: 2025-08-05 - Shadow Functionality Simplification
+
+### What Changed:
+- [x] Investigated API4AI shadow feature and updated to use built-in shadows
+- [x] Removed ALL custom shadow implementations (drop, ground, dual ground)
+- [x] Updated Python service to only apply shadows via API during background removal
+- [x] Cleaned up models and removed shadow-related types
+- [x] Deployed changes to production
+
+### Implementation Details:
+- API4AI supports shadow via `fg-image-shadow` mode
+- Removed custom shadow functions from `app.py`
+- Cleaned up imports and model definitions
+- Shadow now ONLY applies when `remove_background=true`
+- No shadow functionality when background removal is disabled
+
+### Breaking Changes:
+- `add_shadow` parameter now only works with `remove_background=true`
+- Custom shadow types no longer available
+- Shadows cannot be applied independently of background removal
+
+### Known Issues:
+- Git authentication prevented direct pushing (changes committed locally)
+- Fixed: `shadow_type` metadata field was missing (restored as optional)
+
+### Next Steps:
+1. Monitor API shadow quality in production
+2. Update any UI that references custom shadow options
+3. Remove shadow-related test images and unused files
+4. Update user documentation about shadow behavior
+
+### Files Modified:
+- `railway-pdfplumber-poc/app.py` - Removed custom shadow logic
+- `railway-pdfplumber-poc/models.py` - Removed ShadowType enum, cleaned parameters
+- `railway-pdfplumber-poc/image_processing/background.py` - Added shadow support
+- `supabase/functions/remove-bg/index.ts` - Updated documentation
+- Created test files for validation
+
+### Testing Results:
+- ✅ Shadows only apply with background removal
+- ✅ No custom shadows are applied
+- ✅ API shadow integration working correctly
+- ✅ Metadata properly tracks shadow application
+
 ### Edge Functions to Update:
 Based on imagescript usage, these Edge Functions need updating:
 - `admin-image-operations` - Primary target for image processing
