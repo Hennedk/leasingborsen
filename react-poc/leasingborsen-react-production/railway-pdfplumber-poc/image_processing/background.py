@@ -93,29 +93,30 @@ async def remove_background_api4ai(
                 # Parse response
                 result = await response.json()
                 
-                # Check for success
-                if result.get('status', {}).get('code') != 'ok':
-                    error_msg = result.get('status', {}).get('message', 'Unknown error')
-                    raise BackgroundRemovalError(f"API4.ai error: {error_msg}")
-                
-                # Extract result image
-                results = result.get('results', [])
-                if not results:
-                    raise BackgroundRemovalError("No results returned from API4.ai")
-                
-                # Get the background-removed image
-                entities = results[0].get('entities', [])
-                for entity in entities:
-                    if entity.get('kind') == 'image' and entity.get('name') == 'result':
-                        image_data = entity.get('image')
-                        if image_data:
-                            # If it's already base64, return it
-                            if isinstance(image_data, str):
-                                return image_data
-                            # If it's bytes, encode to base64
-                            return base64.b64encode(image_data).decode('utf-8')
-                
-                raise BackgroundRemovalError("No result image found in API response")
+                # Check for success in results array
+                if 'results' in result and len(result['results']) > 0:
+                    first_result = result['results'][0]
+                    status = first_result.get('status', {})
+                    
+                    if status.get('code') != 'ok':
+                        error_msg = status.get('message', 'Unknown error')
+                        raise BackgroundRemovalError(f"Cars API error: {error_msg}")
+                    
+                    # Extract result image from entities
+                    entities = first_result.get('entities', [])
+                    for entity in entities:
+                        if entity.get('kind') == 'image' and 'RemBgMode.image' in entity.get('name', ''):
+                            image_data = entity.get('image')
+                            if image_data:
+                                # If it's already base64, return it
+                                if isinstance(image_data, str):
+                                    return image_data
+                                # If it's bytes, encode to base64
+                                return base64.b64encode(image_data).decode('utf-8')
+                    
+                    raise BackgroundRemovalError("No result image found in API response")
+                else:
+                    raise BackgroundRemovalError("No results returned from cars API")
                 
     except asyncio.TimeoutError:
         raise BackgroundRemovalError("API4.ai request timed out")
