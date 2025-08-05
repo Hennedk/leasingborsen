@@ -186,7 +186,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-blue-50/80 to-blue-100/60 dark:from-blue-950/20 dark:to-blue-900/30">
+        <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
           {/* Enhanced placeholder for missing images */}
           {!car.image && !car.processed_image_grid ? (
             <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] flex items-center justify-center text-muted-foreground w-full h-56">
