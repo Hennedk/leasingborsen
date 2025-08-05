@@ -49,7 +49,11 @@
       "Bash(deno check:*)",
       "WebFetch(domain:github.com)",
       "Bash(chmod:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(export VITE_SUPABASE_URL=https://lpbtgtpgbnybjqcpsrrf.supabase.co)",
+      "Bash(export:*)",
+      "Bash(mkdir:*)",
+      "mcp__serena__search_for_pattern"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -355,12 +355,15 @@ async function updateListing(supabase: any, listingId: string, listingData: any,
         listing_id: listingId
       }))
       
+      console.log('Inserting offers:', JSON.stringify(offersToInsert, null, 2))
+      
       const { error: offersError } = await supabase
         .from('lease_pricing')
         .insert(offersToInsert)
       
       if (offersError) {
         console.error('Error updating offers:', offersError)
+        console.error('Offers being inserted:', offersToInsert)
         throw new Error(errorMessages.updateError)
       }
     }

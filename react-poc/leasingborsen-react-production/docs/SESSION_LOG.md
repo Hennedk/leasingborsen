@@ -4,6 +4,53 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-05 - Auto-Crop Bug Investigation and Python Service Planning
+
+### What Changed:
+- [x] Investigated auto-crop feature failing with boundary errors
+- [x] Identified root cause: imagescript library incompatibility with API4.ai PNGs
+- [x] Fixed database trigger `mark_lease_score_stale()` using wrong column name
+- [x] Implemented manual pixel copying workaround for imagescript bug
+- [x] Created fallback mechanism for failed auto-crop operations
+- [x] Deployed updated Edge Functions (remove-bg, admin-listing-operations)
+- [x] Created comprehensive Python service implementation plan
+
+### Known Issues:
+- imagescript cannot decode PNG images from API4.ai (fundamental incompatibility)
+- Auto-crop feature non-functional with current architecture
+- Image objects report dimensions but have no accessible pixel data
+
+### Root Cause Analysis:
+The imagescript library's Image objects from API4.ai PNGs have:
+- Valid width/height properties
+- Missing or corrupted bitmap/pixel data
+- Any pixel access attempts fail with boundary errors
+- This affects both the built-in crop() method and manual pixel operations
+
+### Next Steps:
+1. Implement Python microservice with Pillow for image processing
+2. Use test-driven development approach (tests written in plan)
+3. Deploy on Railway platform
+4. Migrate from Edge Function to Python service
+5. Add drop shadow feature as bonus
+
+### Files Modified:
+- `/supabase/functions/remove-bg/index.ts` - Added debugging, fallback logic
+- `/supabase/functions/remove-bg/auto-crop.ts` - Manual crop implementation  
+- `/supabase/functions/admin-listing-operations/index.ts` - Enhanced logging
+- `/supabase/functions/admin-image-operations/index.ts` - Logging for debugging
+- `docs/PYTHON_IMAGE_SERVICE_PLAN.md` - Created comprehensive implementation plan
+- `docs/AUTO_CROP_MANUAL_FIX.md` - Documented the attempted fix
+- Database migration for `mark_lease_score_stale()` trigger
+
+### Key Decisions:
+- Keep API4.ai for background removal (working well)
+- Use Python/Pillow for image manipulation (proven compatibility)
+- Implement as separate microservice for flexibility
+- Follow TDD approach for reliability
+
+---
+
 ## Session: 2025-01-31 - CLAUDE.md Restructuring
 
 ### What Changed:

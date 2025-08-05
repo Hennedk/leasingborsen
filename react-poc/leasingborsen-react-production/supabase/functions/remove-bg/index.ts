@@ -3,6 +3,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { Image } from 'https://deno.land/x/imagescript@1.2.15/mod.ts';
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts';
 import { autoCropToContent, type AutoCropOptions } from './auto-crop.ts';
+import { fallbackAutoCrop } from './sharp-crop.ts';
 
 interface RemoveBgRequest {
   imageData: string; // base64 encoded image
@@ -72,10 +73,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const requestBody = await req.json();
     console.log('Received request body keys:', Object.keys(requestBody));
     
-    const { imageData, fileName }: RemoveBgRequest = requestBody;
+    const { imageData, fileName, skipAutoCrop }: RemoveBgRequest = requestBody;
     console.log('Received request with fileName:', fileName);
     console.log('ImageData type:', typeof imageData);
     console.log('ImageData length:', imageData?.length || 0);
+    console.log('Skip auto-crop:', skipAutoCrop);
     
     // Validate inputs early
     if (!imageData || !fileName) {
@@ -231,60 +233,41 @@ Deno.serve(async (req: Request): Promise<Response> => {
     console.log('Processed image base64 start:', processedImageBase64.substring(0, 50));
     console.log('Is PNG signature:', processedBuffer[0] === 0x89 && processedBuffer[1] === 0x50);
 
-    // Apply auto-crop to remove whitespace
-    try {
-      console.log('Starting auto-crop process...');
-      console.log('Buffer length before decode:', processedBuffer.length);
-      
-      const processedImage = await Image.decode(processedBuffer);
-      console.log('Decoded image properties:', { 
-        width: processedImage.width, 
-        height: processedImage.height,
-        hasData: !!processedImage,
-        type: typeof processedImage,
-        constructor: processedImage?.constructor?.name
-      });
-      
-      // Validate the decoded image
-      if (!processedImage || processedImage.width <= 0 || processedImage.height <= 0) {
-        throw new Error(`Invalid decoded image: width=${processedImage?.width}, height=${processedImage?.height}`);
-      }
-      
-      const { image: croppedImage, metadata: cropMetadata } = await autoCropToContent(
-        processedImage, 
-        AUTO_CROP_OPTIONS
-      );
-      
-      // Encode the manually cropped image
+    // Apply auto-crop to remove whitespace (unless explicitly skipped)
+    let cropMetadata = null;
+    
+    if (!skipAutoCrop) {
       try {
-        processedBuffer = await croppedImage.encode();
-        console.log('✅ Successfully encoded manually cropped image');
-      } catch (encodeError) {
-        console.error('❌ Failed to encode manually cropped image:', encodeError);
-        // Fallback to uncropped image if encoding still fails
-        console.log('⚠️ Falling back to uncropped processed image');
-        processedBuffer = await processedImage.encode();
+        console.log('Starting auto-crop process...');
+        console.log('Buffer length before decode:', processedBuffer.length);
+        
+        // Use fallback auto-crop that doesn't depend on imagescript
+        const { buffer: croppedBuffer, metadata } = await fallbackAutoCrop(
+          processedBuffer,
+          AUTO_CROP_OPTIONS
+        );
+        
+        processedBuffer = croppedBuffer;
+        cropMetadata = metadata;
+        
+        console.log('Auto-crop completed (fallback mode):', {
+          originalDimensions: cropMetadata.originalDimensions,
+          cropBounds: cropMetadata.cropBounds,
+          preservedOriginal: true
+        });
+      } catch (cropError) {
+        console.error('Auto-crop failed, using original processed image:', cropError);
+        console.error('Error details:', {
+          name: cropError.name,
+          message: cropError.message,
+          stack: cropError.stack
+        });
+        // Reset processedBuffer to original base64 data
+        processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
+        console.log('Reverted to original processed buffer');
       }
-      
-      console.log('Auto-crop applied:', {
-        originalDimensions: cropMetadata.originalDimensions,
-        croppedDimensions: {
-          width: croppedImage.width,
-          height: croppedImage.height
-        },
-        whitespaceReduction: Math.round(
-          (1 - (croppedImage.width * croppedImage.height) / 
-          (cropMetadata.originalDimensions.width * cropMetadata.originalDimensions.height)) * 100
-        ) + '%'
-      });
-    } catch (cropError) {
-      console.error('Auto-crop failed, using original processed image:', cropError);
-      console.error('Error details:', {
-        name: cropError.name,
-        message: cropError.message,
-        stack: cropError.stack
-      });
-      // Continue with original processed image if crop fails
+    } else {
+      console.log('Auto-crop skipped by request parameter');
     }
 
     // Upload processed image to Supabase Storage

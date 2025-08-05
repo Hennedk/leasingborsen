@@ -44,6 +44,17 @@ export async function findContentBounds(
     return null;
   }
   
+  // Debug: Check internal image properties
+  console.log('Image internal properties:', {
+    width: image.width,
+    height: image.height,
+    bitmap: image.bitmap ? 'present' : 'missing',
+    data: image.data ? 'present' : 'missing',
+    // Check if these are the actual dimensions
+    bitmapLength: image.bitmap?.length,
+    expectedLength: image.width * image.height * 4
+  });
+  
   // Additional validation
   const width = Math.floor(image.width);
   const height = Math.floor(image.height);
@@ -53,13 +64,30 @@ export async function findContentBounds(
     return null;
   }
   
-  // Test if we can actually access pixels
+  // Test if we can actually access pixels - be extra careful with edge pixels
   try {
-    // Try to access the last pixel to ensure dimensions are correct
-    const testColor = image.getPixelAt(width - 1, height - 1);
-    if (!testColor && testColor !== 0) {
-      console.error('Cannot access pixels in image, getPixelAt returned:', testColor);
-      return null;
+    // Test corners more carefully
+    const testPoints = [
+      { x: 0, y: 0 },
+      { x: Math.min(10, width - 1), y: 0 },
+      { x: width - 1, y: 0 },
+      { x: width - 1, y: height - 1 },
+      { x: 0, y: height - 1 }
+    ];
+    
+    for (const point of testPoints) {
+      if (point.x >= 0 && point.x < width && point.y >= 0 && point.y < height) {
+        try {
+          const testColor = image.getPixelAt(point.x, point.y);
+          if (testColor === undefined) {
+            console.error(`Cannot access pixel at (${point.x}, ${point.y})`);
+            return null;
+          }
+        } catch (e) {
+          console.error(`Failed to test pixel at (${point.x}, ${point.y}):`, e.message);
+          return null;
+        }
+      }
     }
   } catch (e) {
     console.error('Image pixel access test failed:', {
