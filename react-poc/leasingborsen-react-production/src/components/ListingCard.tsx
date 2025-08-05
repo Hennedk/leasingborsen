@@ -186,7 +186,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+        <div className="relative overflow-hidden bg-gradient-to-br from-muted/5 to-muted/10">
           {/* Enhanced placeholder for missing images */}
           {!car.image && !car.processed_image_grid ? (
             <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] flex items-center justify-center text-muted-foreground w-full h-56">
@@ -204,7 +204,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 <div className="absolute inset-0 z-10">
                   <img 
                     src={car.thumbnail_base64} 
-                    className={`w-full h-56 object-cover blur-sm scale-105 transition-opacity duration-300 ${
+                    className={`w-full h-56 object-contain p-4 blur-sm scale-105 transition-opacity duration-300 ${
                       imageLoaded ? 'opacity-0' : ''
                     }`}
                     alt={`${car.make} ${car.model} thumbnail`}
@@ -222,7 +222,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 ref={imageRef}
                 src={car.processed_image_grid || car.image}
                 alt={carAltText}
-                className={`w-full h-56 object-cover transition-opacity duration-500 ease-out ${
+                className={`w-full h-56 object-contain p-6 transition-opacity duration-500 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 loading="lazy"

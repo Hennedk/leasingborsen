@@ -19,8 +19,8 @@ class ImageOptions(BaseModel):
     add_shadow: bool = True  # Only applies with remove_background via API shadow
     create_sizes: bool = True
     padding_percent: float = 0.05
-    quality: int = 85
-    format: str = "WEBP"
+    quality: int = 100
+    format: str = "PNG"
 
 
 class ProcessImageRequest(BaseModel):
@@ -68,7 +68,7 @@ class ProcessImageResponse(BaseModel):
                     "has_shadow": True,
                     "was_cropped": True,
                     "processing_time_ms": 2150,
-                    "format": "WEBP"
+                    "format": "PNG"
                 }
             }
         }

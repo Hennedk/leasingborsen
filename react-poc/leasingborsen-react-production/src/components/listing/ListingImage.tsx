@@ -14,7 +14,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   const [imageError, setImageError] = useState(false)
   return (
     <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
-      <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+      <div className="relative overflow-hidden bg-gradient-to-br from-muted/5 to-muted/10">
         {(car.processed_image_detail || car.image) && !imageError ? (
           <>
             {imageLoading && (
@@ -24,7 +24,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
               src={car.processed_image_detail || car.image} 
               alt={`${car.make} ${car.model}`}
               className={cn(
-                "w-full h-96 object-cover transition-opacity duration-500 ease-out",
+                "w-full h-96 object-contain p-8 transition-opacity duration-500 ease-out",
                 imageLoading ? "opacity-0" : "opacity-100"
               )}
               loading="lazy"

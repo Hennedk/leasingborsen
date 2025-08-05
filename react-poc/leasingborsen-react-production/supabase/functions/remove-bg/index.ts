@@ -131,8 +131,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           add_shadow: true, // Always true for the remove-bg function - shadow via API
           create_sizes: true,
           padding_percent: 0.05, // 5% padding for tight crop like LeaseLoco
-          quality: 85,
-          format: 'WEBP'
+          quality: 100,
+          format: 'PNG'
         },
         mode: 'car'
       })
@@ -164,12 +164,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Upload the main processed image
     if (pythonResult.processed) {
       const processedBuffer = Uint8Array.from(atob(pythonResult.processed), c => c.charCodeAt(0));
-      const processedFileName = `background-removal/processed/${timestamp}-${sanitizedFileName}.webp`;
+      const processedFileName = `background-removal/processed/${timestamp}-${sanitizedFileName}.png`;
       
       const { data: processedUpload, error: processedError } = await supabase.storage
         .from('images')
         .upload(processedFileName, processedBuffer, {
-          contentType: 'image/webp',
+          contentType: 'image/png',
         });
 
       if (processedError) {
@@ -183,12 +183,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const [variant, base64Image] of Object.entries(pythonResult.sizes)) {
         try {
           const buffer = Uint8Array.from(atob(base64Image as string), c => c.charCodeAt(0));
-          const standardizedFileName = `background-removal/${variant}/${timestamp}-${sanitizedFileName}.webp`;
+          const standardizedFileName = `background-removal/${variant}/${timestamp}-${sanitizedFileName}.png`;
           
           const { data: standardizedUpload, error: uploadError } = await supabase.storage
             .from('images')
             .upload(standardizedFileName, buffer, {
-              contentType: 'image/webp',
+              contentType: 'image/png',
             });
           
           if (uploadError) {
@@ -243,7 +243,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       
     const { data: { publicUrl: processedUrl } } = supabase.storage
       .from('images')
-      .getPublicUrl(`background-removal/processed/${timestamp}-${fileName}.webp`);
+      .getPublicUrl(`background-removal/processed/${timestamp}-${sanitizedFileName}.png`);
 
     console.log('✅ Background removal completed successfully');
 
