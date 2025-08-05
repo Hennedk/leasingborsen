@@ -14,9 +14,6 @@ from typing import Dict, Any
 # Import image processing functions
 from image_processing import (
     auto_crop_with_padding,
-    add_drop_shadow,
-    add_ground_shadow,
-    add_dual_ground_shadow,
     remove_background_api4ai,
     create_image_sizes
 )
@@ -25,8 +22,7 @@ from models import (
     ProcessImageRequest,
     ProcessImageResponse,
     ImageMetadata,
-    HealthResponse,
-    ShadowType
+    HealthResponse
 )
 
 app = FastAPI(title="Leasingborsen Processing Service", version="2.0.0")
@@ -111,8 +107,6 @@ async def process_image(request: ProcessImageRequest):
         'auto_crop': request.options.auto_crop,
         'add_shadow': request.options.add_shadow,
         'create_sizes': request.options.create_sizes,
-        'shadow_offset': request.options.shadow_offset,
-        'shadow_blur': request.options.shadow_blur,
         'padding_percent': request.options.padding_percent,
         'quality': request.options.quality,
         'format': request.options.format,
@@ -156,6 +150,7 @@ async def process_image(request: ProcessImageRequest):
                 # Call API with fg-image mode for cars
                 # API will add shadow if requested
                 api_mode = "fg-image"  # Always use fg-image for foreground extraction
+                print(f"🎨 Calling background removal - add_shadow: {request.options.add_shadow}")
                 result_base64 = await remove_background_api4ai(
                     current_base64,
                     mode=api_mode,
@@ -187,48 +182,8 @@ async def process_image(request: ProcessImageRequest):
             except Exception as e:
                 print(f"Auto-crop failed: {str(e)}")
         
-        # Step 3: Add custom shadow only if not using API shadow
-        # (API shadow is applied during background removal)
-        if request.options.add_shadow and not request.options.remove_background:
-            # Only apply custom shadow if we didn't use background removal
-            # This is for cases where user wants shadow without background removal
-            try:
-                if request.options.shadow_type == ShadowType.DROP:
-                    # Traditional drop shadow
-                    image = add_drop_shadow(
-                        image,
-                        offset=request.options.shadow_offset,
-                        blur_radius=request.options.shadow_blur
-                    )
-                elif request.options.shadow_type == ShadowType.GROUND:
-                    # Photoreal elliptical ground shadow
-                    image = add_ground_shadow(
-                        image,
-                        shadow_height_ratio=request.options.shadow_height_ratio,
-                        shadow_width_ratio=request.options.shadow_width_ratio,
-                        offset=(0, 2),  # Minimal offset
-                        blur_radius=25,  # Moderate blur for definition
-                        opacity_center=request.options.shadow_opacity_center,
-                        opacity_edge=request.options.shadow_opacity_edge,
-                        raise_car=2  # Raise car slightly
-                    )
-                elif request.options.shadow_type == ShadowType.DUAL_GROUND:
-                    # Concentrated dual shadows under wheels
-                    image = add_dual_ground_shadow(
-                        image,
-                        wheel_spacing_ratio=request.options.wheel_spacing_ratio,
-                        shadow_size_ratio=request.options.shadow_size_ratio,
-                        offset=(0, 2),
-                        blur_radius=20,  # Less blur for concentrated look
-                        opacity_center=0.9,  # Darker wheels
-                        opacity_edge=request.options.shadow_opacity_edge,
-                        raise_car=2
-                    )
-                
-                metadata["has_shadow"] = True
-                metadata["shadow_type"] = request.options.shadow_type.value
-            except Exception as e:
-                print(f"Shadow application failed: {str(e)}")
+        # Step 3: Shadow is now only applied via API during background removal
+        # No custom shadow functionality when background removal is not used
         
         metadata["final_size"] = list(image.size)
         

@@ -50,6 +50,8 @@ async def remove_background_api4ai(
     actual_mode = f"{mode}-shadow" if add_shadow and mode == 'fg-image' else mode
     url = f'https://cars-image-background-removal.p.rapidapi.com/v1/results?mode={actual_mode}'
     
+    print(f"🔍 Background removal - Mode: {mode}, Add shadow: {add_shadow}, Actual mode: {actual_mode}")
+    
     try:
         async with aiohttp.ClientSession() as session:
             # Prepare form data
