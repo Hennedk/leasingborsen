@@ -15,6 +15,8 @@ from typing import Dict, Any
 from image_processing import (
     auto_crop_with_padding,
     add_drop_shadow,
+    add_ground_shadow,
+    add_dual_ground_shadow,
     remove_background_api4ai,
     create_image_sizes
 )
@@ -23,7 +25,8 @@ from models import (
     ProcessImageRequest,
     ProcessImageResponse,
     ImageMetadata,
-    HealthResponse
+    HealthResponse,
+    ShadowType
 )
 
 app = FastAPI(title="Leasingborsen Processing Service", version="2.0.0")
@@ -180,17 +183,43 @@ async def process_image(request: ProcessImageRequest):
             except Exception as e:
                 print(f"Auto-crop failed: {str(e)}")
         
-        # Step 3: Add drop shadow if requested
+        # Step 3: Add shadow if requested
         if request.options.add_shadow:
             try:
-                image = add_drop_shadow(
-                    image,
-                    offset=request.options.shadow_offset,
-                    blur_radius=request.options.shadow_blur
-                )
+                if request.options.shadow_type == ShadowType.DROP:
+                    # Traditional drop shadow
+                    image = add_drop_shadow(
+                        image,
+                        offset=request.options.shadow_offset,
+                        blur_radius=request.options.shadow_blur
+                    )
+                elif request.options.shadow_type == ShadowType.GROUND:
+                    # Single elliptical ground shadow
+                    image = add_ground_shadow(
+                        image,
+                        shadow_height_ratio=request.options.shadow_height_ratio,
+                        shadow_width_ratio=request.options.shadow_width_ratio,
+                        offset=(0, 3),  # Minimal offset for ground shadow
+                        blur_radius=35,  # Higher blur for realism
+                        opacity_center=request.options.shadow_opacity_center,
+                        opacity_edge=request.options.shadow_opacity_edge
+                    )
+                elif request.options.shadow_type == ShadowType.DUAL_GROUND:
+                    # Dual ground shadows under wheels
+                    image = add_dual_ground_shadow(
+                        image,
+                        wheel_spacing_ratio=request.options.wheel_spacing_ratio,
+                        shadow_size_ratio=request.options.shadow_size_ratio,
+                        offset=(0, 3),
+                        blur_radius=30,
+                        opacity_center=request.options.shadow_opacity_center,
+                        opacity_edge=request.options.shadow_opacity_edge
+                    )
+                
                 metadata["has_shadow"] = True
+                metadata["shadow_type"] = request.options.shadow_type.value
             except Exception as e:
-                print(f"Drop shadow failed: {str(e)}")
+                print(f"Shadow application failed: {str(e)}")
         
         metadata["final_size"] = list(image.size)
         

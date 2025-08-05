@@ -120,6 +120,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           remove_background: true,
           auto_crop: !skipAutoCrop, // Apply auto-crop unless explicitly skipped
           add_shadow: true,
+          shadow_type: 'ground', // Use realistic ground shadow
           create_sizes: true,
           padding_percent: 0.05, // 5% padding for tight crop like LeaseLoco
           quality: 85,
