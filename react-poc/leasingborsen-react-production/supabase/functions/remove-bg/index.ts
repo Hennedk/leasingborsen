@@ -107,6 +107,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Extract base64 data (remove data URL prefix if present)
     const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
     
+    // Sanitize filename to prevent storage errors
+    let sanitizedFileName = fileName;
+    if (sanitizedFileName.length > 50) {
+      const extension = sanitizedFileName.match(/\.[^.]+$/)?.[0] || '.jpg';
+      const baseName = sanitizedFileName.substring(0, 40).replace(/[^a-zA-Z0-9-_]/g, '_');
+      sanitizedFileName = `${baseName}${extension}`;
+      console.log(`Filename sanitized from ${fileName.length} to ${sanitizedFileName.length} chars`);
+    }
+    
     // Call Python service for image processing
     console.log('🎨 Calling Python service for image processing...');
     
@@ -115,7 +124,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         image_base64: base64Data,
-        filename: fileName,
+        filename: sanitizedFileName,
         options: {
           remove_background: true,
           auto_crop: !skipAutoCrop, // Apply auto-crop unless explicitly skipped
@@ -155,7 +164,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Upload the main processed image
     if (pythonResult.processed) {
       const processedBuffer = Uint8Array.from(atob(pythonResult.processed), c => c.charCodeAt(0));
-      const processedFileName = `background-removal/processed/${timestamp}-${fileName}.webp`;
+      const processedFileName = `background-removal/processed/${timestamp}-${sanitizedFileName}.webp`;
       
       const { data: processedUpload, error: processedError } = await supabase.storage
         .from('images')
@@ -174,7 +183,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       for (const [variant, base64Image] of Object.entries(pythonResult.sizes)) {
         try {
           const buffer = Uint8Array.from(atob(base64Image as string), c => c.charCodeAt(0));
-          const standardizedFileName = `background-removal/${variant}/${timestamp}-${fileName}.webp`;
+          const standardizedFileName = `background-removal/${variant}/${timestamp}-${sanitizedFileName}.webp`;
           
           const { data: standardizedUpload, error: uploadError } = await supabase.storage
             .from('images')
@@ -214,7 +223,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // Upload original image (for reference)
     const originalBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-    const originalFileName = `background-removal/originals/${timestamp}-${fileName}`;
+    const originalFileName = `background-removal/originals/${timestamp}-${sanitizedFileName}`;
     
     const { data: originalUpload, error: uploadError } = await supabase.storage
       .from('images')

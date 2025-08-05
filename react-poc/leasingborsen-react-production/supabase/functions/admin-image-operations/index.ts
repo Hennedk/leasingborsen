@@ -241,9 +241,19 @@ async function processBackground(supabase: any, imageUrl: string): Promise<Admin
     const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
     const imageData = `data:${contentType};base64,${base64String}`
     
-    // Extract filename from URL
+    // Extract filename from URL and sanitize
     const urlPath = new URL(imageUrl).pathname
-    const fileName = urlPath.split('/').pop() || 'image.jpg'
+    let fileName = urlPath.split('/').pop() || 'image.jpg'
+    
+    // Sanitize filename - remove query params and limit length
+    fileName = fileName.split('?')[0] // Remove query params
+    
+    // If filename is too long, truncate and preserve extension
+    if (fileName.length > 50) {
+      const extension = fileName.match(/\.[^.]+$/)?.[0] || '.jpg'
+      const baseName = fileName.substring(0, 40).replace(/[^a-zA-Z0-9-_]/g, '_')
+      fileName = `${baseName}${extension}`
+    }
     
     console.log('📤 Calling remove-bg with:', {
       fileName,
