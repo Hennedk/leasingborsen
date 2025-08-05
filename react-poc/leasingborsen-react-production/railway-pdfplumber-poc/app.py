@@ -150,10 +150,12 @@ async def process_image(request: ProcessImageRequest):
                 image.save(buffer, format='PNG')
                 current_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
                 
-                # Call API4.ai
+                # Call API with fg-image mode for cars
+                # Map our modes to the cars API mode
+                api_mode = "fg-image"  # Always use fg-image for foreground extraction
                 result_base64 = await remove_background_api4ai(
                     current_base64,
-                    mode=request.mode.value
+                    mode=api_mode
                 )
                 
                 # Convert back to PIL Image

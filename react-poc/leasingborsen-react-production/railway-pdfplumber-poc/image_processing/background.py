@@ -22,15 +22,15 @@ class BackgroundRemovalError(Exception):
 async def remove_background_api4ai(
     image_base64: str,
     api_key: Optional[str] = None,
-    mode: str = 'auto'
+    mode: str = 'fg-image'
 ) -> str:
     """
-    Remove background from image using API4.ai service.
+    Remove background from image using cars-image-background-removal API.
     
     Args:
         image_base64: Base64 encoded image
-        api_key: API4.ai API key (defaults to env var)
-        mode: Processing mode ('auto', 'person', 'product', 'car')
+        api_key: RapidAPI key (defaults to env var)
+        mode: Processing mode ('fg-image' for foreground, 'bg-image' for background)
     
     Returns:
         Base64 encoded image with background removed
@@ -43,8 +43,9 @@ async def remove_background_api4ai(
         if not api_key:
             raise BackgroundRemovalError("API4AI_KEY not provided")
     
-    # RapidAPI endpoint for API4.ai background removal
-    url = 'https://background-removal4.p.rapidapi.com/api/v1/background'
+    # RapidAPI endpoint for cars background removal
+    # Mode can be 'fg-image' for foreground image
+    url = f'https://cars-image-background-removal.p.rapidapi.com/v1/results?mode={mode}'
     
     try:
         async with aiohttp.ClientSession() as session:
@@ -62,13 +63,10 @@ async def remove_background_api4ai(
                 content_type='image/png'
             )
             
-            # Add mode parameter
-            form_data.add_field('mode', mode)
-            
             # RapidAPI headers
             headers = {
                 'X-RapidAPI-Key': api_key,
-                'X-RapidAPI-Host': 'background-removal4.p.rapidapi.com'
+                'X-RapidAPI-Host': 'cars-image-background-removal.p.rapidapi.com'
             }
             
             # Make request
@@ -134,16 +132,17 @@ async def process_with_fallback(
     api_key: Optional[str] = None
 ) -> str:
     """
-    Process image with fallback to different modes if car mode fails.
+    Process image with fallback to different modes if fg-image mode fails.
     
     Args:
         image_base64: Base64 encoded image
-        api_key: API4.ai API key
+        api_key: RapidAPI key
     
     Returns:
         Base64 encoded image with background removed
     """
-    modes = ['car', 'product', 'auto']
+    # For cars API, we primarily use fg-image mode
+    modes = ['fg-image']
     
     for mode in modes:
         try:
