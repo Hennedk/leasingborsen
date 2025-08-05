@@ -1,9 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'jsr:@supabase/supabase-js@2';
-import { Image } from 'https://deno.land/x/imagescript@1.2.15/mod.ts';
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts';
-import { autoCropToContent, type AutoCropOptions } from './auto-crop.ts';
-import { fallbackAutoCrop } from './sharp-crop.ts';
 
 interface RemoveBgRequest {
   imageData: string; // base64 encoded image
@@ -24,19 +21,13 @@ interface RemoveBgResponse {
   standardizedImages?: {
     grid?: StandardizedImage;
     detail?: StandardizedImage;
+    full?: StandardizedImage;
   };
   error?: string;
 }
 
-// Auto-crop configuration - tighter cropping like LeaseLoco
-const AUTO_CROP_OPTIONS: AutoCropOptions = {
-  alphaThreshold: 25,
-  paddingRatio: 0.05,  // Reduced from 0.15 to 0.05 (5% padding)
-  minPadding: 20,      // Reduced from 50 to 20px
-  maxCropRatio: 0.9,   // Increased from 0.8 to 0.9 (allow 90% crop)
-  maxAspectRatio: 3,
-  minAspectRatio: 0.33
-};
+// Python service URL (can be overridden with environment variable)
+const PYTHON_SERVICE_URL = Deno.env.get('RAILWAY_SERVICE_URL') || 'https://leasingborsen-production.up.railway.app';
 
 Deno.serve(async (req: Request): Promise<Response> => {
   // Handle CORS
@@ -68,8 +59,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // console.log('Starting remove-bg function...');
-    
     const requestBody = await req.json();
     console.log('Received request body keys:', Object.keys(requestBody));
     
@@ -104,22 +93,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
         }
       );
     }
-    
-    // Detect image type from base64 data
-    const imageTypeMatch = imageData.match(/^data:image\/([a-z]+);base64,/);
-    const imageType = imageTypeMatch ? imageTypeMatch[1] : 'jpeg';
-    const contentType = `image/${imageType}`;
-    console.log('Detected image type:', imageType, 'contentType:', contentType);
 
     // Initialize Supabase client with service role key for storage operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    
-    // console.log('Environment check:', {
-    //   hasSupabaseUrl: !!supabaseUrl,
-    //   hasServiceKey: !!supabaseServiceKey,
-    //   hasApi4aiKey: !!Deno.env.get('API4AI_KEY')
-    // });
 
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing Supabase environment variables');
@@ -127,260 +104,148 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Convert base64 to buffer
-    const imageBuffer = Uint8Array.from(atob(imageData.replace(/^data:image\/[a-z]+;base64,/, '')), c => c.charCodeAt(0));
+    // Extract base64 data (remove data URL prefix if present)
+    const base64Data = imageData.includes(',') ? imageData.split(',')[1] : imageData;
+    
+    // Call Python service for image processing
+    console.log('🎨 Calling Python service for image processing...');
+    
+    const pythonResponse = await fetch(`${PYTHON_SERVICE_URL}/process-image`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        image_base64: base64Data,
+        filename: fileName,
+        options: {
+          remove_background: true,
+          auto_crop: !skipAutoCrop, // Apply auto-crop unless explicitly skipped
+          add_shadow: true,
+          create_sizes: true,
+          padding_percent: 0.05, // 5% padding for tight crop like LeaseLoco
+          quality: 85,
+          format: 'WEBP'
+        },
+        mode: 'car'
+      })
+    });
 
-    // Upload original image to Supabase Storage
+    if (!pythonResponse.ok) {
+      const errorText = await pythonResponse.text();
+      console.error('Python service error:', errorText);
+      throw new Error(`Python service request failed: ${pythonResponse.status} ${errorText}`);
+    }
+
+    const pythonResult = await pythonResponse.json();
+    
+    if (!pythonResult.success) {
+      console.error('Python service processing failed:', pythonResult);
+      throw new Error(pythonResult.error || 'Image processing failed');
+    }
+
+    console.log('✅ Python service processing completed:', {
+      hasProcessed: !!pythonResult.processed,
+      hasSizes: !!pythonResult.sizes,
+      metadata: pythonResult.metadata
+    });
+
+    // Convert processed images back to buffers for Supabase storage
     const timestamp = Date.now();
+    const standardizedImages: RemoveBgResponse['standardizedImages'] = {};
+    
+    // Upload the main processed image
+    if (pythonResult.processed) {
+      const processedBuffer = Uint8Array.from(atob(pythonResult.processed), c => c.charCodeAt(0));
+      const processedFileName = `background-removal/processed/${timestamp}-${fileName}.webp`;
+      
+      const { data: processedUpload, error: processedError } = await supabase.storage
+        .from('images')
+        .upload(processedFileName, processedBuffer, {
+          contentType: 'image/webp',
+        });
+
+      if (processedError) {
+        console.error('Processed upload error:', processedError);
+        throw new Error(`Failed to upload processed image: ${processedError.message}`);
+      }
+    }
+
+    // Upload standardized sizes if available
+    if (pythonResult.sizes) {
+      for (const [variant, base64Image] of Object.entries(pythonResult.sizes)) {
+        try {
+          const buffer = Uint8Array.from(atob(base64Image as string), c => c.charCodeAt(0));
+          const standardizedFileName = `background-removal/${variant}/${timestamp}-${fileName}.webp`;
+          
+          const { data: standardizedUpload, error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(standardizedFileName, buffer, {
+              contentType: 'image/webp',
+            });
+          
+          if (uploadError) {
+            console.error(`Error uploading ${variant} image:`, uploadError);
+            continue;
+          }
+          
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(standardizedFileName);
+          
+          // Map Python service sizes to expected format
+          const dimensions = {
+            grid: '400x300',
+            detail: '800x600',
+            full: '1200x900'
+          };
+          
+          standardizedImages[variant as keyof typeof standardizedImages] = {
+            url: publicUrl,
+            variant: variant,
+            dimensions: dimensions[variant as keyof typeof dimensions] || 'unknown'
+          };
+          
+          console.log(`✅ Uploaded ${variant} variant successfully`);
+        } catch (uploadError) {
+          console.error(`Failed to upload ${variant} variant:`, uploadError);
+        }
+      }
+    }
+
+    // Upload original image (for reference)
+    const originalBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
     const originalFileName = `background-removal/originals/${timestamp}-${fileName}`;
+    
     const { data: originalUpload, error: uploadError } = await supabase.storage
       .from('images')
-      .upload(originalFileName, imageBuffer, {
-        contentType: contentType,
+      .upload(originalFileName, originalBuffer, {
+        contentType: 'image/jpeg', // Assume JPEG for originals
       });
 
     if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error(`Failed to upload original image: ${uploadError.message}`);
-    }
-
-    // Get API4.ai key from environment
-    const api4aiKey = Deno.env.get('API4AI_KEY');
-    if (!api4aiKey) {
-      throw new Error('API4AI_KEY environment variable not set');
-    }
-
-    // Prepare FormData for API4.ai
-    const formData = new FormData();
-    const blob = new Blob([imageBuffer], { type: contentType });
-    formData.append('image', blob, fileName);
-    
-    // console.log('FormData prepared:', {
-    //   blobSize: blob.size,
-    //   blobType: blob.type,
-    //   fileName: fileName
-    // });
-
-    // Call API4.ai background removal service via RapidAPI
-    // console.log('Calling API4.ai background removal via RapidAPI...');
-    // console.log('Request details:', {
-    //   url: 'https://api4ai-background-removal.p.rapidapi.com/v1/results',
-    //   method: 'POST',
-    //   hasApiKey: !!api4aiKey,
-    //   apiKeyLength: api4aiKey?.length,
-    //   formDataSize: formData.get('image') ? 'has image' : 'no image'
-    // });
-
-    const api4Response = await fetch('https://cars-image-background-removal.p.rapidapi.com/v1/results', {
-      method: 'POST',
-      headers: {
-        'X-RapidAPI-Key': api4aiKey,
-        'X-RapidAPI-Host': 'cars-image-background-removal.p.rapidapi.com',
-      },
-      body: formData,
-    });
-
-    // console.log('API4.ai response status:', api4Response.status);
-    // console.log('API4.ai response headers:', Object.fromEntries(api4Response.headers.entries()));
-
-    if (!api4Response.ok) {
-      const errorText = await api4Response.text();
-      console.error('API4.ai error response:', errorText);
-      throw new Error(`API4.ai request failed: ${api4Response.status} ${errorText}`);
-    }
-
-    const result = await api4Response.json();
-    // console.log('API4.ai response structure:', {
-    //   hasResults: 'results' in result,
-    //   resultsLength: result.results?.length,
-    //   // Don't log full response as it contains large base64 data
-    //   firstResultStatus: result.results?.[0]?.status,
-    //   originalDimensions: {
-    //     width: result.results?.[0]?.width,
-    //     height: result.results?.[0]?.height
-    //   }
-    // });
-
-    if (!result.results || result.results.length === 0) {
-      console.error('API4.ai processing failed - no results:', result);
-      throw new Error('No results returned from API4.ai');
-    }
-
-    const firstResult = result.results[0];
-    if (firstResult.status?.code !== 'ok') {
-      console.error('API4.ai processing failed:', firstResult.status);
-      throw new Error(firstResult.status?.message || 'API4.ai processing failed');
-    }
-
-    // Extract the processed image (base64) from the entities
-    const imageEntity = firstResult.entities?.find((entity: any) => entity.kind === 'image');
-    const processedImageBase64 = imageEntity?.image;
-    
-    // console.log('Processed image info:', {
-    //   hasImageEntity: !!imageEntity,
-    //   hasProcessedImage: !!processedImageBase64,
-    //   imageLength: processedImageBase64?.length,
-    //   imageStart: processedImageBase64?.substring(0, 50)
-    // });
-
-    if (!processedImageBase64) {
-      console.error('No processed image found in entities. Result structure:', firstResult);
-      throw new Error('No processed image found in API4.ai response');
-    }
-
-    // Convert processed image to buffer
-    let processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
-    console.log('Processed image base64 start:', processedImageBase64.substring(0, 50));
-    console.log('Is PNG signature:', processedBuffer[0] === 0x89 && processedBuffer[1] === 0x50);
-
-    // Apply auto-crop to remove whitespace (unless explicitly skipped)
-    let cropMetadata = null;
-    
-    if (!skipAutoCrop) {
-      try {
-        console.log('Starting auto-crop process...');
-        console.log('Buffer length before decode:', processedBuffer.length);
-        
-        // Use fallback auto-crop that doesn't depend on imagescript
-        const { buffer: croppedBuffer, metadata } = await fallbackAutoCrop(
-          processedBuffer,
-          AUTO_CROP_OPTIONS
-        );
-        
-        processedBuffer = croppedBuffer;
-        cropMetadata = metadata;
-        
-        console.log('Auto-crop completed (fallback mode):', {
-          originalDimensions: cropMetadata.originalDimensions,
-          cropBounds: cropMetadata.cropBounds,
-          preservedOriginal: true
-        });
-      } catch (cropError) {
-        console.error('Auto-crop failed, using original processed image:', cropError);
-        console.error('Error details:', {
-          name: cropError.name,
-          message: cropError.message,
-          stack: cropError.stack
-        });
-        // Reset processedBuffer to original base64 data
-        processedBuffer = Uint8Array.from(atob(processedImageBase64), c => c.charCodeAt(0));
-        console.log('Reverted to original processed buffer');
-      }
-    } else {
-      console.log('Auto-crop skipped by request parameter');
-    }
-
-    // Upload processed image to Supabase Storage
-    const processedFileName = `background-removal/processed/${timestamp}-${fileName}.png`;
-    const { data: processedUpload, error: processedError } = await supabase.storage
-      .from('images')
-      .upload(processedFileName, processedBuffer, {
-        contentType: 'image/png',
-      });
-
-    if (processedError) {
-      console.error('Processed upload error:', processedError);
-      throw new Error(`Failed to upload processed image: ${processedError.message}`);
-    }
-
-    // Standardize images to grid and detail sizes
-    const standardizedImages: RemoveBgResponse['standardizedImages'] = {};
-    
-    try {
-      // console.log('Starting image standardization...');
-      
-      // Define standard sizes with higher resolution and tighter aspect ratio
-      const sizes = {
-        grid: { width: 800, height: 450 },     // 16:9 aspect ratio for tighter crop
-        detail: { width: 1920, height: 1080 }  // Full HD 16:9 aspect ratio
-      };
-      
-      // Load the processed image for standardization
-      const sourceImage = await Image.decode(processedBuffer);
-      
-      for (const [variant, dimensions] of Object.entries(sizes)) {
-        // console.log(`Creating ${variant} variant: ${dimensions.width}x${dimensions.height}`);
-        
-        // Create new image with transparent background
-        const targetImage = new Image(dimensions.width, dimensions.height);
-        
-        // Calculate scale to fit image with minimal padding for tight crop
-        const padding = 0.02;  // Only 2% padding for very tight crop
-        const maxWidth = dimensions.width * (1 - padding * 2);
-        const maxHeight = dimensions.height * (1 - padding * 2);
-        
-        const scale = Math.min(
-          maxWidth / sourceImage.width,
-          maxHeight / sourceImage.height
-        );
-        
-        const scaledWidth = Math.round(sourceImage.width * scale);
-        const scaledHeight = Math.round(sourceImage.height * scale);
-        
-        // Center the image
-        const x = Math.round((dimensions.width - scaledWidth) / 2);
-        const y = Math.round((dimensions.height - scaledHeight) / 2);
-        
-        // Resize the source image
-        const resizedImage = sourceImage.clone().resize(scaledWidth, scaledHeight);
-        
-        // Composite the resized image onto the target (preserving transparency)
-        targetImage.composite(resizedImage, x, y);
-        
-        // Convert to buffer
-        const standardizedBuffer = await targetImage.encode();
-        
-        // Upload standardized image
-        const standardizedFileName = `background-removal/${variant}/${timestamp}-${fileName}.png`;
-        const { data: standardizedUpload, error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(standardizedFileName, standardizedBuffer, {
-            contentType: 'image/png',
-          });
-        
-        if (uploadError) {
-          console.error(`Error uploading ${variant} image:`, uploadError);
-          continue;
-        }
-        
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('images')
-          .getPublicUrl(standardizedFileName);
-        
-        standardizedImages[variant as 'grid' | 'detail'] = {
-          url: publicUrl,
-          variant,
-          dimensions: `${dimensions.width}x${dimensions.height}`
-        };
-      }
-      
-      // console.log('Image standardization completed');
-      
-    } catch (standardizationError) {
-      console.error('Error during standardization:', standardizationError);
-      // Continue even if standardization fails - we still have the processed image
+      console.error('Original upload error:', uploadError);
+      // Don't throw here, original upload is not critical
     }
 
     // Get public URLs
     const { data: { publicUrl: originalUrl } } = supabase.storage
       .from('images')
       .getPublicUrl(originalFileName);
-
+      
     const { data: { publicUrl: processedUrl } } = supabase.storage
       .from('images')
-      .getPublicUrl(processedFileName);
+      .getPublicUrl(`background-removal/processed/${timestamp}-${fileName}.webp`);
 
-    // Return success response
-    const response: RemoveBgResponse = {
-      success: true,
-      original: originalUrl,
-      processed: processedUrl,
-      standardizedImages: Object.keys(standardizedImages).length > 0 ? standardizedImages : undefined,
-    };
+    console.log('✅ Background removal completed successfully');
 
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({
+        success: true,
+        original: originalUrl,
+        processed: processedUrl,
+        standardizedImages,
+        metadata: pythonResult.metadata
+      } as RemoveBgResponse),
       { 
         status: 200,
         headers: { 
@@ -391,15 +256,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
     );
 
   } catch (error) {
-    console.error('Error in remove-bg function:', error);
-    
-    const errorResponse: RemoveBgResponse = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-
+    console.error('Background removal error:', error);
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({ 
+        success: false,
+        error: error.message || 'Failed to process image'
+      } as RemoveBgResponse),
       { 
         status: 500,
         headers: { 
@@ -409,5 +271,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
     );
   }
-  }); // End of rate limiting wrapper
+
+  }); // Close rate limiter
+
 });
