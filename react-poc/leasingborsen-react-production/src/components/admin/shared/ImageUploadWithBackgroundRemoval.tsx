@@ -9,22 +9,10 @@ import {
   X, 
   Link, 
   Loader2, 
-  Wand2,
-  CheckCircle2,
-  AlertCircle
+  Wand2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Progress } from '@/components/ui/progress'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ImageUploadProps {
   images: string[]
@@ -35,14 +23,6 @@ interface ImageUploadProps {
   onBackgroundRemovalComplete?: (processed: string, original: string, gridUrl?: string, detailUrl?: string) => void
 }
 
-interface ProcessingPreview {
-  file: File
-  originalUrl: string
-  processedUrl?: string
-  gridUrl?: string
-  detailUrl?: string
-  error?: string
-}
 
 export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
   images,
@@ -55,8 +35,6 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
   const [urlInput, setUrlInput] = useState('')
   const [dragActive, setDragActive] = useState(false)
   const [removeBackground, setRemoveBackground] = useState(true)
-  const [showPreviewDialog, setShowPreviewDialog] = useState(false)
-  const [processingPreview, setProcessingPreview] = useState<ProcessingPreview | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const { 
@@ -85,53 +63,49 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
 
     const filesToUpload = files.slice(0, maxImages - images.length)
     
-    // If background removal is enabled and checked, process first file
-    if (enableBackgroundRemoval && removeBackground && filesToUpload.length > 0) {
-      console.log('Starting background removal process...')
-      const file = filesToUpload[0] // Process one at a time for now
-      const originalUrl = URL.createObjectURL(file)
+    try {
+      resetUpload()
       
-      setProcessingPreview({
-        file,
-        originalUrl
-      })
-      setShowPreviewDialog(true)
+      // Collect all new image URLs to add at once
+      const newImageUrls: string[] = []
       
-      // Start processing with admin image upload
-      try {
-        const result = await uploadImage(file, { processBackground: true })
-        
-        // Update preview with processed URLs
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          processedUrl: result.processedUrl || result.url,
-          gridUrl: result.processedUrl, // For grid display
-          detailUrl: result.processedUrl // For detail display
-        } : null)
-      } catch (error) {
-        console.error('Error processing image:', error)
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling'
-        } : null)
-      }
-    } else {
-      console.log('Normal upload without background removal')
-      // Normal upload without background removal
-      try {
-        resetUpload()
-        
-        for (const file of filesToUpload) {
+      for (const file of filesToUpload) {
+        if (enableBackgroundRemoval && removeBackground) {
+          // Process with background removal
+          console.log('Processing image with background removal...')
+          const result = await uploadImage(file, { processBackground: true })
+          const processedUrl = result.processedUrl || result.url
+          
+          newImageUrls.push(processedUrl)
+          
+          if (onBackgroundRemovalComplete) {
+            onBackgroundRemovalComplete(
+              processedUrl, 
+              URL.createObjectURL(file),
+              result.processedUrl,
+              result.processedUrl
+            )
+          }
+        } else {
+          // Normal upload without background removal
           const uploadedImage = await uploadImage(file)
-          onImagesChange([...images, uploadedImage.publicUrl])
+          newImageUrls.push(uploadedImage.publicUrl)
         }
-        toast.success(`${filesToUpload.length} billede(r) uploadet succesfuldt`)
-      } catch (error) {
-        console.error('Error uploading files:', error)
-        toast.error('Fejl ved upload af billeder')
       }
+      
+      // Update images array once with all new URLs
+      onImagesChange([...images, ...newImageUrls])
+      
+      const message = enableBackgroundRemoval && removeBackground 
+        ? `${newImageUrls.length} billede(r) uploadet med fjernet baggrund`
+        : `${newImageUrls.length} billede(r) uploadet`
+      toast.success(message)
+      
+    } catch (error) {
+      console.error('Error uploading files:', error)
+      toast.error('Fejl ved upload af billeder')
     }
-  }, [images, maxImages, uploadImage, onImagesChange, resetUpload, enableBackgroundRemoval, removeBackground])
+  }, [images, maxImages, uploadImage, onImagesChange, resetUpload, enableBackgroundRemoval, removeBackground, onBackgroundRemovalComplete])
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -161,73 +135,11 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     }
   }, [handleFiles])
 
-  const handleConfirmProcessed = useCallback(async () => {
-    if (!processingPreview?.processedUrl) return
-
-    try {
-      // Use the detail URL as the main image (it's higher quality)
-      const mainImageUrl = processingPreview.detailUrl || processingPreview.processedUrl
-      
-      console.log('🖼️ Confirming processed image:', {
-        mainImageUrl,
-        processedUrl: processingPreview.processedUrl,
-        gridUrl: processingPreview.gridUrl,
-        detailUrl: processingPreview.detailUrl,
-        currentImages: images,
-        isUrlImage: !processingPreview.file
-      })
-      
-      onImagesChange([...images, mainImageUrl])
-      
-      if (onBackgroundRemovalComplete) {
-        onBackgroundRemovalComplete(
-          mainImageUrl, 
-          processingPreview.originalUrl,
-          processingPreview.gridUrl,
-          processingPreview.detailUrl
-        )
-      }
-      
-      toast.success('Billede med fjernet baggrund tilføjet')
-      setShowPreviewDialog(false)
-      setProcessingPreview(null)
-      resetUpload()
-    } catch (error) {
-      console.error('Error adding processed image:', error)
-      toast.error('Fejl ved tilføjelse af behandlet billede')
-    }
-  }, [processingPreview, images, onImagesChange, onBackgroundRemovalComplete, resetUpload])
-
-  const handleUseOriginal = useCallback(async () => {
-    if (!processingPreview) return
-
-    try {
-      // If it's a URL image (no file), just add the URL
-      if (!processingPreview.file) {
-        onImagesChange([...images, processingPreview.originalUrl])
-        toast.success('Originalt billede tilføjet')
-      } else {
-        // Upload the file
-        const uploadedImage = await uploadImage(processingPreview.file)
-        onImagesChange([...images, uploadedImage.publicUrl])
-        toast.success('Originalt billede uploadet')
-      }
-      
-      setShowPreviewDialog(false)
-      setProcessingPreview(null)
-      resetUpload()
-    } catch (error) {
-      console.error('Error adding original:', error)
-      toast.error('Fejl ved tilføjelse af billede')
-    }
-  }, [processingPreview, uploadImage, images, onImagesChange, resetUpload])
 
   const handleAddUrl = useCallback(async () => {
     if (!urlInput.trim()) return
 
     console.log('🔗 handleAddUrl called with URL:', urlInput.trim())
-    console.log('🔗 Current images:', images)
-    console.log('🔗 Max images:', maxImages)
     console.log('🔗 Remove background enabled:', enableBackgroundRemoval, removeBackground)
 
     if (!validateImageUrl(urlInput)) {
@@ -241,45 +153,36 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
     }
 
     const imageUrl = urlInput.trim()
+    setUrlInput('')
     
-    // If background removal is enabled and checked, process the URL
-    if (enableBackgroundRemoval && removeBackground) {
-      console.log('🔗 Starting background removal process for URL...')
-      
-      setProcessingPreview({
-        file: null as any, // URL doesn't have a file
-        originalUrl: imageUrl
-      })
-      setShowPreviewDialog(true)
-      setUrlInput('')
-      
-      // Start processing with admin image operations
-      try {
+    try {
+      if (enableBackgroundRemoval && removeBackground) {
+        // Process URL with background removal
+        console.log('🔗 Processing URL with background removal...')
         const processedUrl = await processBackground(imageUrl)
         
-        // Update preview with processed URL
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          processedUrl: processedUrl,
-          gridUrl: processedUrl,
-          detailUrl: processedUrl
-        } : null)
-      } catch (error) {
-        console.error('Error processing URL image:', error)
-        setProcessingPreview(prev => prev ? {
-          ...prev,
-          error: error instanceof Error ? error.message : 'Der opstod en fejl ved behandling'
-        } : null)
+        onImagesChange([...images, processedUrl])
+        
+        if (onBackgroundRemovalComplete) {
+          onBackgroundRemovalComplete(
+            processedUrl, 
+            imageUrl,
+            processedUrl,
+            processedUrl
+          )
+        }
+        
+        toast.success('Billede tilføjet med fjernet baggrund')
+      } else {
+        // Normal URL add without background removal
+        onImagesChange([...images, imageUrl])
+        toast.success('Billede URL tilføjet')
       }
-    } else {
-      // Normal URL add without background removal
-      const newImages = [...images, imageUrl]
-      console.log('🔗 Calling onImagesChange with:', newImages)
-      onImagesChange(newImages)
-      setUrlInput('')
-      toast.success('Billede URL tilføjet')
+    } catch (error) {
+      console.error('Error processing URL:', error)
+      toast.error('Fejl ved behandling af billede URL')
     }
-  }, [urlInput, images, maxImages, validateImageUrl, onImagesChange, enableBackgroundRemoval, removeBackground, processBackground])
+  }, [urlInput, images, maxImages, validateImageUrl, onImagesChange, enableBackgroundRemoval, removeBackground, processBackground, onBackgroundRemovalComplete])
 
   const handleRemoveImage = useCallback((index: number) => {
     const newImages = images.filter((_, i) => i !== index)
@@ -432,112 +335,6 @@ export const ImageUploadWithBackgroundRemoval = React.memo<ImageUploadProps>(({
 
         {uploadError && <FormMessage>{uploadError}</FormMessage>}
       </FormItem>
-
-      {/* Background Removal Preview Dialog */}
-      <Dialog open={showPreviewDialog} onOpenChange={(open) => {
-        console.log('Dialog onOpenChange:', open)
-        setShowPreviewDialog(open)
-      }}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Baggrundsfjernelse</DialogTitle>
-            <DialogDescription>
-              Vi behandler dit billede for at fjerne baggrunden og standardisere størrelsen.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {/* Progress indicator */}
-            {uploading && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Behandler billede...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} />
-              </div>
-            )}
-
-            {/* Error alert */}
-            {processingPreview?.error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{processingPreview.error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Image comparison */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Original</h4>
-                <div className="aspect-video bg-muted rounded-lg overflow-hidden">
-                  {processingPreview?.originalUrl && (
-                    <img
-                      src={processingPreview.originalUrl}
-                      alt="Original"
-                      className="w-full h-full object-contain"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                  Behandlet
-                  {processingPreview?.processedUrl && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  )}
-                </h4>
-                <div 
-                  className="aspect-video rounded-lg overflow-hidden"
-                  style={{
-                    backgroundImage: `
-                      linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
-                      linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
-                      linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
-                      linear-gradient(-45deg, transparent 75%, #f0f0f0 75%)
-                    `,
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
-                  }}
-                >
-                  {processingPreview?.processedUrl ? (
-                    <img
-                      src={processingPreview.processedUrl}
-                      alt="Behandlet"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      {uploading ? (
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      ) : (
-                        <p className="text-muted-foreground">Afventer behandling...</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={handleUseOriginal}
-              disabled={uploading}
-            >
-              Brug original
-            </Button>
-            <Button
-              onClick={handleConfirmProcessed}
-              disabled={uploading || !processingPreview?.processedUrl}
-            >
-              Brug behandlet billede
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   )
 })
