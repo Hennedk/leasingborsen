@@ -4,6 +4,59 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-05 - Image Display Standardization and PNG Format Migration
+
+### What Changed:
+- [x] **Fixed PNG format conversion** - Updated from WebP to PNG with quality 100
+- [x] **Standardized image container sizes** - Consistent 4:3 aspect ratio across all views
+- [x] **Fixed transparent car image display** - Proper padding and object-contain for better UX
+- [x] **Added responsive margins** - Better desktop presentation for detail view
+- [x] **Cleared problematic listing images** - Removed images with WebP border artifacts
+
+### Technical Implementation:
+- **Format migration**: Python service now outputs PNG (quality 100) instead of WebP (quality 85)
+- **Edge Functions updated**: Content types changed from `image/webp` to `image/png`
+- **CSS standardization**: 
+  - Cards: `aspect-[4/3]` with `p-4` padding and `object-contain`
+  - Detail view: `aspect-[4/3]` with `p-6` padding and responsive margins
+  - Background: Consistent `from-muted to-muted/70` gradient
+- **Responsive design**: Detail images have `lg:mx-8 xl:mx-16 2xl:mx-24` margins
+
+### Problem Solved:
+- **Before**: Cars appeared "ultrathin" with inconsistent sizing due to:
+  - Different container heights (h-56 vs h-96)
+  - `object-cover` cropping transparent images
+  - WebP format causing border artifacts
+- **After**: All cars display at consistent relative size with proper spacing
+
+### Edge Functions Deployed:
+- `remove-bg` - Updated PNG content types and file extensions
+- `admin-image-operations` - Updated for PNG format consistency
+
+### Files Modified:
+- `railway-pdfplumber-poc/models.py` - PNG format and quality 100
+- `supabase/functions/remove-bg/index.ts` - PNG content types and paths
+- `src/components/ListingCard.tsx` - Aspect ratio, padding, object-contain
+- `src/components/listing/ListingImage.tsx` - Aspect ratio, responsive margins
+
+### Testing Results:
+- ✅ Visual consistency achieved across card and detail views
+- ✅ No more "ultrathin" car appearance
+- ✅ Proper spacing prevents edge clipping
+- ✅ Responsive behavior works on all screen sizes
+- ❌ Test suite has pre-existing failures (AI extraction, auth) - unrelated to image changes
+
+### Known Issues:
+- Lint warnings exist in legacy/archive code (not related to this session's changes)
+- Some Edge Function integration tests failing (pre-existing, not image-related)
+
+### Next Steps:
+1. Monitor image quality and user feedback on new PNG format
+2. Consider implementing image optimization for different device densities
+3. Address unrelated test failures in AI extraction functionality
+
+---
+
 ## Session: 2025-08-05 - Python Image Service RapidAPI Fix and Deployment
 
 ### What Changed:
