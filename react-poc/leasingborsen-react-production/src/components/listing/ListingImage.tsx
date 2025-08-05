@@ -13,7 +13,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   const [imageLoading, setImageLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
   return (
-    <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
+    <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden mx-auto lg:mx-8 xl:mx-16 2xl:mx-24">
       <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
         {(car.processed_image_detail || car.image) && !imageError ? (
           <>
@@ -24,7 +24,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
               src={car.processed_image_detail || car.image} 
               alt={`${car.make} ${car.model}`}
               className={cn(
-                "w-full aspect-[4/3] object-contain p-6 transition-opacity duration-500 ease-out",
+                "w-full aspect-[4/3] object-contain p-6 lg:p-8 xl:p-10 transition-opacity duration-500 ease-out",
                 imageLoading ? "opacity-0" : "opacity-100"
               )}
               loading="lazy"
