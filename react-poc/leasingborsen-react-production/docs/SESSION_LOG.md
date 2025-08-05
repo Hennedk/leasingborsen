@@ -4,6 +4,79 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-05 - Python Image Service RapidAPI Fix and Deployment
+
+### What Changed:
+- [x] Fixed RapidAPI integration to use cars-image-background-removal API
+- [x] Updated endpoint from background-removal4 to cars-image-background-removal
+- [x] Fixed response parsing for cars API JSON structure
+- [x] Tested service with both test images and real car images
+- [x] Accidentally committed venv directory (4503 files) - created .gitignore
+- [x] Service fully operational on Railway with all features working
+
+### Implementation Details:
+- Changed API endpoint to `https://cars-image-background-removal.p.rapidapi.com/v1/results`
+- Updated mode parameter to use `fg-image` for foreground extraction
+- Fixed response parsing to handle cars API's nested results array structure
+- All features working: background removal, auto-crop, shadow, multiple sizes
+- Processing time: ~7.5 seconds for 477KB car image
+
+### Known Issues:
+- Git history contains massive commit with venv directory (needs cleanup)
+- RapidAPI key was exposed in conversation (user should rotate)
+- Edge Functions still using buggy imagescript implementation
+
+### Next Steps:
+1. **Update Edge Functions to use Python service** (HIGH PRIORITY)
+   - Identify all Edge Functions using imagescript
+   - Replace imagescript calls with HTTP requests to Python service
+   - Main endpoint: `https://leasingborsen-production.up.railway.app/process-image`
+2. Test Edge Functions with new integration
+3. Add Supabase storage integration to Python service
+4. Clean up git history from venv commit
+
+### Files Modified:
+- `railway-pdfplumber-poc/image_processing/background.py` - Fixed API endpoint and parsing
+- `railway-pdfplumber-poc/app.py` - Updated mode mapping
+- `railway-pdfplumber-poc/.gitignore` - Created to prevent future venv commits
+- Created multiple test scripts for validation
+
+### Testing Results:
+- ✅ Small test image (10x10): All features working
+- ✅ Real car image (477KB): Background removed, cropped, shadow added
+- ✅ Processing times: 1.8s for small, 7.5s for large images
+- ✅ Multiple sizes generated correctly (grid, detail, full)
+- ✅ Cache working to prevent duplicate processing
+
+### Edge Functions to Update:
+Based on imagescript usage, these Edge Functions need updating:
+- `admin-image-operations` - Primary target for image processing
+- `admin-listing-operations` - May have image processing features
+- `remove-bg` - Dedicated background removal function
+
+### Python Service API Reference:
+```typescript
+POST https://leasingborsen-production.up.railway.app/process-image
+{
+  image_base64: string,
+  filename: string,
+  options: {
+    remove_background: boolean,
+    auto_crop: boolean,
+    add_shadow: boolean,
+    create_sizes: boolean,
+    padding_percent?: number,
+    shadow_offset?: [number, number],
+    shadow_blur?: number,
+    quality?: number,
+    format?: string
+  },
+  mode?: "car" | "product" | "auto"
+}
+```
+
+---
+
 ## Session: 2025-08-05 - Auto-Crop Bug Investigation and Python Service Planning
 
 ### What Changed:
