@@ -145,7 +145,7 @@ async def process_image(request: ProcessImageRequest):
             "format": request.options.format
         }
         
-        # Step 1: Remove background if requested
+        # Step 1: Remove background (with optional shadow) if requested
         if request.options.remove_background:
             try:
                 # Convert current image to base64 for API
@@ -154,17 +154,21 @@ async def process_image(request: ProcessImageRequest):
                 current_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
                 
                 # Call API with fg-image mode for cars
-                # Map our modes to the cars API mode
+                # API will add shadow if requested
                 api_mode = "fg-image"  # Always use fg-image for foreground extraction
                 result_base64 = await remove_background_api4ai(
                     current_base64,
-                    mode=api_mode
+                    mode=api_mode,
+                    add_shadow=request.options.add_shadow  # Let API handle shadow
                 )
                 
                 # Convert back to PIL Image
                 image_bytes = base64.b64decode(result_base64)
                 image = Image.open(io.BytesIO(image_bytes))
                 metadata["has_background_removed"] = True
+                if request.options.add_shadow:
+                    metadata["has_shadow"] = True
+                    metadata["shadow_type"] = "api_shadow"
                 
             except Exception as e:
                 print(f"Background removal failed: {str(e)}")
@@ -183,8 +187,11 @@ async def process_image(request: ProcessImageRequest):
             except Exception as e:
                 print(f"Auto-crop failed: {str(e)}")
         
-        # Step 3: Add shadow if requested
-        if request.options.add_shadow:
+        # Step 3: Add custom shadow only if not using API shadow
+        # (API shadow is applied during background removal)
+        if request.options.add_shadow and not request.options.remove_background:
+            # Only apply custom shadow if we didn't use background removal
+            # This is for cases where user wants shadow without background removal
             try:
                 if request.options.shadow_type == ShadowType.DROP:
                     # Traditional drop shadow

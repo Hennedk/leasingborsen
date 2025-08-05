@@ -22,7 +22,8 @@ class BackgroundRemovalError(Exception):
 async def remove_background_api4ai(
     image_base64: str,
     api_key: Optional[str] = None,
-    mode: str = 'fg-image'
+    mode: str = 'fg-image',
+    add_shadow: bool = True
 ) -> str:
     """
     Remove background from image using cars-image-background-removal API.
@@ -31,9 +32,10 @@ async def remove_background_api4ai(
         image_base64: Base64 encoded image
         api_key: RapidAPI key (defaults to env var)
         mode: Processing mode ('fg-image' for foreground, 'bg-image' for background)
+        add_shadow: Whether to add shadow effect (appends '-shadow' to mode)
     
     Returns:
-        Base64 encoded image with background removed
+        Base64 encoded image with background removed (and optional shadow)
     
     Raises:
         BackgroundRemovalError: If API call fails
@@ -44,8 +46,9 @@ async def remove_background_api4ai(
             raise BackgroundRemovalError("API4AI_KEY not provided")
     
     # RapidAPI endpoint for cars background removal
-    # Mode can be 'fg-image' for foreground image
-    url = f'https://cars-image-background-removal.p.rapidapi.com/v1/results?mode={mode}'
+    # Mode can be 'fg-image' for foreground image, 'fg-image-shadow' for foreground with shadow
+    actual_mode = f"{mode}-shadow" if add_shadow and mode == 'fg-image' else mode
+    url = f'https://cars-image-background-removal.p.rapidapi.com/v1/results?mode={actual_mode}'
     
     try:
         async with aiohttp.ClientSession() as session:
@@ -130,7 +133,8 @@ async def remove_background_api4ai(
 
 async def process_with_fallback(
     image_base64: str,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
+    add_shadow: bool = True
 ) -> str:
     """
     Process image with fallback to different modes if fg-image mode fails.
@@ -138,6 +142,7 @@ async def process_with_fallback(
     Args:
         image_base64: Base64 encoded image
         api_key: RapidAPI key
+        add_shadow: Whether to add shadow effect
     
     Returns:
         Base64 encoded image with background removed
@@ -147,7 +152,7 @@ async def process_with_fallback(
     
     for mode in modes:
         try:
-            return await remove_background_api4ai(image_base64, api_key, mode)
+            return await remove_background_api4ai(image_base64, api_key, mode, add_shadow)
         except BackgroundRemovalError as e:
             if mode == modes[-1]:  # Last mode
                 raise
