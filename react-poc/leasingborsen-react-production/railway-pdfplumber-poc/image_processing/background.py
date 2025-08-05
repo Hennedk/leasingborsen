@@ -43,8 +43,8 @@ async def remove_background_api4ai(
         if not api_key:
             raise BackgroundRemovalError("API4AI_KEY not provided")
     
-    # API4.ai endpoint
-    url = 'https://api4.ai/api/v1/background'
+    # RapidAPI endpoint for API4.ai background removal
+    url = 'https://background-removal4.p.rapidapi.com/api/v1/background'
     
     try:
         async with aiohttp.ClientSession() as session:
@@ -65,10 +65,16 @@ async def remove_background_api4ai(
             # Add mode parameter
             form_data.add_field('mode', mode)
             
+            # RapidAPI headers
+            headers = {
+                'X-RapidAPI-Key': api_key,
+                'X-RapidAPI-Host': 'background-removal4.p.rapidapi.com'
+            }
+            
             # Make request
             async with session.post(
                 url,
-                headers={'X-Api-Key': api_key},
+                headers=headers,
                 data=form_data,
                 timeout=aiohttp.ClientTimeout(total=30)
             ) as response:
