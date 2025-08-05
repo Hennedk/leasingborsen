@@ -108,31 +108,36 @@ def add_simple_shadow(
 
 def add_ground_shadow(
     image: Image.Image,
-    shadow_height_ratio: float = 0.15,
-    shadow_width_ratio: float = 0.9,
-    offset: tuple = (0, 3),
-    blur_radius: int = 35,
-    opacity_center: float = 0.7,
+    shadow_height_ratio: float = 0.08,  # Flatter for photoreal look
+    shadow_width_ratio: float = 0.95,   # Slightly wider
+    offset: tuple = (0, 2),             # Minimal offset, raise car slightly
+    blur_radius: int = 25,              # Less blur for better definition
+    opacity_center: float = 0.85,       # Darker center
     opacity_edge: float = 0.0,
     shadow_color: tuple = (0, 0, 0),
-    expand_canvas: int = 60
+    expand_canvas: int = 60,
+    raise_car: int = 2                  # Pixels to raise car above shadow
 ) -> Image.Image:
     """
-    Add a realistic ground shadow beneath a car image.
+    Add a photoreal ground shadow beneath a car image.
+    
+    Creates a concentrated elliptical shadow with darker areas under wheel positions
+    for a realistic "car on ground" appearance.
     
     Args:
         image: PIL Image (should have alpha channel)
-        shadow_height_ratio: Height of shadow as ratio of car height (0.15 = 15%)
-        shadow_width_ratio: Width of shadow as ratio of car width (0.9 = 90%)
+        shadow_height_ratio: Height of shadow as ratio of car height (0.08 = 8%)
+        shadow_width_ratio: Width of shadow as ratio of car width (0.95 = 95%)
         offset: Shadow offset as (x, y) tuple - minimal for ground effect
-        blur_radius: Blur radius for shadow softness (higher = softer)
+        blur_radius: Blur radius for shadow softness
         opacity_center: Opacity at shadow center (0-1)
         opacity_edge: Opacity at shadow edge (0-1)
         shadow_color: RGB color for shadow
         expand_canvas: Pixels to expand canvas on each side
+        raise_car: Pixels to raise car above shadow for layering effect
     
     Returns:
-        PIL Image with ground shadow
+        PIL Image with photoreal ground shadow
     """
     # Convert to RGBA if not already
     if image.mode != 'RGBA':
@@ -177,16 +182,32 @@ def add_ground_shadow(
     
     for y in range(shadow_height * 2):
         for x in range(shadow_width * 2):
-            # Calculate normalized distance from center (0 to 1)
+            # Calculate normalized distance from center
             dx = (x - center_x) / shadow_width
             dy = (y - center_y) / shadow_height
-            distance = math.sqrt(dx * dx + dy * dy)
+            
+            # Use squared distance for ellipse (flattened more vertically)
+            distance_squared = (dx * dx) + (dy * dy * 4)  # Multiply dy to flatten
             
             # Only draw within ellipse
-            if distance <= 1.0:
-                # Calculate opacity with smooth falloff
-                opacity = opacity_center * (1 - distance) + opacity_edge * distance
-                pixel_value = int(opacity * 255)
+            if distance_squared <= 1.0:
+                # Quadratic falloff for more concentration
+                falloff = 1 - (distance_squared * distance_squared)
+                base_opacity = opacity_center * falloff + opacity_edge * (1 - falloff)
+                
+                # Add wheel hotspots at ~30% and ~70% of width
+                wheel_positions = [0.3, 0.7]
+                wheel_boost = 0
+                for wheel_x in wheel_positions:
+                    # Distance from wheel center
+                    wheel_dx = abs(dx - (wheel_x - 0.5) * 2)
+                    if wheel_dx < 0.3:  # Within wheel influence
+                        wheel_influence = 1 - (wheel_dx / 0.3)
+                        wheel_boost = max(wheel_boost, wheel_influence * 0.15)
+                
+                # Combine base opacity with wheel boost
+                final_opacity = min(1.0, base_opacity + wheel_boost)
+                pixel_value = int(final_opacity * 255)
                 ellipse_img.putpixel((x, y), pixel_value)
     
     # Apply blur to soften edges
@@ -215,8 +236,9 @@ def add_ground_shadow(
     # Composite shadow onto result
     result = Image.alpha_composite(result, shadow_layer)
     
-    # Paste original image on top
-    result.paste(image, (expand_canvas, expand_canvas), image)
+    # Paste original image on top, raised slightly for layering effect
+    car_y = expand_canvas - raise_car  # Raise car above its normal position
+    result.paste(image, (expand_canvas, car_y), image)
     
     return result
 
@@ -224,13 +246,14 @@ def add_ground_shadow(
 def add_dual_ground_shadow(
     image: Image.Image,
     wheel_spacing_ratio: float = 0.6,
-    shadow_size_ratio: float = 0.25,
-    offset: tuple = (0, 3),
-    blur_radius: int = 30,
-    opacity_center: float = 0.8,
+    shadow_size_ratio: float = 0.2,      # Smaller, more concentrated
+    offset: tuple = (0, 2),
+    blur_radius: int = 20,               # Less blur for definition
+    opacity_center: float = 0.9,         # Darker centers
     opacity_edge: float = 0.0,
     shadow_color: tuple = (0, 0, 0),
-    expand_canvas: int = 60
+    expand_canvas: int = 60,
+    raise_car: int = 2                   # Raise car for layering
 ) -> Image.Image:
     """
     Add realistic ground shadows under both wheels of a car.
@@ -286,11 +309,13 @@ def add_dual_ground_shadow(
         for y in range(shadow_size * 2):
             for x in range(shadow_size * 2):
                 dx = (x - center) / shadow_size
-                dy = (y - center) / (shadow_size * 0.4)  # Flatten vertically
-                distance = math.sqrt(dx * dx + dy * dy)
+                dy = (y - center) / (shadow_size * 0.3)  # More flattened
+                distance_squared = dx * dx + dy * dy
                 
-                if distance <= 1.0:
-                    opacity = opacity_center * (1 - distance) + opacity_edge * distance
+                if distance_squared <= 1.0:
+                    # Quadratic falloff for concentration
+                    falloff = 1 - (distance_squared * distance_squared)
+                    opacity = opacity_center * falloff + opacity_edge * (1 - falloff)
                     pixel_value = int(opacity * 255)
                     ellipse_img.putpixel((x, y), pixel_value)
         
@@ -309,15 +334,16 @@ def add_dual_ground_shadow(
         # Crop and paste
         ellipse_cropped = shadow_colored.crop((
             center - shadow_size // 2,
-            center - int(shadow_size * 0.2),
+            center - int(shadow_size * 0.15),  # Even flatter
             center + shadow_size // 2,
-            center + int(shadow_size * 0.2)
+            center + int(shadow_size * 0.15)
         ))
         
         shadow_layer.paste(ellipse_cropped, (shadow_x, shadow_y), ellipse_cropped)
     
-    # Composite and return
+    # Composite shadow and raised car
     result = Image.alpha_composite(result, shadow_layer)
-    result.paste(image, (expand_canvas, expand_canvas), image)
+    car_y = expand_canvas - raise_car  # Raise car for layering effect
+    result.paste(image, (expand_canvas, car_y), image)
     
     return result

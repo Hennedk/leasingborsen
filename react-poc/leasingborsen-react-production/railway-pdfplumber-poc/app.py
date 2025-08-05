@@ -194,26 +194,28 @@ async def process_image(request: ProcessImageRequest):
                         blur_radius=request.options.shadow_blur
                     )
                 elif request.options.shadow_type == ShadowType.GROUND:
-                    # Single elliptical ground shadow
+                    # Photoreal elliptical ground shadow
                     image = add_ground_shadow(
                         image,
                         shadow_height_ratio=request.options.shadow_height_ratio,
                         shadow_width_ratio=request.options.shadow_width_ratio,
-                        offset=(0, 3),  # Minimal offset for ground shadow
-                        blur_radius=35,  # Higher blur for realism
+                        offset=(0, 2),  # Minimal offset
+                        blur_radius=25,  # Moderate blur for definition
                         opacity_center=request.options.shadow_opacity_center,
-                        opacity_edge=request.options.shadow_opacity_edge
+                        opacity_edge=request.options.shadow_opacity_edge,
+                        raise_car=2  # Raise car slightly
                     )
                 elif request.options.shadow_type == ShadowType.DUAL_GROUND:
-                    # Dual ground shadows under wheels
+                    # Concentrated dual shadows under wheels
                     image = add_dual_ground_shadow(
                         image,
                         wheel_spacing_ratio=request.options.wheel_spacing_ratio,
                         shadow_size_ratio=request.options.shadow_size_ratio,
-                        offset=(0, 3),
-                        blur_radius=30,
-                        opacity_center=request.options.shadow_opacity_center,
-                        opacity_edge=request.options.shadow_opacity_edge
+                        offset=(0, 2),
+                        blur_radius=20,  # Less blur for concentrated look
+                        opacity_center=0.9,  # Darker wheels
+                        opacity_edge=request.options.shadow_opacity_edge,
+                        raise_car=2
                     )
                 
                 metadata["has_shadow"] = True

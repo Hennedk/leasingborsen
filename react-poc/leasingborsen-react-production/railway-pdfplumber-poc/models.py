@@ -30,14 +30,14 @@ class ImageOptions(BaseModel):
     # Drop shadow parameters
     shadow_offset: tuple = (10, 10)
     shadow_blur: int = 20
-    # Ground shadow parameters
-    shadow_height_ratio: float = 0.15
-    shadow_width_ratio: float = 0.9
-    shadow_opacity_center: float = 0.7
+    # Ground shadow parameters (photoreal)
+    shadow_height_ratio: float = 0.08    # Flatter shadow
+    shadow_width_ratio: float = 0.95     # Wider coverage
+    shadow_opacity_center: float = 0.85  # Darker center
     shadow_opacity_edge: float = 0.0
     # Dual ground shadow parameters
     wheel_spacing_ratio: float = 0.6
-    shadow_size_ratio: float = 0.25
+    shadow_size_ratio: float = 0.2       # Smaller, concentrated
     # Common parameters
     padding_percent: float = 0.05
     quality: int = 85
