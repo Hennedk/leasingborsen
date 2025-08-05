@@ -42,7 +42,7 @@ def health_check():
         "status": "healthy",
         "service": "leasingborsen-processing",
         "version": "2.0.0",
-        "features": ["pdf_extraction", "background_removal", "auto_crop", "drop_shadow", "image_resize"]
+        "features": ["pdf_extraction", "background_removal", "auto_crop", "image_resize"]
     }
 
 @app.get("/health")
