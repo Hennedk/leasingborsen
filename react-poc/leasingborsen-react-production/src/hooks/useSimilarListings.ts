@@ -158,7 +158,12 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
   // Use broad query strategy for initial data fetch
   const broadQueryFilters = useMemo(() => {
     if (!currentCar) return {}
-    return buildBroadQuery(currentCar)
+    const filters = buildBroadQuery(currentCar)
+    
+    // DEBUG: Log the broad query being sent to database
+    console.log('🗃️ BROAD QUERY FILTERS:', filters)
+    
+    return filters
   }, [currentCar])
 
   const { 
@@ -197,7 +202,32 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
         model: currentCar.model,
         price: currentCar.monthly_price
       },
-      totalCandidates: candidateCars.length
+      totalCandidates: candidateCars.length,
+      // DEBUG: Show all candidate cars to see what we're actually working with
+      allCandidates: candidateCars.map(car => ({
+        id: car.listing_id,
+        make: car.make,
+        model: car.model,
+        price: car.monthly_price
+      })),
+      // DEBUG: Show which VW cars exist in candidates
+      volkswagensInCandidates: candidateCars
+        .filter(car => car.make === 'Volkswagen')
+        .map(car => ({
+          id: car.listing_id,
+          make: car.make,
+          model: car.model,
+          price: car.monthly_price
+        })),
+      // DEBUG: Show ID.3 variants specifically
+      id3VariantsInCandidates: candidateCars
+        .filter(car => car.make === 'Volkswagen' && car.model?.toLowerCase().includes('id.3'))
+        .map(car => ({
+          id: car.listing_id,
+          make: car.make,
+          model: car.model,
+          price: car.monthly_price
+        }))
     })
     
     for (const tier of similarityTiers) {
