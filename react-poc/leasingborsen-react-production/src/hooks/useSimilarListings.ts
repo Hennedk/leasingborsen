@@ -59,8 +59,8 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     transmission: scoredCar.transmission,
     monthly_price: scoredCar.monthly_price,
     
-    // Image
-    image_url: scoredCar.image_url,
+    // Image - map to expected field name for ListingCard compatibility
+    image: scoredCar.image_url,
     
     // Additional metadata from scoring (optional)
     _score: scoredCar.score,
