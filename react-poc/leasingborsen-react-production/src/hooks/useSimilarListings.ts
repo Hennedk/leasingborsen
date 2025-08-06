@@ -189,33 +189,10 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     let stackedResults: CarListing[] = []
     let tiersUsed: string[] = []
     
-    // DEBUG: Log current car details for analysis
-    console.log('🔍 SIMILAR LISTINGS DEBUG:', {
-      currentCar: {
-        id: currentCar.listing_id,
-        make: currentCar.make,
-        model: currentCar.model,
-        price: currentCar.monthly_price
-      },
-      totalCandidates: candidateCars.length
-    })
-    
     for (const tier of similarityTiers) {
       const tierMatches = candidateCars.filter(car => 
         matchesTierCriteria(car, currentCar, tier)
       )
-      
-      // DEBUG: Log tier analysis
-      console.log(`🎯 ${tier.name}:`, {
-        criteria: tier.getFilters(currentCar),
-        foundMatches: tierMatches.length,
-        matches: tierMatches.map(car => ({
-          id: car.listing_id,
-          make: car.make,
-          model: car.model,
-          price: car.monthly_price
-        }))
-      })
       
       // Add new matches that aren't already included (deduplication)
       const newMatches = tierMatches.filter(car => 
@@ -225,7 +202,6 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
       if (newMatches.length > 0) {
         stackedResults.push(...newMatches)
         tiersUsed.push(tier.name)
-        console.log(`✅ Added ${newMatches.length} new matches from ${tier.name}`)
         
         // Stop if we've reached our target count
         if (stackedResults.length >= targetCount) {

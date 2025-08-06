@@ -54,7 +54,8 @@
       "Bash(export:*)",
       "Bash(mkdir:*)",
       "mcp__serena__search_for_pattern",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(npm run test:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
