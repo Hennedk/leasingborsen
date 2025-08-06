@@ -269,11 +269,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         <CardContent className="p-5">
           {/* Enhanced Title & Variant */}
           <div className="space-y-0 mb-4">
-            <h3 className="text-xl font-bold text-foreground leading-tight group-hover:text-primary transition-colors duration-200">
+            <h3 className="text-lg font-bold text-foreground leading-tight min-h-[1.75rem] group-hover:text-primary transition-colors duration-200">
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-base text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
+              <p className="text-sm text-muted-foreground font-normal line-clamp-2 break-words min-h-[2.5rem]">{car.variant}</p>
             )}
           </div>
 
