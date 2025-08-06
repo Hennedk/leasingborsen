@@ -79,7 +79,7 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
         price_min: Math.floor((car.monthly_price || 0) * 0.9),
         price_max: Math.ceil((car.monthly_price || 0) * 1.1)
       }),
-      minResults: 3
+      minResults: 1 // Always include exact model matches if found
     },
     // Tier 2: Same make + body type 
     {
@@ -90,7 +90,7 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
         price_min: Math.floor((car.monthly_price || 0) * 0.8),
         price_max: Math.ceil((car.monthly_price || 0) * 1.2)
       }),
-      minResults: 3
+      minResults: 1 // Always include same make + body type if found
     },
     // Tier 3: Same make + broader price range
     {
@@ -153,35 +153,52 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
              car.listing_id !== currentCarId
     })
     
-    // Try each tier progressively until minimum results are found
+    // Progressive stacking: collect results from all tiers in priority order
+    let stackedResults: CarListing[] = []
+    let tiersUsed: string[] = []
+    
     for (const tier of similarityTiers) {
-      const matches = candidateCars.filter(car => 
+      const tierMatches = candidateCars.filter(car => 
         matchesTierCriteria(car, currentCar, tier)
       )
       
-      if (matches.length >= tier.minResults) {
-        return {
-          similarCars: matches.slice(0, targetCount),
-          activeTier: tier.name
+      // Add new matches that aren't already included (deduplication)
+      const newMatches = tierMatches.filter(car => 
+        !stackedResults.some(existing => getCarId(existing) === getCarId(car))
+      )
+      
+      if (newMatches.length > 0) {
+        stackedResults.push(...newMatches)
+        tiersUsed.push(tier.name)
+        
+        // Stop if we've reached our target count
+        if (stackedResults.length >= targetCount) {
+          break
         }
       }
     }
     
-    // Final fallback: return any available matches even if below minimum
-    const finalMatches = candidateCars.slice(0, targetCount)
+    // Final fallback: if no tier matches found, use any available cars
+    if (stackedResults.length === 0 && candidateCars.length > 0) {
+      stackedResults = candidateCars.slice(0, targetCount)
+      tiersUsed = ['fallback']
+    }
+    
     return {
-      similarCars: finalMatches,
-      activeTier: finalMatches.length > 0 ? 'fallback' : null
+      similarCars: stackedResults.slice(0, targetCount),
+      activeTier: tiersUsed.length > 0 ? tiersUsed.join('+') : null,
+      tiersUsed: tiersUsed
     }
   }, [currentCar, similarListingsResponse?.data, targetCount, similarityTiers])
 
-  // Calculate hasMinimumResults based on the active tier
+  // Calculate hasMinimumResults based on results achieved
   const hasMinimumResults = useMemo(() => {
-    if (!activeTier || activeTier === 'fallback') return similarCars.length > 0
+    if (!activeTier || activeTier.includes('fallback')) return similarCars.length > 0
     
-    const tier = similarityTiers.find(t => t.name === activeTier)
-    return similarCars.length >= (tier?.minResults || 1)
-  }, [activeTier, similarCars.length, similarityTiers])
+    // With progressive stacking, we consider it successful if we have results
+    // The minimum is more about having relevant matches than hitting specific counts
+    return similarCars.length >= 1
+  }, [activeTier, similarCars.length])
 
   return {
     similarCars,
@@ -191,9 +208,10 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     hasMinimumResults,
     // Additional metadata for Danish UI messaging
     messages: danishMessages,
-    // Information about fallback usage for analytics/debugging
-    isFallbackTier: activeTier === 'fallback',
-    tierUsed: activeTier,
+    // Information about tier usage for analytics/debugging
+    tiersUsed: activeTier ? activeTier.split('+') : [],
+    isFallbackTier: activeTier?.includes('fallback') || false,
+    tierUsed: activeTier, // Kept for backward compatibility
     totalCandidates: similarListingsResponse?.data?.length || 0
   }
 }

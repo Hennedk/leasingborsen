@@ -111,7 +111,8 @@ describe('useSimilarListings Progressive Fallback', () => {
         useSimilarListings(mockCurrentCar, 6)
       )
 
-      expect(result.current.similarCars).toHaveLength(2)
+      // Progressive stacking includes all available relevant matches: BMW X3 + BMW X1 + Audi Q3
+      expect(result.current.similarCars).toHaveLength(3)
       expect(result.current.isLoading).toBe(false)
       expect(result.current.error).toBeNull()
     })
@@ -124,7 +125,7 @@ describe('useSimilarListings Progressive Fallback', () => {
         useSimilarListings(mockCurrentCar, 6)
       )
 
-      expect(result.current.similarCars).toHaveLength(2)
+      expect(result.current.similarCars).toHaveLength(3) // All similar cars except current
       expect(result.current.similarCars).not.toContainEqual(mockCurrentCar)
     })
 
@@ -138,14 +139,18 @@ describe('useSimilarListings Progressive Fallback', () => {
     })
   })
 
-  describe('Progressive Fallback Logic (New Implementation)', () => {
-    it('uses progressive tier fallback instead of fixed Tier 2', () => {
+  describe('Progressive Stacking Logic (New Implementation)', () => {
+    it('uses progressive stacking to combine results from multiple tiers', () => {
       const { result } = renderHook(() => 
-        useSimilarListings(mockCurrentCar, 6)
+        useSimilarListings(mockCurrentCar, 2) // Small target to see tier behavior
       )
 
-      // Should now use progressive logic and land on same_make_broad for this test data
-      expect(result.current.activeTier).toBe('same_make_broad')
+      // With progressive stacking and target=2: BMW X3 (Tier 1) + BMW X1 (Tier 2)
+      // Should stop after finding 2 cars
+      expect(result.current.similarCars).toHaveLength(2)
+      expect(result.current.activeTier).toMatch(/same_make_model/) // Should include Tier 1
+      expect(result.current.tiersUsed).toContain('same_make_model')
+      expect(result.current.similarCars[0].model).toBe('X3') // Exact match first
     })
 
     it('applies broad query scope (60%-140% price range) for initial fetch', async () => {
@@ -183,20 +188,23 @@ describe('useSimilarListings Progressive Fallback', () => {
       // expect(result.current.similarCars.length).toBeGreaterThan(0)
     })
 
-    it('tries each tier progressively until minimum results found', () => {
+    it('stacks tiers progressively with exact matches prioritized first', () => {
       const { result } = renderHook(() => 
-        useSimilarListings(mockCurrentCar, 6)
+        useSimilarListings(mockCurrentCar, 3) // Allow up to 3 results
       )
 
-      // With current test data, progressive fallback should settle on same_make_broad
-      // because our mock data has only 2 BMW SUVs which is < 3 (Tier 2 minimum)
-      // but same_make_broad (minimum 2) will succeed
-      expect(result.current.activeTier).toBe('same_make_broad')
+      // Progressive stacking logic prioritizes matches:
+      // 1. Tier 1 (same_make_model): BMW X3 appears first (exact match)
+      // 2. Additional tiers add more matches in order of relevance
+      expect(result.current.similarCars).toHaveLength(3) // All available matches
       
-      // Progressive fallback logic is now implemented:
-      // 1. Try Tier 1 (same_make_model) - fails with 1 BMW X3
-      // 2. Try Tier 2 (same_make_body) - fails with 2 BMW SUVs < 3 minimum 
-      // 3. Try Tier 3 (same_make_broad) - succeeds with 2 BMW cars >= 2 minimum
+      // Verify exact model match appears first (most relevant)
+      expect(result.current.similarCars[0].model).toBe('X3') // BMW X3 (Tier 1)
+      expect(result.current.similarCars[0].make).toBe('BMW')
+      
+      // Verify progressive stacking includes at least Tier 1
+      expect(result.current.tiersUsed).toContain('same_make_model')
+      expect(result.current.activeTier).toMatch(/same_make_model/)
     })
 
     it('should apply broader price boundaries for query scope', () => {
@@ -366,8 +374,8 @@ describe('useSimilarListings Progressive Fallback', () => {
         useSimilarListings(currentCarWithMultipleIds, 6)
       )
 
-      // Should exclude all variations of the current car (only 2 similar cars remain from original mockSimilarCars)
-      expect(result.current.similarCars).toHaveLength(2)
+      // Should exclude all variations of the current car (only 3 similar cars remain from original mockSimilarCars)
+      expect(result.current.similarCars).toHaveLength(3)
       expect(result.current.similarCars.every(car => 
         car.id !== currentCarWithMultipleIds.id && 
         car.listing_id !== currentCarWithMultipleIds.listing_id
@@ -405,17 +413,19 @@ describe('useSimilarListings Progressive Fallback', () => {
       expect(result.current.hasMinimumResults).toBe(true)
     })
 
-    it('should report false when below minimum results', () => {
-      mockListingsData.mockReturnValue({ data: [mockSimilarCars[0]] }) // Only 1 car
+    it('should report true when any relevant matches are found', () => {
+      mockListingsData.mockReturnValue({ data: [mockSimilarCars[0]] }) // Only 1 BMW X3
 
       const { result } = renderHook(() => 
         useSimilarListings(mockCurrentCar, 6)
       )
 
-      // With progressive fallback, should fall back to 'price_only' tier (Tier 5) which needs 1 result
-      // So this should now be true since we have 1 car and it meets the minimum
+      // With progressive stacking, should use Tier 1 (same_make_model) with 1 BMW X3
+      // This is a perfect match, so hasMinimumResults should be true
       expect(result.current.hasMinimumResults).toBe(true)
-      expect(result.current.activeTier).toBe('price_only')
+      expect(result.current.activeTier).toBe('same_make_model')
+      expect(result.current.similarCars).toHaveLength(1)
+      expect(result.current.similarCars[0].model).toBe('X3')
     })
   })
 })
