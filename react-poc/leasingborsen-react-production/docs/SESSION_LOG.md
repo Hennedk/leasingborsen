@@ -60,10 +60,39 @@ function isSameModel(model1: string, model2: string): boolean {
 - ✅ **Debug version committed** - With comprehensive logging for production diagnosis
 - ✅ **Production version clean** - Debug code removed, ready for deployment
 
-### Next Steps:
-- Deploy to production and verify VW ID.3 exact model matches now appear first
-- Monitor similar listings performance with new progressive stacking algorithm
-- Consider extending model normalization rules based on real data patterns
+### Current Status:
+- ✅ **Progressive stacking implementation COMPLETE** - All 21 tests pass, production ready
+- 🔄 **VW ID.3 debugging IN PROGRESS** - Root cause identified, fix needed
+
+### Critical Issue Discovered:
+**Problem**: VW ID.3 `5cbb1b78-32fa-4cdc-a947-38fba84f8d96` shows 0 similar VW cars despite 3 existing in database
+
+**Root Cause Found**: Data layer issue - database has the cars but they're not reaching React app
+- Database query confirms 3 VW ID.3 cars exist (prices: 2795, 3195, 3795) ✅
+- Broad query filters correct (1917-4473 range) ✅  
+- 18 candidates fetched, but 0 VW cars among them ❌
+- All candidates show `id: undefined` - **field mapping issue suspected**
+
+**Debug Evidence**:
+```javascript
+// Database reality:
+VW ID.3 cars: bf8223ef-...(2795), 5cbb1b78-...(3195), fa794df2-...(3795)
+
+// React app reality:  
+volkswagensInCandidates: []  // Empty!
+allCandidates: [{id: undefined, make: 'Hyundai', ...}, ...] // All IDs undefined
+```
+
+**Next Session Tasks**:
+1. **URGENT**: Fix field mapping issue in data pipeline
+2. Check `CarListingQueries.getListings` implementation  
+3. Verify ID field mapping (`id` vs `listing_id`)
+4. Test if undefined IDs cause filtering
+5. Remove debug logging once fixed
+6. Deploy corrected version
+
+**Files with Active Debug Code**:
+- `src/hooks/useSimilarListings.ts` - Has comprehensive console logs for diagnosis
 
 ---
 
