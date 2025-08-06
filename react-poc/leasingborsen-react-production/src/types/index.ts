@@ -229,3 +229,41 @@ export interface SellerContact {
   email: string
   description: string
 }
+
+// Similar cars Edge Function types
+export interface ScoredListing {
+  listing_id: string
+  make: string
+  model: string
+  variant: string
+  monthly_price: number
+  body_type: string
+  fuel_type: string
+  transmission: string
+  score: number
+  tier: string
+  match_reasons: string[]
+  image_url?: string
+}
+
+export interface SimilarCarsDebugInfo {
+  source_car: any
+  tier_results: {
+    tier1: { candidates: number; selected: number; results: ScoredListing[] }
+    tier2: { candidates: number; selected: number; results: ScoredListing[] }
+    tier3: { candidates: number; selected: number; results: ScoredListing[] }
+  }
+  config_used: any
+  performance: {
+    query_time_ms: number
+    processing_time_ms: number
+    total_time_ms: number
+  }
+}
+
+export interface SimilarCarsResponse {
+  similar_cars: ScoredListing[]
+  debug_info?: SimilarCarsDebugInfo
+  total_results: number
+  tiers_used: string[]
+}

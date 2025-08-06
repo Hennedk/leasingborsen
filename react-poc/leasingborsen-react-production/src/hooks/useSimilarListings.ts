@@ -1,257 +1,107 @@
-import { useMemo } from 'react'
-import { useListings } from './useListings'
-import type { CarListing } from '@/types'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import type { CarListing, SimilarCarsResponse, ScoredListing } from '@/types'
 import { getCarId } from '@/lib/utils'
 
-// Helper function to detect rare/luxury brands that should constrain to same make
-function isRareBrand(make: string | null | undefined): boolean {
-  if (!make) return false
-  
-  const rareBrands = [
-    'Lamborghini', 'Ferrari', 'McLaren', 'Bugatti', 'Koenigsegg', 
-    'Pagani', 'Aston Martin', 'Bentley', 'Rolls-Royce', 'Maserati',
-    'Lotus', 'Morgan', 'Alpine', 'Caterham'
-  ]
-  
-  return rareBrands.includes(make)
-}
-
-// Helper function to check if cars are the same model (handling variants)
-function isSameModel(model1: string, model2: string): boolean {
-  if (!model1 || !model2) return false
-  
-  // Normalize model names for comparison
-  const normalize = (model: string) => model
-    .toLowerCase()
-    .replace(/\s+/g, '') // Remove spaces
-    .replace(/[^\w]/g, '') // Remove special characters
-    .replace(/\d+hk$/, '') // Remove HP suffix
-    .replace(/max\+?$/, '') // Remove Max+ suffix
-    .replace(/(pro|life|style|business)$/, '') // Remove trim levels
-  
-  const normalized1 = normalize(model1)
-  const normalized2 = normalize(model2)
-  
-  // Exact match or one contains the other (for variants)
-  return normalized1 === normalized2 || 
-         normalized1.includes(normalized2) || 
-         normalized2.includes(normalized1)
-}
-
-// Helper function to check if a car matches tier criteria
-function matchesTierCriteria(car: CarListing, currentCar: CarListing, tier: SimilarityTier): boolean {
-  const filters = tier.getFilters(currentCar)
-  
-  // Check make constraint
-  if (filters.makes && filters.makes.length > 0 && !filters.makes.includes(car.make)) {
-    return false
-  }
-  
-  // For same_make_model tier, use flexible model matching
-  if (tier.name === 'same_make_model' && filters.models && filters.models.length > 0) {
-    const hasModelMatch = filters.models.some((filterModel: string) => 
-      isSameModel(car.model, filterModel)
-    )
-    if (!hasModelMatch) {
-      return false
-    }
-  }
-  
-  // Check body type constraint
-  if (filters.body_type && filters.body_type.length > 0 && !filters.body_type.includes(car.body_type)) {
-    return false
-  }
-  
-  // Check price constraints
-  const carPrice = car.monthly_price || 0
-  if (filters.price_min && carPrice < filters.price_min) {
-    return false
-  }
-  if (filters.price_max && carPrice > filters.price_max) {
-    return false
-  }
-  
-  return true
-}
-
-// Helper function to build broad query scope for initial data fetch
-function buildBroadQuery(currentCar: CarListing) {
-  const basePrice = currentCar.monthly_price || 0
-  
-  return {
-    price_min: Math.floor(basePrice * 0.6), // 60% price floor
-    price_max: Math.ceil(basePrice * 1.4),  // 140% price ceiling
-    // Add make constraint for rare brands to prevent excessive data fetching
-    makes: isRareBrand(currentCar.make) ? [currentCar.make] : undefined
-  }
-}
-
-interface SimilarityTier {
-  name: string
-  getFilters: (car: CarListing) => any
-  minResults: number
-}
-
-export function useSimilarListings(currentCar: CarListing | null, targetCount: number = 6) {
+export function useSimilarListings(currentCar: CarListing | null, targetCount: number = 8) {
   // Danish error messages for similar listings
   const danishMessages = {
     loadingMessage: 'Indlæser lignende biler...',
     errorMessage: 'Der opstod en fejl ved hentning af lignende biler',
-    noSimilarMessage: 'Ingen lignende biler fundet', // Should rarely appear with fallback
+    noSimilarMessage: 'Ingen lignende biler fundet',
     fallbackUsedMessage: 'Viser lignende biler i bredere kategori'
   }
-  // Define similarity tiers - progressively broader criteria
-  const similarityTiers: SimilarityTier[] = useMemo(() => [
-    // Tier 1: Same make + model variations (tightest match)
-    {
-      name: 'same_make_model',
-      getFilters: (car: CarListing) => ({
-        makes: [car.make],
-        models: [car.model],
-        price_min: Math.floor((car.monthly_price || 0) * 0.85), // Broader range for variants
-        price_max: Math.ceil((car.monthly_price || 0) * 1.15)   // 85%-115% instead of 90%-110%
-      }),
-      minResults: 1 // Always include exact model matches if found
-    },
-    // Tier 2: Same make + body type 
-    {
-      name: 'same_make_body',
-      getFilters: (car: CarListing) => ({
-        makes: [car.make],
-        body_type: car.body_type ? [car.body_type] : [],
-        price_min: Math.floor((car.monthly_price || 0) * 0.8),
-        price_max: Math.ceil((car.monthly_price || 0) * 1.2)
-      }),
-      minResults: 1 // Always include same make + body type if found
-    },
-    // Tier 3: Same make + broader price range
-    {
-      name: 'same_make_broad',
-      getFilters: (car: CarListing) => ({
-        makes: [car.make],
-        price_min: Math.floor((car.monthly_price || 0) * 0.75),
-        price_max: Math.ceil((car.monthly_price || 0) * 1.25)
-      }),
-      minResults: 2
-    },
-    // Tier 4: Same body type + broader price (cross-brand)
-    {
-      name: 'same_body_cross_brand',
-      getFilters: (car: CarListing) => ({
-        body_type: car.body_type ? [car.body_type] : [],
-        price_min: Math.floor((car.monthly_price || 0) * 0.7),
-        price_max: Math.ceil((car.monthly_price || 0) * 1.3)
-      }),
-      minResults: 2
-    },
-    // Tier 5: Fallback - just price range (any car in similar price range)
-    {
-      name: 'price_only',
-      getFilters: (car: CarListing) => ({
-        price_min: Math.floor((car.monthly_price || 0) * 0.6),
-        price_max: Math.ceil((car.monthly_price || 0) * 1.4)
-      }),
-      minResults: 1
-    }
-  ], [])
 
-  // Use broad query strategy for initial data fetch
-  const broadQueryFilters = useMemo(() => {
-    if (!currentCar) return {}
-    const filters = buildBroadQuery(currentCar)
-    
-    return filters
-  }, [currentCar])
-
-  // CRITICAL FIX: Increase candidate pool size to ensure diverse results
-  // The VW ID.3 cars appear at positions 27+ in sorted results, but we were only fetching first 18
-  // Now fetch 10x target count to ensure we get cars from different price points
-  const candidatePoolSize = targetCount * 10 // Increased from 3x to 10x
-
-  const { 
-    data: similarListingsResponse, 
-    isLoading, 
-    error 
-  } = useListings(broadQueryFilters, candidatePoolSize, '') // Fetch much larger candidate pool
-
-  // Progressive tier fallback with client-side filtering
-  const { similarCars, activeTier } = useMemo(() => {
-    if (!currentCar || !similarListingsResponse?.data) {
-      return { similarCars: [], activeTier: null }
-    }
-    
-    const currentCarId = getCarId(currentCar)
-    const allCandidates = similarListingsResponse.data
-    
-    // Filter out the current car first
-    const candidateCars = allCandidates.filter(car => {
-      // Use the ID normalization helper to handle both id and listing_id fields
-      const carId = getCarId(car)
-      return carId !== currentCarId && 
-             car.id !== currentCarId && 
-             car.listing_id !== currentCarId
-    })
-    
-    // Progressive stacking: collect results from all tiers in priority order
-    let stackedResults: CarListing[] = []
-    let tiersUsed: string[] = []
-    
-    for (const tier of similarityTiers) {
-      const tierMatches = candidateCars.filter(car => 
-        matchesTierCriteria(car, currentCar, tier)
-      )
-      
-      // Add new matches that aren't already included (deduplication)
-      const newMatches = tierMatches.filter(car => 
-        !stackedResults.some(existing => getCarId(existing) === getCarId(car))
-      )
-      
-      if (newMatches.length > 0) {
-        stackedResults.push(...newMatches)
-        tiersUsed.push(tier.name)
-        
-        // Stop if we've reached our target count
-        if (stackedResults.length >= targetCount) {
-          break
-        }
+  const query = useQuery({
+    queryKey: ['similar-cars', currentCar ? getCarId(currentCar) : null, targetCount],
+    queryFn: async () => {
+      if (!currentCar) {
+        throw new Error('No car provided')
       }
-    }
-    
-    // Final fallback: if no tier matches found, use any available cars
-    if (stackedResults.length === 0 && candidateCars.length > 0) {
-      stackedResults = candidateCars.slice(0, targetCount)
-      tiersUsed = ['fallback']
-    }
-    
-    return {
-      similarCars: stackedResults.slice(0, targetCount),
-      activeTier: tiersUsed.length > 0 ? tiersUsed.join('+') : null,
-      tiersUsed: tiersUsed
-    }
-  }, [currentCar, similarListingsResponse?.data, targetCount, similarityTiers])
 
-  // Calculate hasMinimumResults based on results achieved
-  const hasMinimumResults = useMemo(() => {
-    if (!activeTier || activeTier.includes('fallback')) return similarCars.length > 0
+      const listingId = getCarId(currentCar)
+      if (!listingId) {
+        throw new Error('Invalid car ID')
+      }
+
+      const { data, error } = await supabase.functions.invoke('get-similar-cars', {
+        body: { 
+          listing_id: listingId, 
+          target_count: targetCount,
+          debug: process.env.NODE_ENV === 'development'
+        }
+      })
+
+      if (error) {
+        console.error('Similar cars error:', error)
+        throw new Error('Der opstod en fejl ved hentning af lignende biler')
+      }
+
+      return data as SimilarCarsResponse
+    },
+    enabled: !!currentCar && !!getCarId(currentCar),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  })
+
+  // Convert ScoredListing to CarListing format for backward compatibility
+  const similarCars: CarListing[] = (query.data?.similar_cars || []).map((scoredCar: ScoredListing) => ({
+    // Core fields
+    listing_id: scoredCar.listing_id,
+    id: scoredCar.listing_id, // Alias for backward compatibility
+    make: scoredCar.make,
+    model: scoredCar.model,
+    variant: scoredCar.variant,
+    body_type: scoredCar.body_type,
+    fuel_type: scoredCar.fuel_type,
+    transmission: scoredCar.transmission,
+    monthly_price: scoredCar.monthly_price,
     
-    // With progressive stacking, we consider it successful if we have results
-    // The minimum is more about having relevant matches than hitting specific counts
-    return similarCars.length >= 1
-  }, [activeTier, similarCars.length])
+    // Image
+    image_url: scoredCar.image_url,
+    
+    // Additional metadata from scoring (optional)
+    _score: scoredCar.score,
+    _tier: scoredCar.tier,
+    _match_reasons: scoredCar.match_reasons
+  }))
+
+  // Extract tier information for backward compatibility
+  const tiersUsed = query.data?.tiers_used || []
+  const activeTier = tiersUsed.length > 0 ? tiersUsed.join('+') : null
+  const isFallbackTier = tiersUsed.includes('tier3')
+
+  // Determine if we have minimum results based on tier success
+  const hasMinimumResults = similarCars.length >= 1
 
   return {
+    // Main data
     similarCars,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error,
+    
+    // Tier information (backward compatibility)
     activeTier,
     hasMinimumResults,
-    // Additional metadata for Danish UI messaging
+    tierUsed: activeTier, // Alias for backward compatibility
+    tiersUsed,
+    isFallbackTier,
+    
+    // Danish UI messaging
     messages: danishMessages,
-    // Information about tier usage for analytics/debugging
-    tiersUsed: activeTier ? activeTier.split('+') : [],
-    isFallbackTier: activeTier?.includes('fallback') || false,
-    tierUsed: activeTier, // Kept for backward compatibility
-    totalCandidates: similarListingsResponse?.data?.length || 0
+    
+    // Additional metadata
+    totalCandidates: query.data?.total_results || 0,
+    
+    // Debug information (development only)
+    debugInfo: process.env.NODE_ENV === 'development' ? query.data?.debug_info : undefined,
+    
+    // Query status for advanced use cases
+    isSuccess: query.isSuccess,
+    isFetching: query.isFetching,
+    refetch: query.refetch
   }
 }
 
