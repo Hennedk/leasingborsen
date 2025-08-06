@@ -16,6 +16,28 @@ function isRareBrand(make: string | null | undefined): boolean {
   return rareBrands.includes(make)
 }
 
+// Helper function to check if cars are the same model (handling variants)
+function isSameModel(model1: string, model2: string): boolean {
+  if (!model1 || !model2) return false
+  
+  // Normalize model names for comparison
+  const normalize = (model: string) => model
+    .toLowerCase()
+    .replace(/\s+/g, '') // Remove spaces
+    .replace(/[^\w]/g, '') // Remove special characters
+    .replace(/\d+hk$/, '') // Remove HP suffix
+    .replace(/max\+?$/, '') // Remove Max+ suffix
+    .replace(/(pro|life|style|business)$/, '') // Remove trim levels
+  
+  const normalized1 = normalize(model1)
+  const normalized2 = normalize(model2)
+  
+  // Exact match or one contains the other (for variants)
+  return normalized1 === normalized2 || 
+         normalized1.includes(normalized2) || 
+         normalized2.includes(normalized1)
+}
+
 // Helper function to check if a car matches tier criteria
 function matchesTierCriteria(car: CarListing, currentCar: CarListing, tier: SimilarityTier): boolean {
   const filters = tier.getFilters(currentCar)
@@ -23,6 +45,16 @@ function matchesTierCriteria(car: CarListing, currentCar: CarListing, tier: Simi
   // Check make constraint
   if (filters.makes && filters.makes.length > 0 && !filters.makes.includes(car.make)) {
     return false
+  }
+  
+  // For same_make_model tier, use flexible model matching
+  if (tier.name === 'same_make_model' && filters.models && filters.models.length > 0) {
+    const hasModelMatch = filters.models.some((filterModel: string) => 
+      isSameModel(car.model, filterModel)
+    )
+    if (!hasModelMatch) {
+      return false
+    }
   }
   
   // Check body type constraint
@@ -76,8 +108,8 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
       getFilters: (car: CarListing) => ({
         makes: [car.make],
         models: [car.model],
-        price_min: Math.floor((car.monthly_price || 0) * 0.9),
-        price_max: Math.ceil((car.monthly_price || 0) * 1.1)
+        price_min: Math.floor((car.monthly_price || 0) * 0.85), // Broader range for variants
+        price_max: Math.ceil((car.monthly_price || 0) * 1.15)   // 85%-115% instead of 90%-110%
       }),
       minResults: 1 // Always include exact model matches if found
     },
@@ -157,10 +189,33 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     let stackedResults: CarListing[] = []
     let tiersUsed: string[] = []
     
+    // DEBUG: Log current car details for analysis
+    console.log('🔍 SIMILAR LISTINGS DEBUG:', {
+      currentCar: {
+        id: currentCar.listing_id,
+        make: currentCar.make,
+        model: currentCar.model,
+        price: currentCar.monthly_price
+      },
+      totalCandidates: candidateCars.length
+    })
+    
     for (const tier of similarityTiers) {
       const tierMatches = candidateCars.filter(car => 
         matchesTierCriteria(car, currentCar, tier)
       )
+      
+      // DEBUG: Log tier analysis
+      console.log(`🎯 ${tier.name}:`, {
+        criteria: tier.getFilters(currentCar),
+        foundMatches: tierMatches.length,
+        matches: tierMatches.map(car => ({
+          id: car.listing_id,
+          make: car.make,
+          model: car.model,
+          price: car.monthly_price
+        }))
+      })
       
       // Add new matches that aren't already included (deduplication)
       const newMatches = tierMatches.filter(car => 
@@ -170,6 +225,7 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
       if (newMatches.length > 0) {
         stackedResults.push(...newMatches)
         tiersUsed.push(tier.name)
+        console.log(`✅ Added ${newMatches.length} new matches from ${tier.name}`)
         
         // Stop if we've reached our target count
         if (stackedResults.length >= targetCount) {
