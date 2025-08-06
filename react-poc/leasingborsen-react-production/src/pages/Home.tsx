@@ -6,7 +6,7 @@ import CarListingGrid from '@/components/CarListingGrid'
 import PopularCategories from '@/components/PopularCategories'
 
 const Home: React.FC = () => {
-  const { data: listingsResponse, isLoading, error } = useListings({}, 4)
+  const { data: listingsResponse, isLoading, error } = useListings({}, 5)
   const [navigationError, setNavigationError] = useState<string | null>(null)
   
 
@@ -56,7 +56,7 @@ const Home: React.FC = () => {
               ctaText="Se alle biler"
               ctaLink="/listings"
               showCta={true}
-              maxCards={4}
+              maxCards={5}
             />
           </div>
         </section>
