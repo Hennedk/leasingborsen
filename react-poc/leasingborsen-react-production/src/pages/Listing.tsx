@@ -6,6 +6,7 @@ import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
+import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
 import MobilePriceOverlay from '@/components/MobilePriceOverlay'
 import MobilePriceBar from '@/components/MobilePriceBar'
@@ -100,7 +101,7 @@ const Listing: React.FC = () => {
 
   return (
     <BaseLayout>
-      <div className="max-w-7xl mx-auto px-6 py-8 pb-32 lg:pb-8">
+      <Container className="py-8 pb-32 lg:pb-8">
         <ListingHeader car={car} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -206,7 +207,7 @@ const Listing: React.FC = () => {
             />
           </>
         )}
-      </div>
+      </Container>
     </BaseLayout>
   )
 }

@@ -7,7 +7,7 @@ interface ListingSpecificationsProps {
 
 const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) => {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 lg:mr-3 xl:mr-7 2xl:mr-10">
       {/* Description Section */}
       {car.description && (
         <div>
@@ -26,7 +26,7 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
 
       {/* Specifications Section */}
       <div>
-        <div className="space-y-0 mb-4">
+        <div className="space-y-0 mb-6 mt-8">
           <h2 className="text-xl font-bold text-foreground leading-tight">
             Specifikationer
           </h2>
