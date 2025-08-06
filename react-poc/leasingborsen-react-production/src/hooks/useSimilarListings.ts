@@ -57,16 +57,26 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     body_type: scoredCar.body_type,
     fuel_type: scoredCar.fuel_type,
     transmission: scoredCar.transmission,
+    
+    // Pricing fields
     monthly_price: scoredCar.monthly_price,
+    mileage_per_year: 15000, // Default value for display
+    first_payment: undefined, // Optional field
     
     // Image - map to expected field name for ListingCard compatibility
     image: scoredCar.image_url,
+    
+    // Optional spec fields with sensible defaults to prevent display issues
+    horsepower: undefined,
+    seats: undefined,
+    doors: undefined,
+    year: undefined,
     
     // Additional metadata from scoring (optional)
     _score: scoredCar.score,
     _tier: scoredCar.tier,
     _match_reasons: scoredCar.match_reasons
-  }))
+  } as CarListing))
 
   // Extract tier information for backward compatibility
   const tiersUsed = query.data?.tiers_used || []
