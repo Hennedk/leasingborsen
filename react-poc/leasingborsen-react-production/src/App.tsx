@@ -1,8 +1,8 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { 
   AdminErrorBoundary, 
@@ -76,11 +76,23 @@ const PageLoader: React.FC = () => (
   </div>
 )
 
+// ScrollRestoration component
+const ScrollRestoration: React.FC = () => {
+  const location = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+
+  return null
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
+          <ScrollRestoration />
           <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
             <Suspense fallback={<PageLoader />}>
               <Routes>
