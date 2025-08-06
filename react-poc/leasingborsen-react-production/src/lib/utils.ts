@@ -1,8 +1,14 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import type { CarListing } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+// Car ID normalization helper for handling both id and listing_id fields
+export function getCarId(car: CarListing): string {
+  return car.id || car.listing_id || ''
 }
 
 // Danish number formatting utility

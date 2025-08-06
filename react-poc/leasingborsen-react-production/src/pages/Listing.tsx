@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
-import { useListing, useListings } from '@/hooks/useListings'
+import { useListing } from '@/hooks/useListings'
+import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
 import CarListingGrid from '@/components/CarListingGrid'
@@ -22,28 +23,12 @@ const Listing: React.FC = () => {
 
   const car = listingResponse?.data as CarListing | undefined
 
-  // Fetch similar listings based on the current car
-  const similarFilters = useMemo(() => {
-    if (!car) return {}
-    return {
-      makes: [car.make],
-      body_type: car.body_type ? [car.body_type] : [],
-      price_min: Math.floor((car.monthly_price || 0) * 0.75),
-      price_max: Math.ceil((car.monthly_price || 0) * 1.25)
-    }
-  }, [car?.make, car?.body_type, car?.monthly_price])
-
+  // Fetch similar listings using enhanced multi-tier matching
   const { 
-    data: similarListingsResponse, 
+    similarCars,
     isLoading: similarLoading, 
-    error: similarError 
-  } = useListings(similarFilters, 6, '') // Get 6 similar cars
-
-  // Filter out the current car from similar listings
-  const similarCars = useMemo(() => {
-    const cars = similarListingsResponse?.data || []
-    return cars.filter(similarCar => similarCar.listing_id !== id)
-  }, [similarListingsResponse?.data, id])
+    error: similarError
+  } = useSimilarListings(car || null, 6)
 
   // Lease calculator hook
   const {
