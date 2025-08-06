@@ -4,6 +4,70 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-06 (Final) - Similar Cars Edge Function Architecture Design & Tier Model Refinement
+
+### What Changed:
+- [x] **Investigated Similar Cars Issues** - Analyzed fundamental architectural flaw with price-sorted queries
+- [x] **Fixed Progressive Stacking** - Improved candidate pool size from 18x to 60x as temporary relief
+- [x] **Documented Root Cause** - Price-sorted queries create systematic bias for expensive cars  
+- [x] **Designed Edge Function Solution** - Complete 3-tier server-side replacement architecture
+- [x] **Refined Tier Model** - Updated to user's improved tier system focusing on loyalty and use cases
+- [x] **Stored Implementation Plan** - Comprehensive technical specification for future implementation
+
+### Tier Model Refinement:
+**Updated from generic brand clustering to loyalty-focused matching:**
+
+1. **Tier 1: Same Make & Model** - Strongest match for loyalty and true alternatives
+   - Logic: VW ID.4 → other ID.4s (different trims/mileage/price)
+   - Focus: Brand loyalty and exact model variants
+   
+2. **Tier 2: Same Body Type & Fuel, Similar Price (±25-35%)** - Cross-brand same use case
+   - Logic: VW ID.4 (electric SUV) → Ford Mustang Mach-E, Skoda Enyaq, Hyundai Ioniq 5
+   - Focus: Same vehicle "shape" and use case across brands
+   - Bonus: Extra points if make matches but don't force it
+   
+3. **Tier 3: Fallback - Wider Price Range** - Broader compatibility
+   - Logic: Same body type within ±50-60% price range
+   - Focus: Ensure some alternatives always available
+
+### Technical Architecture:
+**Edge Function Design**: Single query + in-memory processing for all 231 cars
+- **Performance**: Expected <150ms total response time
+- **Eliminates**: Price-sorted candidate pool bias completely
+- **Features**: Configuration-driven scoring, Danish localization, debug mode
+- **Integration**: Replaces client-side `useSimilarListings` hook entirely
+
+### Root Cause Analysis:
+**Problem**: VW ID.3 and expensive cars don't show relevant similar listings
+**Discovery**: Architectural flaw where price-sorted queries create brand clustering
+- Cars appear at positions 27+ but only first 18-60 are fetched
+- This affects ALL expensive cars systematically
+- Current fix (60-car pool) provides relief but doesn't solve fundamental issue
+
+### Files Modified:
+- `src/hooks/useSimilarListings.ts` - Temporary fix: increased candidate pool to 60
+- `src/hooks/__tests__/useSimilarListings.test.tsx` - Updated test expectations  
+- `docs/SIMILAR_CARS_EDGE_FUNCTION_PLAN.md` - **Complete implementation plan with refined tier model**
+
+### Session Outcome:
+**Primary Goal**: ✅ **ACHIEVED** - Similar cars architectural flaw documented and solution designed  
+**Immediate Relief**: ✅ **APPLIED** - Candidate pool increased for better coverage  
+**Long-term Solution**: ✅ **DESIGNED** - Complete Edge Function with user-refined tier model  
+**Implementation Ready**: 💾 **STORED** - Production-ready plan with Danish localization and debug features
+
+### Next Steps (For Future Implementation):
+1. **Deploy Edge Function** following refined tier model in stored plan
+2. **Replace client-side logic** with server-side API calls  
+3. **Test expensive cars** to verify architectural bias elimination
+4. **Monitor tier usage** and tune scoring weights based on user engagement
+
+### Critical Business Impact:
+- **Before**: Premium cars showed poor alternatives (major UX/conversion issue)
+- **After Implementation**: All cars get relevant, loyalty-focused suggestions
+- **Architecture**: Eliminates systematic bias, scales to 500+ cars
+
+---
+
 ## Session: 2025-08-06 (Continued) - Progressive Stacking Implementation & Debug Cleanup
 
 ### What Changed:

@@ -167,7 +167,7 @@ describe('useSimilarListings Progressive Fallback', () => {
 
       // The useListings mock should have been called with broad filters
       const { useListings } = await import('../useListings')
-      expect(useListings).toHaveBeenCalledWith(expectedBroadFilters, 18, '') // targetCount * 3
+      expect(useListings).toHaveBeenCalledWith(expectedBroadFilters, 60, '') // targetCount * 3
     })
   })
 
@@ -318,7 +318,7 @@ describe('useSimilarListings Progressive Fallback', () => {
       const { useListings } = await import('../useListings')
       expect(useListings).toHaveBeenCalledWith(
         expect.any(Object),
-        18, // targetCount * 3 for progressive filtering
+        60, // targetCount * 10 for progressive filtering (increased to ensure diverse results)
         ''
       )
     })

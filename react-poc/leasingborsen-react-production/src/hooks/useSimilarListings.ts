@@ -160,17 +160,19 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     if (!currentCar) return {}
     const filters = buildBroadQuery(currentCar)
     
-    // DEBUG: Log the broad query being sent to database
-    console.log('🗃️ BROAD QUERY FILTERS:', filters)
-    
     return filters
   }, [currentCar])
+
+  // CRITICAL FIX: Increase candidate pool size to ensure diverse results
+  // The VW ID.3 cars appear at positions 27+ in sorted results, but we were only fetching first 18
+  // Now fetch 10x target count to ensure we get cars from different price points
+  const candidatePoolSize = targetCount * 10 // Increased from 3x to 10x
 
   const { 
     data: similarListingsResponse, 
     isLoading, 
     error 
-  } = useListings(broadQueryFilters, targetCount * 3, '') // Fetch extra to enable progressive filtering
+  } = useListings(broadQueryFilters, candidatePoolSize, '') // Fetch much larger candidate pool
 
   // Progressive tier fallback with client-side filtering
   const { similarCars, activeTier } = useMemo(() => {
@@ -194,58 +196,10 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     let stackedResults: CarListing[] = []
     let tiersUsed: string[] = []
     
-    // DEBUG: Log current car details for analysis
-    console.log('🔍 SIMILAR LISTINGS DEBUG:', {
-      currentCar: {
-        id: currentCar.listing_id,
-        make: currentCar.make,
-        model: currentCar.model,
-        price: currentCar.monthly_price
-      },
-      totalCandidates: candidateCars.length,
-      // DEBUG: Show all candidate cars to see what we're actually working with
-      allCandidates: candidateCars.map(car => ({
-        id: car.listing_id,
-        make: car.make,
-        model: car.model,
-        price: car.monthly_price
-      })),
-      // DEBUG: Show which VW cars exist in candidates
-      volkswagensInCandidates: candidateCars
-        .filter(car => car.make === 'Volkswagen')
-        .map(car => ({
-          id: car.listing_id,
-          make: car.make,
-          model: car.model,
-          price: car.monthly_price
-        })),
-      // DEBUG: Show ID.3 variants specifically
-      id3VariantsInCandidates: candidateCars
-        .filter(car => car.make === 'Volkswagen' && car.model?.toLowerCase().includes('id.3'))
-        .map(car => ({
-          id: car.listing_id,
-          make: car.make,
-          model: car.model,
-          price: car.monthly_price
-        }))
-    })
-    
     for (const tier of similarityTiers) {
       const tierMatches = candidateCars.filter(car => 
         matchesTierCriteria(car, currentCar, tier)
       )
-      
-      // DEBUG: Log tier analysis
-      console.log(`🎯 ${tier.name}:`, {
-        criteria: tier.getFilters(currentCar),
-        foundMatches: tierMatches.length,
-        matches: tierMatches.map(car => ({
-          id: car.listing_id,
-          make: car.make,
-          model: car.model,
-          price: car.monthly_price
-        }))
-      })
       
       // Add new matches that aren't already included (deduplication)
       const newMatches = tierMatches.filter(car => 
@@ -255,7 +209,6 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
       if (newMatches.length > 0) {
         stackedResults.push(...newMatches)
         tiersUsed.push(tier.name)
-        console.log(`✅ Added ${newMatches.length} new matches from ${tier.name}`)
         
         // Stop if we've reached our target count
         if (stackedResults.length >= targetCount) {
