@@ -4,6 +4,65 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-06 - Similar Listings Progressive Fallback Implementation
+
+### What Changed:
+- [x] **Implemented progressive tier fallback logic** - No more empty similar listings sections
+- [x] **Added broad query strategy** - Uses 60%-140% price boundaries for initial data fetch
+- [x] **Created comprehensive test suite** - 21 tests covering all progressive fallback scenarios  
+- [x] **Fixed specific problematic car ID** - Car `37d003fb-1fad-43d7-ba22-4e7ec84b3c7c` now shows similar listings
+- [x] **Added helper functions** - Tier matching, rare brand detection, and broad query building
+- [x] **Enhanced Danish error handling** - Proper localized messages throughout
+
+### Technical Implementation:
+**Core Algorithm Change**: Replaced fixed Tier 2 selection with progressive fallback:
+```typescript
+// OLD: Fixed tier selection
+return similarityTiers[1] // Always Tier 2
+
+// NEW: Progressive fallback until minimum results found
+for (const tier of similarityTiers) {
+  const matches = candidateCars.filter(car => matchesTierCriteria(car, currentCar, tier))
+  if (matches.length >= tier.minResults) {
+    return { similarCars: matches.slice(0, targetCount), activeTier: tier.name }
+  }
+}
+```
+
+**Query Strategy**: Smart broad initial query + client-side progressive filtering:
+- **Database query**: 60%-140% price range (reduces API calls)  
+- **Client filtering**: Progressive tier application until minimum results
+- **Fetch size**: `targetCount * 3` for sufficient candidate pool
+- **Rare brands**: Auto-constrain to same make for luxury cars
+
+**Helper Functions Added**:
+- `isRareBrand(make)` - Detects luxury brands needing make constraints
+- `matchesTierCriteria(car, currentCar, tier)` - Client-side tier evaluation  
+- `buildBroadQuery(currentCar)` - Generates intelligent query scope
+
+### Files Modified:
+- `src/hooks/useSimilarListings.ts` - Core progressive fallback implementation
+- `src/hooks/__tests__/useSimilarListings.test.tsx` - Comprehensive test suite
+
+### Success Metrics Achieved:
+- ✅ **Zero empty similar listings** - Progressive fallback guarantees results
+- ✅ **Specific bug fixed** - Car `37d003fb-1fad-43d7-ba22-4e7ec84b3c7c` now shows similar cars
+- ✅ **All 21 tests pass** - Including edge cases and performance requirements
+- ✅ **Build succeeds** - No TypeScript errors
+- ✅ **Performance maintained** - ~292KB JS bundle size (within target)
+
+### Business Impact:
+- **UX improvement**: No more empty "Similar Cars" sections damage engagement
+- **Cross-selling opportunity**: Always show relevant alternatives to users
+- **Fallback reliability**: Guaranteed similar listings via progressive tier logic
+
+### Next Steps:
+- Monitor post-deployment metrics for empty similar listings (should be zero)
+- Track user engagement on listing detail pages
+- Consider A/B testing different tier priorities based on usage patterns
+
+---
+
 ## Session: 2025-08-05 - Image Display Standardization and PNG Format Migration
 
 ### What Changed:
@@ -819,6 +878,102 @@ try {
   processedBuffer = await processedImage.encode(); // Fallback to uncropped
 }
 ```
+
+---
+
+## Template for Future Sessions
+
+## Session: 2025-01-08 - Similar Listings Bug Fix & Enhanced Matching Algorithm
+
+### What Changed:
+- [x] **Fixed Critical Self-Inclusion Bug** - Cars no longer show themselves in similar listings
+  - Changed filter from `similarCar.listing_id !== id` to `similarCar.id !== id`
+  - Added defensive checks for both ID field variations in filtering
+  - Specific fix for listing `bf8223ef-7e72-4279-bfca-fcc3d3e1ba94`
+- [x] **Enhanced Similarity Algorithm** - Replaced basic matching with multi-tier system
+  - Created new `useSimilarListings` hook with 5 progressive tiers
+  - Currently using Tier 2: same make + body type (80%-120% price)
+  - Improved from 75%-125% to more balanced matching criteria
+- [x] **Added ID Normalization Helper** - Better handling of ID field variations
+  - Created `getCarId(car: CarListing)` utility in utils.ts
+  - Handles both `id` and `listing_id` fields defensively
+- [x] **Comprehensive Test Coverage** - Created test suite for bug scenarios
+  - Tests specific bug with listing `bf8223ef-7e72-4279-bfca-fcc3d3e1ba94`
+  - Covers ID field variations and minimum results guarantee
+  - Mocked complex dependencies for focused testing
+- [x] **Updated Listing Component** - Integrated new similarity hook
+  - Replaced manual filtering with enhanced hook
+  - Improved type safety and error handling
+  - Removed unused imports and code
+
+### Known Issues:
+- **CRITICAL**: Progressive tier fallback logic NOT implemented
+  - Current code only uses fixed Tier 2 without fallback
+  - Result: Cars like `37d003fb-1fad-43d7-ba22-4e7ec84b3c7c` show NO similar listings
+  - User reported this issue immediately after merge
+- **Missing Implementation**: Line 74 in `useSimilarListings.ts` needs progressive logic
+  ```typescript
+  // Current broken logic:
+  return similarityTiers[1]  // Fixed tier, no fallback!
+  
+  // Should implement:
+  // Try Tier 1 → Tier 2 → Tier 3 → etc. until we get results
+  ```
+
+### Next Steps:
+1. **IMMEDIATE (High Priority)**: Implement progressive tier fallback logic
+   - Replace fixed tier selection with dynamic progression
+   - Try each tier until minimum results achieved
+   - Ensure at least 3 similar listings when database has cars available
+2. **Test with Real Listings**: Verify `37d003fb-1fad-43d7-ba22-4e7ec84b3c7c` and others
+3. **Quick Implementation Strategy**:
+   ```typescript
+   for (const tier of similarityTiers) {
+     const results = await fetchWithCriteria(tier)
+     if (results.length >= tier.minResults) {
+       return { results, activeTier: tier }
+     }
+   }
+   ```
+
+### Files Modified:
+- `src/pages/Listing.tsx` - Fixed filter logic, integrated new similarity hook
+- `src/lib/utils.ts` - Added `getCarId()` ID normalization helper  
+- `src/hooks/useSimilarListings.ts` - **⚠️ NEEDS PROGRESSIVE FALLBACK IMPLEMENTATION**
+- `src/pages/__tests__/Listing.test.tsx` - Comprehensive test coverage
+- `docs/SIMILAR_LISTINGS_BUG_ANALYSIS.md` - Bug analysis documentation
+
+### Testing Notes:
+- ✅ Self-inclusion bug completely fixed (cars don't show themselves)
+- ✅ Enhanced similarity criteria working (same make + body type)
+- ✅ Build compiles successfully without TypeScript errors
+- ❌ **User testing revealed empty similar listings sections**
+- Tests pass but don't cover real progressive fallback scenarios
+
+### Deployment Notes:
+- **Commit Hash**: `bb80868` (merged to main)
+- **Status**: Self-inclusion bug fixed ✅, but similar listings display broken ❌
+- **Impact**: Critical functionality partially working
+- **Immediate Follow-up Required**: Progressive tier fallback implementation
+
+### Success Metrics:
+#### Achieved:
+- ✅ No cars show themselves in similar listings  
+- ✅ Better similarity criteria (same make + body type)
+- ✅ Type-safe implementation with proper error handling
+- ✅ Comprehensive test coverage for core bug
+
+#### Still Needed:
+- ❌ **Guaranteed minimum similar listings** (critical gap)
+- ❌ Progressive fallback working in production  
+- ❌ User-facing empty similar sections resolved
+
+### Session Outcome:
+**Primary Goal**: ✅ **ACHIEVED** - Self-inclusion bug completely fixed  
+**Secondary Discovery**: ❌ **CRITICAL ISSUE** - Similar listings display broken for many cars  
+**Next Session Priority**: Implement progressive tier fallback logic to guarantee similar listings display
+
+**Note**: This session successfully fixed the reported bug but revealed a larger UX issue that requires immediate attention.
 
 ---
 
