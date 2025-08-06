@@ -268,7 +268,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         {/* Enhanced Card Body Content */}
         <CardContent className="p-5">
           {/* Enhanced Title & Variant */}
-          <div className="space-y-0 mb-4">
+          <div className="space-y-0 mb-2">
             <h3 className="text-lg font-bold text-foreground leading-tight min-h-[1.75rem] group-hover:text-primary transition-colors duration-200">
               {car.make} {car.model}
             </h3>
