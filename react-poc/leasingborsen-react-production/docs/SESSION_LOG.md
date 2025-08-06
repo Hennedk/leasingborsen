@@ -4,6 +4,69 @@ This file tracks changes made during Claude Code sessions for knowledge transfer
 
 ---
 
+## Session: 2025-08-06 (Continued) - Progressive Stacking Implementation & Debug Cleanup
+
+### What Changed:
+- [x] **Implemented progressive stacking algorithm** - Replaced "first sufficient tier" with tier result stacking
+- [x] **Fixed exact model matching priority** - VW ID.3 variants now appear first, then broader matches
+- [x] **Added intelligent model normalization** - Handles variants like "ID.3" ↔ "ID.3 Pro" ↔ "ID.3 Max+"
+- [x] **Enhanced deduplication logic** - Prevents same car appearing across multiple tiers
+- [x] **Added comprehensive debug logging** - For diagnosing model matching issues
+- [x] **Cleaned up production version** - Removed debug code for production deployment
+
+### Technical Implementation:
+**Progressive Stacking Algorithm**: Instead of using first tier with sufficient results, now stacks results from all tiers:
+```typescript
+// NEW: Progressive stacking approach
+let stackedResults: CarListing[] = []
+for (const tier of similarityTiers) {
+  const tierMatches = candidateCars.filter(car => matchesTierCriteria(car, currentCar, tier))
+  const newMatches = tierMatches.filter(car => !stackedResults.some(existing => getCarId(existing) === getCarId(car)))
+  if (newMatches.length > 0) {
+    stackedResults.push(...newMatches)
+    tiersUsed.push(tier.name)
+    if (stackedResults.length >= targetCount) break
+  }
+}
+```
+
+**Model Matching Enhancement**: Added intelligent model variant detection:
+```typescript
+function isSameModel(model1: string, model2: string): boolean {
+  const normalize = (model: string) => model
+    .toLowerCase()
+    .replace(/\s+/g, '')
+    .replace(/[^\w]/g, '')
+    .replace(/\d+hk$/, '')
+    .replace(/max\+?$/, '')
+    .replace(/(pro|life|style|business)$/, '')
+  // Exact match or substring match for variants
+  return normalized1 === normalized2 || normalized1.includes(normalized2) || normalized2.includes(normalized1)
+}
+```
+
+### Problem Solved:
+**Before**: VW ID.3 `5cbb1b78-32fa-4cdc-a947-38fba84f8d96` showed only other hatchbacks, not exact model matches
+**After**: Progressive stacking prioritizes exact model matches (ID.3 variants) first, then adds broader matches
+
+### Files Modified:
+- `src/hooks/useSimilarListings.ts` - Progressive stacking + model matching improvements
+- `src/hooks/__tests__/useSimilarListings.test.tsx` - Updated tests for stacking behavior
+
+### Success Metrics:
+- ✅ **Progressive stacking working** - Exact matches appear first, then broader matches
+- ✅ **Model variant matching** - ID.3/ID.3 Pro/ID.3 Max+ recognized as same model  
+- ✅ **All 21 tests passing** - Including updated expectations for stacking behavior
+- ✅ **Debug version committed** - With comprehensive logging for production diagnosis
+- ✅ **Production version clean** - Debug code removed, ready for deployment
+
+### Next Steps:
+- Deploy to production and verify VW ID.3 exact model matches now appear first
+- Monitor similar listings performance with new progressive stacking algorithm
+- Consider extending model normalization rules based on real data patterns
+
+---
+
 ## Session: 2025-08-06 - Similar Listings Progressive Fallback Implementation
 
 ### What Changed:
