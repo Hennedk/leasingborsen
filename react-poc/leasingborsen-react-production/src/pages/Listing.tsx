@@ -162,7 +162,7 @@ const Listing: React.FC = () => {
         {car && (
           <div className="text-center py-4 mt-8">
             <p className="text-xs text-muted-foreground opacity-40">
-              Listing ID: {car.listing_id}
+              Listing ID: {car.listing_id || car.id || 'N/A'}
             </p>
           </div>
         )}
