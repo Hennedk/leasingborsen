@@ -3,7 +3,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ExternalLink, RotateCcw, Loader2, AlertTriangle } from 'lucide-react'
+import { ExternalLink, Loader2, AlertTriangle, TrendingDown, Check } from 'lucide-react'
+import AnimatedPrice from './AnimatedPrice'
 import type { LeaseOption } from '@/types'
 
 interface LeaseCalculatorCardProps {
@@ -21,6 +22,9 @@ interface LeaseCalculatorCardProps {
   onShowSeller: () => void
   isLoading?: boolean
   error?: any
+  totalCost?: number | null
+  isCheapest?: boolean
+  priceDifference?: number
 }
 
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
@@ -37,7 +41,10 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onResetToCheapest,
   onShowSeller,
   isLoading = false,
-  error = null
+  error = null,
+  totalCost = null,
+  isCheapest = false,
+  priceDifference = 0
 }) => {
   return (
     <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
@@ -65,24 +72,51 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         {/* Content - Only show when not loading and no error */}
         {!isLoading && !error && (
           <>
-            {/* Reset Button - Top Right Corner */}
-            <Button
-          variant="ghost"
-          size="sm"
-          onClick={onResetToCheapest}
-          className="absolute top-3 right-3 h-auto px-2 py-1 hover:bg-muted"
-          title="Nulstil til laveste pris"
-        >
-          <RotateCcw className="w-4 h-4 mr-1" />
-          Nulstil
-        </Button>
+            {/* Subtle price indicator */}
+            {!isCheapest && (
+              <div className="mb-3">
+                <Button
+                  variant="ghost"
+                  onClick={onResetToCheapest}
+                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  size="sm"
+                >
+                  <TrendingDown className="w-3 h-3 mr-1" />
+                  Vælg billigste ({priceDifference > 0 ? `-${priceDifference.toLocaleString('da-DK')} kr/md` : 'tilgængelig'})
+                </Button>
+              </div>
+            )}
 
-        {/* Monthly Price Display */}
-        <div className="pr-12">
-          <h3 className="text-3xl font-bold text-primary mb-2">
-            {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
-          </h3>
-        </div>
+            {/* Enhanced Price Display */}
+            <div className="space-y-2 pb-4 border-b border-border/50">
+              <div className="flex items-baseline gap-2">
+                <AnimatedPrice 
+                  value={selectedLease?.monthly_price ?? 0}
+                  className="text-3xl font-bold text-primary"
+                  showCurrency={true}
+                  showPeriod={true}
+                />
+              </div>
+              
+              {/* Total Cost Display */}
+              {totalCost && selectedPeriod && (
+                <div className="text-sm text-muted-foreground">
+                  <span>I alt: </span>
+                  <span className="font-semibold text-foreground">
+                    {totalCost.toLocaleString('da-DK')} kr
+                  </span>
+                  <span> over {selectedPeriod} mdr</span>
+                </div>
+              )}
+              
+              {/* Subtle indicator when cheapest */}
+              {isCheapest && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Check className="w-3 h-3" />
+                  <span>Billigste konfiguration</span>
+                </div>
+              )}
+            </div>
 
         {/* Form Fields */}
         <div className="space-y-4">
@@ -94,8 +128,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             <Select 
               value={selectedMileage?.toString() || ''} 
               onValueChange={(value) => onMileageChange(parseInt(value))}
+              disabled={availableMileages.length <= 1}
             >
-              <SelectTrigger className="w-full border-input focus:border-ring">
+              <SelectTrigger className="w-full border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                 <SelectValue placeholder="Vælg km-forbrug" />
               </SelectTrigger>
               <SelectContent>
@@ -116,8 +151,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             <Select 
               value={selectedPeriod?.toString() || ''} 
               onValueChange={(value) => onPeriodChange(parseInt(value))}
+              disabled={availablePeriods.length <= 1}
             >
-              <SelectTrigger className="w-full border-input focus:border-ring">
+              <SelectTrigger className="w-full border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                 <SelectValue placeholder="Vælg periode" />
               </SelectTrigger>
               <SelectContent>
@@ -138,8 +174,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             <Select 
               value={selectedUpfront?.toString() || ''} 
               onValueChange={(value) => onUpfrontChange(parseInt(value))}
+              disabled={availableUpfronts.length <= 1}
             >
-              <SelectTrigger className="w-full border-input focus:border-ring">
+              <SelectTrigger className="w-full border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                 <SelectValue placeholder="Vælg udbetaling" />
               </SelectTrigger>
               <SelectContent>

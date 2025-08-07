@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X, RotateCcw, ExternalLink } from 'lucide-react'
+import { X, ExternalLink, TrendingDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import AnimatedPrice from '@/components/listing/AnimatedPrice'
 import type { LeaseOption, CarListing } from '@/types'
 
 interface MobilePriceOverlayProps {
@@ -22,6 +23,9 @@ interface MobilePriceOverlayProps {
   onUpfrontChange: (value: number) => void
   onResetToCheapest: () => void
   onShowSeller: () => void
+  totalCost?: number | null
+  isCheapest?: boolean
+  priceDifference?: number
 }
 
 const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
@@ -39,7 +43,10 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onPeriodChange,
   onUpfrontChange,
   onResetToCheapest,
-  onShowSeller
+  onShowSeller,
+  totalCost = null,
+  isCheapest = false,
+  priceDifference = 0
 }) => {
   const overlayRef = useRef<HTMLDivElement>(null)
   const firstFocusableRef = useRef<HTMLButtonElement>(null)
@@ -135,24 +142,49 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-5 space-y-6 relative">
-              {/* Reset Button - Top Right Corner */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onResetToCheapest}
-                className="absolute top-0 right-0 h-auto px-2 py-1 hover:bg-muted"
-                title="Nulstil til laveste pris"
-              >
-                <RotateCcw className="w-4 h-4 mr-1" />
-                Nulstil
-              </Button>
+            <div className="p-5 space-y-6">
+              {/* Subtle price indicator */}
+              {!isCheapest && (
+                <Button
+                  variant="ghost"
+                  onClick={onResetToCheapest}
+                  className="w-full h-10 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  size="sm"
+                >
+                  <TrendingDown className="w-3 h-3 mr-1" />
+                  Vælg billigste ({priceDifference > 0 ? `-${priceDifference.toLocaleString('da-DK')} kr/md` : 'tilgængelig'})
+                </Button>
+              )}
 
-              {/* Price Display */}
-              <div className="pr-12">
-                <div className="text-3xl font-bold text-primary leading-tight">
-                  {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
+              {/* Enhanced Price Display */}
+              <div className="space-y-2 pb-4 border-b border-border/50">
+                <div className="flex items-baseline gap-2">
+                  <AnimatedPrice 
+                    value={selectedLease?.monthly_price ?? 0}
+                    className="text-3xl font-bold text-primary"
+                    showCurrency={true}
+                    showPeriod={true}
+                  />
                 </div>
+                
+                {/* Total Cost Display */}
+                {totalCost && selectedPeriod && (
+                  <div className="text-sm text-muted-foreground">
+                    <span>I alt: </span>
+                    <span className="font-semibold text-foreground">
+                      {totalCost.toLocaleString('da-DK')} kr
+                    </span>
+                    <span> over {selectedPeriod} mdr</span>
+                  </div>
+                )}
+                
+                {/* Subtle indicator when cheapest */}
+                {isCheapest && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Check className="w-3 h-3" />
+                    <span>Billigste konfiguration</span>
+                  </div>
+                )}
               </div>
 
               {/* Form Fields */}
@@ -165,8 +197,9 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Select 
                     value={selectedMileage?.toString() || ''} 
                     onValueChange={(value) => onMileageChange(parseInt(value))}
+                    disabled={availableMileages.length <= 1}
                   >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg km-forbrug" />
                     </SelectTrigger>
                     <SelectContent>
@@ -187,8 +220,9 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Select 
                     value={selectedPeriod?.toString() || ''} 
                     onValueChange={(value) => onPeriodChange(parseInt(value))}
+                    disabled={availablePeriods.length <= 1}
                   >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg periode" />
                     </SelectTrigger>
                     <SelectContent>
@@ -209,8 +243,9 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Select 
                     value={selectedUpfront?.toString() || ''} 
                     onValueChange={(value) => onUpfrontChange(parseInt(value))}
+                    disabled={availableUpfronts.length <= 1}
                   >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg udbetaling" />
                     </SelectTrigger>
                     <SelectContent>

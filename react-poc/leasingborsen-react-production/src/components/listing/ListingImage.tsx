@@ -13,6 +13,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   const [imageLoading, setImageLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
   return (
+    <div>
     <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden lg:mr-3 xl:mr-7 2xl:mr-10">
       <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
         {(car.processed_image_detail || car.image) && !imageError ? (
@@ -46,6 +47,14 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-transparent to-transparent"></div>
       </div>
     </Card>
+    
+    {/* Image disclaimer - outside card */}
+    <div className="mt-2">
+      <p className="text-xs text-muted-foreground text-center">
+        Billede kun til illustration
+      </p>
+    </div>
+    </div>
   )
 })
 

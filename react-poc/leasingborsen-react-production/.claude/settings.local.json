@@ -56,7 +56,8 @@
       "mcp__serena__search_for_pattern",
       "Bash(cp:*)",
       "Bash(npm run test:*)",
-      "WebFetch(domain:www.leaseloco.com)"
+      "WebFetch(domain:www.leaseloco.com)",
+      "Bash(git checkout:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

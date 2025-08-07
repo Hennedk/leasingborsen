@@ -220,6 +220,17 @@ body {
   }
 }
 
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(10px) translateY(-5px);
+  }
+}
+
 .animate-shimmer {
   animation: shimmer 2s infinite linear;
 }

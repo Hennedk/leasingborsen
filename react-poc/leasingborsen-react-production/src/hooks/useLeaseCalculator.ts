@@ -24,6 +24,10 @@ export interface LeaseCalculatorData {
   resetToCheapest: () => void
   isLoading: boolean
   error: any
+  totalCost: number | null
+  cheapestOption: LeaseOption | undefined
+  isCheapest: boolean
+  priceDifference: number
 }
 
 export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculatorData => {
@@ -79,17 +83,39 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     [leaseOptions, selectedMileage, selectedPeriod, selectedUpfront]
   )
 
-  // Reset to cheapest option
-  const resetToCheapest = () => {
-    if (leaseOptions.length === 0) return
-    
-    const cheapest = leaseOptions.reduce((prev, curr) => 
+  // Find cheapest option
+  const cheapestOption = useMemo(() => {
+    if (leaseOptions.length === 0) return undefined
+    return leaseOptions.reduce((prev, curr) => 
       prev.monthly_price < curr.monthly_price ? prev : curr
     )
+  }, [leaseOptions])
+
+  // Calculate total cost
+  const totalCost = useMemo(() => {
+    if (!selectedLease) return null
+    return (selectedLease.monthly_price * selectedLease.period_months) + selectedLease.first_payment
+  }, [selectedLease])
+
+  // Check if current selection is cheapest
+  const isCheapest = useMemo(() => {
+    if (!selectedLease || !cheapestOption) return false
+    return selectedLease.monthly_price === cheapestOption.monthly_price
+  }, [selectedLease, cheapestOption])
+
+  // Calculate price difference from cheapest
+  const priceDifference = useMemo(() => {
+    if (!selectedLease || !cheapestOption) return 0
+    return selectedLease.monthly_price - cheapestOption.monthly_price
+  }, [selectedLease, cheapestOption])
+
+  // Reset to cheapest option
+  const resetToCheapest = () => {
+    if (!cheapestOption) return
     
-    setSelectedMileage(cheapest.mileage_per_year)
-    setSelectedPeriod(cheapest.period_months)
-    setSelectedUpfront(cheapest.first_payment)
+    setSelectedMileage(cheapestOption.mileage_per_year)
+    setSelectedPeriod(cheapestOption.period_months)
+    setSelectedUpfront(cheapestOption.first_payment)
   }
 
   // Initialize with cheapest option
@@ -113,6 +139,10 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedUpfront,
     resetToCheapest,
     isLoading,
-    error
+    error,
+    totalCost,
+    cheapestOption,
+    isCheapest,
+    priceDifference
   }
 }
