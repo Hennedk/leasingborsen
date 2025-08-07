@@ -77,7 +77,7 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
             Array.from({ length: maxCards }).map((_, i) => (
               <div 
                 key={`loading-${i}`}
-                className="flex-none w-[calc(23%-12px)] lg:w-[calc(23%-18px)] snap-start"
+                className="flex-none w-[calc(85%-16px)] sm:w-[calc(50%-16px)] lg:w-[calc(23%-18px)] snap-start"
               >
                 <ListingCard loading={true} />
               </div>
@@ -88,7 +88,7 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
             displayedCars.map((car) => (
               <div 
                 key={car.listing_id || car.id}
-                className="flex-none w-[calc(23%-12px)] lg:w-[calc(23%-18px)] snap-start"
+                className="flex-none w-[calc(85%-16px)] sm:w-[calc(50%-16px)] lg:w-[calc(23%-18px)] snap-start"
               >
                 <ListingCard 
                   car={{
