@@ -1,11 +1,13 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { ExternalLink, Loader2, AlertTriangle, TrendingDown, Check } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
+import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption } from '@/types'
+import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
 interface LeaseCalculatorCardProps {
   selectedLease: LeaseOption | undefined
@@ -25,6 +27,10 @@ interface LeaseCalculatorCardProps {
   totalCost?: number | null
   isCheapest?: boolean
   priceDifference?: number
+  mileagePriceImpacts?: Map<number, PriceImpactData>
+  periodPriceImpacts?: Map<number, PriceImpactData>
+  upfrontPriceImpacts?: Map<number, PriceImpactData>
+  onHoverOption?: (option: HoveredOption | null) => void
 }
 
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
@@ -44,8 +50,27 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   error = null,
   totalCost = null,
   isCheapest = false,
-  priceDifference = 0
+  priceDifference = 0,
+  mileagePriceImpacts,
+  periodPriceImpacts,
+  upfrontPriceImpacts,
+  onHoverOption
 }) => {
+  const handleMileageHover = useCallback((mileage: number) => {
+    onHoverOption?.({ dimension: 'mileage', value: mileage })
+  }, [onHoverOption])
+  
+  const handlePeriodHover = useCallback((period: number) => {
+    onHoverOption?.({ dimension: 'period', value: period })
+  }, [onHoverOption])
+  
+  const handleUpfrontHover = useCallback((upfront: number) => {
+    onHoverOption?.({ dimension: 'upfront', value: upfront })
+  }, [onHoverOption])
+  
+  const handleHoverEnd = useCallback(() => {
+    onHoverOption?.(null)
+  }, [onHoverOption])
   return (
     <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
       <CardContent className="p-5 space-y-4 relative">
@@ -135,9 +160,15 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availableMileages.map((mileage) => (
-                  <SelectItem key={`mileage-${mileage}`} value={mileage.toString()}>
-                    {mileage.toLocaleString('da-DK')} km/år
-                  </SelectItem>
+                  <PriceImpactSelectItem
+                    key={`mileage-${mileage}`}
+                    value={mileage.toString()}
+                    label={`${mileage.toLocaleString('da-DK')} km/år`}
+                    impact={mileagePriceImpacts?.get(mileage)}
+                    isSelected={mileage === selectedMileage}
+                    onHover={() => handleMileageHover(mileage)}
+                    onHoverEnd={handleHoverEnd}
+                  />
                 ))}
               </SelectContent>
             </Select>
@@ -158,9 +189,15 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availablePeriods.map((period) => (
-                  <SelectItem key={`period-${period}`} value={period.toString()}>
-                    {period} måneder
-                  </SelectItem>
+                  <PriceImpactSelectItem
+                    key={`period-${period}`}
+                    value={period.toString()}
+                    label={`${period} måneder`}
+                    impact={periodPriceImpacts?.get(period)}
+                    isSelected={period === selectedPeriod}
+                    onHover={() => handlePeriodHover(period)}
+                    onHoverEnd={handleHoverEnd}
+                  />
                 ))}
               </SelectContent>
             </Select>
@@ -181,9 +218,15 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               </SelectTrigger>
               <SelectContent>
                 {availableUpfronts.map((upfront) => (
-                  <SelectItem key={`upfront-${upfront}`} value={upfront.toString()}>
-                    {upfront.toLocaleString('da-DK')} kr
-                  </SelectItem>
+                  <PriceImpactSelectItem
+                    key={`upfront-${upfront}`}
+                    value={upfront.toString()}
+                    label={`${upfront.toLocaleString('da-DK')} kr`}
+                    impact={upfrontPriceImpacts?.get(upfront)}
+                    isSelected={upfront === selectedUpfront}
+                    onHover={() => handleUpfrontHover(upfront)}
+                    onHoverEnd={handleHoverEnd}
+                  />
                 ))}
               </SelectContent>
             </Select>

@@ -49,7 +49,11 @@ const Listing: React.FC = () => {
     error: leaseError,
     totalCost,
     isCheapest,
-    priceDifference
+    priceDifference,
+    mileagePriceImpacts,
+    periodPriceImpacts,
+    upfrontPriceImpacts,
+    setHoveredOption
   } = useLeaseCalculator(car)
   
   // Mobile price overlay state
@@ -140,6 +144,10 @@ const Listing: React.FC = () => {
                 totalCost={totalCost}
                 isCheapest={isCheapest}
                 priceDifference={priceDifference}
+                mileagePriceImpacts={mileagePriceImpacts}
+                periodPriceImpacts={periodPriceImpacts}
+                upfrontPriceImpacts={upfrontPriceImpacts}
+                onHoverOption={setHoveredOption}
               />
             </ErrorBoundary>
 

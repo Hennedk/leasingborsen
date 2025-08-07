@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { CarListing } from '@/types'
+import type { HoveredOption, PriceImpactData } from '@/types/priceImpact'
 import { useOffers } from './useOffers'
+import { PriceMatrix } from '@/lib/priceMatrix'
+// import { useLeaseCalculatorDebug } from './useLeaseCalculatorDebug' // Uncomment for debugging
 
 export interface LeaseOption {
   mileage_per_year: number
@@ -28,12 +31,19 @@ export interface LeaseCalculatorData {
   cheapestOption: LeaseOption | undefined
   isCheapest: boolean
   priceDifference: number
+  priceMatrix: PriceMatrix | null
+  mileagePriceImpacts: Map<number, PriceImpactData>
+  periodPriceImpacts: Map<number, PriceImpactData>
+  upfrontPriceImpacts: Map<number, PriceImpactData>
+  setHoveredOption: (option: HoveredOption | null) => void
+  hoveredPriceImpact: PriceImpactData | null
 }
 
 export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculatorData => {
   const [selectedMileage, setSelectedMileage] = useState<number | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
   const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
+  const [hoveredOption, setHoveredOption] = useState<HoveredOption | null>(null)
 
   // Fetch real pricing data from database instead of using mock data
   // Use both possible ID fields for compatibility with different data sources
@@ -109,6 +119,103 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     return selectedLease.monthly_price - cheapestOption.monthly_price
   }, [selectedLease, cheapestOption])
 
+  // Create price matrix for efficient lookups
+  const priceMatrix = useMemo(() => {
+    if (leaseOptions.length === 0) return null
+    return new PriceMatrix(leaseOptions)
+  }, [leaseOptions])
+
+  // Generate price impacts for each dimension
+  const mileagePriceImpacts = useMemo(() => {
+    if (!priceMatrix || !selectedLease || selectedPeriod === null || selectedUpfront === null) {
+      return new Map()
+    }
+    
+    return new Map(
+      availableMileages.map(mileage => [
+        mileage,
+        priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          mileage,
+          selectedPeriod,
+          selectedUpfront
+        )
+      ])
+    )
+  }, [priceMatrix, selectedLease, selectedPeriod, selectedUpfront, availableMileages])
+
+  const periodPriceImpacts = useMemo(() => {
+    if (!priceMatrix || !selectedLease || selectedMileage === null || selectedUpfront === null) {
+      return new Map()
+    }
+    
+    return new Map(
+      availablePeriods.map(period => [
+        period,
+        priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          selectedMileage,
+          period,
+          selectedUpfront
+        )
+      ])
+    )
+  }, [priceMatrix, selectedLease, selectedMileage, selectedUpfront, availablePeriods])
+
+  const upfrontPriceImpacts = useMemo(() => {
+    if (!priceMatrix || !selectedLease || selectedMileage === null || selectedPeriod === null) {
+      return new Map()
+    }
+    
+    return new Map(
+      availableUpfronts.map(upfront => [
+        upfront,
+        priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          selectedMileage,
+          selectedPeriod,
+          upfront
+        )
+      ])
+    )
+  }, [priceMatrix, selectedLease, selectedMileage, selectedPeriod, availableUpfronts])
+
+  // Compute hover state for instant feedback
+  const hoveredPriceImpact = useMemo(() => {
+    if (!hoveredOption || !priceMatrix || !selectedLease) return null
+    
+    const { dimension, value } = hoveredOption
+    
+    switch (dimension) {
+      case 'mileage':
+        if (selectedPeriod === null || selectedUpfront === null) return null
+        return priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          value,
+          selectedPeriod,
+          selectedUpfront
+        )
+      case 'period':
+        if (selectedMileage === null || selectedUpfront === null) return null
+        return priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          selectedMileage,
+          value,
+          selectedUpfront
+        )
+      case 'upfront':
+        if (selectedMileage === null || selectedPeriod === null) return null
+        return priceMatrix.getPriceImpact(
+          selectedLease.monthly_price,
+          selectedMileage,
+          selectedPeriod,
+          value
+        )
+      default:
+        return null
+    }
+  }, [hoveredOption, priceMatrix, selectedLease, selectedMileage, selectedPeriod, selectedUpfront])
+
   // Reset to cheapest option
   const resetToCheapest = () => {
     if (!cheapestOption) return
@@ -143,6 +250,12 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     totalCost,
     cheapestOption,
     isCheapest,
-    priceDifference
+    priceDifference,
+    priceMatrix,
+    mileagePriceImpacts,
+    periodPriceImpacts,
+    upfrontPriceImpacts,
+    setHoveredOption,
+    hoveredPriceImpact
   }
 }
