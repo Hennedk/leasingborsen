@@ -18,13 +18,13 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
         {(car.processed_image_detail || car.image) && !imageError ? (
           <>
             {imageLoading && (
-              <Skeleton className="w-full aspect-[4/3] absolute inset-0" />
+              <Skeleton className="w-full aspect-[16/9] absolute inset-0" />
             )}
             <img 
               src={car.processed_image_detail || car.image} 
               alt={`${car.make} ${car.model}`}
               className={cn(
-                "w-full aspect-[4/3] object-contain p-6 lg:p-8 xl:p-10 transition-opacity duration-500 ease-out",
+                "w-full aspect-[16/9] object-contain p-6 lg:p-8 xl:p-10 transition-opacity duration-500 ease-out",
                 imageLoading ? "opacity-0" : "opacity-100"
               )}
               loading="lazy"
@@ -36,7 +36,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
             />
           </>
         ) : (
-          <div className="w-full aspect-[4/3] bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
+          <div className="w-full aspect-[16/9] bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <Car className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>{imageError ? 'Billede kunne ikke indlæses' : 'Billede ikke tilgængeligt'}</p>
