@@ -72,11 +72,11 @@ describe('LeaseScorePill - Circular Progress Design', () => {
   it('should render SVG progress circle with correct dimensions', () => {
     render(<LeaseScorePill score={75} size="md" />)
     
-    // SVG should be present
+    // SVG should be present with new horizontal pill sizing
     const svgElement = screen.getByRole('img').querySelector('svg')
     expect(svgElement).toBeInTheDocument()
-    expect(svgElement).toHaveAttribute('width', '80')
-    expect(svgElement).toHaveAttribute('height', '80')
+    expect(svgElement).toHaveAttribute('width', '40')
+    expect(svgElement).toHaveAttribute('height', '40')
     
     // Should have both background and progress circles
     const circles = screen.getByRole('img').querySelectorAll('circle')
@@ -92,17 +92,17 @@ describe('LeaseScorePill - Circular Progress Design', () => {
   it('should apply size variants correctly', () => {
     const { rerender } = render(<LeaseScorePill score={85} size="sm" />)
     
-    // Small size should be 60px
+    // Small size should be 36px for horizontal pill
     let svgElement = screen.getByRole('img').querySelector('svg')
-    expect(svgElement).toHaveAttribute('width', '60')
-    expect(svgElement).toHaveAttribute('height', '60')
+    expect(svgElement).toHaveAttribute('width', '36')
+    expect(svgElement).toHaveAttribute('height', '36')
     
     rerender(<LeaseScorePill score={85} size="lg" />)
     
-    // Large size should be 100px
+    // Large size should be 48px for horizontal pill
     svgElement = screen.getByRole('img').querySelector('svg')
-    expect(svgElement).toHaveAttribute('width', '100')
-    expect(svgElement).toHaveAttribute('height', '100')
+    expect(svgElement).toHaveAttribute('width', '48')
+    expect(svgElement).toHaveAttribute('height', '48')
   })
 
   it('should apply custom className prop', () => {
@@ -138,9 +138,10 @@ describe('LeaseScorePill - Circular Progress Design', () => {
   it('should calculate progress correctly for different scores', () => {
     const { rerender } = render(<LeaseScorePill score={0} size="md" />)
     
-    // For score 0, progress circle should have maximum offset (no progress shown)
+    // For md size: diameter=40, strokeWidth=3, so radius = (40-6)/2 = 17
     let progressCircle = screen.getByRole('img').querySelectorAll('circle')[1]
-    const circumference = 2 * Math.PI * 36 // radius for md size
+    const radius = (40 - 3 * 2) / 2 // 17
+    const circumference = 2 * Math.PI * radius
     expect(progressCircle).toHaveAttribute('stroke-dashoffset', circumference.toString())
     
     rerender(<LeaseScorePill score={100} size="md" />)

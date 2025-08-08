@@ -30,31 +30,37 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
     return 'Dårligt tilbud'
   }
 
-  // Size variants for responsive design
+  // Size variants for horizontal pill design
   const sizeConfig = {
     sm: {
-      diameter: 60,
+      diameter: 36,
       strokeWidth: 3,
-      fontSize: 'text-lg',
+      fontSize: 'text-sm',
       labelSize: 'text-xs',
       descriptorSize: 'text-xs',
-      padding: 'p-2'
+      paddingX: 'px-3',
+      paddingY: 'py-2',
+      gap: 'gap-2.5'
     },
     md: {
-      diameter: 80,
-      strokeWidth: 4,
-      fontSize: 'text-2xl',
+      diameter: 40,
+      strokeWidth: 3,
+      fontSize: 'text-base',
       labelSize: 'text-sm',
       descriptorSize: 'text-xs',
-      padding: 'p-3'
+      paddingX: 'px-3',
+      paddingY: 'py-2.5',
+      gap: 'gap-3'
     },
     lg: {
-      diameter: 100,
-      strokeWidth: 5,
-      fontSize: 'text-3xl',
-      labelSize: 'text-base',
+      diameter: 48,
+      strokeWidth: 4,
+      fontSize: 'text-lg',
+      labelSize: 'text-sm',
       descriptorSize: 'text-sm',
-      padding: 'p-4'
+      paddingX: 'px-4',
+      paddingY: 'py-3',
+      gap: 'gap-3'
     }
   }[size]
 
@@ -69,8 +75,10 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl shadow-lg flex flex-col items-center',
-        sizeConfig.padding,
+        'bg-white rounded-full shadow-lg flex items-center',
+        sizeConfig.paddingX,
+        sizeConfig.paddingY,
+        sizeConfig.gap,
         className
       )}
       role="img"
@@ -78,7 +86,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
     >
       {/* Circular Progress Indicator */}
       <div 
-        className="relative flex items-center justify-center"
+        className="relative flex items-center justify-center flex-shrink-0"
         style={{ 
           width: sizeConfig.diameter, 
           height: sizeConfig.diameter 
@@ -129,12 +137,12 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
         </div>
       </div>
 
-      {/* Text Labels */}
-      <div className="text-center mt-2">
-        <div className={cn('font-medium text-gray-600', sizeConfig.labelSize)}>
+      {/* Text Labels - Horizontal Layout */}
+      <div className="flex flex-col">
+        <div className={cn('font-semibold text-gray-900 leading-tight', sizeConfig.labelSize)}>
           LeaseScore
         </div>
-        <div className={cn('font-semibold text-gray-800', sizeConfig.descriptorSize)}>
+        <div className={cn('text-gray-600 leading-tight', sizeConfig.descriptorSize)}>
           {descriptor}
         </div>
       </div>

@@ -148,13 +148,13 @@ describe('ListingCard - Lease Score Integration', () => {
     renderWithRouter(<ListingCard car={mockCarWithScore} />)
     
     const pill = screen.getByRole('img', { name: /LeaseScore: 85/ })
-    // Should have circular design classes and small padding
-    expect(pill).toHaveClass('bg-white', 'rounded-2xl', 'shadow-lg', 'flex', 'flex-col', 'items-center', 'p-2')
+    // Should have horizontal pill design classes
+    expect(pill).toHaveClass('bg-white', 'rounded-full', 'shadow-lg', 'flex', 'items-center', 'px-3', 'py-2', 'gap-2.5')
     
-    // SVG should be small size (60px for sm)
+    // SVG should be small size (36px for sm in horizontal layout)
     const svgElement = pill.querySelector('svg')
-    expect(svgElement).toHaveAttribute('width', '60')
-    expect(svgElement).toHaveAttribute('height', '60')
+    expect(svgElement).toHaveAttribute('width', '36')
+    expect(svgElement).toHaveAttribute('height', '36')
   })
 
   it('should handle car object with only listing_id (no id field)', () => {
