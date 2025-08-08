@@ -6,6 +6,8 @@ import { X, ExternalLink, TrendingDown, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import AnimatedPrice from '@/components/listing/AnimatedPrice'
 import type { LeaseOption, CarListing } from '@/types'
+import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
+import PriceImpactSelectItem from '@/components/listing/PriceImpactSelectItem'
 
 interface MobilePriceOverlayProps {
   isOpen: boolean
@@ -26,6 +28,11 @@ interface MobilePriceOverlayProps {
   totalCost?: number | null
   isCheapest?: boolean
   priceDifference?: number
+  // Price impact props for mobile parity
+  mileagePriceImpacts?: Map<number, PriceImpactData>
+  periodPriceImpacts?: Map<number, PriceImpactData>
+  upfrontPriceImpacts?: Map<number, PriceImpactData>
+  onHoverOption?: (option: HoveredOption | null) => void
 }
 
 const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
@@ -46,7 +53,11 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onShowSeller,
   totalCost = null,
   isCheapest = false,
-  priceDifference = 0
+  priceDifference = 0,
+  mileagePriceImpacts,
+  periodPriceImpacts,
+  upfrontPriceImpacts,
+  onHoverOption
 }) => {
   const overlayRef = useRef<HTMLDivElement>(null)
   const firstFocusableRef = useRef<HTMLButtonElement>(null)
@@ -202,11 +213,18 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg km-forbrug" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[50vh]">
                       {availableMileages.map((mileage) => (
-                        <SelectItem key={`mileage-${mileage}`} value={mileage.toString()}>
-                          {mileage.toLocaleString('da-DK')} km/år
-                        </SelectItem>
+                        <PriceImpactSelectItem
+                          key={`mileage-${mileage}`}
+                          value={mileage.toString()}
+                          label={`${mileage.toLocaleString('da-DK')} km/år`}
+                          impact={mileagePriceImpacts?.get(mileage)}
+                          isSelected={mileage === selectedMileage}
+                          onHover={() => onHoverOption?.({ dimension: 'mileage', value: mileage })}
+                          onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
+                        />
                       ))}
                     </SelectContent>
                   </Select>
@@ -225,11 +243,18 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg periode" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[50vh]">
                       {availablePeriods.map((period) => (
-                        <SelectItem key={`period-${period}`} value={period.toString()}>
-                          {period} måneder
-                        </SelectItem>
+                        <PriceImpactSelectItem
+                          key={`period-${period}`}
+                          value={period.toString()}
+                          label={`${period} måneder`}
+                          impact={periodPriceImpacts?.get(period)}
+                          isSelected={period === selectedPeriod}
+                          onHover={() => onHoverOption?.({ dimension: 'period', value: period })}
+                          onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
+                        />
                       ))}
                     </SelectContent>
                   </Select>
@@ -248,11 +273,18 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
                       <SelectValue placeholder="Vælg udbetaling" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-h-[50vh]">
                       {availableUpfronts.map((upfront) => (
-                        <SelectItem key={`upfront-${upfront}`} value={upfront.toString()}>
-                          {upfront.toLocaleString('da-DK')} kr
-                        </SelectItem>
+                        <PriceImpactSelectItem
+                          key={`upfront-${upfront}`}
+                          value={upfront.toString()}
+                          label={`${upfront.toLocaleString('da-DK')} kr`}
+                          impact={upfrontPriceImpacts?.get(upfront)}
+                          isSelected={upfront === selectedUpfront}
+                          onHover={() => onHoverOption?.({ dimension: 'upfront', value: upfront })}
+                          onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
+                        />
                       ))}
                     </SelectContent>
                   </Select>

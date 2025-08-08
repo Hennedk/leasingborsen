@@ -213,6 +213,10 @@ const Listing: React.FC = () => {
               totalCost={totalCost}
               isCheapest={isCheapest}
               priceDifference={priceDifference}
+              mileagePriceImpacts={mileagePriceImpacts}
+              periodPriceImpacts={periodPriceImpacts}
+              upfrontPriceImpacts={upfrontPriceImpacts}
+              onHoverOption={setHoveredOption}
             />
 
             {/* Seller Modal */}
