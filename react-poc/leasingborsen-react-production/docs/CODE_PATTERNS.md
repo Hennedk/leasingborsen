@@ -237,6 +237,49 @@ import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
 const { imageRef, imageLoaded, imageError, retryImage, canRetry } = useImageLazyLoading(imageUrl)
 ```
 
+### Price Impact Visualization Pattern
+```typescript
+// Price Matrix for efficient calculations
+import { PriceMatrix } from '@/lib/priceMatrix'
+
+// Create price matrix for lease options
+const priceMatrix = useMemo(() => {
+  if (leaseOptions.length === 0) return null
+  return new PriceMatrix(leaseOptions)
+}, [leaseOptions])
+
+// Calculate price impacts for dropdowns
+const mileagePriceImpacts = useMemo(() => {
+  if (!priceMatrix || !selectedLease) return new Map()
+  
+  return new Map(
+    availableMileages.map(mileage => [
+      mileage,
+      priceMatrix.getPriceImpact(
+        selectedLease.monthly_price,
+        mileage,
+        selectedPeriod,
+        selectedUpfront
+      )
+    ])
+  )
+}, [priceMatrix, selectedLease, selectedPeriod, selectedUpfront])
+
+// Custom select item with price impact
+<PriceImpactSelectItem
+  value={mileage.toString()}
+  label={`${mileage.toLocaleString('da-DK')} km/år`}
+  impact={mileagePriceImpacts?.get(mileage)}
+  isSelected={mileage === selectedMileage}
+/>
+
+// Handle sparse pricing matrices gracefully
+if (!impact || !impact.available) {
+  // Show regular item without price impact
+  return <SelectItem>{label}</SelectItem>
+}
+```
+
 ## Error Handling Patterns
 
 ### Danish Localization
