@@ -3,8 +3,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ArrowUpDown } from 'lucide-react'
 import { PriceRangeFilter } from '@/components/shared/filters'
-
-type SortOrder = '' | 'desc'
+import type { SortOrder } from '@/types'
 
 interface MobileFilterPricingProps {
   // Current values
@@ -41,17 +40,24 @@ export const MobileFilterPricing: React.FC<MobileFilterPricingProps> = React.mem
   // Sort options configuration - adapted for Radix UI Select (no empty string values)
   const mobileSelectOptions = [
     { value: 'asc', label: 'Laveste pris' },
-    { value: 'desc', label: 'Højeste pris' }
+    { value: 'desc', label: 'Højeste pris' },
+    { value: 'lease_score_desc', label: 'Bedste værdi' }
   ]
 
   // Map mobile select values to backend sort values
   const mapToBackendSort = (selectValue: string): SortOrder => {
-    return selectValue === 'asc' ? '' : 'desc'
+    if (selectValue === 'asc') return ''
+    if (selectValue === 'desc') return 'desc'
+    if (selectValue === 'lease_score_desc') return 'lease_score_desc'
+    return ''
   }
 
   // Map backend sort values to mobile select values
   const mapToSelectValue = (sortOrder: SortOrder): string => {
-    return sortOrder === '' ? 'asc' : 'desc'
+    if (sortOrder === '') return 'asc'
+    if (sortOrder === 'desc') return 'desc'
+    if (sortOrder === 'lease_score_desc') return 'lease_score_desc'
+    return 'asc'
   }
 
   const handleSortChange = (value: string) => {

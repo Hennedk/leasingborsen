@@ -26,7 +26,8 @@ import type { SortOrder, SortOption } from '@/types'
 // Sort options configuration
 const sortOptions: SortOption[] = [
   { value: '', label: 'Laveste pris' },
-  { value: 'desc', label: 'Højeste pris' }
+  { value: 'desc', label: 'Højeste pris' },
+  { value: 'lease_score_desc', label: 'Bedste værdi' }
 ]
 
 const Listings: React.FC = () => {

@@ -206,7 +206,7 @@ export interface FilterChip {
 }
 
 // Sort options
-export type SortOrder = '' | 'desc'
+export type SortOrder = '' | 'desc' | 'lease_score_desc'
 
 export interface SortOption {
   value: SortOrder

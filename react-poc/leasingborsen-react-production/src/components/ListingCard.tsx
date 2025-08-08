@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
+import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import type { CarListing } from '@/types'
 
 interface ListingCardProps {
@@ -259,6 +260,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 </Button>
               </div>
             </div>
+          )}
+          
+          {/* Lease Score Pill - positioned absolutely in top-right corner */}
+          {car.lease_score && car.lease_score >= 60 && car.retail_price && (
+            <LeaseScorePill 
+              score={car.lease_score}
+              size="sm"
+              className="absolute top-4 right-4 z-10"
+            />
           )}
           
           {/* Enhanced overlay gradient on hover */}

@@ -161,15 +161,31 @@ export class CarListingQueries {
     // Convert back to array and apply sorting based on sortOrder
     let deduplicatedData = Array.from(uniqueListings.values())
     
-    // Apply final sorting
-    const isDescending = sortOrder === 'desc'
-    deduplicatedData.sort((a, b) => {
-      if (isDescending) {
-        return (b.monthly_price || 0) - (a.monthly_price || 0)
-      } else {
-        return (a.monthly_price || 0) - (b.monthly_price || 0)
-      }
-    })
+    // Apply final sorting based on sortOrder
+    if (sortOrder === 'lease_score_desc') {
+      // Filter out listings without scores when sorting by score
+      deduplicatedData = deduplicatedData.filter(listing => 
+        listing.lease_score !== null && 
+        listing.lease_score !== undefined
+      )
+      
+      // Sort by score (highest first), then by price as tiebreaker
+      deduplicatedData.sort((a, b) => {
+        const scoreDiff = (b.lease_score || 0) - (a.lease_score || 0)
+        if (scoreDiff !== 0) return scoreDiff
+        return (a.monthly_price || 0) - (b.monthly_price || 0) // Price as tiebreaker
+      })
+    } else {
+      // Handle regular price sorting
+      const isDescending = sortOrder === 'desc'
+      deduplicatedData.sort((a, b) => {
+        if (isDescending) {
+          return (b.monthly_price || 0) - (a.monthly_price || 0)
+        } else {
+          return (a.monthly_price || 0) - (b.monthly_price || 0)
+        }
+      })
+    }
 
     // Apply pagination to deduplicated data
     const paginatedData = deduplicatedData.slice(offset, offset + limit)
