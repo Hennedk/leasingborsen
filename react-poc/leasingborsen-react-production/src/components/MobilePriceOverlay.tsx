@@ -223,6 +223,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           isSelected={mileage === selectedMileage}
                           onHover={() => onHoverOption?.({ dimension: 'mileage', value: mileage })}
                           onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
                         />
                       ))}
                     </SelectContent>
@@ -252,6 +253,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           isSelected={period === selectedPeriod}
                           onHover={() => onHoverOption?.({ dimension: 'period', value: period })}
                           onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
                         />
                       ))}
                     </SelectContent>
@@ -281,6 +283,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           isSelected={upfront === selectedUpfront}
                           onHover={() => onHoverOption?.({ dimension: 'upfront', value: upfront })}
                           onHoverEnd={() => onHoverOption?.(null)}
+                          className="min-h-[44px] py-3"
                         />
                       ))}
                     </SelectContent>

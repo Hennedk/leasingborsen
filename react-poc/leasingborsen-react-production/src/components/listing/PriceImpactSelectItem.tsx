@@ -12,6 +12,7 @@ interface PriceImpactSelectItemProps {
   disabled?: boolean
   onHover?: () => void
   onHoverEnd?: () => void
+  className?: string  // Add className support for mobile styling
 }
 
 const PriceImpactSelectItem = forwardRef<
@@ -24,7 +25,8 @@ const PriceImpactSelectItem = forwardRef<
   isSelected = false,
   disabled = false,
   onHover,
-  onHoverEnd
+  onHoverEnd,
+  className
 }, ref) => {
   // Handle disabled state
   if (disabled) {
@@ -35,7 +37,8 @@ const PriceImpactSelectItem = forwardRef<
         disabled={true}
         className={cn(
           "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none",
-          "opacity-50 cursor-not-allowed"
+          "opacity-50 cursor-not-allowed",
+          className
         )}
       >
         <span className="absolute right-2 flex size-3.5 items-center justify-center">
@@ -59,7 +62,8 @@ const PriceImpactSelectItem = forwardRef<
           "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none",
           "focus:bg-accent focus:text-accent-foreground",
           "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-          isSelected && "bg-accent"
+          isSelected && "bg-accent",
+          className
         )}
         onMouseEnter={onHover}
         onMouseLeave={onHoverEnd}
@@ -103,7 +107,8 @@ const PriceImpactSelectItem = forwardRef<
         "focus:bg-accent focus:text-accent-foreground",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         isSelected && "bg-accent",
-        impact.isCheapest && "ring-1 ring-yellow-500/20"
+        impact.isCheapest && "ring-1 ring-yellow-500/20",
+        className
       )}
       onMouseEnter={onHover}
       onMouseLeave={onHoverEnd}
