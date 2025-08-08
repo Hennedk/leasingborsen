@@ -71,13 +71,18 @@ const renderWithRouter = (component: React.ReactElement) => {
 }
 
 describe('ListingCard - Lease Score Integration', () => {
-  it('should display LeaseScorePill when score >= 60 and retail_price exists', () => {
+  it('should display LeaseScorePill when score exists and retail_price exists', () => {
     renderWithRouter(<ListingCard car={mockCarWithScore} />)
     
     expect(screen.getByRole('img', { name: /LeaseScore: 85/ })).toBeInTheDocument()
     expect(screen.getByText('LeaseScore')).toBeInTheDocument()
-    expect(screen.getByText('Fantastisk værdi')).toBeInTheDocument()
+    expect(screen.getByText('Fantastisk tilbud')).toBeInTheDocument() // Updated for new Danish text
     expect(screen.getByText('85')).toBeInTheDocument()
+    
+    // Should render as circular progress indicator with SVG
+    const container = screen.getByRole('img', { name: /LeaseScore: 85/ })
+    const svgElement = container.querySelector('svg')
+    expect(svgElement).toBeInTheDocument()
   })
 
   it('should not display LeaseScorePill when score is undefined', () => {
@@ -87,11 +92,14 @@ describe('ListingCard - Lease Score Integration', () => {
     expect(screen.queryByRole('img', { name: /LeaseScore/ })).not.toBeInTheDocument()
   })
 
-  it('should not display LeaseScorePill when score < 60', () => {
+  it('should display LeaseScorePill for low scores with appropriate styling', () => {
     renderWithRouter(<ListingCard car={mockCarWithLowScore} />)
     
-    expect(screen.queryByText('LeaseScore')).not.toBeInTheDocument()
-    expect(screen.queryByRole('img', { name: /LeaseScore/ })).not.toBeInTheDocument()
+    // Should display low scores with appropriate Danish text
+    expect(screen.getByText('LeaseScore')).toBeInTheDocument()
+    expect(screen.getByText('45')).toBeInTheDocument()
+    expect(screen.getByText('Rimeligt tilbud')).toBeInTheDocument() // Text for 40-59 range
+    expect(screen.getByRole('img', { name: /LeaseScore: 45/ })).toBeInTheDocument()
   })
 
   it('should position pill absolutely in top-right corner of image container', () => {
@@ -140,7 +148,13 @@ describe('ListingCard - Lease Score Integration', () => {
     renderWithRouter(<ListingCard car={mockCarWithScore} />)
     
     const pill = screen.getByRole('img', { name: /LeaseScore: 85/ })
-    expect(pill).toHaveClass('px-3', 'py-1') // Small size classes
+    // Should have circular design classes and small padding
+    expect(pill).toHaveClass('bg-white', 'rounded-2xl', 'shadow-lg', 'flex', 'flex-col', 'items-center', 'p-2')
+    
+    // SVG should be small size (60px for sm)
+    const svgElement = pill.querySelector('svg')
+    expect(svgElement).toHaveAttribute('width', '60')
+    expect(svgElement).toHaveAttribute('height', '60')
   })
 
   it('should handle car object with only listing_id (no id field)', () => {

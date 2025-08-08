@@ -263,7 +263,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
           )}
           
           {/* Lease Score Pill - positioned absolutely in top-right corner */}
-          {car.lease_score && car.lease_score >= 60 && car.retail_price && (
+          {car.lease_score && car.retail_price && (
             <LeaseScorePill 
               score={car.lease_score}
               size="sm"
