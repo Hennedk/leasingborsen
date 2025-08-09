@@ -67,7 +67,7 @@ export interface FilterOptions {
 }
 
 // Legacy alias for backward compatibility
-export interface Filters extends FilterOptions {}
+export type Filters = FilterOptions
 
 // Car listing core data
 export interface CarListingCore {
@@ -219,6 +219,11 @@ export interface LeaseOption {
   period_months: number
   first_payment: number
   monthly_price: number
+}
+
+// Lease option with calculated score
+export interface LeaseOptionWithScore extends LeaseOption {
+  lease_score?: number
 }
 
 // Basic seller info interface (renamed to avoid conflict with database Seller entity)

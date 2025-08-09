@@ -60,18 +60,24 @@
   
   /* Single column with centered alignment */
   .order-1 {
-    margin-bottom: clamp(1rem, 4vw, 2rem);
+    margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
     text-align: center;
   }
   
   .order-2 {
-    margin-top: clamp(1rem, 4vw, 2rem);
+    margin-top: clamp(0.75rem, 3vw, 1.5rem);
     text-align: center;
   }
   
   /* Reduce car illustration scale by 20% on mobile */
   .order-1 img {
     transform: scale(0.8);
+  }
+  
+  /* Mobile-specific hero optimizations for above-the-fold content */
+  .hero-mobile-compact {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
 }
 

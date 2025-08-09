@@ -40,14 +40,16 @@ const Listing: React.FC = () => {
     availableMileages,
     availablePeriods,
     availableUpfronts,
-    leaseOptions: _leaseOptions,
+    leaseOptionsWithScores,
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
     resetToCheapest,
+    selectBestScore,
     isLoading: leaseLoading,
     error: leaseError,
     totalCost,
+    bestScoreOption,
     isCheapest,
     priceDifference,
     mileagePriceImpacts,
@@ -209,6 +211,7 @@ const Listing: React.FC = () => {
               onPeriodChange={setSelectedPeriod}
               onUpfrontChange={setSelectedUpfront}
               onResetToCheapest={resetToCheapest}
+              onSelectBestScore={selectBestScore}
               onShowSeller={() => setSellerModalOpen(true)}
               totalCost={totalCost}
               isCheapest={isCheapest}
@@ -217,6 +220,8 @@ const Listing: React.FC = () => {
               periodPriceImpacts={periodPriceImpacts}
               upfrontPriceImpacts={upfrontPriceImpacts}
               onHoverOption={setHoveredOption}
+              leaseOptionsWithScores={leaseOptionsWithScores}
+              bestScoreOption={bestScoreOption}
             />
 
             {/* Seller Modal */}

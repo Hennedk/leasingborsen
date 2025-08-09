@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { FormField } from '@/components/ui/form-field'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useListingCount } from '@/hooks/useListings'
@@ -17,6 +18,7 @@ const HeroBanner: React.FC = () => {
     body_type: '',
     price_max: null as number | null
   })
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
   // Price steps for max price dropdown
   const priceSteps = Array.from({ length: 10 }, (_, i) => (i + 1) * 1000)
@@ -100,7 +102,7 @@ const HeroBanner: React.FC = () => {
           CONTENT CONTAINER - Main content wrapper with 48px top/bottom padding
       ================= */}
       <div className="w-full">
-        <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12 py-12 relative z-10">
+        <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12 py-6 md:py-12 relative z-10">
           
           {/* =================
               RESPONSIVE GRID LAYOUT
@@ -115,9 +117,9 @@ const HeroBanner: React.FC = () => {
                 - Descriptive text
                 - Promotional banner image
             ========================================= */}
-            <div className="order-1 md:order-2 text-left animate-slide-in-left">
+            <div className="order-2 md:order-2 text-left animate-slide-in-left">
               {/* Text Content Wrapper - 24px vertical spacing, full width */}
-              <div className="w-full space-y-6">
+              <div className="w-full space-y-4 md:space-y-6">
                 
                 {/* Main Headline & Subtitle Group - 16px internal spacing */}
                 <div className="space-y-4">
@@ -141,23 +143,24 @@ const HeroBanner: React.FC = () => {
                 - 4 filter dropdowns (2x2 grid)
                 - Search CTA button
             ========================================= */}
-            <div className="order-2 md:order-1 animate-slide-in-right px-0 md:pl-0 md:pr-0">
+            <div className="order-1 md:order-1 animate-slide-in-right px-0 md:pl-0 md:pr-0">
               
               {/* Search Form Card - Backdrop blur with hover effects */}
               {/* Width: 350px-550px responsive, 95% max on mobile */}
-              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-4 md:p-6 max-w-xl">
+              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-3 md:p-6 max-w-xl">
                 {/* Form Content Wrapper - 24px vertical spacing */}
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   
                   {/* Form Title - Fluid typography: 20px-24px */}
-                  <h2 className="font-bold text-card-foreground text-left leading-tight" style={{fontSize: 'clamp(1.25rem, 3vw, 1.5rem)'}}>
-                    Find din drømmebil blandt hundredvis af leasingbiler
+                  <h2 className="font-bold text-card-foreground text-left leading-tight text-lg md:text-xl">
+                    <span className="hidden sm:inline">Find din drømmebil blandt hundredvis af leasingbiler</span>
+                    <span className="sm:hidden">Find din drømmebil</span>
                   </h2>
                   
                   {/* Form Fields Container - 16px vertical spacing between rows */}
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     
-                    {/* ===== FILTER ROW 1: Vehicle Make & Model ===== */}
+                    {/* ===== PRIMARY FILTERS: Make & Price ===== */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <FormField
                         label="Mærke"
@@ -170,40 +173,6 @@ const HeroBanner: React.FC = () => {
                           ...(referenceData?.makes?.map((make: any) => ({
                             value: make.name,
                             label: make.name
-                          })) || [])
-                        ]}
-                      />
-
-                      <FormField
-                        label="Model"
-                        value={localFilters.model || 'all'}
-                        onValueChange={(value) => handleFilterChange('model', value)}
-                        placeholder={localFilters.make ? 'Vælg model' : 'Vælg mærke først'}
-                        disabled={!localFilters.make}
-                        size="lg"
-                        options={[
-                          { value: 'all', label: localFilters.make ? 'Vælg model' : 'Vælg mærke først' },
-                          ...filteredModels.map((model: any) => ({
-                            value: model.name,
-                            label: model.name
-                          }))
-                        ]}
-                      />
-                    </div>
-
-                    {/* ===== FILTER ROW 2: Vehicle Type & Price Range ===== */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <FormField
-                        label="Biltype"
-                        value={localFilters.body_type || 'all'}
-                        onValueChange={(value) => handleFilterChange('body_type', value)}
-                        placeholder="Alle biltyper"
-                        size="lg"
-                        options={[
-                          { value: 'all', label: 'Alle biltyper' },
-                          ...(referenceData?.bodyTypes?.map((bodyType: any) => ({
-                            value: bodyType.name,
-                            label: bodyType.name
                           })) || [])
                         ]}
                       />
@@ -224,6 +193,59 @@ const HeroBanner: React.FC = () => {
                         ]}
                       />
                     </div>
+
+                    {/* ===== ADVANCED FILTERS TOGGLE ===== */}
+                    <div className="block md:hidden">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+                        onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                      >
+                        <span>Flere filtre</span>
+                        {showAdvancedFilters ? 
+                          <ChevronUp className="h-4 w-4" /> : 
+                          <ChevronDown className="h-4 w-4" />
+                        }
+                      </button>
+                    </div>
+
+                    {/* ===== ADVANCED FILTERS: Model & Body Type ===== */}
+                    <div className={`space-y-3 md:space-y-4 transition-all duration-200 md:block ${
+                      showAdvancedFilters ? 'block' : 'hidden'
+                    }`}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField
+                          label="Model"
+                          value={localFilters.model || 'all'}
+                          onValueChange={(value) => handleFilterChange('model', value)}
+                          placeholder={localFilters.make ? 'Vælg model' : 'Vælg mærke først'}
+                          disabled={!localFilters.make}
+                          size="lg"
+                          options={[
+                            { value: 'all', label: localFilters.make ? 'Vælg model' : 'Vælg mærke først' },
+                            ...filteredModels.map((model: any) => ({
+                              value: model.name,
+                              label: model.name
+                            }))
+                          ]}
+                        />
+
+                        <FormField
+                          label="Biltype"
+                          value={localFilters.body_type || 'all'}
+                          onValueChange={(value) => handleFilterChange('body_type', value)}
+                          placeholder="Alle biltyper"
+                          size="lg"
+                          options={[
+                            { value: 'all', label: 'Alle biltyper' },
+                            ...(referenceData?.bodyTypes?.map((bodyType: any) => ({
+                              value: bodyType.name,
+                              label: bodyType.name
+                            })) || [])
+                          ]}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -232,8 +254,7 @@ const HeroBanner: React.FC = () => {
                 <div className="pt-4">
                   {/* Primary Search Button - Large size (48px height), full width */}
                   <Button 
-                    size="lg"
-                    className="w-full font-bold tracking-wide shadow-xl hover:shadow-2xl" 
+                    className="w-full font-bold tracking-wide shadow-xl hover:shadow-2xl h-10 md:h-12 text-sm md:text-base" 
                     onClick={handleSearch}
                     aria-label="Søg efter biler med de valgte kriterier"
                   >

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import type { CarListing } from '@/types'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import type { CarListing, LeaseOptionWithScore } from '@/types'
 import type { HoveredOption, PriceImpactData } from '@/types/priceImpact'
 import { useOffers } from './useOffers'
 import { PriceMatrix } from '@/lib/priceMatrix'
@@ -12,6 +12,49 @@ export interface LeaseOption {
   monthly_price: number
 }
 
+// Lease score calculation function (simplified version of Edge Function logic)
+const calculateLeaseScore = (
+  monthlyPrice: number,
+  retailPrice: number,
+  mileagePerYear: number,
+  periodMonths: number
+): number => {
+  // Monthly Rate Score (45% weight)
+  const monthlyRatePercent = (monthlyPrice / retailPrice) * 100
+  let monthlyRateScore = 100
+  if (monthlyRatePercent > 0.9) monthlyRateScore = 90
+  if (monthlyRatePercent > 1.1) monthlyRateScore = 80
+  if (monthlyRatePercent > 1.3) monthlyRateScore = 70
+  if (monthlyRatePercent > 1.5) monthlyRateScore = 60
+  if (monthlyRatePercent > 1.7) monthlyRateScore = 50
+  if (monthlyRatePercent > 1.9) monthlyRateScore = 40
+  if (monthlyRatePercent > 2.1) monthlyRateScore = 25
+
+  // Mileage Score (35% weight)
+  let mileageScore = 20
+  if (mileagePerYear >= 25000) mileageScore = 100
+  else if (mileagePerYear >= 20000) mileageScore = 90
+  else if (mileagePerYear >= 15000) mileageScore = 75
+  else if (mileagePerYear >= 12000) mileageScore = 55
+  else if (mileagePerYear >= 10000) mileageScore = 35
+
+  // Flexibility Score (20% weight)
+  let flexibilityScore = 30
+  if (periodMonths <= 12) flexibilityScore = 100
+  else if (periodMonths <= 24) flexibilityScore = 90
+  else if (periodMonths <= 36) flexibilityScore = 75
+  else if (periodMonths <= 48) flexibilityScore = 55
+
+  // Calculate weighted total
+  const totalScore = Math.round(
+    (monthlyRateScore * 0.45) + 
+    (mileageScore * 0.35) + 
+    (flexibilityScore * 0.20)
+  )
+
+  return Math.max(0, Math.min(100, totalScore))
+}
+
 export interface LeaseCalculatorData {
   selectedMileage: number | null
   selectedPeriod: number | null
@@ -21,14 +64,17 @@ export interface LeaseCalculatorData {
   availablePeriods: number[]
   availableUpfronts: number[]
   leaseOptions: LeaseOption[]
+  leaseOptionsWithScores: LeaseOptionWithScore[]
   setSelectedMileage: (value: number) => void
   setSelectedPeriod: (value: number) => void
   setSelectedUpfront: (value: number) => void
   resetToCheapest: () => void
+  selectBestScore: () => void
   isLoading: boolean
-  error: any
+  error: Error | null
   totalCost: number | null
   cheapestOption: LeaseOption | undefined
+  bestScoreOption: LeaseOptionWithScore | undefined
   isCheapest: boolean
   priceDifference: number
   priceMatrix: PriceMatrix | null
@@ -216,21 +262,53 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     }
   }, [hoveredOption, priceMatrix, selectedLease, selectedMileage, selectedPeriod, selectedUpfront])
 
+  // Calculate lease scores for all options
+  const leaseOptionsWithScores = useMemo(() => {
+    if (!car?.retail_price || leaseOptions.length === 0) return []
+    
+    return leaseOptions.map(option => ({
+      ...option,
+      lease_score: calculateLeaseScore(
+        option.monthly_price,
+        car.retail_price!,
+        option.mileage_per_year,
+        option.period_months
+      )
+    }))
+  }, [leaseOptions, car?.retail_price])
+
+  // Find best score option
+  const bestScoreOption = useMemo(() => {
+    if (leaseOptionsWithScores.length === 0) return undefined
+    return leaseOptionsWithScores.reduce((prev, curr) => 
+      (curr.lease_score || 0) > (prev.lease_score || 0) ? curr : prev
+    )
+  }, [leaseOptionsWithScores])
+
   // Reset to cheapest option
-  const resetToCheapest = () => {
+  const resetToCheapest = useCallback(() => {
     if (!cheapestOption) return
     
     setSelectedMileage(cheapestOption.mileage_per_year)
     setSelectedPeriod(cheapestOption.period_months)
     setSelectedUpfront(cheapestOption.first_payment)
-  }
+  }, [cheapestOption])
+
+  // Select best score option
+  const selectBestScore = useCallback(() => {
+    if (!bestScoreOption) return
+    
+    setSelectedMileage(bestScoreOption.mileage_per_year)
+    setSelectedPeriod(bestScoreOption.period_months)
+    setSelectedUpfront(bestScoreOption.first_payment)
+  }, [bestScoreOption])
 
   // Initialize with cheapest option
   useEffect(() => {
     if (leaseOptions.length && !selectedLease) {
       resetToCheapest()
     }
-  }, [leaseOptions, selectedLease])
+  }, [leaseOptions, selectedLease, resetToCheapest])
 
   return {
     selectedMileage,
@@ -241,14 +319,17 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     availablePeriods,
     availableUpfronts,
     leaseOptions,
+    leaseOptionsWithScores,
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
     resetToCheapest,
+    selectBestScore,
     isLoading,
     error,
     totalCost,
     cheapestOption,
+    bestScoreOption,
     isCheapest,
     priceDifference,
     priceMatrix,

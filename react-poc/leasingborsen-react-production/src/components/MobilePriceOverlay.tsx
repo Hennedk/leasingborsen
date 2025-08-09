@@ -1,13 +1,12 @@
 import React, { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X, ExternalLink, TrendingDown, Check } from 'lucide-react'
+import { X, ExternalLink, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import AnimatedPrice from '@/components/listing/AnimatedPrice'
-import type { LeaseOption, CarListing } from '@/types'
+import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
+import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
-import PriceImpactSelectItem from '@/components/listing/PriceImpactSelectItem'
 
 interface MobilePriceOverlayProps {
   isOpen: boolean
@@ -24,6 +23,7 @@ interface MobilePriceOverlayProps {
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
   onResetToCheapest: () => void
+  onSelectBestScore: () => void
   onShowSeller: () => void
   totalCost?: number | null
   isCheapest?: boolean
@@ -33,12 +33,14 @@ interface MobilePriceOverlayProps {
   periodPriceImpacts?: Map<number, PriceImpactData>
   upfrontPriceImpacts?: Map<number, PriceImpactData>
   onHoverOption?: (option: HoveredOption | null) => void
+  // New props for lease scores
+  leaseOptionsWithScores?: LeaseOptionWithScore[]
+  bestScoreOption?: LeaseOptionWithScore
 }
 
 const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   isOpen,
   onClose,
-  car,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -50,14 +52,15 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onPeriodChange,
   onUpfrontChange,
   onResetToCheapest,
+  onSelectBestScore,
   onShowSeller,
   totalCost = null,
   isCheapest = false,
-  priceDifference = 0,
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,
-  onHoverOption
+  leaseOptionsWithScores = [],
+  bestScoreOption
 }) => {
   const overlayRef = useRef<HTMLDivElement>(null)
   const firstFocusableRef = useRef<HTMLButtonElement>(null)
@@ -144,28 +147,35 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             </Button>
           </div>
 
-          {/* Car Info */}
-          <div className="px-5 py-3 border-b border-border/50 flex-shrink-0">
-            <p id="price-overlay-description" className="text-sm text-muted-foreground">
-              Tilpas leasingbetingelser for {car.make} {car.model}{car.variant ? ` ${car.variant}` : ''}
-            </p>
-          </div>
-
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-5 space-y-6">
-              {/* Subtle price indicator */}
-              {!isCheapest && (
-                <Button
-                  variant="ghost"
-                  onClick={onResetToCheapest}
-                  className="w-full h-10 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  size="sm"
-                >
-                  <TrendingDown className="w-3 h-3 mr-1" />
-                  Vælg billigste ({priceDifference > 0 ? `-${priceDifference.toLocaleString('da-DK')} kr/md` : 'tilgængelig'})
-                </Button>
-              )}
+              {/* Quick Options Section */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold text-primary">
+                  Hurtig valg
+                </Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onResetToCheapest}
+                    className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                  >
+                    <span>💰</span>
+                    <span className="font-medium">Billigste</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={onSelectBestScore}
+                    className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                    disabled={!bestScoreOption}
+                  >
+                    <span>⭐</span>
+                    <span className="font-medium">Bedste score</span>
+                  </Button>
+                </div>
+                <div className="border-b border-border/50 mt-6"></div>
+              </div>
 
               {/* Enhanced Price Display */}
               <div className="space-y-2 pb-4 border-b border-border/50">
@@ -198,96 +208,90 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                 )}
               </div>
 
-              {/* Form Fields */}
-              <div className="space-y-5">
+              {/* Configuration Options */}
+              <div className="space-y-6">
                 {/* Mileage Selection */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label className="text-sm font-semibold text-primary">
                     Årligt km-forbrug
                   </Label>
-                  <Select 
-                    value={selectedMileage?.toString() || ''} 
-                    onValueChange={(value) => onMileageChange(parseInt(value))}
-                    disabled={availableMileages.length <= 1}
-                  >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
-                      <SelectValue placeholder="Vælg km-forbrug" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[50vh]">
-                      {availableMileages.map((mileage) => (
-                        <PriceImpactSelectItem
+                  <div className="grid gap-3">
+                    {availableMileages.map((mileage) => {
+                      const optionWithScore = leaseOptionsWithScores.find(opt => 
+                        opt.mileage_per_year === mileage &&
+                        opt.period_months === selectedPeriod &&
+                        opt.first_payment === selectedUpfront
+                      )
+                      
+                      return (
+                        <LeaseOptionCard
                           key={`mileage-${mileage}`}
-                          value={mileage.toString()}
-                          label={`${mileage.toLocaleString('da-DK')} km/år`}
-                          impact={mileagePriceImpacts?.get(mileage)}
+                          value={`${mileage.toLocaleString('da-DK')} km/år`}
+                          label="Årligt km-forbrug"
+                          score={optionWithScore?.lease_score}
+                          priceImpact={mileagePriceImpacts?.get(mileage)}
                           isSelected={mileage === selectedMileage}
-                          onHover={() => onHoverOption?.({ dimension: 'mileage', value: mileage })}
-                          onHoverEnd={() => onHoverOption?.(null)}
-                          className="min-h-[44px] py-3"
+                          onClick={() => onMileageChange(mileage)}
                         />
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Period Selection */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label className="text-sm font-semibold text-primary">
                     Leasingperiode
                   </Label>
-                  <Select 
-                    value={selectedPeriod?.toString() || ''} 
-                    onValueChange={(value) => onPeriodChange(parseInt(value))}
-                    disabled={availablePeriods.length <= 1}
-                  >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
-                      <SelectValue placeholder="Vælg periode" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[50vh]">
-                      {availablePeriods.map((period) => (
-                        <PriceImpactSelectItem
+                  <div className="grid gap-3">
+                    {availablePeriods.map((period) => {
+                      const optionWithScore = leaseOptionsWithScores.find(opt => 
+                        opt.mileage_per_year === selectedMileage &&
+                        opt.period_months === period &&
+                        opt.first_payment === selectedUpfront
+                      )
+                      
+                      return (
+                        <LeaseOptionCard
                           key={`period-${period}`}
-                          value={period.toString()}
-                          label={`${period} måneder`}
-                          impact={periodPriceImpacts?.get(period)}
+                          value={`${period} måneder`}
+                          label="Leasingperiode"
+                          score={optionWithScore?.lease_score}
+                          priceImpact={periodPriceImpacts?.get(period)}
                           isSelected={period === selectedPeriod}
-                          onHover={() => onHoverOption?.({ dimension: 'period', value: period })}
-                          onHoverEnd={() => onHoverOption?.(null)}
-                          className="min-h-[44px] py-3"
+                          onClick={() => onPeriodChange(period)}
                         />
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Upfront Payment Selection */}
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label className="text-sm font-semibold text-primary">
                     Udbetaling
                   </Label>
-                  <Select 
-                    value={selectedUpfront?.toString() || ''} 
-                    onValueChange={(value) => onUpfrontChange(parseInt(value))}
-                    disabled={availableUpfronts.length <= 1}
-                  >
-                    <SelectTrigger className="w-full h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed">
-                      <SelectValue placeholder="Vælg udbetaling" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[50vh]">
-                      {availableUpfronts.map((upfront) => (
-                        <PriceImpactSelectItem
+                  <div className="grid gap-3">
+                    {availableUpfronts.map((upfront) => {
+                      const optionWithScore = leaseOptionsWithScores.find(opt => 
+                        opt.mileage_per_year === selectedMileage &&
+                        opt.period_months === selectedPeriod &&
+                        opt.first_payment === upfront
+                      )
+                      
+                      return (
+                        <LeaseOptionCard
                           key={`upfront-${upfront}`}
-                          value={upfront.toString()}
-                          label={`${upfront.toLocaleString('da-DK')} kr`}
-                          impact={upfrontPriceImpacts?.get(upfront)}
+                          value={`${upfront.toLocaleString('da-DK')} kr`}
+                          label="Udbetaling"
+                          score={optionWithScore?.lease_score}
+                          priceImpact={upfrontPriceImpacts?.get(upfront)}
                           isSelected={upfront === selectedUpfront}
-                          onHover={() => onHoverOption?.({ dimension: 'upfront', value: upfront })}
-                          onHoverEnd={() => onHoverOption?.(null)}
-                          className="min-h-[44px] py-3"
+                          onClick={() => onUpfrontChange(upfront)}
                         />
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
