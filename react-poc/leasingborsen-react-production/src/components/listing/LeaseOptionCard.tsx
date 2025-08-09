@@ -1,6 +1,5 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
-import LeaseScoreGauge from './LeaseScoreGauge'
 import type { PriceImpactData } from '@/types/priceImpact'
 
 interface LeaseOptionCardProps {
@@ -22,18 +21,21 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
   onClick,
   className
 }) => {
+  // Calculate fill percentage based on score (0-100)
+  const fillPercentage = score ? Math.min(100, Math.max(0, score)) : 0
+  
   // Format price impact display
   const renderPriceImpact = () => {
     if (isSelected) {
       return (
-        <span className="text-xs text-current opacity-70">
+        <span className="text-xs font-medium text-primary">
           Valgt
         </span>
       )
     }
 
     if (!priceImpact || !priceImpact.difference || priceImpact.difference === 0) {
-      return null
+      return <span className="text-xs text-muted-foreground">–</span>
     }
 
     const { difference } = priceImpact
@@ -55,19 +57,19 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
     <button
       onClick={onClick}
       className={cn(
-        // Base styles
-        'flex items-center justify-between gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left w-full min-h-[88px]',
+        // Base styles with vertical layout
+        'flex flex-col items-center justify-between p-3 rounded-xl border-2 transition-all duration-200 w-full min-h-[110px]',
         // Touch target size for mobile
         'touch-manipulation',
-        // Default state
+        // Default state with light grey border
         !isSelected && [
-          'bg-background border-border hover:border-primary/40 hover:bg-muted/50',
+          'bg-background border-gray-200 hover:border-primary/40 hover:bg-muted/50',
           'active:scale-[0.98] active:bg-muted'
         ],
         // Selected state
         isSelected && [
-          'bg-foreground text-background border-foreground',
-          'shadow-lg shadow-foreground/20'
+          'bg-primary/5 border-primary',
+          'shadow-sm'
         ],
         // Custom className
         className
@@ -76,30 +78,61 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       aria-checked={isSelected}
       aria-label={`Vælg ${label}: ${value}`}
     >
-      {/* Left: Score gauge */}
-      <div className="flex-shrink-0">
-        <LeaseScoreGauge 
-          score={score} 
-          size="default"
-          inverted={isSelected}
-        />
+      {/* Top: Score gauge with number inside */}
+      <div className="relative w-12 h-12 mb-2">
+        <svg className="w-12 h-12 transform -rotate-90">
+          {/* Background circle */}
+          <circle
+            cx="24"
+            cy="24"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="3"
+            fill="none"
+            className="text-gray-200"
+          />
+          {/* Filled circle based on score */}
+          <circle
+            cx="24"
+            cy="24"
+            r="20"
+            stroke="currentColor"
+            strokeWidth="3"
+            fill="none"
+            strokeDasharray={`${(fillPercentage * 125.6) / 100} 125.6`}
+            strokeLinecap="round"
+            className={cn(
+              'transition-all duration-500',
+              score && score >= 80 ? 'text-green-500' :
+              score && score >= 60 ? 'text-yellow-500' :
+              score && score >= 40 ? 'text-orange-500' :
+              'text-red-500'
+            )}
+          />
+        </svg>
+        {/* Score number in center */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className={cn(
+            'text-sm font-bold',
+            isSelected ? 'text-primary' : 'text-foreground'
+          )}>
+            {score || '–'}
+          </span>
+        </div>
       </div>
 
-      {/* Center: Option details */}
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm leading-tight">
+      {/* Middle: Option value */}
+      <div className="text-center mb-1">
+        <div className={cn(
+          'text-sm font-semibold leading-tight',
+          isSelected ? 'text-primary' : 'text-foreground'
+        )}>
           {value}
         </div>
-        <div className={cn(
-          'text-xs leading-tight mt-0.5',
-          isSelected ? 'text-current opacity-70' : 'text-muted-foreground'
-        )}>
-          {label}
-        </div>
       </div>
 
-      {/* Right: Price impact */}
-      <div className="flex-shrink-0 text-right">
+      {/* Bottom: Price impact or selected state */}
+      <div className="text-center">
         {renderPriceImpact()}
       </div>
     </button>
