@@ -271,8 +271,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             "sticky bottom-0",
             // Layout
             "flex-shrink-0",
-            // Styling  
-            "p-5 bg-background shadow-lg",
+            // Styling with border and subtle shadow
+            "p-5 bg-background border-t border-border/50 shadow-xl",
             // iOS safe area support
             "pb-[max(1rem,env(safe-area-inset-bottom))]"
           )}>
