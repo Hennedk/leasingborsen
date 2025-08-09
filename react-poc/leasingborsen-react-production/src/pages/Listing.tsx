@@ -213,9 +213,6 @@ const Listing: React.FC = () => {
               onResetToCheapest={resetToCheapest}
               onSelectBestScore={selectBestScore}
               onShowSeller={() => setSellerModalOpen(true)}
-              totalCost={totalCost}
-              isCheapest={isCheapest}
-              priceDifference={priceDifference}
               mileagePriceImpacts={mileagePriceImpacts}
               periodPriceImpacts={periodPriceImpacts}
               upfrontPriceImpacts={upfrontPriceImpacts}
