@@ -276,21 +276,22 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             // iOS safe area support
             "pb-[max(1rem,env(safe-area-inset-bottom))]"
           )}>
-            {/* Current Lease Summary */}
-            <div className="mb-5">
-              <div className="text-2xl font-bold text-primary leading-tight mb-1">
-                {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
+            {/* Price Summary and CTA on same line */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: Current Lease Summary */}
+              <div className="flex-1 min-w-0">
+                <div className="text-2xl font-bold text-primary leading-tight mb-1">
+                  {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
+                </div>
+                <div className="text-sm text-muted-foreground leading-relaxed truncate">
+                  {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK') ?? '–'} kr • {selectedLease?.period_months ?? car.period_months ?? '–'} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK') ?? '–'} km
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground leading-relaxed">
-                {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK') ?? '–'} kr udbetaling • {selectedLease?.period_months ?? car.period_months ?? '–'} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK') ?? '–'} km/år
-              </div>
-            </div>
 
-            {/* CTA Button */}
-            <div>
+              {/* Right: CTA Button */}
               <Button 
-                className="w-full h-12" 
-                size="lg"
+                className="flex-shrink-0" 
+                size="default"
                 onClick={onShowSeller}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
