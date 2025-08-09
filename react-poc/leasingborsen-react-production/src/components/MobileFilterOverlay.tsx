@@ -18,7 +18,8 @@ import type { Make, Model, SortOrder } from '@/types'
 // Sort options configuration - adapted for Radix UI Select (no empty string values)
 const mobileSelectOptions = [
   { value: 'asc', label: 'Laveste pris' },
-  { value: 'desc', label: 'Højeste pris' }
+  { value: 'desc', label: 'Højeste pris' },
+  { value: 'lease_score_desc', label: 'Bedste værdi' }
 ]
 
 // Map mobile select values to backend sort values
