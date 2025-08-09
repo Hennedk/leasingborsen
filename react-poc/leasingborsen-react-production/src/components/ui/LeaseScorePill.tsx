@@ -67,18 +67,19 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
       return () => clearTimeout(fallbackTimeout)
     }
     
-    // const duration = 700 // ms - matches circle animation
-    const steps = 30
-    const increment = score / steps
-    let current = 0
+    const duration = 1000 // ms - matches circle animation
     let animationFrameId: number
     
+    const startTime = Date.now()
+    
     const animateScore = () => {
-      current += increment
-      if (current >= score) {
+      const elapsed = Date.now() - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      
+      if (progress >= 1) {
         setDisplayScore(score)
       } else {
-        setDisplayScore(Math.floor(current))
+        setDisplayScore(Math.floor(score * progress))
         animationFrameId = requestAnimationFrame(animateScore)
       }
     }
@@ -227,7 +228,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className="transition-all duration-700 ease-out"
+            className="transition-all duration-1000 ease-out"
             style={{
               filter: score >= 90 ? 'drop-shadow(0 0 4px rgba(5, 150, 105, 0.4))' : undefined,
               transitionDelay: prefersReducedMotion ? '0ms' : `${animationDelay}ms`,

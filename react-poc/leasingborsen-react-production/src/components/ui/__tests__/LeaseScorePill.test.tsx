@@ -199,7 +199,7 @@ describe('LeaseScorePill - Circular Progress Design', () => {
     render(<LeaseScorePill score={75} />)
     
     const progressCircle = screen.getByRole('img').querySelectorAll('circle')[1]
-    expect(progressCircle).toHaveClass('transition-all', 'duration-700', 'ease-out')
+    expect(progressCircle).toHaveClass('transition-all', 'duration-1000', 'ease-out')
   })
 
   it('should apply glow effect for exceptional scores (90+)', () => {
@@ -321,6 +321,6 @@ describe('LeaseScorePill - Circular Progress Design', () => {
     render(<LeaseScorePill score={75} />)
     
     const progressCircle = screen.getByRole('img').querySelectorAll('circle')[1]
-    expect(progressCircle).toHaveClass('duration-700')
+    expect(progressCircle).toHaveClass('duration-1000')
   })
 })
