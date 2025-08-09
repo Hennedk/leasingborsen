@@ -279,7 +279,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl"
           )}>
             {/* Main Content - Inverted colors */}
-            <div className="p-5">
+            <div className="px-5 py-3">
               {/* Price Summary and CTA on same line - Inverted */}
               <div className="flex items-center justify-between gap-4">
                 {/* Left: Current Lease Summary */}
@@ -334,7 +334,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   onClick={onShowSeller}
                 >
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Se tilbud
+                  Gå til tilbud
                 </Button>
               </div>
             </div>

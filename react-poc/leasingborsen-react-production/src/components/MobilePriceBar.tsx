@@ -35,7 +35,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
     >
       {/* Main Content */}
       <div 
-        className="p-5 cursor-pointer"
+        className="px-5 py-3 cursor-pointer"
         onClick={onEditPrice}
       >
         {/* Price Summary and CTA on same line */}
@@ -60,7 +60,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
             }}
           >
             <ExternalLink className="w-4 h-4 mr-2" />
-            Se tilbud
+            Gå til tilbud
           </Button>
         </div>
       </div>
