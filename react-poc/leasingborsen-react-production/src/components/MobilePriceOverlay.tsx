@@ -180,8 +180,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-semibold text-primary">
                     Leasingperiode
                   </Label>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {availablePeriods.map((period) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
+                    {availablePeriods.map((period, index) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === selectedMileage &&
                         opt.period_months === period &&
@@ -191,12 +191,13 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       return (
                         <LeaseOptionCard
                           key={`period-${period}`}
-                          value={`${period} mdr`}
+                          value={`${period} måneder`}
                           label="Periode"
                           score={optionWithScore?.lease_score}
                           priceImpact={periodPriceImpacts?.get(period)}
                           isSelected={period === selectedPeriod}
                           onClick={() => onPeriodChange(period)}
+                          className={`flex-shrink-0 w-32 snap-start ${index === availablePeriods.length - 1 ? 'mr-5' : ''}`}
                         />
                       )
                     })}
@@ -208,8 +209,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-semibold text-primary">
                     Årligt km-forbrug
                   </Label>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {availableMileages.map((mileage) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
+                    {availableMileages.map((mileage, index) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === mileage &&
                         opt.period_months === selectedPeriod &&
@@ -219,12 +220,13 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       return (
                         <LeaseOptionCard
                           key={`mileage-${mileage}`}
-                          value={`${(mileage / 1000).toLocaleString('da-DK')}k`}
-                          label="km/år"
+                          value={`${mileage.toLocaleString('da-DK')} km`}
+                          label="pr. år"
                           score={optionWithScore?.lease_score}
                           priceImpact={mileagePriceImpacts?.get(mileage)}
                           isSelected={mileage === selectedMileage}
                           onClick={() => onMileageChange(mileage)}
+                          className={`flex-shrink-0 w-32 snap-start ${index === availableMileages.length - 1 ? 'mr-5' : ''}`}
                         />
                       )
                     })}
@@ -236,8 +238,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-semibold text-primary">
                     Udbetaling
                   </Label>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {availableUpfronts.map((upfront) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
+                    {availableUpfronts.map((upfront, index) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === selectedMileage &&
                         opt.period_months === selectedPeriod &&
@@ -247,12 +249,13 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       return (
                         <LeaseOptionCard
                           key={`upfront-${upfront}`}
-                          value={`${Math.round(upfront / 1000)}k kr`}
-                          label="Udbetaling"
+                          value={`${upfront.toLocaleString('da-DK')} kr`}
+                          label="udbetaling"
                           score={optionWithScore?.lease_score}
                           priceImpact={upfrontPriceImpacts?.get(upfront)}
                           isSelected={upfront === selectedUpfront}
                           onClick={() => onUpfrontChange(upfront)}
+                          className={`flex-shrink-0 w-32 snap-start ${index === availableUpfronts.length - 1 ? 'mr-5' : ''}`}
                         />
                       )
                     })}

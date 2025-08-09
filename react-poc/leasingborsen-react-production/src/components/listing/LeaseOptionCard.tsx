@@ -56,7 +56,7 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       onClick={onClick}
       className={cn(
         // Base styles
-        'flex items-center justify-between gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left w-full min-h-[72px]',
+        'flex items-center justify-between gap-3 p-4 rounded-xl border-2 transition-all duration-200 text-left w-full min-h-[88px]',
         // Touch target size for mobile
         'touch-manipulation',
         // Default state
