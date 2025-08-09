@@ -25,6 +25,24 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
     rootMargin: '50px' 
   })
 
+  // Immediate fallback for elements that are already visible
+  useEffect(() => {
+    if (!enableScoreAnimation) return
+    
+    // Check if element is already visible after a short delay
+    const immediateCheck = setTimeout(() => {
+      if (!isInView && elementRef.current) {
+        const rect = elementRef.current.getBoundingClientRect()
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0
+        if (isVisible) {
+          setDisplayScore(score)
+        }
+      }
+    }, 100)
+    
+    return () => clearTimeout(immediateCheck)
+  }, [elementRef, isInView, score, enableScoreAnimation])
+
   // Score animation state
   const [displayScore, setDisplayScore] = useState(enableScoreAnimation ? 0 : score)
   
@@ -41,8 +59,12 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
     }
     
     if (!isInView) {
-      // Keep displayScore at 0 until element comes into view
-      return
+      // Fallback: Show real score after 2 seconds if animation hasn't triggered
+      const fallbackTimeout = setTimeout(() => {
+        setDisplayScore(score)
+      }, 2000)
+      
+      return () => clearTimeout(fallbackTimeout)
     }
     
     // const duration = 700 // ms - matches circle animation

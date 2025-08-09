@@ -58,7 +58,10 @@
       "Bash(npm run test:*)",
       "WebFetch(domain:www.leaseloco.com)",
       "Bash(git checkout:*)",
-      "WebFetch(domain:www.volkswagen.dk)"
+      "WebFetch(domain:www.volkswagen.dk)",
+      "WebFetch(domain:vehicledatabases.com)",
+      "WebFetch(domain:www.toyota.dk)",
+      "mcp__serena__think_about_collected_information"
     ]
   },
   "enableAllProjectMcpServers": true,

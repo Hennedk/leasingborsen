@@ -92,7 +92,7 @@ export const useAnimateOnScroll = (
         observedAnimationElements.delete(currentRef)
       }
     }
-  }, [triggerAnimation, threshold, rootMargin, isObserving, isInView, triggerOnce])
+  }, [triggerAnimation, threshold, rootMargin, isObserving, triggerOnce])
 
   // Cleanup on unmount
   useEffect(() => {
