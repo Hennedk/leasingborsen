@@ -268,38 +268,39 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             </div>
           </div>
 
-          {/* Sticky Footer with Price and CTA */}
+          {/* Sticky Footer - Exact Match with MobilePriceBar (minus grab handle) */}
           <div className={cn(
             // Positioning
             "sticky bottom-0",
             // Layout
             "flex-shrink-0",
-            // Styling with border and subtle shadow
-            "p-4 bg-background border-t border-border/50 shadow-xl",
-            // iOS safe area support
-            "pb-[max(1rem,env(safe-area-inset-bottom))]"
+            // Exact styling match with MobilePriceBar
+            "bg-background border-t border-border/50 shadow-xl rounded-t-2xl"
           )}>
-            <div className="w-full space-y-3">
-              {/* Monthly Price Display */}
-              <div className="flex items-baseline justify-between">
-                <div className="text-sm font-medium">Pris per måned</div>
-                <div className="text-2xl font-bold">
-                  {(() => {
-                    const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
-                    return monthlyPrice > 0 ? `${monthlyPrice.toLocaleString('da-DK')} DKK` : '– DKK'
-                  })()}
+            {/* Main Content - Exact match with MobilePriceBar */}
+            <div className="p-5">
+              {/* Price Summary and CTA on same line - Exact match */}
+              <div className="flex items-center justify-between gap-4">
+                {/* Left: Current Lease Summary */}
+                <div className="flex-1 min-w-0">
+                  <div className="text-2xl font-bold text-primary leading-tight mb-1">
+                    {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK')} kr/md
+                  </div>
+                  <div className="text-sm text-muted-foreground leading-relaxed truncate">
+                    {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK')} kr • {selectedLease?.period_months ?? car.period_months} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK')} km
+                  </div>
                 </div>
+
+                {/* Right: CTA Button */}
+                <Button 
+                  className="flex-shrink-0" 
+                  size="default"
+                  onClick={onShowSeller}
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Se tilbud
+                </Button>
               </div>
-              
-              {/* CTA Button */}
-              <Button 
-                className="w-full h-12 text-base font-semibold" 
-                size="lg"
-                onClick={onShowSeller}
-              >
-                <ExternalLink className="w-5 h-5 mr-2" />
-                Se tilbud
-              </Button>
             </div>
           </div>
         </div>
