@@ -66,9 +66,9 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
           'bg-background border-gray-200 hover:border-primary/40 hover:bg-muted/50',
           'active:scale-[0.98] active:bg-muted'
         ],
-        // Selected state
+        // Selected state - same bg as non-selected with black border
         isSelected && [
-          'bg-primary/5 border-primary',
+          'bg-background border-black',
           'shadow-sm'
         ],
         // Custom className

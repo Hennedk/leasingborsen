@@ -290,7 +290,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       className="text-2xl font-bold text-primary-foreground"
                       showCurrency={true}
                       showPeriod={true}
-                      animationDuration={200}
+                      animationDuration={300}
                       disableColorChanges={true}
                     />
                   </div>
@@ -300,7 +300,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       className="text-sm text-primary-foreground"
                       showCurrency={true}
                       showPeriod={false}
-                      animationDuration={200}
+                      animationDuration={300}
                       disableColorChanges={true}
                     />
                     <span>•</span>
@@ -309,7 +309,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       className="text-sm text-primary-foreground"
                       showCurrency={false}
                       showPeriod={false}
-                      animationDuration={200}
+                      animationDuration={300}
                       disableColorChanges={true}
                     />
                     <span>mdr</span>
@@ -319,7 +319,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                       className="text-sm text-primary-foreground"
                       showCurrency={false}
                       showPeriod={false}
-                      animationDuration={200}
+                      animationDuration={300}
                       disableColorChanges={true}
                     />
                     <span>km</span>
