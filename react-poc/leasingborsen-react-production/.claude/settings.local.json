@@ -57,7 +57,8 @@
       "Bash(cp:*)",
       "Bash(npm run test:*)",
       "WebFetch(domain:www.leaseloco.com)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "WebFetch(domain:www.volkswagen.dk)"
     ]
   },
   "enableAllProjectMcpServers": true,

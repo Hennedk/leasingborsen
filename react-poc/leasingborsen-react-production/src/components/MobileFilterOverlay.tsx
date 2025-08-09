@@ -23,12 +23,18 @@ const mobileSelectOptions = [
 
 // Map mobile select values to backend sort values
 const mapToBackendSort = (selectValue: string): SortOrder => {
-  return selectValue === 'asc' ? '' : 'desc'
+  if (selectValue === 'asc') return ''
+  if (selectValue === 'desc') return 'desc'
+  if (selectValue === 'lease_score_desc') return 'lease_score_desc'
+  return ''
 }
 
 // Map backend sort values to mobile select values
 const mapToSelectValue = (sortOrder: SortOrder): string => {
-  return sortOrder === '' ? 'asc' : 'desc'
+  if (sortOrder === '') return 'asc'
+  if (sortOrder === 'desc') return 'desc'
+  if (sortOrder === 'lease_score_desc') return 'lease_score_desc'
+  return 'asc'
 }
 
 interface MobileFilterOverlayProps {
