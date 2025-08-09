@@ -147,39 +147,6 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-4 space-y-4">
-              {/* Current Price Display */}
-              <div className="space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm font-medium">Pris per måned</div>
-                  <div className="text-2xl font-bold">
-                    {(() => {
-                      const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
-                      return monthlyPrice > 0 ? `${monthlyPrice.toLocaleString('da-DK')} DKK` : '– DKK'
-                    })()}
-                  </div>
-                </div>
-                <div className="flex items-baseline justify-between">
-                  <div className="text-sm font-medium">
-                    {(() => {
-                      const period = selectedLease?.period_months ?? car.period_months ?? 0
-                      return period > 0 ? `Samlet pris over ${period} måneder` : 'Samlet pris'
-                    })()}
-                  </div>
-                  <div className="text-sm font-medium">
-                    {(() => {
-                      const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
-                      const period = selectedLease?.period_months ?? car.period_months ?? 0
-                      const upfront = selectedLease?.first_payment ?? car.first_payment ?? 0
-                      const totalCost = (monthlyPrice * period) + upfront
-                      
-                      return totalCost > 0 ? `${totalCost.toLocaleString('da-DK')} DKK` : '– DKK'
-                    })()}
-                  </div>
-                </div>
-              </div>
-
-              {/* Separator */}
-              <div className="border-b border-border/50"></div>
 
               {/* Quick Options Section */}
               <div className="space-y-3">
@@ -297,19 +264,42 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     })}
                   </div>
                 </div>
-                
-                {/* CTA Button in scrollable content */}
-                <div className="pt-3">
-                  <Button 
-                    className="w-full h-12 text-base font-semibold" 
-                    size="lg"
-                    onClick={onShowSeller}
-                  >
-                    <ExternalLink className="w-5 h-5 mr-2" />
-                    Se tilbud
-                  </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Sticky Footer with Price and CTA */}
+          <div className={cn(
+            // Positioning
+            "sticky bottom-0",
+            // Layout
+            "flex-shrink-0",
+            // Styling with border and subtle shadow
+            "p-4 bg-background border-t border-border/50 shadow-xl",
+            // iOS safe area support
+            "pb-[max(1rem,env(safe-area-inset-bottom))]"
+          )}>
+            <div className="w-full space-y-3">
+              {/* Monthly Price Display */}
+              <div className="flex items-baseline justify-between">
+                <div className="text-sm font-medium">Pris per måned</div>
+                <div className="text-2xl font-bold">
+                  {(() => {
+                    const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
+                    return monthlyPrice > 0 ? `${monthlyPrice.toLocaleString('da-DK')} DKK` : '– DKK'
+                  })()}
                 </div>
               </div>
+              
+              {/* CTA Button */}
+              <Button 
+                className="w-full h-12 text-base font-semibold" 
+                size="lg"
+                onClick={onShowSeller}
+              >
+                <ExternalLink className="w-5 h-5 mr-2" />
+                Se tilbud
+              </Button>
             </div>
           </div>
         </div>
