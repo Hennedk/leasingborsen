@@ -58,17 +58,17 @@ export const LeaseScoreBadge: React.FC<LeaseScoreBadgeProps> = ({
     )
   }
 
-  // Determine badge variant and color based on score
+  // Determine badge variant and color based on score using Leasingbuddy theme
   const getScoreVariant = (score: number) => {
-    if (score >= 80) return 'default' // Green for high scores
-    if (score >= 60) return 'secondary' // Yellow for medium scores
-    return 'destructive' // Red for low scores
+    if (score >= 80) return 'default' // Orange for excellent scores
+    if (score >= 60) return 'primary' // Navy for good scores
+    return 'secondary' // Gray for fair scores
   }
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-700 bg-green-50 border-green-200'
-    if (score >= 60) return 'text-yellow-700 bg-yellow-50 border-yellow-200'
-    return 'text-red-700 bg-red-50 border-red-200'
+    if (score >= 80) return '' // Use default variant styling (orange)
+    if (score >= 60) return '' // Use primary variant styling (navy)
+    return '' // Use secondary variant styling (gray)
   }
 
   // Check if score is stale (older than 7 days)
@@ -80,14 +80,14 @@ export const LeaseScoreBadge: React.FC<LeaseScoreBadgeProps> = ({
     <Badge 
       variant={getScoreVariant(score)}
       className={cn(
-        "text-xs font-medium",
-        getScoreColor(score),
+        "text-xs font-semibold rounded-full",
         isStale && "opacity-75",
-        size === 'sm' && "text-xs px-1.5 py-0.5",
+        size === 'sm' && "text-xs px-2 py-0.5",
+        size === 'default' && "px-3 py-1",
         className
       )}
     >
-      {score}
+      <span>Score: {score}</span>
       {isStale && <Clock className="h-3 w-3 ml-1 opacity-60" />}
     </Badge>
   )

@@ -61,7 +61,9 @@
       "WebFetch(domain:www.volkswagen.dk)",
       "WebFetch(domain:vehicledatabases.com)",
       "WebFetch(domain:www.toyota.dk)",
-      "mcp__serena__think_about_collected_information"
+      "mcp__serena__think_about_collected_information",
+      "Bash(npx eslint:*)",
+      "Bash(npx eslint:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

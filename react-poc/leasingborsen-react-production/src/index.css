@@ -1,102 +1,138 @@
 /* Fonts must come first */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: hsl(210 16.6667% 97.6471%);
-  --foreground: hsl(240 41.4634% 8.0392%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(240 41.4634% 8.0392%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(240 41.4634% 8.0392%);
-  --primary: hsl(312.9412 100% 50%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(240 100% 97.0588%);
-  --secondary-foreground: hsl(240 41.4634% 8.0392%);
-  --muted: hsl(240 100% 97.0588%);
-  --muted-foreground: hsl(240 41.4634% 8.0392%);
-  --accent: hsl(168 100% 50%);
-  --accent-foreground: hsl(240 41.4634% 8.0392%);
-  --destructive: hsl(14.3529 100% 50%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(198.0000 18.5185% 89.4118%);
-  --input: hsl(198.0000 18.5185% 89.4118%);
-  --ring: hsl(312.9412 100% 50%);
-  --ring-offset: hsl(210 16.6667% 97.6471%);
-  --chart-1: hsl(312.9412 100% 50%);
-  --chart-2: hsl(273.8824 100% 50%);
-  --chart-3: hsl(186.1176 100% 50%);
-  --chart-4: hsl(168 100% 50%);
-  --chart-5: hsl(54.1176 100% 50%);
-  --sidebar: hsl(240 100% 97.0588%);
-  --sidebar-foreground: hsl(240 41.4634% 8.0392%);
-  --sidebar-primary: hsl(312.9412 100% 50%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(168 100% 50%);
-  --sidebar-accent-foreground: hsl(240 41.4634% 8.0392%);
-  --sidebar-border: hsl(198.0000 18.5185% 89.4118%);
-  --sidebar-ring: hsl(312.9412 100% 50%);
-  --font-sans: Outfit, sans-serif;
+  /* Leasingbuddy Brand Colors - WCAG AA Compliant */
+  --background: hsl(220 14% 96%); /* #F3F4F6 - Soft Light Gray */
+  --foreground: hsl(215 28% 17%); /* #1F2937 - Deep Navy */
+  
+  --card: hsl(0 0% 100%); /* White */
+  --card-foreground: hsl(215 28% 17%); /* Deep Navy */
+  
+  --popover: hsl(0 0% 100%); /* White */
+  --popover-foreground: hsl(215 28% 17%); /* Deep Navy */
+  
+  --primary: hsl(215 28% 17%); /* Deep Navy #1F2937 */
+  --primary-foreground: hsl(0 0% 100%); /* White */
+  
+  --secondary: hsl(220 10% 92%); /* Soft gray chip */
+  --secondary-foreground: hsl(215 28% 17%); /* Deep Navy */
+  
+  --muted: hsl(220 10% 92%); /* Muted background */
+  --muted-foreground: hsl(215 16% 35%); /* Muted text */
+  
+  --accent: hsl(17 88% 40%); /* #C2410C - Action Orange (WCAG AA) */
+  --accent-foreground: hsl(0 0% 100%); /* White */
+  --accent-highlight: hsl(25 95% 53%); /* #F97316 - Decorative Orange */
+  
+  --destructive: hsl(0 84% 60%); /* Error red */
+  --destructive-foreground: hsl(0 0% 100%); /* White */
+  
+  --border: hsl(220 10% 88%); /* Light gray borders */
+  --input: hsl(220 10% 88%); /* Input borders */
+  --ring: hsl(17 88% 40%); /* Focus ring - Action Orange */
+  --ring-offset: hsl(220 14% 96%); /* Background */
+  
+  /* Chart colors */
+  --chart-1: hsl(17 88% 40%); /* Action Orange */
+  --chart-2: hsl(215 28% 17%); /* Deep Navy */
+  --chart-3: hsl(220 10% 70%); /* Medium gray */
+  --chart-4: hsl(220 10% 50%); /* Darker gray */
+  --chart-5: hsl(17 88% 30%); /* Darker orange */
+  
+  /* Sidebar */
+  --sidebar: hsl(220 14% 96%); /* Light Gray */
+  --sidebar-foreground: hsl(215 28% 17%); /* Deep Navy */
+  --sidebar-primary: hsl(215 28% 17%); /* Deep Navy */
+  --sidebar-primary-foreground: hsl(0 0% 100%); /* White */
+  --sidebar-accent: hsl(17 88% 40%); /* Action Orange */
+  --sidebar-accent-foreground: hsl(0 0% 100%); /* White */
+  --sidebar-border: hsl(220 10% 88%); /* Light gray */
+  --sidebar-ring: hsl(17 88% 40%); /* Action Orange */
+  
+  /* Typography */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: Fira Code, monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-  --shadow: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 2px 4px -3px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -3px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.10);
-  --shadow-2xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.25);
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  --font-heading: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+  
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 2px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 3px hsl(0 0% 0% / 0.04);
+  --shadow-sm: 0px 2px 4px hsl(0 0% 0% / 0.06);
+  --shadow: 0px 4px 6px hsl(0 0% 0% / 0.08);
+  --shadow-md: 0px 6px 12px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 10px 20px hsl(0 0% 0% / 0.12);
+  --shadow-xl: 0px 16px 32px hsl(0 0% 0% / 0.14);
+  --shadow-2xl: 0px 24px 48px hsl(0 0% 0% / 0.16);
 }
 
 .dark {
-  --background: hsl(240 41.4634% 8.0392%);
-  --foreground: hsl(217.5000 26.6667% 94.1176%);
-  --card: hsl(240 35.4839% 18.2353%);
-  --card-foreground: hsl(217.5000 26.6667% 94.1176%);
-  --popover: hsl(240 35.4839% 18.2353%);
-  --popover-foreground: hsl(217.5000 26.6667% 94.1176%);
-  --primary: hsl(312.9412 100% 50%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(240 35.4839% 18.2353%);
-  --secondary-foreground: hsl(217.5000 26.6667% 94.1176%);
-  --muted: hsl(240 35.4839% 18.2353%);
-  --muted-foreground: hsl(232.1053 17.5926% 57.6471%);
-  --accent: hsl(168 100% 50%);
-  --accent-foreground: hsl(240 41.4634% 8.0392%);
-  --destructive: hsl(14.3529 100% 50%);
-  --destructive-foreground: hsl(0 0% 100%);
-  --border: hsl(240 34.2857% 27.4510%);
-  --input: hsl(240 34.2857% 27.4510%);
-  --ring: hsl(312.9412 100% 50%);
-  --ring-offset: hsl(240 41.4634% 8.0392%);
-  --chart-1: hsl(312.9412 100% 50%);
-  --chart-2: hsl(273.8824 100% 50%);
-  --chart-3: hsl(186.1176 100% 50%);
-  --chart-4: hsl(168 100% 50%);
-  --chart-5: hsl(54.1176 100% 50%);
-  --sidebar: hsl(240 41.4634% 8.0392%);
-  --sidebar-foreground: hsl(217.5000 26.6667% 94.1176%);
-  --sidebar-primary: hsl(312.9412 100% 50%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(168 100% 50%);
-  --sidebar-accent-foreground: hsl(240 41.4634% 8.0392%);
-  --sidebar-border: hsl(240 34.2857% 27.4510%);
-  --sidebar-ring: hsl(312.9412 100% 50%);
-  --font-sans: Outfit, sans-serif;
+  /* Leasingbuddy Dark Mode - WCAG AA Compliant */
+  --background: hsl(215 28% 12%); /* Dark navy background */
+  --foreground: hsl(0 0% 98%); /* Almost white text */
+  
+  --card: hsl(215 28% 14%); /* Slightly lighter navy */
+  --card-foreground: hsl(0 0% 98%); /* Almost white */
+  
+  --popover: hsl(215 28% 14%); /* Card color */
+  --popover-foreground: hsl(0 0% 98%); /* Almost white */
+  
+  --primary: hsl(17 88% 40%); /* Action Orange (WCAG AA) */
+  --primary-foreground: hsl(0 0% 100%); /* White */
+  
+  --secondary: hsl(215 16% 22%); /* Darker navy */
+  --secondary-foreground: hsl(0 0% 98%); /* Almost white */
+  
+  --muted: hsl(215 16% 22%); /* Muted background */
+  --muted-foreground: hsl(215 15% 75%); /* Muted text */
+  
+  --accent: hsl(17 88% 40%); /* Action Orange (WCAG AA) */
+  --accent-foreground: hsl(0 0% 100%); /* White */
+  --accent-highlight: hsl(25 95% 53%); /* Decorative Orange */
+  
+  --destructive: hsl(0 72% 50%); /* Error red */
+  --destructive-foreground: hsl(0 0% 100%); /* White */
+  
+  --border: hsl(215 16% 24%); /* Navy borders */
+  --input: hsl(215 16% 24%); /* Input borders */
+  --ring: hsl(17 88% 40%); /* Focus ring - Action Orange */
+  --ring-offset: hsl(215 28% 12%); /* Background */
+  
+  /* Chart colors */
+  --chart-1: hsl(17 88% 40%); /* Action Orange */
+  --chart-2: hsl(0 0% 98%); /* Almost white */
+  --chart-3: hsl(215 16% 40%); /* Medium navy */
+  --chart-4: hsl(215 15% 60%); /* Light navy */
+  --chart-5: hsl(17 88% 30%); /* Darker orange */
+  
+  /* Sidebar */
+  --sidebar: hsl(215 28% 12%); /* Dark navy */
+  --sidebar-foreground: hsl(0 0% 98%); /* Almost white */
+  --sidebar-primary: hsl(17 88% 40%); /* Action Orange */
+  --sidebar-primary-foreground: hsl(0 0% 100%); /* White */
+  --sidebar-accent: hsl(17 88% 40%); /* Action Orange */
+  --sidebar-accent-foreground: hsl(0 0% 100%); /* White */
+  --sidebar-border: hsl(215 16% 24%); /* Navy borders */
+  --sidebar-ring: hsl(17 88% 40%); /* Action Orange */
+  
+  /* Typography */
+  --font-sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: Fira Code, monospace;
-  --radius: 0.5rem;
-  --shadow-2xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
-  --shadow-xs: 0px 4px 8px -2px hsl(0 0% 0% / 0.05);
-  --shadow-sm: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-  --shadow: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 1px 2px -3px hsl(0 0% 0% / 0.10);
-  --shadow-md: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 2px 4px -3px hsl(0 0% 0% / 0.10);
-  --shadow-lg: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -3px hsl(0 0% 0% / 0.10);
-  --shadow-xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.10), 0px 8px 10px -3px hsl(0 0% 0% / 0.10);
-  --shadow-2xl: 0px 4px 8px -2px hsl(0 0% 0% / 0.25);
+  --font-mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+  --font-heading: Montserrat, system-ui, -apple-system, "Segoe UI", sans-serif;
+  
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 2px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 3px hsl(0 0% 0% / 0.04);
+  --shadow-sm: 0px 2px 4px hsl(0 0% 0% / 0.06);
+  --shadow: 0px 4px 6px hsl(0 0% 0% / 0.08);
+  --shadow-md: 0px 6px 12px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 10px 20px hsl(0 0% 0% / 0.12);
+  --shadow-xl: 0px 16px 32px hsl(0 0% 0% / 0.14);
+  --shadow-2xl: 0px 24px 48px hsl(0 0% 0% / 0.16);
 }
 
 @theme inline {
@@ -160,6 +196,24 @@
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+}
+
+/* Typography utilities for Leasingbuddy */
+h1, h2, h3, h4, h5, h6,
+.font-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.text-4xl, .text-3xl, .text-2xl, .text-xl {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* Apply Inter for body text */
+.text-sm, .text-base, .text-xs {
   font-family: var(--font-sans);
 }
 
@@ -321,7 +375,7 @@ body {
 /* Admin-specific component classes */
 @layer components {
   .admin-card {
-    @apply bg-card border border-border/50 rounded-lg shadow-lg;
+    @apply bg-card border border-border/50 rounded-xl shadow-md;
   }
   
   .admin-card-header {
@@ -334,6 +388,7 @@ body {
   
   .admin-section-title {
     @apply flex items-center gap-2 text-lg font-semibold;
+    font-family: var(--font-heading);
   }
   
   .admin-form-grid {
@@ -349,7 +404,7 @@ body {
   }
   
   .admin-icon-button {
-    @apply h-8 w-8 p-0;
+    @apply h-8 w-8 p-0 rounded-lg;
   }
   
   .admin-badge-missing {
@@ -357,6 +412,53 @@ body {
   }
   
   .admin-draft-badge {
-    @apply text-xs border-orange-200 text-orange-700 bg-orange-50;
+    @apply text-xs border-accent/30 text-accent bg-accent/10 rounded-lg;
+  }
+  
+  /* Leasingbuddy-specific components */
+  .leasingbuddy-logo {
+    @apply inline-flex items-center gap-2;
+  }
+  
+  .leasingbuddy-logo-badge {
+    @apply bg-accent text-white font-bold text-lg px-3 py-1.5 rounded-lg inline-flex items-center justify-center;
+  }
+  
+  .leasingbuddy-logo-text {
+    @apply text-foreground font-bold text-xl;
+    font-family: var(--font-heading);
+  }
+  
+  .buddy-tip {
+    @apply bg-secondary text-foreground p-4 rounded-xl shadow-sm border border-border/30 relative;
+  }
+  
+  .buddy-tip::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -8px;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 8px 8px 8px 0;
+    border-color: transparent hsl(var(--secondary)) transparent transparent;
+  }
+  
+  .lease-score-badge {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-semibold text-sm;
+  }
+  
+  .lease-score-badge.excellent {
+    @apply bg-accent text-accent-foreground;
+  }
+  
+  .lease-score-badge.good {
+    @apply bg-primary text-primary-foreground;
+  }
+  
+  .lease-score-badge.fair {
+    @apply bg-secondary text-secondary-foreground border border-border;
   }
 }
