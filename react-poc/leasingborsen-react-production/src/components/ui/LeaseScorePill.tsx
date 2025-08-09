@@ -162,10 +162,20 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
   const radius = (sizeConfig.diameter - sizeConfig.strokeWidth * 2) / 2
   const circumference = 2 * Math.PI * radius
   
-  // Calculate animated stroke offset based on visibility and motion preference
-  const shouldAnimate = enableCircleAnimation && isInView && !prefersReducedMotion
-  const animatedScore = shouldAnimate ? score : (enableCircleAnimation ? 0 : score)
-  const strokeDashoffset = circumference - (animatedScore / 100) * circumference
+  // Determine what score to show in the circle
+  let circleScore = score // Default: always show the actual score
+  if (enableCircleAnimation && !prefersReducedMotion) {
+    // Only start at 0 if animation is enabled and we're still waiting for trigger
+    if (isInView) {
+      circleScore = score // Animation triggered, show full score
+    } else {
+      // Check if we should show fallback (after delay or if already visible)
+      const shouldShowFallback = displayScore === score // If number is showing, show circle too
+      circleScore = shouldShowFallback ? score : 0
+    }
+  }
+  
+  const strokeDashoffset = circumference - (circleScore / 100) * circumference
   
   const scoreColor = getScoreColor(score)
   const descriptor = getScoreDescriptor(score)
