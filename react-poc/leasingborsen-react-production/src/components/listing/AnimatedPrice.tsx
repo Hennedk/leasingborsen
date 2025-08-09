@@ -37,25 +37,30 @@ const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
       }
 
       // Animate the number change
+      const startValue = previousValue.current
+      const endValue = value
       const steps = 10
-      const difference = value - previousValue.current
-      const increment = difference / steps
+      const difference = endValue - startValue
       let currentStep = 0
 
       const animate = () => {
         currentStep++
-        if (currentStep <= steps) {
-          setDisplayValue(Math.round(previousValue.current + (increment * currentStep)))
+        if (currentStep < steps) {
+          // Use linear interpolation for smooth animation
+          const progress = currentStep / steps
+          const interpolatedValue = startValue + (difference * progress)
+          setDisplayValue(Math.round(interpolatedValue))
           animationTimer.current = setTimeout(animate, animationDuration / steps)
         } else {
-          setDisplayValue(value)
+          // Ensure we end exactly at the target value
+          setDisplayValue(endValue)
           setIsAnimating(false)
+          previousValue.current = endValue  // Update reference only after animation completes
           setTimeout(() => setDirection(null), 500)
         }
       }
 
       animate()
-      previousValue.current = value
     }
 
     return () => {

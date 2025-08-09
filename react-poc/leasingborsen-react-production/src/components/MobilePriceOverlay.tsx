@@ -276,7 +276,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             // Layout
             "flex-shrink-0",
             // Inverted styling - dark background with light text
-            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl rounded-t-2xl"
+            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl"
           )}>
             {/* Main Content - Inverted colors */}
             <div className="p-5">
