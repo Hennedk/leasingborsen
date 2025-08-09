@@ -82,39 +82,38 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
           className={cn(
             // Positioning
             "fixed bottom-0 left-0 right-0 z-50",
-            // Layout
+            // Layout - IMPORTANT: flex flex-col for proper structure
             "flex flex-col",
             // Styling
             "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
-            // Sizing - match original overlay
-            "max-h-[90vh] h-[min(90vh,100dvh-2rem)]",
+            // Sizing - simplified height constraint
+            "max-h-[90vh]",
             // Only show on mobile
             "lg:hidden"
           )}
         >
           {/* Drag Handle */}
-          <div className="mx-auto mt-3 mb-1 flex items-center justify-center">
+          <div className="mx-auto mt-3 mb-1 flex items-center justify-center flex-shrink-0">
             <Drawer.Handle className="h-1.5 w-12 rounded-full bg-muted-foreground/40 hover:bg-muted-foreground/60 transition-colors cursor-grab active:cursor-grabbing" />
           </div>
 
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0">
-              <h3 className="text-lg font-bold">Tilpas pris</h3>
-              <Drawer.Close asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 p-0 hover:bg-muted/50 flex-shrink-0"
-                  aria-label="Luk prisoverlægning"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </Drawer.Close>
-            </div>
+          {/* Header - flex-shrink-0 to prevent compression */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0">
+            <h3 className="text-lg font-bold">Tilpas pris</h3>
+            <Drawer.Close asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 w-9 p-0 hover:bg-muted/50"
+                aria-label="Luk prisoverlægning"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </Drawer.Close>
+          </div>
 
-            {/* Content - Prevent drawer close on scroll */}
-            <div className="flex-1 overflow-y-auto min-h-0" vaul-drawer-direction="none">
+          {/* Scrollable Content - flex-1 overflow-y-auto */}
+          <div className="flex-1 overflow-y-auto min-h-0">
               <div className="p-4 space-y-4">
                 {/* Quick Options Section */}
                 <div className="space-y-3">
@@ -150,7 +149,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <Label className="text-sm font-semibold text-muted-foreground">
                       Leasingperiode
                     </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
                       {availablePeriods.map((period) => {
                         const optionWithScore = leaseOptionsWithScores.find(opt => 
                           opt.mileage_per_year === selectedMileage &&
@@ -179,7 +178,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <Label className="text-sm font-semibold text-muted-foreground">
                       Årligt km-forbrug
                     </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
                       {availableMileages.map((mileage) => {
                         const optionWithScore = leaseOptionsWithScores.find(opt => 
                           opt.mileage_per_year === mileage &&
@@ -208,7 +207,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <Label className="text-sm font-semibold text-muted-foreground">
                       Udbetaling
                     </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
                       {availableUpfronts.map((upfront) => {
                         const optionWithScore = leaseOptionsWithScores.find(opt => 
                           opt.mileage_per_year === selectedMileage &&
@@ -233,19 +232,21 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   </div>
                 </div>
               </div>
-            </div>
+          </div>
 
-            {/* Sticky Footer - Inverted Colors */}
-            <div className={cn(
-              // Positioning
-              "sticky bottom-0",
-              // Layout
-              "flex-shrink-0",
-              // Inverted styling - dark background with light text
-              "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl"
-            )}>
-              {/* Main Content - Inverted colors */}
-              <div className="px-5 py-3">
+          {/* Sticky Footer - NOW PROPERLY POSITIONED AS SIBLING */}
+          <div className={cn(
+            // Layout - flex-shrink-0 prevents compression
+            "flex-shrink-0",
+            // Inverted styling - dark background with light text
+            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl",
+            // Ensure it stays at bottom
+            "mt-auto",
+            // iOS safe area padding
+            "pb-[env(safe-area-inset-bottom)]"
+          )}>
+            {/* Main Content - Inverted colors */}
+            <div className="px-5 py-3 pb-safe">
                 {/* Price Summary and CTA on same line - Inverted */}
                 <div className="flex items-center justify-between gap-4">
                   {/* Left: Current Lease Summary */}
@@ -304,7 +305,6 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   </Button>
                 </div>
               </div>
-            </div>
           </div>
         </Drawer.Content>
       </Drawer.Portal>
