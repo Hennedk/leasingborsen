@@ -7,6 +7,7 @@ interface AnimatedPriceProps {
   showCurrency?: boolean
   showPeriod?: boolean
   animationDuration?: number
+  disableColorChanges?: boolean
 }
 
 const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
@@ -14,7 +15,8 @@ const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
   className,
   showCurrency = true,
   showPeriod = true,
-  animationDuration = 200
+  animationDuration = 200,
+  disableColorChanges = false
 }) => {
   const [displayValue, setDisplayValue] = useState(value)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -71,8 +73,8 @@ const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
         className={cn(
           'transition-all duration-200',
           isAnimating && 'font-bold',
-          direction === 'up' && 'text-destructive',
-          direction === 'down' && 'text-success'
+          !disableColorChanges && direction === 'up' && 'text-destructive',
+          !disableColorChanges && direction === 'down' && 'text-success'
         )}
       >
         {formattedValue}

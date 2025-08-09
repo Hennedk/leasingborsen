@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
+import AnimatedPrice from '@/components/listing/AnimatedPrice'
 
 
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
@@ -268,32 +269,67 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             </div>
           </div>
 
-          {/* Sticky Footer - Exact Match with MobilePriceBar (minus grab handle) */}
+          {/* Sticky Footer - Inverted Colors from MobilePriceBar */}
           <div className={cn(
             // Positioning
             "sticky bottom-0",
             // Layout
             "flex-shrink-0",
-            // Exact styling match with MobilePriceBar
-            "bg-background border-t border-border/50 shadow-xl rounded-t-2xl"
+            // Inverted styling - dark background with light text
+            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl rounded-t-2xl"
           )}>
-            {/* Main Content - Exact match with MobilePriceBar */}
+            {/* Main Content - Inverted colors */}
             <div className="p-5">
-              {/* Price Summary and CTA on same line - Exact match */}
+              {/* Price Summary and CTA on same line - Inverted */}
               <div className="flex items-center justify-between gap-4">
                 {/* Left: Current Lease Summary */}
                 <div className="flex-1 min-w-0">
-                  <div className="text-2xl font-bold text-primary leading-tight mb-1">
-                    {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK')} kr/md
+                  <div className="leading-tight mb-1">
+                    <AnimatedPrice 
+                      value={selectedLease?.monthly_price ?? car.monthly_price ?? 0}
+                      className="text-2xl font-bold text-primary-foreground"
+                      showCurrency={true}
+                      showPeriod={true}
+                      animationDuration={200}
+                      disableColorChanges={true}
+                    />
                   </div>
-                  <div className="text-sm text-muted-foreground leading-relaxed truncate">
-                    {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK')} kr • {selectedLease?.period_months ?? car.period_months} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK')} km
+                  <div className="text-sm text-primary-foreground leading-relaxed truncate flex items-center gap-1">
+                    <AnimatedPrice 
+                      value={selectedLease?.first_payment ?? car.first_payment ?? 0}
+                      className="text-sm text-primary-foreground"
+                      showCurrency={true}
+                      showPeriod={false}
+                      animationDuration={200}
+                      disableColorChanges={true}
+                    />
+                    <span>•</span>
+                    <AnimatedPrice 
+                      value={selectedLease?.period_months ?? car.period_months ?? 0}
+                      className="text-sm text-primary-foreground"
+                      showCurrency={false}
+                      showPeriod={false}
+                      animationDuration={200}
+                      disableColorChanges={true}
+                    />
+                    <span>mdr</span>
+                    <span>•</span>
+                    <AnimatedPrice 
+                      value={selectedLease?.mileage_per_year ?? car.mileage_per_year ?? 0}
+                      className="text-sm text-primary-foreground"
+                      showCurrency={false}
+                      showPeriod={false}
+                      animationDuration={200}
+                      disableColorChanges={true}
+                    />
+                    <span>km</span>
                   </div>
                 </div>
 
-                {/* Right: CTA Button */}
+                {/* Right: CTA Button - Inverted to light variant */}
                 <Button 
-                  className="flex-shrink-0" 
+                  variant="secondary"
+                  className="flex-shrink-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90" 
                   size="default"
                   onClick={onShowSeller}
                 >

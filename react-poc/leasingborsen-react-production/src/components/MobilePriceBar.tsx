@@ -33,25 +33,9 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
         "hover:translate-y-[-2px]"
       )}
     >
-      {/* Grab Handle Indicator */}
-      <button 
-        onClick={onEditPrice}
-        className="absolute top-0 left-0 right-0 h-6 flex items-center justify-center cursor-pointer group"
-        aria-label="Udvid prisindstillinger"
-      >
-        <div 
-          className={cn(
-            "w-12 h-1 bg-muted-foreground/30 rounded-full",
-            "transition-all duration-200",
-            "group-hover:w-16 group-hover:bg-muted-foreground/50",
-            "group-active:scale-95"
-          )}
-        />
-      </button>
-
       {/* Main Content */}
       <div 
-        className="p-5 pt-7 cursor-pointer"
+        className="p-5 cursor-pointer"
         onClick={onEditPrice}
       >
         {/* Price Summary and CTA on same line */}
