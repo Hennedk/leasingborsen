@@ -443,7 +443,38 @@ h1, h2, h3, h4, h5, h6,
     height: 0;
     border-style: solid;
     border-width: 8px 8px 8px 0;
-    border-color: transparent hsl(var(--secondary)) transparent transparent;
+    border-color: transparent hsl(var(--muted)) transparent transparent;
+  }
+  
+  /* Focus visibility improvements */
+  .focus-visible-outline {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+  
+  .input-error {
+    border-color: hsl(var(--destructive));
+    box-shadow: 0 0 0 3px hsl(var(--destructive) / 0.15);
+  }
+  
+  /* Utility classes for semantic radius */
+  @layer utilities {
+    .rounded-app {
+      border-radius: var(--radius);
+    }
+    .rounded-app-lg {
+      border-radius: calc(var(--radius) + 4px);
+    }
+  }
+  
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
   
   .lease-score-badge {

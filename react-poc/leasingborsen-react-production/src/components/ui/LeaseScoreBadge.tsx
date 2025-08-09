@@ -58,17 +58,23 @@ export const LeaseScoreBadge: React.FC<LeaseScoreBadgeProps> = ({
     )
   }
 
-  // Determine badge variant and color based on score using Leasingbuddy theme
-  const getScoreVariant = (score: number) => {
-    if (score >= 80) return 'default' // Orange for excellent scores
-    if (score >= 60) return 'primary' // Navy for good scores
-    return 'secondary' // Gray for fair scores
-  }
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '' // Use default variant styling (orange)
-    if (score >= 60) return '' // Use primary variant styling (navy)
-    return '' // Use secondary variant styling (gray)
+  // Determine badge variant and label based on score
+  const getScoreInfo = (score: number) => {
+    if (score >= 80) return { 
+      variant: 'default' as const, // Orange for excellent
+      label: 'Fremragende',
+      icon: '★'
+    }
+    if (score >= 60) return { 
+      variant: 'primary' as const, // Navy for good
+      label: 'God',
+      icon: '◆'
+    }
+    return { 
+      variant: 'secondary' as const, // Gray for fair
+      label: 'Rimelig',
+      icon: '●'
+    }
   }
 
   // Check if score is stale (older than 7 days)
@@ -76,9 +82,11 @@ export const LeaseScoreBadge: React.FC<LeaseScoreBadgeProps> = ({
     (Date.now() - new Date(calculatedAt).getTime()) > (7 * 24 * 60 * 60 * 1000) : 
     true
 
+  const scoreInfo = getScoreInfo(score)
+
   const badgeContent = (
     <Badge 
-      variant={getScoreVariant(score)}
+      variant={scoreInfo.variant}
       className={cn(
         "text-xs font-semibold rounded-full",
         isStale && "opacity-75",
@@ -86,9 +94,12 @@ export const LeaseScoreBadge: React.FC<LeaseScoreBadgeProps> = ({
         size === 'default' && "px-3 py-1",
         className
       )}
+      aria-label={`Leasingscore ${score} - ${scoreInfo.label}`}
     >
-      <span>Score: {score}</span>
-      {isStale && <Clock className="h-3 w-3 ml-1 opacity-60" />}
+      <span className="mr-1" aria-hidden="true">{scoreInfo.icon}</span>
+      <span>{score}</span>
+      <span className="ml-1 text-[0.65rem] font-medium opacity-90">• {scoreInfo.label}</span>
+      {isStale && <Clock className="h-3 w-3 ml-1 opacity-60" aria-label="Forældet score" />}
     </Badge>
   )
 
