@@ -1,17 +1,79 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
 
 interface LeaseScorePillProps {
   score: number
   size?: 'xs' | 'sm' | 'md' | 'lg'
   className?: string
+  animationDelay?: number
+  enableScoreAnimation?: boolean
+  enableCircleAnimation?: boolean
 }
 
 export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({ 
   score, 
   size = 'md', 
-  className 
+  className,
+  animationDelay = 0,
+  enableScoreAnimation = true,
+  enableCircleAnimation = true
 }) => {
+  // Animation hook for scroll-triggered animation
+  const { elementRef, isInView } = useAnimateOnScroll({ 
+    threshold: 0.1, 
+    rootMargin: '50px' 
+  })
+
+  // Score animation state
+  const [displayScore, setDisplayScore] = useState(enableScoreAnimation ? 0 : score)
+  
+  // Check for reduced motion preference
+  const prefersReducedMotion = typeof window !== 'undefined' 
+    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches 
+    : false
+
+  // Animate score number when component comes into view
+  useEffect(() => {
+    if (!enableScoreAnimation || prefersReducedMotion) {
+      setDisplayScore(score)
+      return
+    }
+    
+    if (!isInView) {
+      // Keep displayScore at 0 until element comes into view
+      return
+    }
+    
+    // const duration = 700 // ms - matches circle animation
+    const steps = 30
+    const increment = score / steps
+    let current = 0
+    let animationFrameId: number
+    
+    const animateScore = () => {
+      current += increment
+      if (current >= score) {
+        setDisplayScore(score)
+      } else {
+        setDisplayScore(Math.floor(current))
+        animationFrameId = requestAnimationFrame(animateScore)
+      }
+    }
+    
+    // Add delay if specified
+    const timeoutId = setTimeout(() => {
+      animationFrameId = requestAnimationFrame(animateScore)
+    }, animationDelay)
+    
+    return () => {
+      clearTimeout(timeoutId)
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId)
+      }
+    }
+  }, [isInView, score, enableScoreAnimation, prefersReducedMotion, animationDelay])
+
   // Get score color based on 5-tier system
   const getScoreColor = (score: number): string => {
     if (score >= 90) return '#059669' // Dark Green - Exceptional
@@ -77,13 +139,18 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
   // Calculate SVG properties
   const radius = (sizeConfig.diameter - sizeConfig.strokeWidth * 2) / 2
   const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (score / 100) * circumference
+  
+  // Calculate animated stroke offset based on visibility and motion preference
+  const shouldAnimate = enableCircleAnimation && isInView && !prefersReducedMotion
+  const animatedScore = shouldAnimate ? score : (enableCircleAnimation ? 0 : score)
+  const strokeDashoffset = circumference - (animatedScore / 100) * circumference
   
   const scoreColor = getScoreColor(score)
   const descriptor = getScoreDescriptor(score)
 
   return (
     <div
+      ref={elementRef}
       className={cn(
         'bg-white rounded-full shadow-lg flex items-center',
         sizeConfig.paddingX,
@@ -128,9 +195,11 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+            className="transition-all duration-700 ease-out"
             style={{
-              filter: score >= 90 ? 'drop-shadow(0 0 4px rgba(5, 150, 105, 0.4))' : undefined
+              filter: score >= 90 ? 'drop-shadow(0 0 4px rgba(5, 150, 105, 0.4))' : undefined,
+              transitionDelay: prefersReducedMotion ? '0ms' : `${animationDelay}ms`,
+              transition: prefersReducedMotion ? 'none' : undefined
             }}
           />
         </svg>
@@ -143,7 +212,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
           )}
           style={{ color: scoreColor }}
         >
-          {score}
+          {displayScore}
         </div>
       </div>
 
