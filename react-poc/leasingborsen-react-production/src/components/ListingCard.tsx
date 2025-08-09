@@ -205,7 +205,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 <div className="absolute inset-0 z-10">
                   <img 
                     src={car.thumbnail_base64} 
-                    className={`w-full aspect-[4/3] object-contain px-4 pt-10 pb-5 blur-sm scale-105 transition-opacity duration-300 ${
+                    className={`w-full aspect-[4/3] object-contain px-4 pt-12 pb-5 blur-sm scale-105 transition-opacity duration-300 ${
                       imageLoaded ? 'opacity-0' : ''
                     }`}
                     alt={`${car.make} ${car.model} thumbnail`}
@@ -223,7 +223,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 ref={imageRef}
                 src={car.processed_image_grid || car.image}
                 alt={carAltText}
-                className={`w-full aspect-[4/3] object-contain px-4 pt-10 pb-5 transition-opacity duration-500 ease-out ${
+                className={`w-full aspect-[4/3] object-contain px-4 pt-12 pb-5 transition-opacity duration-500 ease-out ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 loading="lazy"
