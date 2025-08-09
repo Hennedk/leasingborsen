@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
-import AnimatedPrice from '@/components/listing/AnimatedPrice'
+
 
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
