@@ -5,7 +5,7 @@ import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
 import AnimatedPrice from '@/components/listing/AnimatedPrice'
-import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
+
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
@@ -146,53 +146,43 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="p-5 space-y-8">
-              {/* Current Price Display - Sticky at top of content */}
-              <div className="bg-muted/30 rounded-lg p-4 border border-border/50">
-                <div className="flex items-center justify-center gap-3">
-                  <AnimatedPrice 
-                    value={selectedLease?.monthly_price ?? car.monthly_price ?? 0}
-                    showCurrency={true}
-                    showPeriod={true}
-                    className="text-3xl font-bold text-primary"
-                  />
-                  {(() => {
-                    const currentOption = leaseOptionsWithScores?.find(opt => 
-                      opt.mileage_per_year === selectedMileage &&
-                      opt.period_months === selectedPeriod &&
-                      opt.first_payment === selectedUpfront
-                    )
-                    
-
-                    return currentOption?.lease_score ? (
-                      <LeaseScorePill 
-                        score={currentOption.lease_score}
-                        size="xs"
-                        className="ml-3"
-                      />
-                    ) : null
-                  })()}
+            <div className="p-4 space-y-4">
+              {/* Current Price Display */}
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-sm font-medium">Pris per måned</div>
+                  <div className="text-2xl font-bold">
+                    {(() => {
+                      const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
+                      return monthlyPrice > 0 ? `${monthlyPrice.toLocaleString('da-DK')} DKK` : '– DKK'
+                    })()}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground mt-2 text-center">
-                  {(() => {
-                    const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
-                    const period = selectedLease?.period_months ?? car.period_months ?? 0
-                    const upfront = selectedLease?.first_payment ?? car.first_payment ?? 0
-                    const totalCost = (monthlyPrice * period) + upfront
-                    
-                    return totalCost > 0 ? (
-                      <span>
-                        Total omkostning: <strong>{totalCost.toLocaleString('da-DK')} kr</strong>
-                      </span>
-                    ) : (
-                      <span>Total omkostning ikke tilgængelig</span>
-                    )
-                  })()}
+                <div className="flex items-baseline justify-between">
+                  <div className="text-sm font-medium">
+                    {(() => {
+                      const period = selectedLease?.period_months ?? car.period_months ?? 0
+                      return period > 0 ? `Samlet pris over ${period} måneder` : 'Samlet pris'
+                    })()}
+                  </div>
+                  <div className="text-sm font-medium">
+                    {(() => {
+                      const monthlyPrice = selectedLease?.monthly_price ?? car.monthly_price ?? 0
+                      const period = selectedLease?.period_months ?? car.period_months ?? 0
+                      const upfront = selectedLease?.first_payment ?? car.first_payment ?? 0
+                      const totalCost = (monthlyPrice * period) + upfront
+                      
+                      return totalCost > 0 ? `${totalCost.toLocaleString('da-DK')} DKK` : '– DKK'
+                    })()}
+                  </div>
                 </div>
               </div>
 
+              {/* Separator */}
+              <div className="border-b border-border/50"></div>
+
               {/* Quick Options Section */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <Label className="text-sm font-medium text-muted-foreground">
                   Hurtig valg
                 </Label>
@@ -215,14 +205,14 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     <span className="font-medium">Bedste score</span>
                   </Button>
                 </div>
-                <div className="border-b border-border/50 mt-6"></div>
+                <div className="border-b border-border/50 mt-4"></div>
               </div>
 
 
               {/* Configuration Options */}
-              <div className="space-y-8">
+              <div className="space-y-4">
                 {/* Lease Period Selection */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium text-muted-foreground">
                     Leasingperiode
                   </Label>
@@ -251,7 +241,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                 </div>
 
                 {/* Mileage Selection */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium text-muted-foreground">
                     Årligt km-forbrug
                   </Label>
@@ -280,7 +270,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                 </div>
 
                 {/* Upfront Payment Selection */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <Label className="text-sm font-medium text-muted-foreground">
                     Udbetaling
                   </Label>
@@ -307,30 +297,20 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     })}
                   </div>
                 </div>
+                
+                {/* CTA Button in scrollable content */}
+                <div className="pt-3">
+                  <Button 
+                    className="w-full h-12 text-base font-semibold" 
+                    size="lg"
+                    onClick={onShowSeller}
+                  >
+                    <ExternalLink className="w-5 h-5 mr-2" />
+                    Se tilbud
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Footer - Sticky CTA Only */}
-          <div className={cn(
-            // Positioning
-            "sticky bottom-0",
-            // Layout
-            "flex-shrink-0",
-            // Styling with border and subtle shadow
-            "p-4 bg-background border-t border-border/50 shadow-xl",
-            // iOS safe area support
-            "pb-[max(1rem,env(safe-area-inset-bottom))]"
-          )}>
-            {/* Full width CTA button */}
-            <Button 
-              className="w-full h-12 text-base font-semibold" 
-              size="lg"
-              onClick={onShowSeller}
-            >
-              <ExternalLink className="w-5 h-5 mr-2" />
-              Se tilbud
-            </Button>
           </div>
         </div>
       </div>
