@@ -151,7 +151,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
               {/* Quick Options Section */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium text-muted-foreground">
+                <Label className="text-sm font-semibold text-muted-foreground">
                   Hurtig valg
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
@@ -181,7 +181,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
               <div className="space-y-4">
                 {/* Lease Period Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
+                  <Label className="text-sm font-semibold text-muted-foreground">
                     Leasingperiode
                   </Label>
                   <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
@@ -210,7 +210,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
                 {/* Mileage Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
+                  <Label className="text-sm font-semibold text-muted-foreground">
                     Årligt km-forbrug
                   </Label>
                   <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
@@ -239,7 +239,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
 
                 {/* Upfront Payment Selection */}
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-muted-foreground">
+                  <Label className="text-sm font-semibold text-muted-foreground">
                     Udbetaling
                   </Label>
                   <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">

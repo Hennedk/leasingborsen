@@ -58,17 +58,17 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       onClick={onClick}
       className={cn(
         // Base styles with vertical layout
-        'flex flex-col items-center justify-between p-3 rounded-xl border-2 transition-all duration-200 w-full min-h-[110px]',
+        'flex flex-col items-center justify-between p-3 rounded-xl transition-all duration-200 w-full min-h-[110px]',
         // Touch target size for mobile
         'touch-manipulation',
         // Default state with light grey border
         !isSelected && [
-          'bg-background border-gray-200 hover:border-primary/40 hover:bg-muted/50',
+          'bg-background border-2 border-gray-200 hover:border-primary/40 hover:bg-muted/50',
           'active:scale-[0.98] active:bg-muted'
         ],
-        // Selected state - same bg as non-selected with black border
+        // Selected state - same bg as non-selected with solid black border
         isSelected && [
-          'bg-background border-black',
+          'bg-background border-2 !border-black dark:!border-white',
           'shadow-sm'
         ],
         // Custom className
