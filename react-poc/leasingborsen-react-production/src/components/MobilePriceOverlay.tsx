@@ -1,9 +1,8 @@
 import React, { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { X, ExternalLink, Check } from 'lucide-react'
+import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import AnimatedPrice from '@/components/listing/AnimatedPrice'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
@@ -25,9 +24,6 @@ interface MobilePriceOverlayProps {
   onResetToCheapest: () => void
   onSelectBestScore: () => void
   onShowSeller: () => void
-  totalCost?: number | null
-  isCheapest?: boolean
-  priceDifference?: number
   // Price impact props for mobile parity
   mileagePriceImpacts?: Map<number, PriceImpactData>
   periodPriceImpacts?: Map<number, PriceImpactData>
@@ -41,6 +37,7 @@ interface MobilePriceOverlayProps {
 const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   isOpen,
   onClose,
+  car,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -54,8 +51,6 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
   onResetToCheapest,
   onSelectBestScore,
   onShowSeller,
-  totalCost = null,
-  isCheapest = false,
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,
@@ -177,36 +172,6 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                 <div className="border-b border-border/50 mt-6"></div>
               </div>
 
-              {/* Enhanced Price Display */}
-              <div className="space-y-2 pb-4 border-b border-border/50">
-                <div className="flex items-baseline gap-2">
-                  <AnimatedPrice 
-                    value={selectedLease?.monthly_price ?? 0}
-                    className="text-3xl font-bold text-primary"
-                    showCurrency={true}
-                    showPeriod={true}
-                  />
-                </div>
-                
-                {/* Total Cost Display */}
-                {totalCost && selectedPeriod && (
-                  <div className="text-sm text-muted-foreground">
-                    <span>I alt: </span>
-                    <span className="font-semibold text-foreground">
-                      {totalCost.toLocaleString('da-DK')} kr
-                    </span>
-                    <span> over {selectedPeriod} mdr</span>
-                  </div>
-                )}
-                
-                {/* Subtle indicator when cheapest */}
-                {isCheapest && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Check className="w-3 h-3" />
-                    <span>Billigste konfiguration</span>
-                  </div>
-                )}
-              </div>
 
               {/* Configuration Options */}
               <div className="space-y-6">
@@ -297,25 +262,38 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             </div>
           </div>
 
-          {/* Footer - Sticky CTA */}
+          {/* Footer - Sticky Price Summary & CTA */}
           <div className={cn(
             // Positioning
             "sticky bottom-0",
             // Layout
             "flex-shrink-0",
-            // Styling
-            "p-5 border-t border-border/50 bg-background shadow-lg",
+            // Styling  
+            "p-5 bg-background shadow-lg",
             // iOS safe area support
             "pb-[max(1rem,env(safe-area-inset-bottom))]"
           )}>
-            <Button 
-              className="w-full h-12 gap-2" 
-              size="lg"
-              onClick={onShowSeller}
-            >
-              <ExternalLink className="w-4 h-4" />
-              Se tilbud
-            </Button>
+            {/* Current Lease Summary */}
+            <div className="mb-5">
+              <div className="text-2xl font-bold text-primary leading-tight mb-1">
+                {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK') ?? '–'} kr/md
+              </div>
+              <div className="text-sm text-muted-foreground leading-relaxed">
+                {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK') ?? '–'} kr udbetaling • {selectedLease?.period_months ?? car.period_months ?? '–'} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK') ?? '–'} km/år
+              </div>
+            </div>
+
+            {/* CTA Button */}
+            <div>
+              <Button 
+                className="w-full h-12" 
+                size="lg"
+                onClick={onShowSeller}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Se tilbud
+              </Button>
+            </div>
           </div>
         </div>
       </div>
