@@ -8,7 +8,7 @@ import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
-import MobilePriceOverlay from '@/components/MobilePriceOverlay'
+import MobilePriceDrawer from '@/components/MobilePriceDrawer'
 import MobilePriceBar from '@/components/MobilePriceBar'
 import ListingHeader from '@/components/listing/ListingHeader'
 import ListingImage from '@/components/listing/ListingImage'
@@ -195,8 +195,8 @@ const Listing: React.FC = () => {
               onShowSeller={() => setSellerModalOpen(true)}
             />
 
-            {/* Mobile Price Overlay */}
-            <MobilePriceOverlay
+            {/* Mobile Price Drawer */}
+            <MobilePriceDrawer
               isOpen={mobilePriceOpen}
               onClose={() => setMobilePriceOpen(false)}
               car={car}
