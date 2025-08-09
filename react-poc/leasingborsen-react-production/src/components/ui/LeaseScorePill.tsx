@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 
 interface LeaseScorePillProps {
   score: number
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   className?: string
 }
 
@@ -32,6 +32,16 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
 
   // Size variants for horizontal pill design
   const sizeConfig = {
+    xs: {
+      diameter: 30,
+      strokeWidth: 2.5,
+      fontSize: 'text-xs',
+      labelSize: 'text-[10px]',
+      descriptorSize: 'text-[10px]',
+      paddingX: 'px-2.5',
+      paddingY: 'py-1.5',
+      gap: 'gap-2'
+    },
     sm: {
       diameter: 36,
       strokeWidth: 3,
