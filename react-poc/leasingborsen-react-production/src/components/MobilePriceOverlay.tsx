@@ -180,8 +180,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-medium text-muted-foreground">
                     Leasingperiode
                   </Label>
-                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
-                    {availablePeriods.map((period, index) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    {availablePeriods.map((period) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === selectedMileage &&
                         opt.period_months === period &&
@@ -197,7 +197,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           priceImpact={periodPriceImpacts?.get(period)}
                           isSelected={period === selectedPeriod}
                           onClick={() => onPeriodChange(period)}
-                          className={`flex-shrink-0 w-32 snap-start ${index === availablePeriods.length - 1 ? 'mr-5' : ''}`}
+                          className="flex-shrink-0 w-32 snap-start"
                         />
                       )
                     })}
@@ -209,8 +209,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-medium text-muted-foreground">
                     Årligt km-forbrug
                   </Label>
-                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
-                    {availableMileages.map((mileage, index) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    {availableMileages.map((mileage) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === mileage &&
                         opt.period_months === selectedPeriod &&
@@ -226,7 +226,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           priceImpact={mileagePriceImpacts?.get(mileage)}
                           isSelected={mileage === selectedMileage}
                           onClick={() => onMileageChange(mileage)}
-                          className={`flex-shrink-0 w-32 snap-start ${index === availableMileages.length - 1 ? 'mr-5' : ''}`}
+                          className="flex-shrink-0 w-32 snap-start"
                         />
                       )
                     })}
@@ -238,8 +238,8 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Label className="text-sm font-medium text-muted-foreground">
                     Udbetaling
                   </Label>
-                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-5 px-5">
-                    {availableUpfronts.map((upfront, index) => {
+                  <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide">
+                    {availableUpfronts.map((upfront) => {
                       const optionWithScore = leaseOptionsWithScores.find(opt => 
                         opt.mileage_per_year === selectedMileage &&
                         opt.period_months === selectedPeriod &&
@@ -255,7 +255,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                           priceImpact={upfrontPriceImpacts?.get(upfront)}
                           isSelected={upfront === selectedUpfront}
                           onClick={() => onUpfrontChange(upfront)}
-                          className={`flex-shrink-0 w-32 snap-start ${index === availableUpfronts.length - 1 ? 'mr-5' : ''}`}
+                          className="flex-shrink-0 w-32 snap-start"
                         />
                       )
                     })}
