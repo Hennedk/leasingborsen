@@ -68,7 +68,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
       }}
       modal={true}
       dismissible={true}
-      snapPoints={[0.9]} // Allow drawer to snap at 90% height
+      snapPoints={[1]} // Full height to ensure footer is visible
     >
       <Drawer.Portal>
         <Drawer.Overlay 
@@ -86,8 +86,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             "flex flex-col",
             // Styling
             "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
-            // Sizing - simplified height constraint
-            "max-h-[90vh]",
+            // Sizing - full height with safe area consideration
+            "max-h-[100vh]",
             // Only show on mobile
             "lg:hidden"
           )}
@@ -112,8 +112,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             </Drawer.Close>
           </div>
 
-          {/* Scrollable Content - flex-1 overflow-y-auto */}
-          <div className="flex-1 overflow-y-auto min-h-0">
+          {/* Scrollable Content - flex-1 overflow-y-auto with explicit min-h-0 for proper flex behavior */}
+          <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
               <div className="p-4 space-y-4">
                 {/* Quick Options Section */}
                 <div className="space-y-3">
