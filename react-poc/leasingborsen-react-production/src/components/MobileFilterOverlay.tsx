@@ -234,7 +234,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             // Layout
             "flex flex-col",
             // Styling
-            "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
+            "bg-background rounded-t-2xl border-t border-border/50",
             // Animation
             "transform transition-transform duration-300 ease-out translate-y-0",
             // Sizing - matches mobile price overlay
@@ -324,7 +324,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       <div className="p-5 space-y-6">
         {/* Sorting */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary flex items-center gap-2">
+          <Label className="text-base font-medium text-foreground flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4" />
             Sortering
           </Label>
@@ -347,7 +347,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Make and Model Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Mærke</Label>
+          <Label className="text-base font-medium text-foreground">Mærke</Label>
           <Button
             variant="outline"
             onClick={() => navigateToView('makes')}
@@ -363,7 +363,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             <Plus className="h-4 w-4 ml-2 flex-shrink-0" />
           </Button>
 
-          <Label className="text-sm font-semibold text-primary">Model</Label>
+          <Label className="text-base font-medium text-foreground">Model</Label>
           <Button
             variant="outline"
             onClick={() => {
@@ -391,7 +391,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Fuel Type */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Brændstof</Label>
+          <Label className="text-base font-medium text-foreground">Brændstof</Label>
           <div className="flex flex-wrap gap-2">
             {referenceData?.fuelTypes?.map((fuelType) => (
               <Badge
@@ -413,7 +413,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Transmission */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Geartype</Label>
+          <Label className="text-base font-medium text-foreground">Geartype</Label>
           <div className="flex flex-wrap gap-2">
             {FILTER_CONFIG.TRANSMISSION_TYPES.map((trans) => (
               <Badge
@@ -435,7 +435,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Body Type */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Biltype</Label>
+          <Label className="text-base font-medium text-foreground">Biltype</Label>
           <div className="flex flex-wrap gap-2">
             {referenceData?.bodyTypes?.map((bodyType) => (
               <Badge
@@ -457,7 +457,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Price Range */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Pris pr. måned</Label>
+          <Label className="text-base font-medium text-foreground">Pris pr. måned</Label>
           <div className="grid grid-cols-2 gap-3">
             <Select
               value={price_min?.toString() || 'none'}
@@ -496,7 +496,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Seats Range */}
         <div className="space-y-3">
-          <Label className="text-sm font-semibold text-primary">Antal sæder</Label>
+          <Label className="text-base font-medium text-foreground">Antal sæder</Label>
           <div className="grid grid-cols-2 gap-3">
             <Select
               value={seats_min?.toString() || 'none'}
@@ -600,7 +600,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       {/* Sticky CTA for makes selection */}
       <div className={cn(
         "sticky bottom-0 flex-shrink-0",
-        "p-5 border-t border-border/50 bg-background shadow-lg",
+        "p-5 border-t border-border/50 bg-background",
         "pb-[max(1rem,env(safe-area-inset-bottom))]"
       )}>
         <Button
@@ -681,7 +681,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       {/* Sticky CTA for models selection */}
       <div className={cn(
         "sticky bottom-0 flex-shrink-0",
-        "p-5 border-t border-border/50 bg-background shadow-lg",
+        "p-5 border-t border-border/50 bg-background",
         "pb-[max(1rem,env(safe-area-inset-bottom))]"
       )}>
         <Button

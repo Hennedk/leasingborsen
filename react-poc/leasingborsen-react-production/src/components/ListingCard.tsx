@@ -106,7 +106,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   // Enhanced Skeleton State with Realistic Content Structure
   if (loading) {
     return (
-      <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden">
+      <Card className="bg-card border border-border/50 rounded-xl overflow-hidden">
         {/* Image skeleton with enhanced shimmer */}
         <div className="relative overflow-hidden">
           <Skeleton className="w-full h-56" />
@@ -182,8 +182,8 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
       {/* Enhanced card with improved shadcn/ui styling */}
       <Card 
-        className={`bg-card shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden ${
-          isPressed ? 'scale-95 shadow-md translate-y-0' : ''
+        className={`bg-card border border-border/50 hover:border-primary/30 hover:-translate-y-1 transition-all duration-300 rounded-xl overflow-hidden ${
+          isPressed ? 'scale-95 translate-y-0' : ''
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}

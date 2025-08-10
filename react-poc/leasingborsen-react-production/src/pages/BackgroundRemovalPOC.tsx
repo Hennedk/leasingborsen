@@ -458,7 +458,7 @@ const BackgroundRemovalPOC: React.FC = () => {
                           <div 
                             key={car.listing_id} 
                             onClick={(e) => e.preventDefault()}
-                            className="drop-shadow-lg hover:drop-shadow-xl transition-all"
+                            className="transition-all"
                           >
                             <ListingCard car={car} loading={false} />
                           </div>

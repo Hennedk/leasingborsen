@@ -7,7 +7,7 @@ export const listingStyles = {
   gridContainer: "grid gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
   
   // Layout containers
-  stickyFilterBar: "lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50",
+  stickyFilterBar: "lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-t border-b border-border/50 z-50",
   mainContent: "lg:col-span-3",
   sidebar: "hidden lg:block",
   

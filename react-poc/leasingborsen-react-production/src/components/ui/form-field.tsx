@@ -66,7 +66,7 @@ export const FormField: React.FC<FormFieldProps> = ({
         <SelectTrigger className={selectTriggerVariants({ size })}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
-        <SelectContent className="bg-background border shadow-lg">
+        <SelectContent className="bg-background border">
           {options.map((option, index) => (
             <SelectItem key={`form-option-${index}-${option.value}`} value={option.value}>
               {option.label}

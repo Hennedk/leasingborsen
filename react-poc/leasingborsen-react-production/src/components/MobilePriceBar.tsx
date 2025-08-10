@@ -31,7 +31,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
         isInverted 
           ? "bg-primary text-primary-foreground border-t border-primary/20" 
           : "bg-background border-t border-border/50",
-        "shadow-xl rounded-t-2xl",
+        "rounded-t-2xl",
         // Animation
         "transition-all duration-300 ease-out",
         // Hover effect for desktop testing

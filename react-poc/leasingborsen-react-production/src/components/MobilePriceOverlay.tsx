@@ -123,7 +123,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
           // Layout
           "flex flex-col",
           // Styling
-          "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
+          "bg-background rounded-t-2xl border-t border-border/50",
           // Animation
           "transform transition-transform duration-300 ease-out translate-y-0",
           // Sizing
@@ -158,7 +158,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Button
                     variant="outline"
                     onClick={onResetToCheapest}
-                    className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                    className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                   >
                     <span>💰</span>
                     <span className="font-medium">Billigste</span>
@@ -166,7 +166,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                   <Button
                     variant="outline"
                     onClick={onSelectBestScore}
-                    className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                    className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                     disabled={!bestScoreOption}
                   >
                     <span>⭐</span>
@@ -276,7 +276,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
             // Layout
             "flex-shrink-0",
             // Inverted styling - dark background with light text
-            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl"
+            "bg-primary text-primary-foreground border-t border-primary/20"
           )}>
             {/* Main Content - Inverted colors */}
             <div className="px-5 py-3">

@@ -75,7 +75,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   return (
     <div className={`${className} ${isOpen ? 'block' : 'hidden'}`}>
-      <Card className="bg-card/95 backdrop-blur-sm shadow-xl border border-border/40 hover:shadow-2xl hover:border-primary/40 transition-all duration-300 rounded-2xl overflow-hidden">
+      <Card className="bg-card/95 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 rounded-2xl overflow-hidden">
         <CardHeader className="pb-4 pt-6 bg-gradient-to-b from-background to-background/95">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

@@ -41,8 +41,8 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
               className={cn(
                 "cursor-pointer transition-all duration-200 px-3 py-1.5 text-sm font-medium",
                 isSelected 
-                  ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md hover:from-primary/90 hover:to-primary/80" 
-                  : "hover:bg-muted/50 border-border hover:border-primary/50 hover:shadow-sm"
+                  ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary hover:from-primary/90 hover:to-primary/80" 
+                  : "hover:bg-muted/50 border-border hover:border-primary/50"
               )}
               onClick={() => onToggle(option.name)}
             >

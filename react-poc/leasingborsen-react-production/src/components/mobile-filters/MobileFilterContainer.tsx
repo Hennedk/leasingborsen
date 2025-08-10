@@ -202,7 +202,7 @@ export const MobileFilterContainer: React.FC<MobileFilterContainerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm">
-      <div className="fixed inset-x-0 bottom-0 top-16 bg-background rounded-t-xl shadow-xl flex flex-col">
+      <div className="fixed inset-x-0 bottom-0 top-16 bg-background rounded-t-xl flex flex-col">
         {/* Header */}
         <MobileFilterHeader
           currentView={navigation.currentView}

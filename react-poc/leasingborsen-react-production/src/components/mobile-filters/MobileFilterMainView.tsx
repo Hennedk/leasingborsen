@@ -106,7 +106,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
         <div className="p-4 space-y-6">
           {/* Sorting Section - at the top */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Sortering</Label>
+            <Label className="text-base font-medium text-foreground">Sortering</Label>
             <Select value={sortOrder} onValueChange={handleSortChange}>
               <SelectTrigger className="w-full h-12">
                 <div className="flex items-center gap-2">
@@ -129,7 +129,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
           </div>
           {/* Make Filter */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Mærke</Label>
+            <Label className="text-base font-medium text-foreground">Mærke</Label>
             <Button
               variant="outline"
               className="w-full justify-between h-12"
@@ -145,7 +145,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Model Filter */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Model</Label>
+            <Label className="text-base font-medium text-foreground">Model</Label>
             <Button
               variant="outline"
               className="w-full justify-between h-12"
@@ -164,7 +164,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Fuel Type Filter - Consistent with desktop (no X icons) */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Brændstof</Label>
+            <Label className="text-base font-medium text-foreground">Brændstof</Label>
             <div className="flex flex-wrap gap-2">
               {consolidatedFuelTypes.map((fuelTypeItem) => {
                 const isSelected = fuel_type.includes(fuelTypeItem.name)
@@ -189,7 +189,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Transmission Filter - Consistent with desktop (no X icons) */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Geartype</Label>
+            <Label className="text-base font-medium text-foreground">Geartype</Label>
             <div className="flex flex-wrap gap-2">
               {['Automatic', 'Manual'].map((transmissionType) => {
                 const isSelected = transmission.includes(transmissionType)
@@ -215,7 +215,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Body Type Filter - Consistent with desktop (no X icons) */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Biltype</Label>
+            <Label className="text-base font-medium text-foreground">Biltype</Label>
             <div className="flex flex-wrap gap-2">
               {consolidatedBodyTypes.map((bodyTypeItem) => {
                 const isSelected = body_type.includes(bodyTypeItem.name)
@@ -240,7 +240,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Price Range Filter */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Prisområde</Label>
+            <Label className="text-base font-medium text-foreground">Prisområde</Label>
             <div className="grid grid-cols-2 gap-3">
               <Select 
                 value={price_min?.toString() || 'all'} 
@@ -280,7 +280,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
 
           {/* Seat Count Filter */}
           <div className="space-y-3">
-            <Label className="font-medium text-foreground">Antal sæder</Label>
+            <Label className="text-base font-medium text-foreground">Antal sæder</Label>
             <div className="grid grid-cols-2 gap-3">
               <Select 
                 value={seats_min?.toString() || 'all'} 
@@ -320,7 +320,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
       </div>
       
       {/* Footer - Sticky CTA */}
-      <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background flex-shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex gap-3">
           <Button 
             variant="outline"

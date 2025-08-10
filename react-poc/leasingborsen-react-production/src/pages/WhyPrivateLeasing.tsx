@@ -104,7 +104,7 @@ const WhyPrivateLeasing: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {benefits.map((benefit, index) => (
-                <Card key={index} className="border border-border hover:shadow-lg transition-shadow">
+                <Card key={index} className="border border-border transition-all">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -158,7 +158,7 @@ const WhyPrivateLeasing: React.FC = () => {
                 </Link>
               </div>
 
-              <Card className="border border-border shadow-lg">
+              <Card className="border border-border">
                 <CardHeader>
                   <CardTitle className="text-center text-primary">
                     Eksempel: Månedlig ydelse

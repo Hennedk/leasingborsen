@@ -72,7 +72,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     onHoverOption?.(null)
   }, [onHoverOption])
   return (
-    <Card className="hidden lg:block bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
+    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
       <CardContent className="p-5 space-y-4 relative">
         {/* Loading State */}
         {isLoading && (

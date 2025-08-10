@@ -146,7 +146,7 @@ const About: React.FC = () => {
                 </div>
               </div>
 
-              <Card className="border border-border shadow-lg">
+              <Card className="border border-border">
                 <CardContent className="p-8">
                   <div className="text-center space-y-4">
                     <Clock className="h-12 w-12 text-primary mx-auto" />
@@ -184,7 +184,7 @@ const About: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {values.map((value, index) => (
-                <Card key={index} className="border border-border hover:shadow-lg transition-shadow">
+                <Card key={index} className="border border-border transition-all">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">

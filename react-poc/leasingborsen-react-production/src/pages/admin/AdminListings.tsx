@@ -326,7 +326,7 @@ const AdminListings: React.FC = () => {
         </ComponentErrorBoundary>
 
         {/* Listings table */}
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0">
           <CardContent className="p-0">
             <DataErrorBoundary>
               <ListingsTable

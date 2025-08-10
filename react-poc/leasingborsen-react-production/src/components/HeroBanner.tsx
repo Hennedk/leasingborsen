@@ -147,7 +147,7 @@ const HeroBanner: React.FC = () => {
               
               {/* Search Form Card - Backdrop blur with hover effects */}
               {/* Width: 350px-550px responsive, 95% max on mobile */}
-              <div className="bg-card backdrop-blur-md rounded-3xl shadow-2xl border border-border/50 transition-all duration-500 ease-in hover:shadow-xl md:mr-0 p-3 md:p-6 max-w-xl">
+              <div className="bg-card backdrop-blur-md rounded-3xl border border-border/50 transition-all duration-500 ease-in md:mr-0 p-3 md:p-6 max-w-xl">
                 {/* Form Content Wrapper - 24px vertical spacing */}
                 <div className="space-y-4 md:space-y-6">
                   
@@ -254,7 +254,7 @@ const HeroBanner: React.FC = () => {
                 <div className="pt-4">
                   {/* Primary Search Button - Large size (48px height), full width */}
                   <Button 
-                    className="w-full font-bold tracking-wide shadow-xl hover:shadow-2xl h-10 md:h-12 text-sm md:text-base" 
+                    className="w-full font-bold tracking-wide h-10 md:h-12 text-sm md:text-base" 
                     onClick={handleSearch}
                     aria-label="Søg efter biler med de valgte kriterier"
                   >

@@ -149,7 +149,7 @@ describe('ListingCard - Lease Score Integration', () => {
     
     const pill = screen.getByRole('img', { name: /LeaseScore: 85/ })
     // Should have horizontal pill design classes
-    expect(pill).toHaveClass('bg-white', 'rounded-full', 'shadow-lg', 'flex', 'items-center', 'px-3', 'py-2', 'gap-2.5')
+    expect(pill).toHaveClass('bg-white', 'rounded-full', 'flex', 'items-center', 'px-3', 'py-2', 'gap-2.5')
     
     // SVG should be small size (36px for sm in horizontal layout)
     const svgElement = pill.querySelector('svg')

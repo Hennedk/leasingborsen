@@ -9,7 +9,7 @@ interface FilterSkeletonProps {
 const FilterSkeleton: React.FC<FilterSkeletonProps> = ({ className = '' }) => {
   return (
     <div className={className}>
-      <Card className="bg-card border border-border shadow-xl gap-0">
+      <Card className="bg-card border border-border gap-0">
         <CardHeader className="pb-3 pt-8">
           <div className="flex items-center justify-between">
             <div>
@@ -124,7 +124,7 @@ export const MobileFilterSkeleton: React.FC = () => {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       
       {/* Slide-up overlay */}
-      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl border-t border-border/50 mobile-overlay flex flex-col">
+      <div className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl border-t border-border/50 mobile-overlay flex flex-col">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border/50 flex-shrink-0">
@@ -171,7 +171,7 @@ export const MobileFilterSkeleton: React.FC = () => {
         </div>
         
         {/* Footer */}
-        <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background shadow-lg flex-shrink-0 mobile-overlay-footer">
+        <div className="sticky bottom-0 p-4 border-t border-border/50 bg-background flex-shrink-0 mobile-overlay-footer">
           <div className="flex gap-3">
             <Skeleton className="h-12 flex-1 rounded-md" />
             <Skeleton className="h-12 flex-1 rounded-md" />

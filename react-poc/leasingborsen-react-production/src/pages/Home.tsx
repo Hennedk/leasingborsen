@@ -67,7 +67,7 @@ const Home: React.FC = () => {
           ERROR DISPLAY - User feedback for navigation errors
       ================= */}
       {navigationError && (
-        <div className="fixed bottom-4 right-4 bg-destructive text-destructive-foreground p-4 rounded-lg shadow-lg z-50 max-w-sm">
+        <div className="fixed bottom-4 right-4 bg-destructive text-destructive-foreground p-4 rounded-lg z-50 max-w-sm">
           <p className="text-sm">{navigationError}</p>
         </div>
       )}

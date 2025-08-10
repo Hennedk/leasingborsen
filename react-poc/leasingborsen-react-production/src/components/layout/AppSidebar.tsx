@@ -136,7 +136,7 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         "fixed inset-y-0 z-50 flex w-72 flex-col transition-transform duration-300 ease-in-out lg:hidden",
         open ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4 shadow-xl">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-card px-6 pb-4">
           {/* Mobile Header */}
           <div className="flex h-16 shrink-0 items-center justify-between">
             <Link to="/admin" className="flex items-center gap-2">

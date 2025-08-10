@@ -85,7 +85,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             // Layout - IMPORTANT: flex flex-col for proper structure
             "flex flex-col",
             // Styling
-            "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
+            "bg-background rounded-t-2xl border-t border-border/50",
             // Sizing - matches mobile filter overlay
             "h-[min(90vh,100dvh-2rem)] max-h-[90vh]",
             // Only show on mobile
@@ -124,7 +124,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <Button
                       variant="outline"
                       onClick={onResetToCheapest}
-                      className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                      className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                     >
                       <span>💰</span>
                       <span className="font-medium">Billigste</span>
@@ -132,7 +132,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <Button
                       variant="outline"
                       onClick={onSelectBestScore}
-                      className="h-12 flex items-center justify-center gap-2 hover:shadow-md transition-all active:scale-[0.98]"
+                      className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                       disabled={!bestScoreOption}
                     >
                       <span>⭐</span>
@@ -239,7 +239,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             // Layout - flex-shrink-0 prevents compression
             "flex-shrink-0",
             // Inverted styling - dark background with light text
-            "bg-primary text-primary-foreground border-t border-primary/20 shadow-xl",
+            "bg-primary text-primary-foreground border-t border-primary/20",
             // Ensure it stays at bottom
             "mt-auto",
             // iOS safe area padding

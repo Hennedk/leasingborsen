@@ -88,7 +88,7 @@ export const MobileFilterPricing: React.FC<MobileFilterPricingProps> = React.mem
     <div className={`space-y-6 ${className}`}>
       {/* Sorting */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium flex items-center gap-2">
+        <Label className="text-base font-medium text-foreground flex items-center gap-2">
           <ArrowUpDown className="h-4 w-4" />
           Sortering
         </Label>

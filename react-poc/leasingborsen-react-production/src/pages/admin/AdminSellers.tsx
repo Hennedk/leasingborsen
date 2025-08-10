@@ -121,7 +121,7 @@ const AdminSellers: React.FC = () => {
         </div>
 
         {/* Sellers table */}
-        <Card className="border-0 shadow-sm">
+        <Card className="border-0">
           <CardContent className="p-0">
             <SellersTable
               sellers={sellers}

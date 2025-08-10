@@ -117,7 +117,7 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
         {/* Right Column - 1/3 width */}
         <div className="space-y-6">
           {/* Seller */}
-          <Card className="shadow-lg border-border/50 py-6">
+          <Card className="border-border/50 py-6">
             <CardHeader className="pb-2 px-6">
               <CardTitle className="flex items-center gap-2 text-lg">
                 Sælger
@@ -133,7 +133,7 @@ export const AdminFormSections = React.memo<AdminFormSectionsProps>(({
           </Card>
 
           {/* Media */}
-          <Card className="shadow-lg border-border/50 py-6">
+          <Card className="border-border/50 py-6">
             <CardHeader className="pb-2 px-6">
               <CardTitle className="text-lg">Billeder</CardTitle>
             </CardHeader>

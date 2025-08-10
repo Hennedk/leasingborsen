@@ -22,7 +22,7 @@ export const ListingsSkeleton: React.FC<ListingsSkeletonProps> = ({
     <>
       {/* Mobile: Sticky Filter Bar */}
       {showMobileFilter && (
-        <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50">
+        <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-t border-b border-border/50 z-50">
           <div className="px-4 py-3">
             <div className="flex items-center gap-3 h-8 overflow-x-auto scrollbar-hide">
               <Button
@@ -32,7 +32,6 @@ export const ListingsSkeleton: React.FC<ListingsSkeletonProps> = ({
                 className="flex items-center gap-2 flex-shrink-0 h-8"
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                Filtre
               </Button>
               
               {/* Mobile Filter Chips Skeleton */}
@@ -112,7 +111,7 @@ export const ResultsHeaderSkeleton: React.FC = () => {
  */
 export const MobileFilterBarSkeleton: React.FC = () => {
   return (
-    <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-b border-border/50 z-50">
+    <div className="lg:hidden sticky top-0 bg-card/95 backdrop-blur-sm border-t border-b border-border/50 z-50">
       <div className="px-4 py-3">
         <div className="flex items-center gap-3 h-8 overflow-x-auto scrollbar-hide">
           <Button

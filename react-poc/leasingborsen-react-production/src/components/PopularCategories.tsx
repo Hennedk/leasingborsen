@@ -60,7 +60,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       aria-label={`Filter by ${category.label}: ${category.subtitle}`}
       className={`
         group cursor-pointer transition-all duration-300 
-        hover:shadow-xl hover:-translate-y-1 
+        hover:-translate-y-1 
         border border-border/50 hover:border-primary/20 hover:bg-card/50
         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
         ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}

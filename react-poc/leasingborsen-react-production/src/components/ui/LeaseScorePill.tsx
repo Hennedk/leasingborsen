@@ -185,7 +185,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
     <div
       ref={elementRef}
       className={cn(
-        'bg-white rounded-full shadow-lg flex items-center',
+        'bg-white rounded-full flex items-center',
         sizeConfig.paddingX,
         sizeConfig.paddingY,
         sizeConfig.gap,
@@ -230,7 +230,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
             style={{
-              filter: score >= 90 ? 'drop-shadow(0 0 4px rgba(5, 150, 105, 0.4))' : undefined,
+              filter: undefined,
               transitionDelay: prefersReducedMotion ? '0ms' : `${animationDelay}ms`,
               transition: prefersReducedMotion ? 'none' : undefined
             }}

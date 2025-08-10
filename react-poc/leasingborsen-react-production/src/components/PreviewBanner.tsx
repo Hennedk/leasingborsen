@@ -45,7 +45,7 @@ export const PreviewBanner: React.FC = () => {
   }
 
   return (
-    <Alert className="border-orange-400 bg-orange-100 text-orange-900 rounded-none border-2 shadow-sm">
+    <Alert className="border-orange-400 bg-orange-100 text-orange-900 rounded-none border-2">
       <Info className="h-5 w-5 text-orange-600" />
       <AlertDescription className="flex items-center justify-center text-base font-bold">
         🚧 STAGING ENVIRONMENT - Using Staging Database - Safe for Testing - No Production Impact 🚧

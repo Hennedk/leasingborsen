@@ -16,7 +16,7 @@ export const SaveBar: React.FC<SaveBarProps> = ({
   className
 }) => {
   return (
-    <div className={`fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50 ${className}`}>
+    <div className={`fixed bottom-0 left-0 right-0 bg-background border-t z-50 ${className}`}>
       <div className="flex justify-between items-center max-w-7xl mx-auto p-6">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>

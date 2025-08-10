@@ -146,7 +146,6 @@ const Listings: React.FC = () => {
               aria-label={`Åben filtre${activeFilters.length > 0 ? ` (${activeFilters.length} aktive)` : ''}`}
             >
               <SlidersHorizontal className="w-4 h-4" />
-              Filtre
               {activeFilters.length > 0 && (
                 <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
                   {activeFilters.length}

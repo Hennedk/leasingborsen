@@ -154,7 +154,7 @@ const Advertising: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {benefits.map((benefit, index) => (
-                <Card key={index} className="border border-border hover:shadow-lg transition-shadow">
+                <Card key={index} className="border border-border transition-all">
                   <CardContent className="p-6">
                     <div className="space-y-4">
                       <div className="flex items-center space-x-3">
@@ -192,7 +192,7 @@ const Advertising: React.FC = () => {
                   key={index} 
                   className={`border relative ${
                     pkg.popular 
-                      ? 'border-primary ring-2 ring-primary/20 shadow-lg' 
+                      ? 'border-primary ring-2 ring-primary/20' 
                       : 'border-border'
                   }`}
                 >
@@ -289,7 +289,7 @@ const Advertising: React.FC = () => {
                 </div>
               </div>
 
-              <Card className="border border-border shadow-lg">
+              <Card className="border border-border">
                 <CardHeader>
                   <CardTitle className="text-center text-primary flex items-center justify-center">
                     <Eye className="mr-2 h-5 w-5" />

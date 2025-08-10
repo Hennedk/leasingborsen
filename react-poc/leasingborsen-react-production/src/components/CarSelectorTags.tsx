@@ -137,7 +137,7 @@ const CarSelectorTags: React.FC<CarSelectorTagsProps> = ({
 
       {/* Search Results */}
       {isExpanded && searchTerm && filteredCombinations.length > 0 && (
-        <div className="border rounded-lg bg-card shadow-lg">
+        <div className="border rounded-lg bg-card">
           <ScrollArea className="max-h-48">
             <div className="p-2 space-y-1">
               {filteredCombinations.map((combination) => (
