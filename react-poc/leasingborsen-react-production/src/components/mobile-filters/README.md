@@ -26,7 +26,6 @@ mobile-filters/
 │   └── MobileAutocomplete.tsx       # Mobile autocomplete dropdown
 │
 ├── Filter Interface
-│   ├── MobileFilterMainView.tsx     # Primary filter interface
 │   ├── MobileFilterCategories.tsx   # Category selection with icons
 │   ├── MobileFilterPanel.tsx        # Individual filter panels
 │   └── MobileFilterChips.tsx        # Active filter chips with swipe-to-remove
@@ -86,11 +85,7 @@ export const MobileFilterOverlay: React.FC<MobileFilterOverlayProps> = ({
       />
       
       <div className="flex-1 overflow-y-auto pb-20">
-        <MobileFilterMainView
-          filters={localFilters}
-          onFilterChange={handleFilterChange}
-          onPanelOpen={setActivePanel}
-        />
+        {/* Filter content implementation */}
       </div>
       
       <MobileFilterActions
