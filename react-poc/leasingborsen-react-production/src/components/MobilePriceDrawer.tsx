@@ -68,7 +68,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
       }}
       modal={true}
       dismissible={true}
-      snapPoints={[1]} // Full height to ensure footer is visible
+      snapPoints={[0.9]} // 90% height to match filter overlay
     >
       <Drawer.Portal>
         <Drawer.Overlay 
@@ -86,8 +86,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             "flex flex-col",
             // Styling
             "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
-            // Sizing - full height with safe area consideration
-            "max-h-[100vh]",
+            // Sizing - matches mobile filter overlay
+            "h-[min(90vh,100dvh-2rem)] max-h-[90vh]",
             // Only show on mobile
             "lg:hidden"
           )}
