@@ -63,8 +63,8 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Outfit", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        mono: ["Fira Code", "JetBrains Mono", "Fira Mono", "DejaVu Sans Mono", "Menlo", "Consolas", "monospace"],
+        sans: ["Poppins", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        mono: ["Poppins", "Fira Code", "JetBrains Mono", "Fira Mono", "DejaVu Sans Mono", "Menlo", "Consolas", "monospace"],
       },
       boxShadow: {
         sm: "var(--shadow-sm)",

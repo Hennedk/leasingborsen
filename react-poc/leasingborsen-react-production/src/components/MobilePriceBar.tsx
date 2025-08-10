@@ -42,7 +42,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
         <div className="flex items-center justify-between gap-4">
           {/* Left: Current Lease Summary */}
           <div className="flex-1 min-w-0">
-            <div className="text-2xl font-bold text-primary leading-tight mb-1">
+            <div className="text-2xl font-bold text-foreground leading-tight mb-1">
               {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK')} kr/md
             </div>
             <div className="text-sm text-muted-foreground leading-relaxed truncate">

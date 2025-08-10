@@ -322,7 +322,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
           {/* Enhanced Price Display */}
           <div className="space-y-2">
-            <p className="text-2xl font-bold text-primary group-hover:text-primary/90 transition-colors duration-200 leading-none">
+            <p className="text-2xl font-bold text-foreground group-hover:text-foreground/80 transition-colors duration-200 leading-none">
               {displayPrice}
             </p>
             <div className="flex items-center gap-3 text-xs text-muted-foreground leading-relaxed">

@@ -117,7 +117,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               <div className="flex items-baseline gap-2">
                 <AnimatedPrice 
                   value={selectedLease?.monthly_price ?? 0}
-                  className="text-3xl font-bold text-primary"
+                  className="text-3xl font-bold text-foreground"
                   showCurrency={true}
                   showPeriod={true}
                 />

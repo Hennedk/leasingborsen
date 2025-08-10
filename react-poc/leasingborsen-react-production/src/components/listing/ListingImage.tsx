@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Car } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -14,8 +13,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   const [imageError, setImageError] = useState(false)
   return (
     <div>
-    <Card className="bg-card shadow-lg border border-border/50 rounded-xl overflow-hidden lg:mr-3 xl:mr-7 2xl:mr-10">
-      <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+      <div className="relative overflow-hidden rounded-xl lg:mr-3 xl:mr-7 2xl:mr-10">
         {(car.processed_image_detail || car.image) && !imageError ? (
           <>
             {imageLoading && (
@@ -25,7 +23,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
               src={car.processed_image_detail || car.image} 
               alt={`${car.make} ${car.model}`}
               className={cn(
-                "w-full aspect-[16/9] object-contain p-6 lg:p-8 xl:p-10 transition-opacity duration-500 ease-out",
+                "w-full aspect-[16/9] object-contain p-4 md:p-6 lg:p-8 transition-opacity duration-500 ease-out",
                 imageLoading ? "opacity-0" : "opacity-100"
               )}
               loading="lazy"
@@ -37,18 +35,16 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
             />
           </>
         ) : (
-          <div className="w-full aspect-[16/9] bg-gradient-to-br from-muted to-muted/70 flex items-center justify-center">
+          <div className="w-full aspect-[16/9] flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <Car className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>{imageError ? 'Billede kunne ikke indlæses' : 'Billede ikke tilgængeligt'}</p>
             </div>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/0 via-transparent to-transparent"></div>
       </div>
-    </Card>
     
-    {/* Image disclaimer - outside card */}
+    {/* Image disclaimer */}
     <div className="mt-2">
       <p className="text-xs text-muted-foreground text-center">
         Billede kun til illustration
