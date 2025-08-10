@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { Plus, ArrowUpDown } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { cn } from '@/lib/utils'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -108,11 +108,10 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
           <div className="space-y-3">
             <Label className="text-base font-medium text-foreground">Sortering</Label>
             <Select value={sortOrder} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full h-12">
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+              <SelectTrigger className="w-full h-12 justify-between bg-background text-foreground font-medium px-4">
+                <span className="text-left">
                   <SelectValue placeholder={currentSortLabel} />
-                </div>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {sortOptions.map((option, index) => (
@@ -173,7 +172,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                     key={fuelTypeItem.name}
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm font-normal",
                       isSelected 
                         ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                         : "hover:bg-muted border-border hover:border-primary/50"
@@ -199,7 +198,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                     key={transmissionType}
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm font-normal",
                       isSelected 
                         ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                         : "hover:bg-muted border-border hover:border-primary/50"
@@ -224,7 +223,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                     key={bodyTypeItem.name}
                     variant={isSelected ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-2 text-sm font-normal",
                       isSelected 
                         ? "bg-primary text-primary-foreground hover:bg-primary/90" 
                         : "hover:bg-muted border-border hover:border-primary/50"
@@ -246,7 +245,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 value={price_min?.toString() || 'all'} 
                 onValueChange={(value) => handleFilterChange('price_min', value)}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 justify-between bg-background text-foreground font-medium px-4">
                   <SelectValue placeholder="Min pris" />
                 </SelectTrigger>
                 <SelectContent>
@@ -262,7 +261,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 value={price_max?.toString() || 'all'} 
                 onValueChange={(value) => handleFilterChange('price_max', value)}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 justify-between bg-background text-foreground font-medium px-4">
                   <SelectValue placeholder="Max pris" />
                 </SelectTrigger>
                 <SelectContent>
@@ -286,7 +285,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 value={seats_min?.toString() || 'all'} 
                 onValueChange={(value) => handleFilterChange('seats_min', value)}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 justify-between bg-background text-foreground font-medium px-4">
                   <SelectValue placeholder="Min sæder" />
                 </SelectTrigger>
                 <SelectContent>
@@ -302,7 +301,7 @@ const MobileFilterMainView: React.FC<MobileFilterMainViewProps> = ({
                 value={seats_max?.toString() || 'all'} 
                 onValueChange={(value) => handleFilterChange('seats_max', value)}
               >
-                <SelectTrigger className="h-12">
+                <SelectTrigger className="h-12 justify-between bg-background text-foreground font-medium px-4">
                   <SelectValue placeholder="Max sæder" />
                 </SelectTrigger>
                 <SelectContent>

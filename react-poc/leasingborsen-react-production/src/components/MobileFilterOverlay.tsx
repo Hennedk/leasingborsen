@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { X, ChevronLeft, Plus, Search, ArrowUpDown, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -324,16 +324,17 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       <div className="p-5 space-y-6">
         {/* Sorting */}
         <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground flex items-center gap-2">
-            <ArrowUpDown className="h-4 w-4" />
+          <Label className="text-base font-medium text-foreground">
             Sortering
           </Label>
           <Select
             value={mapToSelectValue(sortOrder)}
             onValueChange={handleSortChange}
           >
-            <SelectTrigger className="w-full h-12 border-input focus:border-ring">
-              <SelectValue />
+            <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
+              <span className="text-left">
+                <SelectValue />
+              </span>
             </SelectTrigger>
             <SelectContent>
               {mobileSelectOptions.map((option) => (
@@ -398,7 +399,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 key={fuelType.name}
                 variant={fuel_type?.includes(fuelType.name) ? "default" : "outline"}
                 className={cn(
-                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
                   fuel_type?.includes(fuelType.name) 
                     ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md" 
                     : "hover:bg-muted hover:border-primary/50"
@@ -420,7 +421,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 key={trans.value}
                 variant={transmission?.includes(trans.value) ? "default" : "outline"}
                 className={cn(
-                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
                   transmission?.includes(trans.value)
                     ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
                     : "hover:bg-muted hover:border-primary/50"
@@ -442,7 +443,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 key={bodyType.name}
                 variant={body_type?.includes(bodyType.name) ? "default" : "outline"}
                 className={cn(
-                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
                   body_type?.includes(bodyType.name)
                     ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
                     : "hover:bg-muted hover:border-primary/50"
@@ -463,7 +464,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               value={price_min?.toString() || 'none'}
               onValueChange={(value) => setFilter('price_min', value === 'none' ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
                 <SelectValue placeholder="Fra pris" />
               </SelectTrigger>
               <SelectContent>
@@ -479,7 +480,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               value={price_max?.toString() || 'none'}
               onValueChange={(value) => setFilter('price_max', value === 'none' ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
                 <SelectValue placeholder="Til pris" />
               </SelectTrigger>
               <SelectContent>
@@ -502,7 +503,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               value={seats_min?.toString() || 'none'}
               onValueChange={(value) => setFilter('seats_min', value === 'none' ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
                 <SelectValue placeholder="Fra sæder" />
               </SelectTrigger>
               <SelectContent>
@@ -518,7 +519,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               value={seats_max?.toString() || 'none'}
               onValueChange={(value) => setFilter('seats_max', value === 'none' ? null : parseInt(value))}
             >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring">
+              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
                 <SelectValue placeholder="Til sæder" />
               </SelectTrigger>
               <SelectContent>
