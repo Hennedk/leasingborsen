@@ -43,11 +43,10 @@ const BODY_TYPE_MAPPING: Record<string, string[]> = {
 
 // Fuel type mapping - maps consolidated categories to database values
 const FUEL_TYPE_MAPPING: Record<string, string[]> = {
-  'Electric': ['Electric', 'Elektrisk', 'EV', 'Battery Electric', 'BEV'],
-  'Hybrid': ['Hybrid', 'Plugin Hybrid', 'PHEV', 'Mild Hybrid', 'HEV', 'Plug-in Hybrid'],
-  'Benzin': ['Benzin', 'Gasoline', 'Petrol', 'Gas'],
+  'Electric': ['Electric'],
+  'Benzin': ['Petrol'],  // Map UI "Benzin" to database "Petrol"
   'Diesel': ['Diesel'],
-  'Others': ['Gas', 'CNG', 'LPG', 'Hydrogen', 'Fuel Cell', 'Other', 'Andre']
+  'Hybrid': ['Hybrid - Petrol', 'Hybrid - Diesel', 'Plug-in - Petrol']  // All hybrid variants in database
 }
 
 // Helper function to convert consolidated body types to database values

@@ -394,7 +394,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Brændstof</Label>
           <div className="flex flex-wrap gap-2">
-            {referenceData?.fuelTypes?.map((fuelType) => (
+            {FILTER_CONFIG.FUEL_TYPES.map((fuelType) => (
               <Badge
                 key={fuelType.name}
                 variant={fuel_type?.includes(fuelType.name) ? "default" : "outline"}
@@ -406,7 +406,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 )}
                 onClick={() => handleFuelTypeToggle(fuelType.name)}
               >
-                {fuelType.name}
+                {fuelType.label}
               </Badge>
             ))}
           </div>
@@ -438,7 +438,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Biltype</Label>
           <div className="flex flex-wrap gap-2">
-            {referenceData?.bodyTypes?.map((bodyType) => (
+            {FILTER_CONFIG.BODY_TYPES.map((bodyType) => (
               <Badge
                 key={bodyType.name}
                 variant={body_type?.includes(bodyType.name) ? "default" : "outline"}
@@ -450,7 +450,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 )}
                 onClick={() => handleBodyTypeToggle(bodyType.name)}
               >
-                {bodyType.name}
+                {bodyType.label}
               </Badge>
             ))}
           </div>

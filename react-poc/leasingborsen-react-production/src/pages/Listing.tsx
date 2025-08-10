@@ -187,7 +187,8 @@ const Listing: React.FC = () => {
         {car && (
           <>
             {/* Mobile Sticky Price Bar */}
-            <MobilePriceBar
+            {!mobilePriceOpen && (
+              <MobilePriceBar
               car={car}
               seller={seller}
               selectedLease={selectedLease}
@@ -195,6 +196,7 @@ const Listing: React.FC = () => {
               onShowSeller={() => setSellerModalOpen(true)}
               isInverted={mobilePriceOpen}
             />
+            )}
 
             {/* Mobile Price Drawer */}
             <MobilePriceDrawer

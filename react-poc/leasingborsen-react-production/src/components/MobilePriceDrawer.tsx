@@ -87,7 +87,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             // Styling
             "bg-background rounded-t-2xl border-t border-border/50",
             // Sizing - matches mobile filter overlay
-            "h-[min(90vh,100dvh-2rem)] max-h-[90vh]",
+            "h-[90vh]",
             // Only show on mobile
             "lg:hidden"
           )}
@@ -234,21 +234,19 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
               </div>
           </div>
 
-          {/* Sticky Footer - NOW PROPERLY POSITIONED AS SIBLING */}
+          {/* Sticky Footer - ALWAYS VISIBLE AT BOTTOM */}
           <div className={cn(
-            // Layout - flex-shrink-0 prevents compression
+            // Layout - flex-shrink-0 keeps it at bottom
             "flex-shrink-0",
             // Inverted styling - dark background with light text
             "bg-primary text-primary-foreground border-t border-primary/20",
-            // Ensure it stays at bottom
-            "mt-auto",
+            // Padding
+            "px-5 py-3",
             // iOS safe area padding
-            "pb-[env(safe-area-inset-bottom)]"
+            "pb-[max(1rem,env(safe-area-inset-bottom))]"
           )}>
-            {/* Main Content - Inverted colors */}
-            <div className="px-5 py-3 pb-safe">
-                {/* Price Summary and CTA on same line - Inverted */}
-                <div className="flex items-center justify-between gap-4">
+            {/* Price Summary and CTA on same line - Inverted */}
+            <div className="flex items-center justify-between gap-4">
                   {/* Left: Current Lease Summary */}
                   <div className="flex-1 min-w-0">
                     <div className="leading-tight mb-1">
@@ -303,8 +301,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Gå til tilbud
                   </Button>
-                </div>
-              </div>
+            </div>
           </div>
         </Drawer.Content>
       </Drawer.Portal>
