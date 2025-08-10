@@ -75,13 +75,18 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   return (
     <div className={`${className} ${isOpen ? 'block' : 'hidden'}`}>
-      <Card className="bg-card shadow-lg border border-border/50 hover:shadow-xl hover:border-primary/30 transition-all duration-300 rounded-xl overflow-hidden gap-0">
-        <CardHeader className="pb-3 pt-8">
+      <Card className="bg-card/95 backdrop-blur-sm shadow-xl border border-border/40 hover:shadow-2xl hover:border-primary/40 transition-all duration-300 rounded-2xl overflow-hidden">
+        <CardHeader className="pb-4 pt-6 bg-gradient-to-b from-background to-background/95">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-xl font-bold text-foreground">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                 Filtrér
               </CardTitle>
+              {activeFiltersCount > 0 && (
+                <div className="bg-gradient-to-r from-primary/20 to-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-semibold border border-primary/30">
+                  {activeFiltersCount}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-2">
@@ -90,7 +95,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                 size="sm"
                 onClick={handleResetAllFilters}
                 disabled={activeFiltersCount === 0}
-                className="h-8 w-8 p-0 hover:bg-muted"
+                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
                 title="Nulstil alle filtre"
               >
                 <RotateCcw className="w-4 h-4" />

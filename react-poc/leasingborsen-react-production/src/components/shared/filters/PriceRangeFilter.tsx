@@ -34,7 +34,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
 }) => {
   return (
     <div className={`space-y-3 ${className}`}>
-      <Label className="font-medium text-foreground">{label}</Label>
+      <Label className="text-sm font-semibold text-primary">{label}</Label>
       <div className="grid grid-cols-2 gap-3">
         <Select 
           value={minValue?.toString() || 'all'} 

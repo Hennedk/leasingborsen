@@ -73,7 +73,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
       <Drawer.Portal>
         <Drawer.Overlay 
           className={cn(
-            "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm",
+            "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm",
             // Only show on mobile
             "lg:hidden"
           )} 
@@ -81,7 +81,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         <Drawer.Content 
           className={cn(
             // Positioning
-            "fixed bottom-0 left-0 right-0 z-50",
+            "fixed bottom-0 left-0 right-0 z-[60]",
             // Layout - IMPORTANT: flex flex-col for proper structure
             "flex flex-col",
             // Styling

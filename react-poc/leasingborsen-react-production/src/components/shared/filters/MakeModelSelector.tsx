@@ -71,7 +71,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Make Filter - Modal Selector */}
       <div className="space-y-3">
-        <Label className="font-medium text-foreground">Mærke</Label>
+        <Label className="text-sm font-semibold text-primary">Mærke</Label>
         
         <Dialog open={makeModalOpen} onOpenChange={setMakeModalOpen}>
           <DialogTrigger asChild>
@@ -158,7 +158,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
 
       {/* Model Filter - Modal Selector */}
       <div className="space-y-3">
-        <Label className="font-medium text-foreground">Model</Label>
+        <Label className="text-sm font-semibold text-primary">Model</Label>
         
         <Dialog open={modelModalOpen} onOpenChange={(open) => {
           setModelModalOpen(open)

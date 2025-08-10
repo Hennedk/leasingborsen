@@ -193,6 +193,7 @@ const Listing: React.FC = () => {
               selectedLease={selectedLease}
               onEditPrice={() => setMobilePriceOpen(true)}
               onShowSeller={() => setSellerModalOpen(true)}
+              isInverted={mobilePriceOpen}
             />
 
             {/* Mobile Price Drawer */}

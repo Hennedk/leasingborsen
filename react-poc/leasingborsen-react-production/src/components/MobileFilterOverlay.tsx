@@ -282,7 +282,10 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           {currentView === 'models' && `${selectedMakeForModels} modeller`}
         </h2>
         {currentView === 'filters' && activeFiltersCount > 0 && (
-          <Badge variant="secondary" className="text-xs">
+          <Badge 
+            variant="secondary" 
+            className="text-xs bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30"
+          >
             {activeFiltersCount}
           </Badge>
         )}
@@ -394,7 +397,12 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               <Badge
                 key={fuelType.name}
                 variant={fuel_type?.includes(fuelType.name) ? "default" : "outline"}
-                className="cursor-pointer text-sm px-3 py-2 hover:bg-muted"
+                className={cn(
+                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  fuel_type?.includes(fuelType.name) 
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md" 
+                    : "hover:bg-muted hover:border-primary/50"
+                )}
                 onClick={() => handleFuelTypeToggle(fuelType.name)}
               >
                 {fuelType.name}
@@ -411,7 +419,12 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               <Badge
                 key={trans.value}
                 variant={transmission?.includes(trans.value) ? "default" : "outline"}
-                className="cursor-pointer text-sm px-3 py-2 hover:bg-muted"
+                className={cn(
+                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  transmission?.includes(trans.value)
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
+                    : "hover:bg-muted hover:border-primary/50"
+                )}
                 onClick={() => handleTransmissionToggle(trans.value)}
               >
                 {trans.label}
@@ -428,7 +441,12 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               <Badge
                 key={bodyType.name}
                 variant={body_type?.includes(bodyType.name) ? "default" : "outline"}
-                className="cursor-pointer text-sm px-3 py-2 hover:bg-muted"
+                className={cn(
+                  "cursor-pointer text-sm px-3 py-2 transition-all duration-200",
+                  body_type?.includes(bodyType.name)
+                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
+                    : "hover:bg-muted hover:border-primary/50"
+                )}
                 onClick={() => handleBodyTypeToggle(bodyType.name)}
               >
                 {bodyType.name}
@@ -702,7 +720,8 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         )}
         <Button
           onClick={onClose}
-          className="flex-1 h-12 bg-primary text-primary-foreground hover:bg-primary/90"
+          variant="default"
+          className="flex-1 h-12"
           size="lg"
         >
           Vis {resultCount} resultater

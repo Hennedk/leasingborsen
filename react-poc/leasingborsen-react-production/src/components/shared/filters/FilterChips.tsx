@@ -30,7 +30,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
 }) => {
   return (
     <div className={`space-y-3 ${className}`}>
-      <Label className="font-medium text-foreground">{label}</Label>
+      <Label className="text-sm font-semibold text-primary">{label}</Label>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = selectedValues.includes(option.name)
@@ -39,10 +39,10 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
               key={option.name}
               variant={isSelected ? "default" : "outline"}
               className={cn(
-                "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm font-medium",
+                "cursor-pointer transition-all duration-200 px-3 py-1.5 text-sm font-medium",
                 isSelected 
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                  : "hover:bg-muted border-muted-foreground/30 text-muted-foreground/60 hover:border-primary/50"
+                  ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md hover:from-primary/90 hover:to-primary/80" 
+                  : "hover:bg-muted/50 border-border hover:border-primary/50 hover:shadow-sm"
               )}
               onClick={() => onToggle(option.name)}
             >

@@ -10,13 +10,15 @@ interface MobilePriceBarProps {
   selectedLease: LeaseOption | undefined
   onEditPrice: () => void
   onShowSeller: () => void
+  isInverted?: boolean
 }
 
 const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
   car,
   selectedLease,
   onEditPrice,
-  onShowSeller
+  onShowSeller,
+  isInverted = false
 }) => {
   return (
     <div 
@@ -25,10 +27,13 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
         "fixed bottom-0 left-0 right-0 z-50",
         // Responsive
         "lg:hidden",
-        // Styling with animation hint
-        "bg-background border-t border-border/50 shadow-xl rounded-t-2xl",
+        // Styling - conditional based on inverted state
+        isInverted 
+          ? "bg-primary text-primary-foreground border-t border-primary/20" 
+          : "bg-background border-t border-border/50",
+        "shadow-xl rounded-t-2xl",
         // Animation
-        "transition-transform duration-300 ease-out",
+        "transition-all duration-300 ease-out",
         // Hover effect for desktop testing
         "hover:translate-y-[-2px]"
       )}
@@ -42,17 +47,27 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
         <div className="flex items-center justify-between gap-4">
           {/* Left: Current Lease Summary */}
           <div className="flex-1 min-w-0">
-            <div className="text-2xl font-bold text-foreground leading-tight mb-1">
+            <div className={cn(
+              "text-2xl font-bold leading-tight mb-1",
+              isInverted ? "text-primary-foreground" : "text-foreground"
+            )}>
               {selectedLease?.monthly_price?.toLocaleString('da-DK') ?? car.monthly_price?.toLocaleString('da-DK')} kr/md
             </div>
-            <div className="text-sm text-muted-foreground leading-relaxed truncate">
+            <div className={cn(
+              "text-sm leading-relaxed truncate",
+              isInverted ? "text-primary-foreground/90" : "text-muted-foreground"
+            )}>
               {selectedLease?.first_payment?.toLocaleString('da-DK') ?? car.first_payment?.toLocaleString('da-DK')} kr • {selectedLease?.period_months ?? car.period_months} mdr • {selectedLease?.mileage_per_year?.toLocaleString('da-DK') ?? car.mileage_per_year?.toLocaleString('da-DK')} km
             </div>
           </div>
 
           {/* Right: CTA Button */}
           <Button 
-            className="flex-shrink-0" 
+            className={cn(
+              "flex-shrink-0",
+              isInverted && "bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+            )}
+            variant={isInverted ? "secondary" : "default"}
             size="default"
             onClick={(e) => {
               e.stopPropagation() // Prevent triggering the edit price when clicking CTA
