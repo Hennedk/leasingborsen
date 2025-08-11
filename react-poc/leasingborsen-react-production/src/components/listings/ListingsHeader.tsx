@@ -55,7 +55,7 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 h-12 border-input focus:border-ring px-4 text-sm"
               aria-label={`Sorter efter: ${currentSortLabel}`}
             >
               <ArrowUpDown className="w-4 h-4" />

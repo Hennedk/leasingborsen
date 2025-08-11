@@ -32,20 +32,30 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
   maxLabel,
   className = ''
 }) => {
+  // Filter options based on selected values to prevent invalid ranges
+  const filteredMinSteps = React.useMemo(() => {
+    if (!maxValue) return steps
+    return steps.filter(step => step <= maxValue)
+  }, [steps, maxValue])
+  
+  const filteredMaxSteps = React.useMemo(() => {
+    if (!minValue) return steps
+    return steps.filter(step => step >= minValue)
+  }, [steps, minValue])
   return (
     <div className={`space-y-3 ${className}`}>
-      <Label className="text-sm font-semibold text-primary">{label}</Label>
+      <Label className="text-sm font-medium text-foreground">{label}</Label>
       <div className="grid grid-cols-2 gap-3">
         <Select 
           value={minValue?.toString() || 'all'} 
           onValueChange={onMinChange}
         >
-          <SelectTrigger className="h-11">
+          <SelectTrigger className="h-12 border-input focus:border-ring justify-between bg-background text-foreground text-sm px-4">
             <SelectValue placeholder={minPlaceholder} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{minPlaceholder}</SelectItem>
-            {steps.map((step) => (
+            {filteredMinSteps.map((step) => (
               <SelectItem key={`min-${step}`} value={step.toString()}>
                 {typeof step === 'number' && step > 1000 
                   ? `${step.toLocaleString('da-DK')} kr`
@@ -60,12 +70,12 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           value={maxValue?.toString() || 'all'} 
           onValueChange={onMaxChange}
         >
-          <SelectTrigger className="h-11">
+          <SelectTrigger className="h-12 border-input focus:border-ring justify-between bg-background text-foreground text-sm px-4">
             <SelectValue placeholder={maxPlaceholder} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{maxPlaceholder}</SelectItem>
-            {steps.map((step) => (
+            {filteredMaxSteps.map((step) => (
               <SelectItem key={`max-${step}`} value={step.toString()}>
                 {typeof step === 'number' && step > 1000 
                   ? `${step.toLocaleString('da-DK')} kr`

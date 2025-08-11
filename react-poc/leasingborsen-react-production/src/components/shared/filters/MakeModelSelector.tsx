@@ -71,13 +71,13 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Make Filter - Modal Selector */}
       <div className="space-y-3">
-        <Label className="text-sm font-semibold text-primary">Mærke</Label>
+        <Label className="text-sm font-medium text-foreground">Mærke</Label>
         
         <Dialog open={makeModalOpen} onOpenChange={setMakeModalOpen}>
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              className="w-full justify-between h-12 border-input focus:border-ring text-sm"
             >
               {selectedMakes.length > 0 
                 ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
@@ -158,7 +158,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
 
       {/* Model Filter - Modal Selector */}
       <div className="space-y-3">
-        <Label className="text-sm font-semibold text-primary">Model</Label>
+        <Label className="text-sm font-medium text-foreground">Model</Label>
         
         <Dialog open={modelModalOpen} onOpenChange={(open) => {
           setModelModalOpen(open)
@@ -177,7 +177,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between"
+              className="w-full justify-between h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={selectedMakes.length === 0}
             >
               {selectedMakes.length === 0 

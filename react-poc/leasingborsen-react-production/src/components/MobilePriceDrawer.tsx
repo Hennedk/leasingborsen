@@ -2,6 +2,7 @@ import React from 'react'
 import { Drawer } from 'vaul'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
@@ -82,23 +83,31 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
           className={cn(
             // Positioning
             "fixed bottom-0 left-0 right-0 z-[60]",
-            // Layout - IMPORTANT: flex flex-col for proper structure
-            "flex flex-col",
+            // Layout - Grid for guaranteed footer visibility
+            "grid grid-rows-[auto_auto_1fr_auto]",
             // Styling
             "bg-background rounded-t-2xl border-t border-border/50",
             // Sizing - matches mobile filter overlay
-            "h-[90vh]",
+            "max-h-[90vh]",
             // Only show on mobile
             "lg:hidden"
           )}
         >
+          {/* Accessibility elements for screen readers */}
+          <VisuallyHidden>
+            <Drawer.Title>Tilpas leasingpris</Drawer.Title>
+            <Drawer.Description>
+              Juster leasingperiode, årligt kilometer og udbetaling for at se forskellige prismuligheder
+            </Drawer.Description>
+          </VisuallyHidden>
+
           {/* Drag Handle */}
-          <div className="mx-auto mt-3 mb-1 flex items-center justify-center flex-shrink-0">
+          <div className="mx-auto mt-3 mb-1 flex items-center justify-center">
             <Drawer.Handle className="h-1.5 w-12 rounded-full bg-muted-foreground/40 hover:bg-muted-foreground/60 transition-colors cursor-grab active:cursor-grabbing" />
           </div>
 
-          {/* Header - flex-shrink-0 to prevent compression */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border/50 flex-shrink-0">
+          {/* Header - Grid row 2 */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
             <h3 className="text-lg font-bold">Tilpas pris</h3>
             <Drawer.Close asChild>
               <Button
@@ -112,8 +121,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             </Drawer.Close>
           </div>
 
-          {/* Scrollable Content - flex-1 overflow-y-auto with explicit min-h-0 for proper flex behavior */}
-          <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+          {/* Scrollable Content - Grid row 3 (1fr) */}
+          <div className="overflow-y-auto overscroll-contain">
               <div className="p-4 space-y-4">
                 {/* Quick Options Section */}
                 <div className="space-y-3">
@@ -234,10 +243,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
               </div>
           </div>
 
-          {/* Sticky Footer - ALWAYS VISIBLE AT BOTTOM */}
+          {/* Sticky Footer - Grid row 4 */}
           <div className={cn(
-            // Layout - flex-shrink-0 keeps it at bottom
-            "flex-shrink-0",
             // Inverted styling - dark background with light text
             "bg-primary text-primary-foreground border-t border-primary/20",
             // Padding

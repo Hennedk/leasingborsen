@@ -162,8 +162,8 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               steps={priceSteps}
               onMinChange={(value) => handleFilterChange('price_min', value)}
               onMaxChange={(value) => handleFilterChange('price_max', value)}
-              minPlaceholder="Min pris"
-              maxPlaceholder="Max pris"
+              minPlaceholder="Min"
+              maxPlaceholder="Max"
               maxLabel="10.000+ kr"
             />
 
@@ -175,8 +175,8 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               steps={seatRange}
               onMinChange={(value) => handleFilterChange('seats_min', value)}
               onMaxChange={(value) => handleFilterChange('seats_max', value)}
-              minPlaceholder="Min sæder"
-              maxPlaceholder="Max sæder"
+              minPlaceholder="Min"
+              maxPlaceholder="Max"
             />
 
           </div>

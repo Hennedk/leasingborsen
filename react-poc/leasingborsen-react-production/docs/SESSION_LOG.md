@@ -1,145 +1,98 @@
 # Session Log
 
-This file tracks changes made during Claude Code sessions for knowledge transfer and continuity.
+## Session: 2025-01-10 - Filter Mapping Fix and Code Cleanup
+**Duration**: ~30 minutes  
+**Main Focus**: Fixed critical fuel type filter bugs and removed unused code
 
----
+### What Changed
+1. **Fixed Fuel Type Filter Mappings** (`src/lib/supabase.ts`)
+   - Fixed "Benzin" to correctly map to "Petrol" in database (was broken, preventing filtering)
+   - Fixed "Hybrid" to map to all variants: "Hybrid - Petrol", "Hybrid - Diesel", "Plug-in - Petrol"
+   - Simplified mappings from overly complex patterns to exact database matches
 
-## Session: 2025-01-10 (Evening) - UI Polish & Component Cleanup
+2. **Updated Filter Configuration** (`src/config/filterConfig.ts`)
+   - Changed "Electric" label to "Elektrisk" for proper Danish translation
+   - Kept all 9 body types including "Mikro" as requested
 
-### Summary
-**Duration**: ~2 hours  
-**Focus**: Removed shadow effects, improved mobile filter UI consistency, and cleaned up unused components  
-**Status**: ✅ Complete - UI polished, unused code removed, ready for production
+3. **Fixed Mobile Filter Display** (`src/components/MobileFilterOverlay.tsx`)
+   - Changed from using database values to FILTER_CONFIG
+   - Now shows same 4 simplified fuel types as desktop (was showing 6+ database values)
+   - Applied same fix to body types for consistency
 
-### Major Changes Implemented
+4. **Removed Unused Code**
+   - Deleted entire `src/components/mobile-filters/` folder (11 files, ~2000 lines)
+   - MobileFilterContainer was never imported or used anywhere
+   - Cleaned up redundant implementation
 
-#### 1. Shadow Removal Across UI
-- Removed ALL shadow effects for flatter, cleaner design
-- Updated CSS variables to set all shadows to `none`
-- Modified Tailwind config to neutralize shadow values
-- Updated 51 files total (components, pages, tests)
-- Affected: Cards, buttons, dialogs, dropdowns, all UI components
+5. **Added Tests** (`src/lib/__tests__/filter-mappings.test.ts`)
+   - Comprehensive tests for fuel type mappings
+   - Tests for body type consistency
+   - Verification of Danish labels
 
-#### 2. Mobile Filter UI Improvements
-- **Filter Button**: Removed "Filtre" text, now icon-only for cleaner look
-- **Visual Separation**: Added top border to mobile filter bar
-- **Typography Consistency**: 
-  - Filter headers: Changed from `text-sm` to `text-base`, `font-medium`, `text-foreground`
-  - Unified label styling across all filter types
-- **Dropdown Styling**: Made sorting dropdown visually consistent with make/model buttons
-  - Added `bg-background`, `text-foreground`, `font-medium`
-  - Applied same styling to price range and seat selects
-- **Filter Chips**: Reduced font weight from `font-medium` to `font-normal`
+### Known Issues Remaining
+- None identified in filter system
 
-#### 3. Component Cleanup
-- **Removed**: `MobileFilterMainView.tsx` (unused alternative implementation)
-- **Reason**: Component was never imported, used static config instead of database
-- **Kept**: `MobileFilterOverlay` as the single production mobile filter component
-- Updated documentation to remove references
-
-#### 4. Data Source Discovery
-- Identified dual-source issue for fuel/body types:
-  - `MobileFilterOverlay`: Uses database via `useReferenceData` hook (ACTIVE)
-  - `MobileFilterMainView`: Used static `FILTER_CONFIG` (REMOVED)
-- Database approach is the production implementation
+### Technical Details
+- **Problem**: Desktop filters used hardcoded values that didn't match database (e.g., "Benzin" vs "Petrol")
+- **Solution**: Implemented mapping layer in `expandFuelTypes()` function
+- **Result**: Users see 4 simple options that correctly query all relevant database records
 
 ### Files Modified
-```
-src/index.css                               - Shadow variables removed
-tailwind.config.js                          - Shadow config neutralized
-src/components/ui/*.tsx                     - All shadcn components updated
-src/components/MobileFilterOverlay.tsx      - Filter UI improvements
-src/components/mobile-filters/              - Removed unused component
-src/pages/Listings.tsx                      - Filter button text removed
-```
+- `src/lib/supabase.ts` - Fixed FUEL_TYPE_MAPPING
+- `src/config/filterConfig.ts` - Updated labels to Danish
+- `src/components/MobileFilterOverlay.tsx` - Use config instead of database
+- Deleted 11 files in `src/components/mobile-filters/`
+- Added `src/lib/__tests__/filter-mappings.test.ts`
 
-### Commits Created
-1. `9b79d02` - Remove shadows and improve mobile filter UX
-2. `842fb42` - Improve mobile filter UI consistency and readability  
-3. `8e3b3aa` - Remove unused MobileFilterMainView component
-
-### Next Steps for Future Sessions
-1. Consider unifying all filter components to use database data
-2. Review other potentially unused components in mobile-filters directory
-3. Consider adding visual feedback for filter state changes
-4. Test mobile filter performance with large datasets
-
-### Known Issues
-- None identified
+### Next Steps for Continuation
+- Monitor production to ensure filters work correctly
+- Consider adding e2e tests for filter functionality
+- May want to add analytics to track filter usage patterns
 
 ### Testing Notes
-- Mobile filter overlay tested on various screen sizes
-- All shadow removal verified visually
-- Component deletion verified (no broken imports)
+- All unit tests pass
+- Manually verify on localhost that:
+  - Mobile shows only 4 fuel types (Elektrisk, Benzin, Diesel, Hybrid)
+  - Desktop shows same 4 options
+  - Selecting "Benzin" actually finds cars with "Petrol" fuel type
+  - Selecting "Hybrid" finds all hybrid variants
+
+### Commit Reference
+- `fcf0944` - fix: correct fuel type and body type filter mappings
 
 ---
 
-## Session: 2025-01-10 - Theme Application & Filter UX Enhancement
+## Previous Session: Mobile UI Refactoring
+**Duration**: Previous session
+**Main Focus**: Mobile filter and price drawer UI improvements
 
-### Summary
-**Duration**: ~2 hours  
-**Focus**: Applied new OKLCH-based theme with purple gradient styling and improved filter UX/design consistency  
-**Status**: ✅ Complete - Theme applied, filters enhanced, ready for rebranding
+### What Was Done
+- Refactored mobile filter overlay for better UX
+- Improved mobile price drawer layout and scrolling
+- Enhanced UI consistency across mobile components
+- Fixed drawer height issues (set to 90vh for consistency)
 
-### Major Changes Implemented
-
-#### 1. Theme System Overhaul
-- Migrated from HSL to OKLCH color format for better perceptual uniformity
-- Changed typography from Outfit to Poppins font family
-- Applied purple gradient theme with primary color: `oklch(0.5257 0.2628 279.2158)`
-- Updated border radius to 0.75rem for softer corners
-
-#### 2. Airbnb-Style Button Gradients
-- Applied authentic gradient styling to primary buttons
-- Base gradient: `from-[#593CFB] to-[#4329C7]`
-- Hover effect uses gradient shift (not transform) for authentic Airbnb behavior
-- Modified: `src/components/ui/button.tsx`
-
-#### 3. Listing Detail Improvements
-- Changed pricing text from blue to blackish color
-- Removed Card wrapper from images for cleaner presentation
-- Added responsive padding to images (p-4 md:p-6 lg:p-8)
-- Modified: `ListingCard.tsx`, `listing/ListingImage.tsx`
-
-#### 4. Filter UX/Design Consistency
-- **Mobile**: Applied gradient to selected states, enhanced badges, updated buttons
-- **Desktop**: Added glassmorphic Card styling with backdrop blur
-- **Shared**: Consistent label styling (text-sm font-semibold text-primary)
-- Enhanced hover states with smooth color transitions across all filters
-
-#### 5. Mobile Price Drawer Fix
-- Fixed flex layout for proper content scrolling
-- Added explicit min-h-0 for flex behavior
-- Improved snap points for full height visibility
-
-### Files Modified
-```
-src/index.css                               - Core theme configuration
-src/components/ui/button.tsx                - Button gradient styling
-src/components/ListingCard.tsx              - Pricing text color
-src/components/listing/ListingImage.tsx     - Image display improvements
-src/components/MobileFilterOverlay.tsx      - Filter state styling
-src/components/mobile-filters/*             - Multiple filter components
-src/components/FilterSidebar.tsx            - Desktop filter styling
-```
-
-### Commits Created
-1. `f947d61` - Mobile price drawer height consistency
-2. `bc47f0a` - Mobile price drawer layout and scrolling improvements
-
-### Next Steps for Future Sessions
-1. Apply consistent theming to admin interface
-2. Review and update email templates with new theme
-3. Consider adding theme toggle for dark mode support
-4. Performance testing with new glassmorphic effects
-
-### Known Issues
-- None identified
-
-### Testing Notes
-- Theme tested across all major components
-- Mobile filters tested on iOS Safari, Chrome Android
-- Gradient buttons verified in light/dark modes
-- Filter state persistence confirmed working
+### Files Modified in Previous Session
+- `src/components/MobileFilterOverlay.tsx` - UI improvements
+- `src/components/MobilePriceDrawer.tsx` - Layout fixes
+- `src/pages/Listing.tsx` - Integration updates
 
 ---
+
+## Environment Setup Notes
+- Supabase project: hqqouszbgskteivjoems (production)
+- Node version: Compatible with Vite 6.3.5
+- Database: PostgreSQL with Row Level Security
+- Primary data view: `full_listing_view`
+
+## Common Commands
+```bash
+npm run dev          # Start dev server
+npm test            # Run tests
+git status          # Check changes
+git log --oneline -5 # Recent commits
+```
+
+## Database Reference
+- Fuel types in production: Electric, Petrol, Diesel, Hybrid - Petrol, Hybrid - Diesel, Plug-in - Petrol
+- Body types in production: SUV, Hatchback, Crossover (CUV), Stationcar, Sedan, Minibus (MPV), Cabriolet, Coupe, Mikro (unused)
