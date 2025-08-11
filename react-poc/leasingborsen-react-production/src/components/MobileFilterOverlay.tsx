@@ -244,7 +244,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           <div className="flex-1 flex flex-col min-h-0">
             <div className="p-5 border-b border-border/50">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Filtrér</h2>
+                <h2 className="text-lg font-bold">Filtre</h2>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -277,7 +277,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           </Button>
         )}
         <h2 id="filter-overlay-title" className="text-lg font-bold">
-          {currentView === 'filters' && 'Filtrér'}
+          {currentView === 'filters' && 'Filtre'}
           {currentView === 'makes' && 'Vælg mærke'}
           {currentView === 'makeSelection' && 'Mærker og modeller'}
           {currentView === 'models' && `${selectedMakeForModels} modeller`}
@@ -393,7 +393,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Fuel Type */}
         <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground">Brændstof</Label>
+          <Label className="text-base font-medium text-foreground">Drivmiddel</Label>
           <div className="flex flex-wrap gap-2">
             {FILTER_CONFIG.FUEL_TYPES.map((fuelType) => (
               <Badge

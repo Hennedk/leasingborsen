@@ -79,7 +79,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
-                Filtrér
+                Filtre
               </CardTitle>
               {activeFiltersCount > 0 && (
                 <div className="bg-gradient-to-r from-primary/20 to-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-semibold border border-primary/30">
@@ -131,7 +131,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
             {/* Fuel Type Filter */}
             <FilterChips
-              label="Brændstof"
+              label="Drivmiddel"
               options={consolidatedFuelTypes}
               selectedValues={fuelTypes}
               onToggle={(value) => handleArrayFilterToggle('fuel_type', value)}

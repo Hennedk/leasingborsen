@@ -14,7 +14,7 @@ const FilterSkeleton: React.FC<FilterSkeletonProps> = ({ className = '' }) => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-xl font-bold text-foreground">
-                Filtrér
+                Filtre
               </CardTitle>
             </div>
             

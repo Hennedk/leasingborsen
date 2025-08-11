@@ -329,7 +329,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
             <p className="text-xl font-bold text-foreground group-hover:text-foreground/80 transition-colors duration-200 leading-none">
               {displayPrice}
             </p>
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground leading-relaxed">
+            <div className="flex items-center gap-2 text-xs sm:text-[11px] text-muted-foreground leading-relaxed">
               <span className="font-medium">{displayMileage}</span>
               {car.period_months && (
                 <>
