@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
@@ -32,6 +32,7 @@ const sortOptions: SortOption[] = [
 
 const Listings: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   
   // Use optimized URL sync hook
@@ -54,6 +55,18 @@ const Listings: React.FC = () => {
 
   // Use extracted filter management hook
   const { handleRemoveFilter } = useFilterManagement()
+
+  // Check for showFilters URL parameter to automatically open mobile filter overlay
+  useEffect(() => {
+    if (searchParams.get('showFilters') === 'true') {
+      setMobileFilterOpen(true)
+      
+      // Clean up the showFilters parameter from URL
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('showFilters')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   // Use infinite query for listings
   const {
