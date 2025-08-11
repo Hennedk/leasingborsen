@@ -3,10 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { RotateCcw, X } from 'lucide-react'
 import { useReferenceData } from '@/hooks/useReferenceData'
-import { FILTER_CONFIG } from '@/config/filterConfig'
+import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import FilterSkeleton from '@/components/FilterSkeleton'
 import {
   FilterChips,
+  ExpandableFilterChips,
   MakeModelSelector,
   PriceRangeFilter,
   useFilterOperations
@@ -59,7 +60,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
   // Get consolidated filter options from config and transform to match interface
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
-  const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
+  const { popular: popularBodyTypes, remaining: remainingBodyTypes } = filterHelpers.getBodyTypesByPopularity()
   const consolidatedTransmissions = FILTER_CONFIG.TRANSMISSION_TYPES.map(t => ({ name: t.value, label: t.label }))
 
   // Show skeleton while reference data is loading
@@ -145,11 +146,13 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             />
 
             {/* Body Type Filter */}
-            <FilterChips
+            <ExpandableFilterChips
               label="Biltype"
-              options={consolidatedBodyTypes}
+              popularOptions={popularBodyTypes}
+              remainingOptions={remainingBodyTypes}
               selectedValues={bodyTypes}
               onToggle={(value) => handleArrayFilterToggle('body_type', value)}
+              variant="desktop"
             />
 
             {/* Price Range Filter */}

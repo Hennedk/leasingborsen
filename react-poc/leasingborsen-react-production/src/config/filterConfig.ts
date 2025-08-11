@@ -37,6 +37,14 @@ export const FILTER_CONFIG = {
     { name: 'Coupe', label: 'Coupe' }
   ],
 
+  // Popular body types for progressive disclosure (Danish market preferences)
+  POPULAR_BODY_TYPES: [
+    'SUV',          // 40%+ market share in Denmark
+    'Stationcar',   // Traditional family favorite
+    'Hatchback',    // Urban/compact choice
+    'Sedan'         // Classic preference
+  ] as const,
+
   // Transmission options with Danish labels
   TRANSMISSION_TYPES: [
     { value: 'Automatic', label: 'Automatisk' },
@@ -104,5 +112,24 @@ export const filterHelpers = {
    * Get transmission label
    */
   getTransmissionLabel: (value: string): string =>
-    TRANSMISSION_LABELS[value] || value
+    TRANSMISSION_LABELS[value] || value,
+
+  /**
+   * Check if a body type is in the popular list
+   */
+  isPopularBodyType: (bodyTypeName: string): boolean => 
+    (FILTER_CONFIG.POPULAR_BODY_TYPES as readonly string[]).includes(bodyTypeName),
+
+  /**
+   * Get popular and remaining body types
+   */
+  getBodyTypesByPopularity: () => {
+    const popular = FILTER_CONFIG.BODY_TYPES.filter(type => 
+      (FILTER_CONFIG.POPULAR_BODY_TYPES as readonly string[]).includes(type.name)
+    )
+    const remaining = FILTER_CONFIG.BODY_TYPES.filter(type => 
+      !(FILTER_CONFIG.POPULAR_BODY_TYPES as readonly string[]).includes(type.name)
+    )
+    return { popular, remaining }
+  }
 }

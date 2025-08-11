@@ -1,5 +1,6 @@
 // Barrel exports for shared filter components
 export { FilterChips } from './FilterChips'
+export { ExpandableFilterChips } from './ExpandableFilterChips'
 export { MakeModelSelector } from './MakeModelSelector'
 export { PriceRangeFilter } from './PriceRangeFilter'
 export { RangeFilter } from './RangeFilter'

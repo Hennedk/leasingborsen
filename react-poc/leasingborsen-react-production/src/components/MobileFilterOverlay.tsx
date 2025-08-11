@@ -7,10 +7,10 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
-import { PriceRangeFilter } from '@/components/shared/filters'
+import { PriceRangeFilter, ExpandableFilterChips } from '@/components/shared/filters'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
-import { FILTER_CONFIG } from '@/config/filterConfig'
+import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
 import { cn } from '@/lib/utils'
@@ -436,26 +436,14 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         </div>
 
         {/* Body Type */}
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground">Biltype</Label>
-          <div className="flex flex-wrap gap-2">
-            {FILTER_CONFIG.BODY_TYPES.map((bodyType) => (
-              <Badge
-                key={bodyType.name}
-                variant={body_type?.includes(bodyType.name) ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
-                  body_type?.includes(bodyType.name)
-                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
-                    : "hover:bg-muted hover:border-primary/50"
-                )}
-                onClick={() => handleBodyTypeToggle(bodyType.name)}
-              >
-                {bodyType.label}
-              </Badge>
-            ))}
-          </div>
-        </div>
+        <ExpandableFilterChips
+          label="Biltype"
+          popularOptions={filterHelpers.getBodyTypesByPopularity().popular}
+          remainingOptions={filterHelpers.getBodyTypesByPopularity().remaining}
+          selectedValues={body_type || []}
+          onToggle={handleBodyTypeToggle}
+          variant="mobile"
+        />
 
         {/* Price Range */}
         <PriceRangeFilter
