@@ -152,7 +152,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               remainingOptions={remainingBodyTypes}
               selectedValues={bodyTypes}
               onToggle={(value) => handleArrayFilterToggle('body_type', value)}
-              variant="desktop"
             />
 
             {/* Price Range Filter */}

@@ -17,7 +17,6 @@ interface ExpandableFilterChipsProps {
   selectedValues: string[]
   onToggle: (value: string) => void
   className?: string
-  variant?: 'desktop' | 'mobile'
 }
 
 /**
@@ -30,8 +29,7 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
   remainingOptions,
   selectedValues,
   onToggle,
-  className = '',
-  variant = 'desktop'
+  className = ''
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -47,7 +45,6 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
     }
   }, [hasSelectedHidden, isExpanded])
   
-  const isMobile = variant === 'mobile'
   const remainingCount = remainingOptions.length
   
   const renderChip = (option: FilterOption, isSelected: boolean) => (
@@ -55,11 +52,10 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
       key={option.name}
       variant={isSelected ? "default" : "outline"}
       className={cn(
-        "cursor-pointer font-normal px-3 py-2 transition-all duration-200",
+        "cursor-pointer transition-all duration-200 px-3 py-1.5 text-xs font-medium",
         isSelected 
-          ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md" 
-          : "hover:bg-muted hover:border-primary/50",
-        isMobile ? "text-sm" : "text-sm"
+          ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary hover:from-primary/90 hover:to-primary/80" 
+          : "hover:bg-muted/50 border-border hover:border-primary/50"
       )}
       onClick={() => onToggle(option.name)}
     >
@@ -69,10 +65,7 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
   
   return (
     <div className={cn('space-y-3', className)}>
-      <Label className={cn(
-        'font-medium text-foreground',
-        isMobile ? 'text-base' : 'text-sm'
-      )}>
+      <Label className="text-sm font-medium text-foreground">
         {label}
       </Label>
       
@@ -113,12 +106,12 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
           >
             {isExpanded ? (
               <>
-                Vis færre biltyper
+                Vis færre
                 <ChevronUp className="w-4 h-4 ml-1" />
               </>
             ) : (
               <>
-                Vis flere biltyper ({remainingCount})
+                Vis flere ({remainingCount})
                 <ChevronDown className="w-4 h-4 ml-1" />
               </>
             )}

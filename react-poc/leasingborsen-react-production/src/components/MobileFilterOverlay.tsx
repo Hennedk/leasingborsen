@@ -442,7 +442,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           remainingOptions={filterHelpers.getBodyTypesByPopularity().remaining}
           selectedValues={body_type || []}
           onToggle={handleBodyTypeToggle}
-          variant="mobile"
         />
 
         {/* Price Range */}
