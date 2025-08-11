@@ -98,8 +98,8 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
             className={cn(
-              "h-auto p-0 text-primary hover:text-primary/80 hover:bg-transparent",
-              "text-sm font-medium transition-colors duration-200"
+              "h-auto p-0 text-muted-foreground hover:text-foreground hover:bg-transparent",
+              "text-xs font-normal transition-colors duration-200"
             )}
             aria-expanded={isExpanded}
             aria-controls={`${label.toLowerCase().replace(/\s+/g, '-')}-additional-options`}
@@ -107,12 +107,12 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
             {isExpanded ? (
               <>
                 Vis færre
-                <ChevronUp className="w-4 h-4 ml-1" />
+                <ChevronUp className="w-3 h-3 ml-1" />
               </>
             ) : (
               <>
-                Vis flere ({remainingCount})
-                <ChevronDown className="w-4 h-4 ml-1" />
+                Vis flere
+                <ChevronDown className="w-3 h-3 ml-1" />
               </>
             )}
           </Button>
