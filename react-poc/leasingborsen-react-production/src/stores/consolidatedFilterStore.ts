@@ -83,7 +83,7 @@ const persistenceConfig = {
         return {
           ...state,
           ...defaultFilters,
-          sortOrder: '' as SortOrder,
+          sortOrder: 'lease_score_desc' as SortOrder,
           filterOrder: []
         }
       }
@@ -102,7 +102,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         ...defaultFilters,
         resultCount: 0,
         isLoading: false,
-        sortOrder: '' as SortOrder,
+        sortOrder: 'lease_score_desc' as SortOrder,
         filterOrder: [],
         selectedCars: [],
         // Explicitly ensure these exist
