@@ -6,9 +6,52 @@ import CarListingGrid from '@/components/CarListingGrid'
 import PopularCategories from '@/components/PopularCategories'
 
 const Home: React.FC = () => {
-  const { data: listingsResponse, isLoading, error } = useListings({}, 5, 'lease_score_desc')
+  const { data: listingsResponse, isLoading, error } = useListings({}, 20, 'lease_score_desc')
   const [navigationError, setNavigationError] = useState<string | null>(null)
-  
+
+  // Function to get diverse top deals (one per make/model combination)
+  const getDiverseTopDeals = useCallback((listings: any[], maxCards = 5) => {
+    if (!listings || listings.length === 0) return []
+
+    const diverseDeals: any[] = []
+    const seenMakeModels = new Set<string>()
+    
+    // Sort listings by lease score desc, then by monthly price asc for same scores
+    const sortedListings = [...listings].sort((a, b) => {
+      // Primary sort: lease score descending
+      if (a.lease_score !== b.lease_score) {
+        return (b.lease_score || 0) - (a.lease_score || 0)
+      }
+      // Secondary sort: monthly price ascending (cheaper first)
+      return (a.monthly_price || 0) - (b.monthly_price || 0)
+    })
+    
+    // First pass: get one listing per make/model (most diverse)
+    for (const listing of sortedListings) {
+      if (diverseDeals.length >= maxCards) break
+      
+      const makeModel = `${listing.make}-${listing.model}`
+      if (!seenMakeModels.has(makeModel)) {
+        diverseDeals.push(listing)
+        seenMakeModels.add(makeModel)
+      }
+    }
+    
+    // Second pass: fill remaining slots with best remaining deals if needed
+    if (diverseDeals.length < maxCards) {
+      for (const listing of sortedListings) {
+        if (diverseDeals.length >= maxCards) break
+        if (!diverseDeals.find(d => d.listing_id === listing.listing_id)) {
+          diverseDeals.push(listing)
+        }
+      }
+    }
+    
+    return diverseDeals
+  }, [])
+
+  // Get diversified deals from the fetched data
+  const diverseDeals = getDiverseTopDeals(listingsResponse?.data || [], 5)
 
   // Error handler for category navigation
   const handleNavigationError = useCallback((error: Error) => {
@@ -44,13 +87,13 @@ const Home: React.FC = () => {
         />
         
         {/* =================
-            BEST DEALS SECTION - Cars with highest lease score
+            BEST DEALS SECTION - Cars with highest lease score (diversified)
         ================= */}
         <section className="bg-background">
           <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
             <CarListingGrid
               title="Bedste tilbud lige nu"
-              cars={listingsResponse?.data || []}
+              cars={diverseDeals}
               isLoading={isLoading}
               error={error?.message || null}
               ctaText="Se alle biler"
