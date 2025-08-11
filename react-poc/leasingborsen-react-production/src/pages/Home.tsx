@@ -6,7 +6,7 @@ import CarListingGrid from '@/components/CarListingGrid'
 import PopularCategories from '@/components/PopularCategories'
 
 const Home: React.FC = () => {
-  const { data: listingsResponse, isLoading, error } = useListings({}, 5)
+  const { data: listingsResponse, isLoading, error } = useListings({}, 5, 'lease_score_desc')
   const [navigationError, setNavigationError] = useState<string | null>(null)
   
 
@@ -44,12 +44,12 @@ const Home: React.FC = () => {
         />
         
         {/* =================
-            LATEST CARS SECTION - Consistent container usage
+            BEST DEALS SECTION - Cars with highest lease score
         ================= */}
         <section className="bg-background">
           <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
             <CarListingGrid
-              title="Seneste biler"
+              title="Bedste tilbud lige nu"
               cars={listingsResponse?.data || []}
               isLoading={isLoading}
               error={error?.message || null}

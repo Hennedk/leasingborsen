@@ -209,7 +209,7 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
         <div className="mb-4 lg:mb-4">
           <h2 
             id="popular-categories-heading"
-            className="text-3xl font-bold text-foreground"
+            className="text-2xl font-semibold text-foreground"
           >
             {title}
           </h2>
