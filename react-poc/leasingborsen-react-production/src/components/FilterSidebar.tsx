@@ -156,7 +156,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
             {/* Price Range Filter */}
             <PriceRangeFilter
-              label="Pris per måned"
+              label="Ydelse pr. måned"
               minValue={priceMin}
               maxValue={priceMax}
               onMinChange={(value) => handleFilterChange('price_min', value)}

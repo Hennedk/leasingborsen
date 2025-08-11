@@ -446,7 +446,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
         {/* Price Range */}
         <PriceRangeFilter
-          label="Pris pr. måned"
+          label="Ydelse pr. måned"
           minValue={price_min}
           maxValue={price_max}
           onMinChange={(value) => setFilter('price_min', value === 'all' ? null : parseInt(value.toString()))}
