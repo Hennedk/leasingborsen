@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
+import { PriceRangeFilter } from '@/components/shared/filters'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -457,82 +458,26 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         </div>
 
         {/* Price Range */}
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground">Pris pr. måned</Label>
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              value={price_min?.toString() || 'none'}
-              onValueChange={(value) => setFilter('price_min', value === 'none' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
-                <SelectValue placeholder="Fra pris" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ingen min.</SelectItem>
-                {FILTER_CONFIG.PRICE.STEPS.map((price) => (
-                  <SelectItem key={`price-min-${price}`} value={price.toString()}>
-                    {price.toLocaleString('da-DK')} kr
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={price_max?.toString() || 'none'}
-              onValueChange={(value) => setFilter('price_max', value === 'none' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
-                <SelectValue placeholder="Til pris" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ingen maks.</SelectItem>
-                {FILTER_CONFIG.PRICE.STEPS.map((price) => (
-                  <SelectItem key={`price-max-${price}`} value={price.toString()}>
-                    {price.toLocaleString('da-DK')} kr
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <PriceRangeFilter
+          label="Pris pr. måned"
+          minValue={price_min}
+          maxValue={price_max}
+          onMinChange={(value) => setFilter('price_min', value === 'all' ? null : parseInt(value.toString()))}
+          onMaxChange={(value) => setFilter('price_max', value === 'all' ? null : parseInt(value.toString()))}
+          schemaKey="price"
+          variant="mobile"
+        />
 
         {/* Seats Range */}
-        <div className="space-y-3">
-          <Label className="text-base font-medium text-foreground">Antal sæder</Label>
-          <div className="grid grid-cols-2 gap-3">
-            <Select
-              value={seats_min?.toString() || 'none'}
-              onValueChange={(value) => setFilter('seats_min', value === 'none' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
-                <SelectValue placeholder="Fra sæder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ingen min.</SelectItem>
-                {FILTER_CONFIG.SEATS.RANGE.map((seats) => (
-                  <SelectItem key={`seats-min-${seats}`} value={seats.toString()}>
-                    {seats} sæder
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={seats_max?.toString() || 'none'}
-              onValueChange={(value) => setFilter('seats_max', value === 'none' ? null : parseInt(value))}
-            >
-              <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
-                <SelectValue placeholder="Til sæder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Ingen maks.</SelectItem>
-                {FILTER_CONFIG.SEATS.RANGE.map((seats) => (
-                  <SelectItem key={`seats-max-${seats}`} value={seats.toString()}>
-                    {seats} sæder
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <PriceRangeFilter
+          label="Antal sæder"
+          minValue={seats_min}
+          maxValue={seats_max}
+          onMinChange={(value) => setFilter('seats_min', value === 'all' ? null : parseInt(value.toString()))}
+          onMaxChange={(value) => setFilter('seats_max', value === 'all' ? null : parseInt(value.toString()))}
+          schemaKey="seats"
+          variant="mobile"
+        />
       </div>
     </div>
   )

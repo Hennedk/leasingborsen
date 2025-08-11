@@ -1,18 +1,24 @@
 import React from 'react'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useRangeFilter } from '@/hooks/useRangeFilter'
+import { getFilterSchema, type FilterSchemaKey } from '@/config/filterSchema'
+import { cn } from '@/lib/utils'
 
 interface PriceRangeFilterProps {
   label: string
   minValue?: number | null
   maxValue?: number | null
-  steps: number[]
+  steps?: number[]
   onMinChange: (value: string | number) => void
   onMaxChange: (value: string | number) => void
   minPlaceholder?: string
   maxPlaceholder?: string
   maxLabel?: string
   className?: string
+  variant?: 'desktop' | 'mobile'
+  schemaKey?: FilterSchemaKey
+  orientation?: 'horizontal' | 'vertical'
 }
 
 /**
@@ -27,40 +33,69 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
   steps,
   onMinChange,
   onMaxChange,
-  minPlaceholder = 'Min',
-  maxPlaceholder = 'Max',
+  minPlaceholder,
+  maxPlaceholder,
   maxLabel,
-  className = ''
+  className = '',
+  variant = 'desktop',
+  schemaKey,
+  orientation = 'horizontal'
 }) => {
-  // Filter options based on selected values to prevent invalid ranges
-  const filteredMinSteps = React.useMemo(() => {
-    if (!maxValue) return steps
-    return steps.filter(step => step <= maxValue)
-  }, [steps, maxValue])
-  
-  const filteredMaxSteps = React.useMemo(() => {
-    if (!minValue) return steps
-    return steps.filter(step => step >= minValue)
-  }, [steps, minValue])
+  // Get schema-based configuration if provided
+  const schema = schemaKey ? getFilterSchema(schemaKey) : null
+  const effectiveSteps = steps || (schema?.type === 'range' ? [...schema.steps] : [])
+  const effectiveFormatter = schema?.type === 'range' ? schema.formatter : undefined
+  const effectiveMinPlaceholder = minPlaceholder || (schema?.type === 'range' ? schema.labels?.min : undefined) || 'Min'
+  const effectiveMaxPlaceholder = maxPlaceholder || (schema?.type === 'range' ? schema.labels?.max : undefined) || 'Max'
+  const effectiveMaxLabel = maxLabel || (schema?.type === 'range' && schema.labels ? schema.labels.unlimited : undefined)
+
+  // Use shared range filter logic
+  const {
+    filteredMinSteps,
+    filteredMaxSteps,
+    formatValue,
+    getValidationMessage
+  } = useRangeFilter({
+    steps: effectiveSteps || [],
+    minValue,
+    maxValue,
+    formatter: effectiveFormatter,
+    minLabel: effectiveMinPlaceholder,
+    maxLabel: effectiveMaxPlaceholder
+  })
+  const isMobile = variant === 'mobile'
+  const isVertical = orientation === 'vertical'
+  const validationMessage = getValidationMessage?.() || null
+
   return (
-    <div className={`space-y-3 ${className}`}>
-      <Label className="text-sm font-medium text-foreground">{label}</Label>
-      <div className="grid grid-cols-2 gap-3">
+    <div className={cn('space-y-3', className)}>
+      <Label className={cn(
+        'font-medium text-foreground',
+        isMobile ? 'text-base' : 'text-sm'
+      )}>
+        {label}
+      </Label>
+      <div className={cn(
+        'gap-3',
+        isVertical ? 'space-y-3' : 'grid grid-cols-2'
+      )}>
         <Select 
           value={minValue?.toString() || 'all'} 
           onValueChange={onMinChange}
         >
-          <SelectTrigger className="h-12 border-input focus:border-ring justify-between bg-background text-foreground text-sm px-4">
-            <SelectValue placeholder={minPlaceholder} />
+          <SelectTrigger className={cn(
+            'border-input focus:border-ring justify-between bg-background text-foreground px-4',
+            isMobile ? 'h-12 text-sm' : 'h-12 text-sm'
+          )}>
+            <SelectValue placeholder={effectiveMinPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{minPlaceholder}</SelectItem>
+            <SelectItem value="all">
+              {isMobile && schemaKey === 'price' ? 'Ingen min.' : effectiveMinPlaceholder}
+            </SelectItem>
             {filteredMinSteps.map((step) => (
               <SelectItem key={`min-${step}`} value={step.toString()}>
-                {typeof step === 'number' && step > 1000 
-                  ? `${step.toLocaleString('da-DK')} kr`
-                  : step.toString()
-                }
+                {formatValue(step)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -70,25 +105,30 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           value={maxValue?.toString() || 'all'} 
           onValueChange={onMaxChange}
         >
-          <SelectTrigger className="h-12 border-input focus:border-ring justify-between bg-background text-foreground text-sm px-4">
-            <SelectValue placeholder={maxPlaceholder} />
+          <SelectTrigger className={cn(
+            'border-input focus:border-ring justify-between bg-background text-foreground px-4',
+            isMobile ? 'h-12 text-sm' : 'h-12 text-sm'
+          )}>
+            <SelectValue placeholder={effectiveMaxPlaceholder} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{maxPlaceholder}</SelectItem>
+            <SelectItem value="all">
+              {isMobile && schemaKey === 'price' ? 'Ingen maks.' : effectiveMaxPlaceholder}
+            </SelectItem>
             {filteredMaxSteps.map((step) => (
               <SelectItem key={`max-${step}`} value={step.toString()}>
-                {typeof step === 'number' && step > 1000 
-                  ? `${step.toLocaleString('da-DK')} kr`
-                  : step.toString()
-                }
+                {formatValue(step)}
               </SelectItem>
             ))}
-            {maxLabel && (
-              <SelectItem value="9999999">{maxLabel}</SelectItem>
+            {effectiveMaxLabel && (
+              <SelectItem value="9999999">{effectiveMaxLabel}</SelectItem>
             )}
           </SelectContent>
         </Select>
       </div>
+      {validationMessage && (
+        <p className="text-sm text-destructive mt-2">{validationMessage}</p>
+      )}
     </div>
   )
 }

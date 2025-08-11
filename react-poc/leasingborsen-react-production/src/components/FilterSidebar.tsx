@@ -61,8 +61,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
   const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
   const consolidatedBodyTypes = FILTER_CONFIG.BODY_TYPES
   const consolidatedTransmissions = FILTER_CONFIG.TRANSMISSION_TYPES.map(t => ({ name: t.value, label: t.label }))
-  const priceSteps = FILTER_CONFIG.PRICE.STEPS
-  const seatRange = FILTER_CONFIG.SEATS.RANGE
 
   // Show skeleton while reference data is loading
   if (referenceDataLoading) {
@@ -156,15 +154,13 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 
             {/* Price Range Filter */}
             <PriceRangeFilter
-              label="Prisområde"
+              label="Pris per måned"
               minValue={priceMin}
               maxValue={priceMax}
-              steps={priceSteps}
               onMinChange={(value) => handleFilterChange('price_min', value)}
               onMaxChange={(value) => handleFilterChange('price_max', value)}
-              minPlaceholder="Min"
-              maxPlaceholder="Max"
-              maxLabel="10.000+ kr"
+              schemaKey="price"
+              variant="desktop"
             />
 
             {/* Seat Count Filter */}
@@ -172,11 +168,10 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               label="Antal sæder"
               minValue={seatsMin}
               maxValue={seatsMax}
-              steps={seatRange}
               onMinChange={(value) => handleFilterChange('seats_min', value)}
               onMaxChange={(value) => handleFilterChange('seats_max', value)}
-              minPlaceholder="Min"
-              maxPlaceholder="Max"
+              schemaKey="seats"
+              variant="desktop"
             />
 
           </div>
