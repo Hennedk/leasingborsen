@@ -91,7 +91,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              {isMobile && schemaKey === 'price' ? 'Ingen min.' : effectiveMinPlaceholder}
+              {effectiveMinPlaceholder}
             </SelectItem>
             {filteredMinSteps.map((step) => (
               <SelectItem key={`min-${step}`} value={step.toString()}>
@@ -113,7 +113,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">
-              {isMobile && schemaKey === 'price' ? 'Ingen maks.' : effectiveMaxPlaceholder}
+              {effectiveMaxPlaceholder}
             </SelectItem>
             {filteredMaxSteps.map((step) => (
               <SelectItem key={`max-${step}`} value={step.toString()}>
