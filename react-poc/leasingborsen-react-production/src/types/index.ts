@@ -173,6 +173,10 @@ export interface CarListing extends
     pricing_id?: string
     calculation_version?: string
   }
+  
+  // Multiple offers tracking
+  offer_count?: number
+  has_multiple_offers?: boolean
 }
 
 // API Response Types

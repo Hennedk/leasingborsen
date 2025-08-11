@@ -96,7 +96,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   }, [])
   
   // Memoized computed values
-  const displayPrice = useMemo(() => formatPrice(car?.monthly_price), [car?.monthly_price, formatPrice])
+  const displayPrice = useMemo(() => {
+    const price = formatPrice(car?.monthly_price)
+    // Add "Fra" prefix if there are multiple offers and this is the lowest
+    return car?.has_multiple_offers ? `Fra ${price}` : price
+  }, [car?.monthly_price, car?.has_multiple_offers, formatPrice])
   const displayMileage = useMemo(() => formatMileage(car?.mileage_per_year), [car?.mileage_per_year, formatMileage])
   const carAltText = useMemo(() => 
     `${car?.make} ${car?.model} ${car?.variant} - ${car?.fuel_type} - ${displayPrice}`,
@@ -322,15 +326,21 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
           {/* Enhanced Price Display */}
           <div className="space-y-2">
-            <p className="text-2xl font-bold text-foreground group-hover:text-foreground/80 transition-colors duration-200 leading-none">
+            <p className="text-xl font-bold text-foreground group-hover:text-foreground/80 transition-colors duration-200 leading-none">
               {displayPrice}
             </p>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground leading-relaxed">
+            <div className="flex items-center gap-2 text-[11px] text-muted-foreground leading-relaxed">
               <span className="font-medium">{displayMileage}</span>
+              {car.period_months && (
+                <>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="font-medium">{car.period_months} mdr</span>
+                </>
+              )}
               {car.first_payment && (
                 <>
                   <span className="text-muted-foreground/50">•</span>
-                  <span className="font-medium">Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr</span>
+                  <span className="font-medium">Udb: {car.first_payment.toLocaleString('da-DK')} kr</span>
                 </>
               )}
             </div>

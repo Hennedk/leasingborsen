@@ -149,12 +149,29 @@ export class CarListingQueries {
       return { data: [], error: null }
     }
 
-    // Deduplicate by id, keeping the one with lowest monthly_price (already sorted ascending)
-    const uniqueListings = new Map<string, CarListing>()
+    // Group by listing id to count offers and identify lowest price
+    const listingGroups = new Map<string, CarListing[]>()
     allData.forEach((listing: CarListing) => {
-      if (listing.id && !uniqueListings.has(listing.id)) {
-        uniqueListings.set(listing.id, listing)
+      if (listing.id) {
+        if (!listingGroups.has(listing.id)) {
+          listingGroups.set(listing.id, [])
+        }
+        listingGroups.get(listing.id)?.push(listing)
       }
+    })
+
+    // Deduplicate by id, keeping the one with lowest monthly_price and adding offer metadata
+    const uniqueListings = new Map<string, CarListing>()
+    listingGroups.forEach((listings, id) => {
+      // The first listing in the array has the lowest price (already sorted ascending)
+      const lowestPriceListing = listings[0]
+      const offerCount = listings.length
+      
+      // Add offer metadata
+      lowestPriceListing.offer_count = offerCount
+      lowestPriceListing.has_multiple_offers = offerCount > 1
+      
+      uniqueListings.set(id, lowestPriceListing)
     })
 
     // Convert back to array and apply sorting based on sortOrder
@@ -209,8 +226,15 @@ export class CarListingQueries {
       return { data: null, error: new Error('Listing not found') }
     }
 
-    // Return the first result (which has the lowest price due to ordering)
-    return { data: data[0] as CarListing, error: null }
+    // Get the first result (which has the lowest price due to ordering) and add offer metadata
+    const lowestPriceListing = data[0] as CarListing
+    const offerCount = data.length
+    
+    // Add offer metadata
+    lowestPriceListing.offer_count = offerCount
+    lowestPriceListing.has_multiple_offers = offerCount > 1
+
+    return { data: lowestPriceListing, error: null }
   }
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
