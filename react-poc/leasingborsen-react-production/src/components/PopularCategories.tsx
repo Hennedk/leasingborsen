@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { Zap, DollarSign, Users, Building, Settings } from 'lucide-react'
 
@@ -146,6 +147,7 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
   onNavigationError
 }) => {
   const navigate = useNavigate()
+  const { resetFilters, setFilter } = useFilterStore()
   const [isNavigating, setIsNavigating] = useState(false)
   
   // Limit categories to 4 on mobile to avoid third row (2x2 grid)
@@ -163,29 +165,31 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
   
   const displayCategories = isMobile ? categories.slice(0, 4) : categories
 
-  // Enhanced navigation function with error handling
+  // Enhanced navigation function with clear-then-apply logic
   const navigateToCategory = async (filters: CategoryFilters) => {
     try {
       setIsNavigating(true)
       
-      // Handle special case for family cars (multiple body types)
-      if (filters.body_type === 'SUV') {
-        navigate('/listings?body_type=SUV')
-        return
-      }
+      // Step 1: Clear all existing filters first
+      resetFilters()
       
-      // Convert filters to query parameters with proper validation
-      const queryParams = new URLSearchParams()
+      // Step 2: Apply only the category filters to global state
       Object.entries(filters).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
-          queryParams.set(key, value.toString())
+          if (key === 'fuel_type') {
+            setFilter('fuel_type', [value as string])
+          } else if (key === 'price_max') {
+            setFilter('price_max', value as number)
+          } else if (key === 'body_type') {
+            setFilter('body_type', [value as string])
+          } else if (key === 'transmission') {
+            setFilter('transmission', [value as string])
+          }
         }
       })
       
-      const queryString = queryParams.toString()
-      const targetUrl = queryString ? `/listings?${queryString}` : '/listings'
-      
-      navigate(targetUrl)
+      // Step 3: Navigate to listings page (filters are now in global state)
+      navigate('/listings')
       
     } catch (error) {
       console.error('Navigation error:', error)
