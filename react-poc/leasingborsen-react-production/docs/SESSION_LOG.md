@@ -1,6 +1,108 @@
 # Session Log
 
-## Session: 2025-01-10 - Filter Mapping Fix and Code Cleanup
+## Session: 2025-01-11 - Filter System Improvements and Listing Card Analysis
+**Duration**: ~3 hours  
+**Main Focus**: Enhanced filter chip display, progressive disclosure, and listing card review
+
+### What Changed
+1. **Enhanced Filter Chip Display** (`src/stores/consolidatedFilterStore.ts`)
+   - Fixed confusing partial range labels (e.g., " - 5.000 kr/md")
+   - Added contextual Danish labels: "Fra X kr/md", "Maks X kr/md"  
+   - Applied same improvement to seat filters: "Fra X sæder", "Maks X sæder"
+   - Improved number formatting with proper da-DK localization
+
+2. **Progressive Disclosure for Body Types** (`src/components/shared/filters/ExpandableFilterChips.tsx`)
+   - Created new component for better UX with 9 body type options
+   - Shows 4 popular types initially: SUV, Stationcar, Hatchback, Sedan
+   - Auto-expands when hidden types are selected
+   - Consistent styling with existing FilterChips component
+
+3. **Unified Filter Architecture** 
+   - Created shared `useRangeFilter` hook for validation
+   - Enhanced `PriceRangeFilter` with mobile/desktop variant support
+   - Standardized labels: "Prisområde" → "Pris per måned"
+   - Applied consistent min/max labels across all range filters
+
+4. **Filter System Refinements**
+   - Made "Vis flere" button less prominent (removed count, smaller text)
+   - Aligned chip styling with existing components (px-3 py-1.5, text-xs)
+   - Improved mobile/desktop consistency for all filter types
+
+5. **Listing Card Analysis**
+   - Reviewed current ListingCard.tsx implementation
+   - Analyzed price display section structure
+   - Identified `period_months` field availability in lease pricing data
+   - **RECOMMENDATION**: Add lease period to secondary price info line
+
+### Known Issues Remaining  
+- None identified in filter system
+
+### Files Modified
+- `src/stores/consolidatedFilterStore.ts` - Enhanced filter chip display
+- `src/components/shared/filters/ExpandableFilterChips.tsx` - New progressive disclosure component  
+- `src/components/FilterSidebar.tsx` - Updated to use ExpandableFilterChips
+- `src/components/MobileFilterOverlay.tsx` - Unified filter components
+- `src/components/shared/filters/PriceRangeFilter.tsx` - Enhanced with mobile support
+- `src/hooks/useRangeFilter.ts` - New shared validation hook
+- `src/config/filterConfig.ts` - Added popular body types configuration
+- `src/config/filterSchema.ts` - New schema-driven filter configuration
+
+### Next Session Implementation Plan
+
+#### Listing Card Enhancement: Add Lease Period
+**File**: `src/components/ListingCard.tsx`  
+**Location**: Lines 328-336 (secondary price information)  
+**Recommended Implementation**:
+
+```tsx
+<div className="flex items-center gap-3 text-xs text-muted-foreground leading-relaxed">
+  <span className="font-medium">{displayMileage}</span>
+  {car.period_months && (
+    <>
+      <span className="text-muted-foreground/50">•</span>
+      <span className="font-medium">{car.period_months} måneder</span>
+    </>
+  )}
+  {car.first_payment && (
+    <>
+      <span className="text-muted-foreground/50">•</span>  
+      <span className="font-medium">Udbetaling: {car.first_payment.toLocaleString('da-DK')} kr</span>
+    </>
+  )}
+</div>
+```
+
+**Expected Result**: `"25.000 km/år • 36 måneder • Udbetaling: 50.000 kr"`
+
+**Rationale**:
+- Contextual grouping with other lease terms
+- Maintains visual hierarchy (monthly price stays prominent)  
+- Uses established pattern with mileage/first payment
+- Proper Danish localization ("måneder")
+- No layout changes needed
+
+**Additional Steps**:
+1. Add formatting helper function if needed
+2. Test with various period values (24, 36, 48 months)
+3. Verify display on mobile and desktop
+4. Check edge cases (missing period_months data)
+
+### Technical Details
+- **Filter Architecture**: Now schema-driven with shared validation
+- **Progressive Disclosure**: Reduces visual overwhelm for body types (was 9, now shows 4+5)
+- **Danish Localization**: Consistent across all filter displays
+- **Performance**: Memoized filter calculations and reduced re-renders
+
+### Commit References
+- `d7f581a` - improve: enhance filter chip display for price and seat ranges
+- `44921a2` - refine: make "Vis flere" button less prominent and hide count  
+- `84a6fe5` - fix: align ExpandableFilterChips styling with existing FilterChips
+- `4f69eba` - feat: implement progressive disclosure for body type filters
+- `3b1ca15` - fix: standardize filter labels for consistency across all ranges
+
+---
+
+## Previous Session: 2025-01-10 - Filter Mapping Fix and Code Cleanup
 **Duration**: ~30 minutes  
 **Main Focus**: Fixed critical fuel type filter bugs and removed unused code
 
