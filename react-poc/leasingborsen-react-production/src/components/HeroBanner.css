@@ -55,23 +55,20 @@
 /* Mobile Strategy - Stack at 768px breakpoint */
 @media (max-width: 768px) {
   .animate-slide-in-right {
+    animation-delay: 0.1s;
+  }
+  
+  .animate-slide-in-left {
     animation-delay: 0s;
   }
   
-  /* Single column with centered alignment */
+  /* Single column layout for mobile */
   .order-1 {
     margin-bottom: clamp(0.75rem, 3vw, 1.5rem);
-    text-align: center;
   }
   
   .order-2 {
     margin-top: clamp(0.75rem, 3vw, 1.5rem);
-    text-align: center;
-  }
-  
-  /* Reduce car illustration scale by 20% on mobile */
-  .order-1 img {
-    transform: scale(0.8);
   }
   
   /* Mobile-specific hero optimizations for above-the-fold content */
