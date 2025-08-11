@@ -149,33 +149,21 @@ export class CarListingQueries {
       return { data: [], error: null }
     }
 
-    // Group by listing id to count offers and identify lowest price
-    const listingGroups = new Map<string, CarListing[]>()
-    allData.forEach((listing: CarListing) => {
-      if (listing.id) {
-        if (!listingGroups.has(listing.id)) {
-          listingGroups.set(listing.id, [])
-        }
-        listingGroups.get(listing.id)?.push(listing)
+    // Add offer metadata since full_listing_view already aggregates by listing
+    const enrichedData = allData.map((listing: any) => {
+      // The lease_pricing field contains all pricing options as JSON array
+      const leasePricingArray = Array.isArray(listing.lease_pricing) ? listing.lease_pricing : []
+      const offerCount = leasePricingArray.length
+      
+      return {
+        ...listing,
+        offer_count: offerCount,
+        has_multiple_offers: offerCount > 1
       }
     })
 
-    // Deduplicate by id, keeping the one with lowest monthly_price and adding offer metadata
-    const uniqueListings = new Map<string, CarListing>()
-    listingGroups.forEach((listings, id) => {
-      // The first listing in the array has the lowest price (already sorted ascending)
-      const lowestPriceListing = listings[0]
-      const offerCount = listings.length
-      
-      // Add offer metadata
-      lowestPriceListing.offer_count = offerCount
-      lowestPriceListing.has_multiple_offers = offerCount > 1
-      
-      uniqueListings.set(id, lowestPriceListing)
-    })
-
-    // Convert back to array and apply sorting based on sortOrder
-    let deduplicatedData = Array.from(uniqueListings.values())
+    // Convert to array and apply sorting based on sortOrder
+    let deduplicatedData = enrichedData
     
     // Apply final sorting based on sortOrder
     if (sortOrder === 'lease_score_desc') {
@@ -226,40 +214,38 @@ export class CarListingQueries {
       return { data: null, error: new Error('Listing not found') }
     }
 
-    // Get the first result (which has the lowest price due to ordering) and add offer metadata
-    const lowestPriceListing = data[0] as CarListing
-    const offerCount = data.length
+    // Get the listing (full_listing_view already returns lowest price and aggregated data)
+    const listing = data[0] as any
+    const leasePricingArray = Array.isArray(listing.lease_pricing) ? listing.lease_pricing : []
+    const offerCount = leasePricingArray.length
     
     // Add offer metadata
-    lowestPriceListing.offer_count = offerCount
-    lowestPriceListing.has_multiple_offers = offerCount > 1
+    const enrichedListing = {
+      ...listing,
+      offer_count: offerCount,
+      has_multiple_offers: offerCount > 1
+    }
 
-    return { data: lowestPriceListing, error: null }
+    return { data: enrichedListing as CarListing, error: null }
   }
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
-    // Get unique listing IDs to count properly (since full_listing_view has duplicates)
+    // Count listings (full_listing_view already aggregates by listing, so no duplicates)
     let query = supabase
       .from('full_listing_view')
-      .select('id')
+      .select('id', { count: 'exact', head: true })
       .not('monthly_price', 'is', null) // Only count listings with offers
 
     // Apply same filters using shared function
     query = applyFilters(query, filters)
 
-    const { data, error } = await query
+    const { count, error } = await query
 
     if (error) {
       return { data: 0, error }
     }
 
-    if (!data) {
-      return { data: 0, error: null }
-    }
-
-    // Count unique listing IDs
-    const uniqueListingIds = new Set(data.map((item: any) => item.id))
-    return { data: uniqueListingIds.size, error: null }
+    return { data: count || 0, error: null }
   }
 }
 
