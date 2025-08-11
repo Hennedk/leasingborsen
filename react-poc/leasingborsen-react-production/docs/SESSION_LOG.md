@@ -1,6 +1,68 @@
 # Session Log
 
-## Session: 2025-01-11 - Filter System Improvements and Listing Card Analysis
+## Session: 2025-01-11 - Listing Card Enhancement and UI Refinements
+**Duration**: ~2 hours  
+**Main Focus**: Complete lease period implementation, UI text improvements, and default sort optimization
+
+### What Changed
+1. **Lease Period Display Implementation** (`src/components/ListingCard.tsx`)
+   - Added lease period to secondary price line: "25.000 km/år • 36 mdr • Udb: 50.000 kr"
+   - Optimized font sizes: text-xl for main price, text-xs (mobile) / text-[11px] (desktop) for details
+   - Abbreviated text for compact display: "måneder" → "mdr", "Udbetaling" → "Udb"
+   - Improved mobile readability while maintaining desktop space efficiency
+
+2. **"Fra" Prefix for Multiple Offers** (`src/lib/supabase.ts`, `src/types/index.ts`)
+   - Fixed critical bug in multiple offers detection logic
+   - Corrected understanding of `full_listing_view` (already aggregates by listing_id)
+   - Use `lease_pricing` JSON array to count offers instead of deduplication
+   - Now correctly shows "Fra 3.500 kr/måned" for listings with multiple pricing options
+   - Added `offer_count` and `has_multiple_offers` fields to CarListing type
+
+3. **UI Text Improvements** (Multiple Components)
+   - Changed filter header: "Filtrér" → "Filtre" (better Danish grammar)
+   - Updated fuel type label: "Brændstof" → "Drivmiddel" (clearer terminology)
+   - Changed price filter: "Pris per måned" → "Ydelse pr. måned" (accurate leasing terminology)
+   - Applied across FilterSidebar, MobileFilterOverlay, and FilterSkeleton
+
+4. **Default Sort Order Optimization** (`src/stores/consolidatedFilterStore.ts`)
+   - Changed default sort from '' (lowest price) to 'lease_score_desc' (highest lease score)
+   - Updated both initial state and URL conflict fallback
+   - Promotes value-based decision making over pure price comparison
+
+### Technical Issues Resolved
+- **"Fra" Prefix Bug**: Root cause was misunderstanding `full_listing_view` structure
+  - View already uses GROUP BY with JSON aggregation of all pricing options
+  - Fixed by using `lease_pricing.length` instead of attempting manual deduplication
+- **Query Optimization**: Simplified count query using proper Supabase count method
+- **Mobile Responsiveness**: Balanced font sizes for optimal readability across devices
+
+### Files Modified
+- `src/components/ListingCard.tsx` - Lease period display and font optimization
+- `src/lib/supabase.ts` - Fixed multiple offers detection and count queries
+- `src/types/index.ts` - Added offer tracking fields to CarListing interface
+- `src/components/FilterSidebar.tsx` - Updated filter labels
+- `src/components/MobileFilterOverlay.tsx` - Updated mobile filter labels
+- `src/components/FilterSkeleton.tsx` - Updated skeleton filter labels
+- `src/stores/consolidatedFilterStore.ts` - Changed default sort order
+
+### Known Issues Remaining
+- None identified
+
+### Next Session Implementation Ideas
+- Consider adding offer configuration selector on listing detail pages
+- Potential A/B testing of sort order impact on user engagement
+- Enhanced mobile filter UX improvements
+
+### Commit References
+- `f7df3ae` - feat: set default sort order to highest lease score
+- `be30ed0` - refine: update price filter label to 'Ydelse pr. måned'
+- `3f29b5a` - refine: improve filter UI text and mobile readability
+- `c4aafe3` - fix: correct 'Fra' prefix logic for multiple offers
+- `f116485` - feat: add lease period display and 'Fra' prefix for multiple offers
+
+---
+
+## Previous Session: 2025-01-11 - Filter System Improvements and Listing Card Analysis
 **Duration**: ~3 hours  
 **Main Focus**: Enhanced filter chip display, progressive disclosure, and listing card review
 
