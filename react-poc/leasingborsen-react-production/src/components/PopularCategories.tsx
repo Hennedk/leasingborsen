@@ -59,9 +59,8 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
       tabIndex={0}
       aria-label={`Filter by ${category.label}: ${category.subtitle}`}
       className={`
-        group cursor-pointer transition-all duration-300 
-        hover:-translate-y-1 
-        border border-border/50 hover:border-primary/20 hover:bg-card/50
+        cursor-pointer 
+        border border-border/50
         focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
         ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}
       `}
@@ -70,15 +69,15 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     >
       <CardContent className="p-4 lg:p-6">
         <div className="space-y-3 text-center">
-          {/* Icon with primary color and hover animation */}
+          {/* Icon with primary color */}
           <div className="flex justify-center">
-            <div className="text-primary group-hover:text-primary group-hover:scale-110 transition-all duration-300">
+            <div className="text-primary">
               <IconComponent className="w-8 h-8 lg:w-10 lg:h-10" />
             </div>
           </div>
           
           {/* Title */}
-          <h3 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors duration-200">
+          <h3 className="text-sm sm:text-base font-semibold text-foreground">
             {category.label}
           </h3>
           

@@ -4,7 +4,6 @@ import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useListingCount } from '@/hooks/useListings'
 import { Card, CardContent } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { FILTER_CONFIG } from '@/config/filterConfig'
@@ -105,6 +104,36 @@ const SearchForm: React.FC<SearchFormProps> = ({
     navigate(`/listings?${searchParams.toString()}`)
   }
 
+  const handleMoreFilters = () => {
+    // Apply current filters to global state
+    Object.entries(localFilters).forEach(([key, value]) => {
+      if (value && value !== '') {
+        if (key === 'make') {
+          setFilter('makes', [value as string])
+        } else if (key === 'model') {
+          setFilter('models', [value as string])
+        } else if (key === 'body_type') {
+          setFilter('body_type', [value as string])
+        } else if (key === 'price_max') {
+          setFilter('price_max', value as number)
+        }
+      }
+    })
+    
+    // Navigate to listings with filters and show filter overlay on mobile
+    const searchParams = new URLSearchParams()
+    Object.entries(localFilters).forEach(([key, value]) => {
+      if (value && value !== '' && value !== null) {
+        searchParams.set(key, value.toString())
+      }
+    })
+    
+    // Add parameter to show filter overlay on mobile
+    searchParams.set('showFilters', 'true')
+    
+    navigate(`/listings?${searchParams.toString()}`)
+  }
+
   const cardPadding = size === 'compact' ? 'p-4' : 'p-6'
   const spacing = size === 'compact' ? 'space-y-4' : 'space-y-5'
 
@@ -118,8 +147,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
           
           {/* Top Row: Make & Model */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Mærke</Label>
+            <div>
               <Select 
                 value={localFilters.make || 'all'}
                 onValueChange={(value) => handleFilterChange('make', value)}
@@ -129,20 +157,35 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alle mærker</SelectItem>
-                  {/* Popular makes first */}
-                  {organizedMakes.popular.map((make: { name: string; id: string }) => (
-                    <SelectItem key={make.id} value={make.name}>{make.name}</SelectItem>
-                  ))}
-                  {/* Remaining makes */}
-                  {organizedMakes.remaining.map((make: { name: string; id: string }) => (
-                    <SelectItem key={make.id} value={make.name}>{make.name}</SelectItem>
-                  ))}
+                  
+                  {/* Popular makes section */}
+                  {organizedMakes.popular.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50">
+                        Mest populære
+                      </div>
+                      {organizedMakes.popular.map((make: { name: string; id: string }) => (
+                        <SelectItem key={make.id} value={make.name}>{make.name}</SelectItem>
+                      ))}
+                    </>
+                  )}
+                  
+                  {/* Remaining makes section */}
+                  {organizedMakes.remaining.length > 0 && (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50">
+                        Alle mærker
+                      </div>
+                      {organizedMakes.remaining.map((make: { name: string; id: string }) => (
+                        <SelectItem key={make.id} value={make.name}>{make.name}</SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Model</Label>
+            <div>
               <Select 
                 value={localFilters.model || 'all'}
                 onValueChange={(value) => handleFilterChange('model', value)}
@@ -167,8 +210,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
           
           {/* Bottom Row: Body Type & Max Price */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Biltype</Label>
+            <div>
               <Select 
                 value={localFilters.body_type || 'all'}
                 onValueChange={(value) => handleFilterChange('body_type', value)}
@@ -187,8 +229,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Maks pris</Label>
+            <div>
               <Select 
                 value={localFilters.price_max?.toString() || 'all'}
                 onValueChange={(value) => handleFilterChange('price_max', value)}
@@ -224,6 +265,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
         <div className="flex items-center justify-center">
           <button 
             className="text-primary hover:text-primary/80 text-sm font-medium flex items-center gap-2 transition-colors"
+            onClick={handleMoreFilters}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
