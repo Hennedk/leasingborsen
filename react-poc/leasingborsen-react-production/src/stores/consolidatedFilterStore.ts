@@ -313,18 +313,36 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         
         // Seats range filter
         if (state.seats_min !== null || state.seats_max !== null) {
+          let label = ''
+          if (state.seats_min !== null && state.seats_max !== null) {
+            label = `${state.seats_min} - ${state.seats_max} sæder`
+          } else if (state.seats_min !== null) {
+            label = `Fra ${state.seats_min} sæder`
+          } else if (state.seats_max !== null) {
+            label = `Maks ${state.seats_max} sæder`
+          }
+          
           activeFilters.push({
             key: 'seats',
-            label: `${state.seats_min ?? ''} - ${state.seats_max ?? ''} sæder`,
+            label,
             value: `${state.seats_min ?? ''}-${state.seats_max ?? ''}`
           })
         }
         
         // Price range filter
         if (state.price_min !== null || state.price_max !== null) {
+          let label = ''
+          if (state.price_min !== null && state.price_max !== null) {
+            label = `${state.price_min.toLocaleString('da-DK')} - ${state.price_max.toLocaleString('da-DK')} kr/md`
+          } else if (state.price_min !== null) {
+            label = `Fra ${state.price_min.toLocaleString('da-DK')} kr/md`
+          } else if (state.price_max !== null) {
+            label = `Maks ${state.price_max.toLocaleString('da-DK')} kr/md`
+          }
+          
           activeFilters.push({
             key: 'price',
-            label: `${state.price_min ? state.price_min.toLocaleString('da-DK') : ''} - ${state.price_max ? state.price_max.toLocaleString('da-DK') : ''} kr/md`,
+            label,
             value: `${state.price_min ?? ''}-${state.price_max ?? ''}`
           })
         }
