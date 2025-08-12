@@ -67,7 +67,7 @@ export function useListing(id: string) {
   })
 }
 
-export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder = '') {
+export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = '') {
   return useQuery({
     queryKey: queryKeys.listingsCount(filters, sortOrder),
     queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
