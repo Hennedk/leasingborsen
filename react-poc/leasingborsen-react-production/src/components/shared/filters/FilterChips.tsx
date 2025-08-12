@@ -1,7 +1,6 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
 
 interface FilterOption {
   readonly name: string

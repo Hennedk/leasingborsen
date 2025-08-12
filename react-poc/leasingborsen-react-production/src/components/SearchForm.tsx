@@ -58,7 +58,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
     body_type: localFilters.body_type ? [localFilters.body_type] : [],
     price_max: localFilters.price_max
   }
-  const { data: countData } = useListingCount(filterOptions, '')
+  const { data: countData } = useListingCount(filterOptions, 'asc')
   const resultCount = countData?.data || 0
 
   // Reset model when make changes

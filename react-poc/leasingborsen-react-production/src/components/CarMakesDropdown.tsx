@@ -8,7 +8,6 @@ import {
   SelectGroup,
   SelectLabel,
 } from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import type { Make } from '@/types'
 

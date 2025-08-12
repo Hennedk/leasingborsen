@@ -233,7 +233,6 @@ const Listings: React.FC = () => {
               <ListingsHeader
                 resultCount={resultCount}
                 sortOptions={sortOptions}
-                currentSortLabel={currentSortLabel}
                 sortOrder={sortOrder}
                 onSortChange={handleSortChange}
               />

@@ -210,7 +210,7 @@ export const useUrlSync = () => {
     }
     
     // Handle sort order
-    if (sortOrder !== '') {
+    if (sortOrder !== 'asc') {
       params.set('sort', sortOrder)
     } else {
       params.delete('sort')

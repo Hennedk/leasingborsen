@@ -7,7 +7,6 @@ import type { SortOrder, SortOption } from '@/types'
 interface ListingsHeaderProps {
   resultCount: number
   sortOptions: SortOption[]
-  currentSortLabel: string
   sortOrder: SortOrder
   onSortChange: (order: SortOrder) => void
   className?: string
@@ -20,7 +19,6 @@ interface ListingsHeaderProps {
 const ListingsHeader: React.FC<ListingsHeaderProps> = ({
   resultCount,
   sortOptions,
-  currentSortLabel,
   sortOrder,
   onSortChange,
   className
