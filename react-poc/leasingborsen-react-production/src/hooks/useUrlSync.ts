@@ -210,7 +210,7 @@ export const useUrlSync = () => {
     }
     
     // Handle sort order
-    if (sortOrder !== 'asc') {
+    if (sortOrder !== 'lease_score_desc') {
       params.set('sort', sortOrder)
     } else {
       params.delete('sort')

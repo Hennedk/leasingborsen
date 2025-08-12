@@ -3,7 +3,7 @@ import { CarListingQueries, type FilterOptions } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { SortOrder } from '@/types'
 
-export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder: SortOrder = 'asc') {
+export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder: SortOrder = 'lease_score_desc') {
   return useQuery({
     queryKey: queryKeys.listingsWithFilters(filters, limit, sortOrder),
     queryFn: () => CarListingQueries.getListings(filters, limit, sortOrder),
@@ -14,7 +14,7 @@ export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, so
   })
 }
 
-export function useInfiniteListings(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = 'asc') {
+export function useInfiniteListings(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = 'lease_score_desc') {
   return useInfiniteQuery({
     queryKey: queryKeys.listingsInfinite(filters, sortOrder),
     queryFn: ({ pageParam = 0 }) => 
@@ -67,7 +67,7 @@ export function useListing(id: string) {
   })
 }
 
-export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = 'asc') {
+export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = 'lease_score_desc') {
   return useQuery({
     queryKey: queryKeys.listingsCount(filters, sortOrder),
     queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
