@@ -28,7 +28,7 @@ import type { SortOrder, SortOption } from '@/types'
 // Sort options configuration
 const sortOptions: SortOption[] = [
   { value: 'lease_score_desc', label: 'Bedste værdi' },
-  { value: '', label: 'Laveste pris' },
+  { value: 'asc', label: 'Laveste pris' },
   { value: 'desc', label: 'Højeste pris' }
 ]
 

@@ -26,15 +26,15 @@ const mobileSelectOptions = [
 
 // Map mobile select values to backend sort values
 const mapToBackendSort = (selectValue: string): SortOrder => {
-  if (selectValue === 'asc') return ''
+  if (selectValue === 'asc') return 'asc'
   if (selectValue === 'desc') return 'desc'
   if (selectValue === 'lease_score_desc') return 'lease_score_desc'
-  return ''
+  return 'asc'
 }
 
 // Map backend sort values to mobile select values
 const mapToSelectValue = (sortOrder: SortOrder): string => {
-  if (sortOrder === '') return 'asc'
+  if (sortOrder === 'asc') return 'asc'
   if (sortOrder === 'desc') return 'desc'
   if (sortOrder === 'lease_score_desc') return 'lease_score_desc'
   return 'asc'

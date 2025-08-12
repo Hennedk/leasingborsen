@@ -205,7 +205,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           ...defaultFilters,
           resultCount: 0,
           isLoading: false,
-          sortOrder: '' as SortOrder,
+          sortOrder: 'asc' as SortOrder,
           filterOrder: [],
           // Explicitly reset arrays
           selectedCars: [],
