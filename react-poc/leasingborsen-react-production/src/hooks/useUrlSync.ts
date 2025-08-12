@@ -77,62 +77,61 @@ export const useUrlSync = () => {
 
     // If URL parameters exist, reset filters first to ensure clean state
     if (hasUrlFilters) {
+      // Reset filters first
       resetFilters()
       
-      // Apply URL parameters after reset
-      setTimeout(() => {
-        // Handle single make parameter
-        if (urlMake) {
-          setFilter('makes', [urlMake])
-        }
+      // Apply URL parameters synchronously to avoid re-render issues
+      // Handle single make parameter
+      if (urlMake) {
+        setFilter('makes', [urlMake])
+      }
 
-        // Handle single model parameter
-        if (urlModel) {
-          setFilter('models', [urlModel])
-        }
-        
-        // Handle array-based filters
-        const urlBodyTypeArray = parseArrayParam(urlBodyType)
-        if (urlBodyTypeArray.length > 0) {
-          setFilter('body_type', urlBodyTypeArray)
-        }
+      // Handle single model parameter
+      if (urlModel) {
+        setFilter('models', [urlModel])
+      }
+      
+      // Handle array-based filters
+      const urlBodyTypeArray = parseArrayParam(urlBodyType)
+      if (urlBodyTypeArray.length > 0) {
+        setFilter('body_type', urlBodyTypeArray)
+      }
 
-        const urlFuelTypeArray = parseArrayParam(urlFuelType)
-        if (urlFuelTypeArray.length > 0) {
-          setFilter('fuel_type', urlFuelTypeArray)
-        }
+      const urlFuelTypeArray = parseArrayParam(urlFuelType)
+      if (urlFuelTypeArray.length > 0) {
+        setFilter('fuel_type', urlFuelTypeArray)
+      }
 
-        const urlTransmissionArray = parseArrayParam(urlTransmission)
-        if (urlTransmissionArray.length > 0) {
-          setFilter('transmission', urlTransmissionArray)
-        }
+      const urlTransmissionArray = parseArrayParam(urlTransmission)
+      if (urlTransmissionArray.length > 0) {
+        setFilter('transmission', urlTransmissionArray)
+      }
 
-        // Handle numeric parameters
-        const parsedPriceMin = parseNumericParam(urlPriceMin)
-        if (parsedPriceMin !== null) {
-          setFilter('price_min', parsedPriceMin)
-        }
+      // Handle numeric parameters
+      const parsedPriceMin = parseNumericParam(urlPriceMin)
+      if (parsedPriceMin !== null) {
+        setFilter('price_min', parsedPriceMin)
+      }
 
-        const parsedPriceMax = parseNumericParam(urlPriceMax)
-        if (parsedPriceMax !== null) {
-          setFilter('price_max', parsedPriceMax)
-        }
+      const parsedPriceMax = parseNumericParam(urlPriceMax)
+      if (parsedPriceMax !== null) {
+        setFilter('price_max', parsedPriceMax)
+      }
 
-        const parsedSeatsMin = parseNumericParam(urlSeatsMin)
-        if (parsedSeatsMin !== null) {
-          setFilter('seats_min', parsedSeatsMin)
-        }
+      const parsedSeatsMin = parseNumericParam(urlSeatsMin)
+      if (parsedSeatsMin !== null) {
+        setFilter('seats_min', parsedSeatsMin)
+      }
 
-        const parsedSeatsMax = parseNumericParam(urlSeatsMax)
-        if (parsedSeatsMax !== null) {
-          setFilter('seats_max', parsedSeatsMax)
-        }
+      const parsedSeatsMax = parseNumericParam(urlSeatsMax)
+      if (parsedSeatsMax !== null) {
+        setFilter('seats_max', parsedSeatsMax)
+      }
 
-        // Handle sort order
-        if (urlSort) {
-          setSortOrder(urlSort as SortOrder)
-        }
-      }, 0)
+      // Handle sort order
+      if (urlSort) {
+        setSortOrder(urlSort as SortOrder)
+      }
       
       return // Exit early when URL parameters are detected
     }

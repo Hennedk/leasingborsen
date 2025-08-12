@@ -31,16 +31,17 @@ const FilterChipsComponent: React.FC<FilterChipsProps> = ({
     const filter = activeFilters.find(f => f.key === key)
     setLastRemovedFilter(filter?.label || '')
     
-    // Add to animating out list
+    // Add to animating out list for visual feedback
     setAnimatingOut(prev => [...prev, key])
     
-    // Remove after animation
+    // Remove immediately to avoid state update timing issues
+    onRemoveFilter(key)
+    
+    // Clean up animation state and announcement
     setTimeout(() => {
-      onRemoveFilter(key)
       setAnimatingOut(prev => prev.filter(k => k !== key))
-      // Clear announcement after a short delay
-      setTimeout(() => setLastRemovedFilter(null), 1000)
-    }, 200)
+      setLastRemovedFilter(null)
+    }, 300)
   }
 
   // Show placeholder when no active filters
