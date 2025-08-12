@@ -99,6 +99,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                 placeholder="Søg mærker..."
                 value={makeSearch}
                 onChange={(e) => setMakeSearch(e.target.value)}
+                className="pr-4 bg-background text-foreground font-medium"
               />
               
               <ScrollArea className="h-80">
@@ -115,6 +116,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => onMakeToggle(make.name)}
+                                className="h-5 w-5"
                               />
                               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                 {make.name}
@@ -139,6 +141,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => onMakeToggle(make.name)}
+                                className="h-5 w-5"
                               />
                               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                 {make.name}
@@ -262,6 +265,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                     placeholder="Søg modeller..."
                     value={modelSearch}
                     onChange={(e) => setModelSearch(e.target.value)}
+                    className="pr-4 bg-background text-foreground font-medium"
                   />
                   
                   <ScrollArea className="h-80">
@@ -277,6 +281,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                               <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={() => onModelToggle(model.name)}
+                                className="h-5 w-5"
                               />
                               <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                 {model.name}
