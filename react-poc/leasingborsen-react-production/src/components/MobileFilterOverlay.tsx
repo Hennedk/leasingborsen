@@ -336,7 +336,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           >
             <SelectTrigger 
               className="w-full justify-between"
-              size="lg"
+              size="sm"
               background="primary"
             >
               <span className="text-left">
@@ -359,8 +359,8 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           <Button
             variant="outline"
             onClick={() => navigateToView('makes')}
-            className="w-full justify-between"
-            size="lg"
+            className="w-full justify-between text-xs font-normal"
+            size="sm"
           >
             <span>
               {selectedMakes.length > 0 ? (
@@ -385,8 +385,8 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               }
             }}
             disabled={selectedMakes.length === 0}
-            className="w-full justify-between"
-            size="lg"
+            className="w-full justify-between text-xs font-normal"
+            size="sm"
           >
             <span>
               {selectedModels.length > 0 ? (

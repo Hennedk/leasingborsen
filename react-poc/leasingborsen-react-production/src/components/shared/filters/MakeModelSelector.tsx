@@ -77,8 +77,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border"
-              size="lg"
+              className="w-full justify-between border text-xs font-normal"
+              size="sm"
             >
               {selectedMakes.length > 0 
                 ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
@@ -182,8 +182,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border"
-              size="lg"
+              className="w-full justify-between border text-xs font-normal"
+              size="sm"
               disabled={selectedMakes.length === 0}
             >
               {selectedMakes.length === 0 

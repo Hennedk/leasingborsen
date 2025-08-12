@@ -85,7 +85,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
         >
           <SelectTrigger 
             className="justify-between"
-            size="lg" 
+            size="sm" 
             background="primary"
           >
             <SelectValue placeholder={effectiveMinPlaceholder} />
@@ -108,7 +108,7 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
         >
           <SelectTrigger 
             className="justify-between"
-            size="lg" 
+            size="sm" 
             background="primary"
           >
             <SelectValue placeholder={effectiveMaxPlaceholder} />

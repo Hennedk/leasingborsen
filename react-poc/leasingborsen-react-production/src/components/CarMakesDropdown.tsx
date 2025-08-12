@@ -60,7 +60,7 @@ const CarMakesDropdown: React.FC<CarMakesDropdownProps> = ({
   if (!referenceData?.makes) {
     return (
       <Select disabled={true}>
-        <SelectTrigger className={cn("h-11", className)}>
+        <SelectTrigger size="sm" background="primary" className={className}>
           <SelectValue placeholder="Indlæser mærker..." />
         </SelectTrigger>
       </Select>
@@ -69,7 +69,7 @@ const CarMakesDropdown: React.FC<CarMakesDropdownProps> = ({
 
   return (
     <Select value={value || "all"} onValueChange={handleValueChange} disabled={disabled}>
-      <SelectTrigger className={cn("h-11", className)}>
+      <SelectTrigger size="sm" background="primary" className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className="max-h-[300px]">
