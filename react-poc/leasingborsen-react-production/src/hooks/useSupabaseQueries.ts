@@ -7,7 +7,7 @@ export const QUERY_KEYS = {
   listings: (filters: Partial<FilterOptions>, sortOrder: string, offset: number) => 
     ['listings', filters, sortOrder, offset] as const,
   listingById: (id: string) => ['listing', id] as const,
-  listingCount: (filters: Partial<FilterOptions>) => ['listing-count', filters] as const,
+  listingCount: (filters: Partial<FilterOptions>, sortOrder?: string) => ['listing-count', filters, sortOrder] as const,
   makes: () => ['makes'] as const,
   models: (makeId?: string) => ['models', makeId] as const,
   bodyTypes: () => ['body-types'] as const,
@@ -50,10 +50,10 @@ export const useListingById = (id: string) => {
   })
 }
 
-export const useListingCount = (filters: Partial<FilterOptions> = {}) => {
+export const useListingCount = (filters: Partial<FilterOptions> = {}, sortOrder = '') => {
   return useQuery({
-    queryKey: QUERY_KEYS.listingCount(filters),
-    queryFn: () => CarListingQueries.getListingCount(filters),
+    queryKey: QUERY_KEYS.listingCount(filters, sortOrder),
+    queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,

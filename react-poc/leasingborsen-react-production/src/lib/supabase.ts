@@ -229,23 +229,46 @@ export class CarListingQueries {
     return { data: enrichedListing as CarListing, error: null }
   }
 
-  static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
-    // Count listings (full_listing_view already aggregates by listing, so no duplicates)
-    let query = supabase
-      .from('full_listing_view')
-      .select('id', { count: 'exact', head: true })
-      .not('monthly_price', 'is', null) // Only count listings with offers
+  static async getListingCount(filters: Partial<FilterOptions> = {}, sortOrder = ''): Promise<{ data: number; error: any }> {
+    // When sorting by lease score, we need to exclude listings without scores
+    // to match the behavior of getListings method
+    if (sortOrder === 'lease_score_desc') {
+      // For lease score sorting, we need to get actual data to filter out null scores
+      // since PostgreSQL count with complex filtering is less reliable
+      let query = supabase
+        .from('full_listing_view')
+        .select('id, lease_score')
+        .not('monthly_price', 'is', null) // Only count listings with offers
+        .not('lease_score', 'is', null) // Only count listings with lease scores
 
-    // Apply same filters using shared function
-    query = applyFilters(query, filters)
+      // Apply same filters using shared function
+      query = applyFilters(query, filters)
 
-    const { count, error } = await query
+      const { data, error } = await query
 
-    if (error) {
-      return { data: 0, error }
+      if (error) {
+        return { data: 0, error }
+      }
+
+      return { data: data?.length || 0, error: null }
+    } else {
+      // For other sort orders, use the standard count approach
+      let query = supabase
+        .from('full_listing_view')
+        .select('id', { count: 'exact', head: true })
+        .not('monthly_price', 'is', null) // Only count listings with offers
+
+      // Apply same filters using shared function
+      query = applyFilters(query, filters)
+
+      const { count, error } = await query
+
+      if (error) {
+        return { data: 0, error }
+      }
+
+      return { data: count || 0, error: null }
     }
-
-    return { data: count || 0, error: null }
   }
 }
 

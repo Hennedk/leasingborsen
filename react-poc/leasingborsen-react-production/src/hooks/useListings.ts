@@ -67,10 +67,10 @@ export function useListing(id: string) {
   })
 }
 
-export function useListingCount(filters: Partial<FilterOptions> = {}) {
+export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder = '') {
   return useQuery({
-    queryKey: queryKeys.listingsCount(filters),
-    queryFn: () => CarListingQueries.getListingCount(filters),
+    queryKey: queryKeys.listingsCount(filters, sortOrder),
+    queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     // Keep previous data while refetching for smooth UX

@@ -83,7 +83,7 @@ const Listings: React.FC = () => {
   } = useInfiniteListings(currentFilters, sortOrder)
 
   // Get total count for display
-  const { data: countResponse } = useListingCount(currentFilters)
+  const { data: countResponse } = useListingCount(currentFilters, sortOrder)
   
   // Memoize expensive calculations for performance
   const listings = useMemo(
