@@ -38,7 +38,7 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
             <Badge
               key={option.name}
               variant={isSelected ? "filter-selected" : "filter-unselected"}
-              className="px-3 py-1.5 text-xs font-medium"
+              className="px-3 py-1.5 text-xs"
               onClick={() => onToggle(option.name)}
             >
               {option.label}

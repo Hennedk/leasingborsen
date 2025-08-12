@@ -19,15 +19,15 @@ const badgeVariants = cva(
           "text-foreground border-border [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         // New variants for filter chips
         "filter-selected":
-          "bg-gradient-to-r from-primary to-primary/90 text-white !border-border hover:from-primary/90 hover:to-primary/80 cursor-pointer",
+          "bg-gradient-to-r from-primary to-primary/90 text-white !border-border hover:from-primary/90 hover:to-primary/80 cursor-pointer font-normal",
         "filter-unselected":
-          "hover:bg-muted/50 !border-border hover:!border-border cursor-pointer",
+          "hover:bg-muted/50 !border-border hover:!border-border cursor-pointer font-normal",
         // Result context badges (subtle, non-intrusive)
         "result-count":
           "px-2.5 py-1 text-xs bg-secondary text-secondary-foreground border-border",
         // For active filter chips in results context  
         "result-filter":
-          "px-2.5 py-1.5 text-xs bg-background text-foreground border-border hover:bg-muted/50",
+          "px-2.5 py-1.5 text-xs bg-background text-foreground !border-border hover:bg-muted/50 font-normal",
       },
     },
     defaultVariants: {

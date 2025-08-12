@@ -96,7 +96,7 @@ const FilterChipsComponent: React.FC<FilterChipsProps> = ({
                   variant="result-filter" 
                   className="flex items-center gap-2 whitespace-nowrap h-8"
                 >
-                  <span className="text-sm font-medium text-foreground">
+                  <span className="text-sm text-foreground">
                     {filter.label}
                   </span>
                   <Button
