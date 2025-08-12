@@ -223,10 +223,13 @@ export default function DesignSystemShowcase() {
                     </DialogHeader>
                     
                     <div className="space-y-4">
-                      <Input
-                        placeholder="Søg mærker..."
-                        icon={<Search className="w-4 h-4" />}
-                      />
+                      <div className="relative">
+                        <Input
+                          placeholder="Søg mærker..."
+                          className="pl-10"
+                        />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                      </div>
                       
                       <ScrollArea className="h-80">
                         <div className="space-y-4">
@@ -312,10 +315,13 @@ export default function DesignSystemShowcase() {
                     </DialogHeader>
                     
                     <div className="space-y-4">
-                      <Input
-                        placeholder="Søg modeller..."
-                        icon={<Search className="w-4 h-4" />}
-                      />
+                      <div className="relative">
+                        <Input
+                          placeholder="Søg modeller..."
+                          className="pl-10"
+                        />
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                      </div>
                       
                       <ScrollArea className="h-80">
                         <div className="space-y-4">
@@ -602,7 +608,7 @@ export default function DesignSystemShowcase() {
                 <Checkbox 
                   id="terms" 
                   checked={termsAccepted}
-                  onCheckedChange={setTermsAccepted}
+                  onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                 />
                 <Label htmlFor="terms" className="cursor-pointer">
                   Jeg accepterer vilkår og betingelser
@@ -715,9 +721,12 @@ export default function DesignSystemShowcase() {
                       score={89}
                       retailPrice={450000}
                       breakdown={{
-                        monthly_price_score: 85,
-                        down_payment_score: 90,
-                        total_cost_score: 92
+                        totalScore: 89,
+                        monthlyRateScore: 85,
+                        monthlyRatePercent: 90,
+                        mileageScore: 92,
+                        mileageNormalized: 88,
+                        flexibilityScore: 85
                       }}
                     />
                   </div>
@@ -769,9 +778,12 @@ export default function DesignSystemShowcase() {
                 score={95}
                 retailPrice={350000}
                 breakdown={{
-                  monthly_price_score: 98,
-                  down_payment_score: 90,
-                  total_cost_score: 97
+                  totalScore: 95,
+                  monthlyRateScore: 98,
+                  monthlyRatePercent: 92,
+                  mileageScore: 97,
+                  mileageNormalized: 95,
+                  flexibilityScore: 90
                 }}
                 size="default"
               />
@@ -779,9 +791,12 @@ export default function DesignSystemShowcase() {
                 score={78}
                 retailPrice={750000}
                 breakdown={{
-                  monthly_price_score: 65,
-                  down_payment_score: 85,
-                  total_cost_score: 83
+                  totalScore: 78,
+                  monthlyRateScore: 65,
+                  monthlyRatePercent: 75,
+                  mileageScore: 83,
+                  mileageNormalized: 80,
+                  flexibilityScore: 85
                 }}
                 size="default"
               />
@@ -789,9 +804,12 @@ export default function DesignSystemShowcase() {
                 score={45}
                 retailPrice={1200000}
                 breakdown={{
-                  monthly_price_score: 35,
-                  down_payment_score: 50,
-                  total_cost_score: 50
+                  totalScore: 45,
+                  monthlyRateScore: 35,
+                  monthlyRatePercent: 40,
+                  mileageScore: 50,
+                  mileageNormalized: 45,
+                  flexibilityScore: 50
                 }}
                 size="default"
               />

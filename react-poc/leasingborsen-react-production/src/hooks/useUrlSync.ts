@@ -17,6 +17,11 @@ export const useUrlSync = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const isInitialLoad = useRef(true)
   const isUpdatingUrl = useRef(false)
+  
+  // Fix for React error #185 - track URL sync state
+  const hasAppliedUrlFilters = useRef(false)
+  const isHydrating = useRef(true)
+  const urlSnapshot = useRef<URLSearchParams | null>(null)
   const {
     makes = [],
     models = [],
@@ -51,14 +56,16 @@ export const useUrlSync = () => {
     return JSON.stringify(a.sort()) !== JSON.stringify(b.sort())
   }, [])
 
-  // Initialize filters from URL params
+  // Initialize filters from URL params (URL → Filters, one-time only)
   useEffect(() => {
-    // Skip if we're in the middle of updating the URL ourselves
+    // Skip if already applied URL filters
+    if (hasAppliedUrlFilters.current) return
+    
+    // Skip if updating URL ourselves
     if (isUpdatingUrl.current) {
       isUpdatingUrl.current = false
       return
     }
-    
     
     const urlMake = searchParams.get('make')
     const urlModel = searchParams.get('model')
@@ -76,9 +83,11 @@ export const useUrlSync = () => {
                          urlTransmission || urlPriceMin || urlPriceMax || 
                          urlSeatsMin || urlSeatsMax || urlSort
 
-    // If URL parameters exist, reset filters first to ensure clean state
     if (hasUrlFilters) {
-      // Reset filters first
+      // Take snapshot of URL
+      urlSnapshot.current = new URLSearchParams(searchParams)
+      
+      // Reset filters first to ensure clean state
       resetFilters()
       
       // Apply URL parameters synchronously to avoid re-render issues
@@ -134,85 +143,28 @@ export const useUrlSync = () => {
         setSortOrder(urlSort as SortOrder)
       }
       
-      return // Exit early when URL parameters are detected
-    }
-
-    // Legacy logic for when no URL parameters are present (preserve existing behavior)
-    // Handle single make parameter
-    if (urlMake && !makes.includes(urlMake)) {
-      setFilter('makes', [urlMake])
-    }
-
-    // Handle single model parameter
-    if (urlModel && !models.includes(urlModel)) {
-      setFilter('models', [urlModel])
+      // Mark as applied to prevent re-run
+      hasAppliedUrlFilters.current = true
     }
     
-    // Handle array-based filters with proper comparison
-    const urlBodyTypeArray = parseArrayParam(urlBodyType)
-    if (urlBodyTypeArray.length > 0 && arraysAreDifferent(urlBodyTypeArray, body_type || [])) {
-      setFilter('body_type', urlBodyTypeArray)
-    }
-
-    const urlFuelTypeArray = parseArrayParam(urlFuelType)
-    if (urlFuelTypeArray.length > 0 && arraysAreDifferent(urlFuelTypeArray, fuel_type || [])) {
-      setFilter('fuel_type', urlFuelTypeArray)
-    }
-
-    const urlTransmissionArray = parseArrayParam(urlTransmission)
-    if (urlTransmissionArray.length > 0 && arraysAreDifferent(urlTransmissionArray, transmission || [])) {
-      setFilter('transmission', urlTransmissionArray)
-    }
-    
-    // Handle numeric filters
-    const parsedPriceMin = parseNumericParam(urlPriceMin)
-    if (parsedPriceMin !== null && parsedPriceMin !== price_min) {
-      setFilter('price_min', parsedPriceMin)
-    }
-
-    const parsedPriceMax = parseNumericParam(urlPriceMax)
-    if (parsedPriceMax !== null && parsedPriceMax !== price_max) {
-      setFilter('price_max', parsedPriceMax)
-    }
-
-    const parsedSeatsMin = parseNumericParam(urlSeatsMin)
-    if (parsedSeatsMin !== null && parsedSeatsMin !== seats_min) {
-      setFilter('seats_min', parsedSeatsMin)
-    }
-
-    const parsedSeatsMax = parseNumericParam(urlSeatsMax)
-    if (parsedSeatsMax !== null && parsedSeatsMax !== seats_max) {
-      setFilter('seats_max', parsedSeatsMax)
-    }
-
-    // Handle sort order
-    if (urlSort && urlSort !== sortOrder) {
-      setSortOrder(urlSort as SortOrder)
-    }
+    // Mark hydration complete
+    isHydrating.current = false
     
     // Mark initial load as complete
     isInitialLoad.current = false
-  }, [
-    searchParams,
-    makes,
-    models,
-    body_type,
-    fuel_type,
-    transmission,
-    price_min,
-    price_max,
-    seats_min,
-    seats_max,
-    sortOrder,
-    setFilter,
-    setSortOrder,
-    parseArrayParam,
-    parseNumericParam,
-    arraysAreDifferent
-  ])
+  }, [searchParams, setFilter, setSortOrder, resetFilters, parseArrayParam, parseNumericParam]) // ← Only depend on searchParams and functions, not filter values
 
   // Sync filter state changes back to URL (after initial load)
   useEffect(() => {
+    // Skip during hydration
+    if (isHydrating.current) return
+    
+    // Skip if we just applied URL filters
+    if (hasAppliedUrlFilters.current && isInitialLoad.current) {
+      isInitialLoad.current = false
+      return
+    }
+    
     if (isInitialLoad.current) return
     
     // Set flag to prevent circular updates
