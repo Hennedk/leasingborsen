@@ -1,12 +1,6 @@
 import React from 'react'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { ArrowUpDown, ChevronDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SortOrder, SortOption } from '@/types'
 
@@ -49,35 +43,30 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
           {resultCount} {resultCount === 1 ? 'tilbud fundet' : 'tilbud fundet'}
         </h1>
         
-        {/* Sort dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="lg"
-              className="flex items-center gap-2"
-              aria-label={`Sorter efter: ${currentSortLabel}`}
+        {/* Sort selector */}
+        <div className="flex items-center gap-2 min-w-[200px]">
+          <ArrowUpDown className="w-4 h-4 text-muted-foreground" />
+          <Select
+            value={sortOrder}
+            onValueChange={onSortChange}
+          >
+            <SelectTrigger
+              size="sm"
+              background="primary"
+              className="min-w-[180px]"
+              aria-label="Sorter efter"
             >
-              <ArrowUpDown className="w-4 h-4" />
-              <span>{currentSortLabel}</span>
-              <ChevronDown className="w-3 h-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[180px]">
-            {sortOptions.map((option) => (
-              <DropdownMenuItem
-                key={option.value}
-                onClick={() => onSortChange(option.value)}
-                className={cn(
-                  "cursor-pointer",
-                  sortOrder === option.value && "text-primary font-medium bg-muted"
-                )}
-              >
-                {option.label}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
     </div>
   )
