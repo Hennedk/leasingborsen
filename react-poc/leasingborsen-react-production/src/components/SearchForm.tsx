@@ -152,7 +152,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.make || 'all'}
                 onValueChange={(value) => handleFilterChange('make', value)}
               >
-                <SelectTrigger className="h-12 text-sm border-input focus:border-ring justify-between bg-background text-foreground px-4">
+                <SelectTrigger size="lg" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg mærke" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,10 +191,10 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 onValueChange={(value) => handleFilterChange('model', value)}
                 disabled={!localFilters.make || localFilters.make === 'all'}
               >
-                <SelectTrigger className={`h-12 text-sm border-input focus:border-ring justify-between px-4 ${
+                <SelectTrigger size="lg" background="primary" className={`justify-between ${
                   !localFilters.make || localFilters.make === 'all' 
                     ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-                    : 'bg-background text-foreground'
+                    : ''
                 }`} disabled={!localFilters.make || localFilters.make === 'all'}>
                   <SelectValue placeholder={localFilters.make && localFilters.make !== 'all' ? "Vælg model" : "Vælg mærke først"} />
                 </SelectTrigger>
@@ -215,7 +215,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.body_type || 'all'}
                 onValueChange={(value) => handleFilterChange('body_type', value)}
               >
-                <SelectTrigger className="h-12 text-sm border-input focus:border-ring justify-between bg-background text-foreground px-4">
+                <SelectTrigger size="lg" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg biltype" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,7 +234,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.price_max?.toString() || 'all'}
                 onValueChange={(value) => handleFilterChange('price_max', value)}
               >
-                <SelectTrigger className="h-12 text-sm border-input focus:border-ring justify-between bg-background text-foreground px-4">
+                <SelectTrigger size="lg" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg maks pris" />
                 </SelectTrigger>
                 <SelectContent>

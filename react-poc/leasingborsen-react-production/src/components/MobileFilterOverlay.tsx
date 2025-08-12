@@ -529,7 +529,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <Button
           onClick={() => navigateToView('filters')}
           disabled={selectedMakes.length === 0}
-          className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="w-full"
           size="lg"
         >
           Vælg {selectedMakes.length === 1 ? '1 mærke' : selectedMakes.length > 0 ? `${selectedMakes.length} mærker` : 'mærker'}
@@ -611,7 +611,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <Button
           onClick={() => navigateToView('makeSelection')}
           disabled={selectedModelsForCurrentMake === 0}
-          className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="w-full"
           size="lg"
         >
           Vælg {selectedModelsForCurrentMake === 1 ? '1 model' : selectedModelsForCurrentMake > 0 ? `${selectedModelsForCurrentMake} modeller` : 'modeller'}
