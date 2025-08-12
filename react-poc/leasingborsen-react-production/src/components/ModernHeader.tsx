@@ -10,13 +10,14 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { borderVariants } from '@/lib/borderStyles'
 
 const ModernHeader: React.FC = () => {
   const location = useLocation()
   const isHomepage = location.pathname === '/'
 
   return (
-    <header className={`lg:sticky top-0 z-50 w-full border-b ${isHomepage ? 'md:border-b-0' : ''} border-border/50 bg-card`}>
+    <header className={`lg:sticky top-0 z-50 w-full ${borderVariants.header.standard} ${isHomepage ? 'md:border-b-0' : ''} bg-card`}>
       <Container className="flex h-16 items-center justify-between">
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 flex-1">

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { borderVariants } from '@/lib/borderStyles'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
 import AnimatedPrice from '@/components/listing/AnimatedPrice'
 
@@ -123,7 +124,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
           // Layout
           "flex flex-col",
           // Styling
-          "bg-background rounded-t-2xl border-t border-border/50",
+          `bg-background rounded-t-2xl ${borderVariants.filter.mobile}`,
           // Animation
           "transform transition-transform duration-300 ease-out translate-y-0",
           // Sizing
@@ -131,7 +132,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
         )}>
         <div className="flex-1 flex flex-col min-h-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-5 border-b border-border/50 flex-shrink-0">
+          <div className={`flex items-center justify-between p-5 ${borderVariants.filter.section} flex-shrink-0`}>
             <h3 id="price-overlay-title" className="text-lg font-bold">Tilpas pris</h3>
             <Button
               ref={firstFocusableRef}
@@ -173,7 +174,7 @@ const MobilePriceOverlayComponent: React.FC<MobilePriceOverlayProps> = ({
                     <span className="font-medium">Bedste score</span>
                   </Button>
                 </div>
-                <div className="border-b border-border/50 mt-4"></div>
+                <div className={`${borderVariants.content.subtle} mt-4`}></div>
               </div>
 
 

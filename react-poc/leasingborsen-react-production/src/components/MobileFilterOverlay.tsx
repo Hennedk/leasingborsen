@@ -14,6 +14,7 @@ import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
 import { cn } from '@/lib/utils'
+import { borderVariants } from '@/lib/borderStyles'
 import type { Make, Model, SortOrder } from '@/types'
 
 // Sort options configuration - adapted for Radix UI Select (no empty string values)
@@ -235,14 +236,14 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             // Layout
             "flex flex-col",
             // Styling
-            "bg-background rounded-t-2xl border-t border-border/50",
+            `bg-background rounded-t-2xl ${borderVariants.filter.mobile}`,
             // Animation
             "transform transition-transform duration-300 ease-out translate-y-0",
             // Sizing - matches mobile price overlay
             "h-[min(90vh,100dvh-2rem)] max-h-[90vh]"
           )}>
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="p-5 border-b border-border/50">
+            <div className={`p-5 ${borderVariants.filter.section}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">Filtre</h2>
                 <Button
@@ -264,7 +265,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
   // Header component for all views
   const renderHeader = () => (
-    <div className="flex items-center justify-between p-5 border-b border-border/50 flex-shrink-0">
+    <div className={`flex items-center justify-between p-5 ${borderVariants.filter.section} flex-shrink-0`}>
       <div className="flex items-center gap-3">
         {currentView !== 'filters' && (
           <Button
@@ -305,7 +306,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
 
   // Search input for make/model views
   const renderSearchInput = () => (
-    <div className="p-5 border-b border-border/50 flex-shrink-0">
+    <div className={`p-5 ${borderVariants.filter.section} flex-shrink-0`}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -533,7 +534,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       {/* Sticky CTA for makes selection */}
       <div className={cn(
         "sticky bottom-0 flex-shrink-0",
-        "p-5 border-t border-border/50 bg-background",
+        `p-5 ${borderVariants.filter.mobile} bg-background`,
         "pb-[max(1rem,env(safe-area-inset-bottom))]"
       )}>
         <Button
@@ -614,7 +615,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       {/* Sticky CTA for models selection */}
       <div className={cn(
         "sticky bottom-0 flex-shrink-0",
-        "p-5 border-t border-border/50 bg-background",
+        `p-5 ${borderVariants.filter.mobile} bg-background`,
         "pb-[max(1rem,env(safe-area-inset-bottom))]"
       )}>
         <Button
@@ -637,7 +638,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
       // Layout
       "flex-shrink-0",
       // Styling
-      "p-5 border-t border-border/50 bg-background shadow-lg",
+      `p-5 ${borderVariants.filter.mobile} bg-background shadow-lg`,
       // iOS safe area support
       "pb-[max(1rem,env(safe-area-inset-bottom))]"
     )}>
@@ -694,7 +695,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           // Layout
           "flex flex-col",
           // Styling
-          "bg-background rounded-t-2xl shadow-2xl border-t border-border/50",
+          `bg-background rounded-t-2xl shadow-2xl ${borderVariants.filter.mobile}`,
           // Animation
           "transform transition-transform duration-300 ease-out translate-y-0",
           // Sizing - matches mobile price overlay
