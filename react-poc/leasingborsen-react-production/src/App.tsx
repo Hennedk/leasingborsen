@@ -19,6 +19,7 @@ const Listing = lazy(() => import('@/pages/Listing'))
 const About = lazy(() => import('@/pages/About'))
 const WhyPrivateLeasing = lazy(() => import('@/pages/WhyPrivateLeasing'))
 const Advertising = lazy(() => import('@/pages/Advertising'))
+const DesignSystemShowcase = lazy(() => import('@/pages/DesignSystemShowcase'))
 
 // Lazy load admin pages
 const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'))
@@ -125,6 +126,11 @@ function App() {
                 <Route path="/advertising" element={
                   <RouteErrorBoundary routeName="Annoncering">
                     <Advertising />
+                  </RouteErrorBoundary>
+                } />
+                <Route path="/design-system" element={
+                  <RouteErrorBoundary routeName="Design System">
+                    <DesignSystemShowcase />
                   </RouteErrorBoundary>
                 } />
                 

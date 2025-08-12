@@ -64,28 +64,12 @@ const persistenceConfig = {
     sortOrder: state.sortOrder,
     filterOrder: state.filterOrder
   }),
-  // Custom onRehydrateStorage to handle URL conflict
+  // Simplified onRehydrateStorage to avoid state conflicts
   onRehydrateStorage: () => {
     return (state: FilterState | undefined, error: unknown) => {
       if (error) {
         console.error('Failed to rehydrate filter store:', error)
-        return
-      }
-      
-      // Check if URL has filter parameters
-      const urlParams = new URLSearchParams(window.location.search)
-      const hasUrlFilters = ['make', 'model', 'body_type', 'fuel_type', 'transmission', 'price_min', 'price_max', 'seats_min', 'seats_max', 'sort']
-        .some(param => urlParams.has(param))
-      
-      if (hasUrlFilters) {
-        console.log('🔗 URL filters detected, clearing persisted state to prevent conflict')
-        // Clear persisted filters to let URL take precedence
-        return {
-          ...state,
-          ...defaultFilters,
-          sortOrder: 'lease_score_desc' as SortOrder,
-          filterOrder: []
-        }
+        return state
       }
       
       console.log('💾 Restored filters from localStorage')

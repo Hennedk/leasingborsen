@@ -63,7 +63,9 @@
       "WebFetch(domain:www.toyota.dk)",
       "mcp__serena__think_about_collected_information",
       "Bash(npx eslint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__serena__write_memory",
+      "Bash(npm run dev:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -59,6 +59,7 @@ export const useUrlSync = () => {
       return
     }
     
+    
     const urlMake = searchParams.get('make')
     const urlModel = searchParams.get('model')
     const urlBodyType = searchParams.get('body_type')
