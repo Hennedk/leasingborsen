@@ -51,10 +51,7 @@ export const useUrlSync = () => {
     return isNaN(parsed) ? null : parsed
   }, [])
 
-  // Check if arrays are different (for optimization)
-  const arraysAreDifferent = useCallback((a: string[], b: string[]): boolean => {
-    return JSON.stringify(a.sort()) !== JSON.stringify(b.sort())
-  }, [])
+
 
   // Initialize filters from URL params (URL → Filters, one-time only)
   useEffect(() => {
