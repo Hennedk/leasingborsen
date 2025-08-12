@@ -39,7 +39,7 @@ const HeroBanner: React.FC = () => {
                 
                 {/* Descriptive Subtitle - 16px */}
                 <p className="text-white/90 leading-relaxed" style={{fontSize: '16px'}}>
-                  Få overblik over hele markedets privatleasingtilbud, sammenlign priser og vilkår, og vælg den bil, der passer perfekt til dine behov.
+                  Få overblik over de bedste privatleasingtilbud og find det tilbud, der passer perfekt til dine behov.
                 </p>
               </div>
               

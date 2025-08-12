@@ -15,6 +15,8 @@ import MobileFilterOverlay from '@/components/MobileFilterOverlay'
 import ListingsHeader from '@/components/listings/ListingsHeader'
 import ListingsErrorState from '@/components/listings/ListingsErrorState'
 import ListingsGrid from '@/components/listings/ListingsGrid'
+import MobileSortStatus from '@/components/listings/MobileSortStatus'
+import MobileSortButton from '@/components/listings/MobileSortButton'
 import { 
   DataErrorBoundary, 
   SearchErrorBoundary, 
@@ -25,9 +27,9 @@ import type { SortOrder, SortOption } from '@/types'
 
 // Sort options configuration
 const sortOptions: SortOption[] = [
+  { value: 'lease_score_desc', label: 'Bedste værdi' },
   { value: '', label: 'Laveste pris' },
-  { value: 'desc', label: 'Højeste pris' },
-  { value: 'lease_score_desc', label: 'Bedste værdi' }
+  { value: 'desc', label: 'Højeste pris' }
 ]
 
 const Listings: React.FC = () => {
@@ -209,11 +211,21 @@ const Listings: React.FC = () => {
           {/* Main Content Area */}
           <main className={listingStyles.mainContent} role="main" aria-label="Billeasing søgning">
             
-            {/* Mobile: Result count */}
-            <div className="lg:hidden flex items-center mb-6">
-              <h1 className="text-lg font-bold text-foreground">
-                {resultCount} {resultCount === 1 ? 'bil' : 'biler'}
-              </h1>
+            {/* Mobile: Result count, sort status and sort button */}
+            <div className="lg:hidden mb-4 flex items-end justify-between">
+              <div className="space-y-1">
+                <h1 className="text-base font-bold text-foreground leading-tight">
+                  {resultCount} {resultCount === 1 ? 'tilbud fundet' : 'tilbud fundet'}
+                </h1>
+                <MobileSortStatus currentSortLabel={currentSortLabel} />
+              </div>
+              {listings.length > 0 && (
+                <MobileSortButton
+                  sortOptions={sortOptions}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSortChange}
+                />
+              )}
             </div>
 
             {/* Desktop: Header with sorting */}

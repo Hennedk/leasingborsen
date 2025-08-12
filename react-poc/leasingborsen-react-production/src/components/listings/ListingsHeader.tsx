@@ -40,13 +40,13 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
         className="sr-only"
         id="results-announcement"
       >
-        Søgeresultater opdateret: {resultCount} {resultCount === 1 ? 'bil fundet' : 'biler fundet'}
+        Søgeresultater opdateret: {resultCount} {resultCount === 1 ? 'tilbud fundet' : 'tilbud fundet'}
       </div>
       
       {/* Main header row */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-bold text-foreground">
-          {resultCount} {resultCount === 1 ? 'bil fundet' : 'biler fundet'}
+          {resultCount} {resultCount === 1 ? 'tilbud fundet' : 'tilbud fundet'}
         </h1>
         
         {/* Sort dropdown */}
