@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
-import { PriceRangeFilter, ExpandableFilterChips } from '@/components/shared/filters'
+import { PriceRangeFilter, ExpandableFilterChips, FilterChips } from '@/components/shared/filters'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
@@ -395,45 +395,25 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         {/* Fuel Type */}
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Drivmiddel</Label>
-          <div className="flex flex-wrap gap-2">
-            {FILTER_CONFIG.FUEL_TYPES.map((fuelType) => (
-              <Badge
-                key={fuelType.name}
-                variant={fuel_type?.includes(fuelType.name) ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
-                  fuel_type?.includes(fuelType.name) 
-                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md" 
-                    : "hover:bg-muted hover:border-primary/50"
-                )}
-                onClick={() => handleFuelTypeToggle(fuelType.name)}
-              >
-                {fuelType.label}
-              </Badge>
-            ))}
-          </div>
+          <FilterChips
+            options={FILTER_CONFIG.FUEL_TYPES}
+            selectedValues={fuel_type || []}
+            onToggle={handleFuelTypeToggle}
+            label=""
+            className="space-y-0"
+          />
         </div>
 
         {/* Transmission */}
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Geartype</Label>
-          <div className="flex flex-wrap gap-2">
-            {FILTER_CONFIG.TRANSMISSION_TYPES.map((trans) => (
-              <Badge
-                key={trans.value}
-                variant={transmission?.includes(trans.value) ? "default" : "outline"}
-                className={cn(
-                  "cursor-pointer text-sm font-normal px-3 py-2 transition-all duration-200",
-                  transmission?.includes(trans.value)
-                    ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary shadow-sm hover:shadow-md"
-                    : "hover:bg-muted hover:border-primary/50"
-                )}
-                onClick={() => handleTransmissionToggle(trans.value)}
-              >
-                {trans.label}
-              </Badge>
-            ))}
-          </div>
+          <FilterChips
+            options={FILTER_CONFIG.TRANSMISSION_TYPES.map(t => ({ name: t.value, label: t.label }))}
+            selectedValues={transmission || []}
+            onToggle={handleTransmissionToggle}
+            label=""
+            className="space-y-0"
+          />
         </div>
 
         {/* Body Type */}
