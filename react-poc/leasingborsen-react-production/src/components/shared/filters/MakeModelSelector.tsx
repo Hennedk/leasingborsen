@@ -77,7 +77,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between h-12 border-input focus:border-ring text-sm"
+              className="w-full justify-between border"
+              size="lg"
             >
               {selectedMakes.length > 0 
                 ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
@@ -99,7 +100,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                 placeholder="Søg mærker..."
                 value={makeSearch}
                 onChange={(e) => setMakeSearch(e.target.value)}
-                className="pr-4 bg-background text-foreground font-medium"
+                size="default"
+                background="primary"
               />
               
               <ScrollArea className="h-80">
@@ -180,7 +182,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full justify-between border"
+              size="lg"
               disabled={selectedMakes.length === 0}
             >
               {selectedMakes.length === 0 
@@ -265,7 +268,8 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                     placeholder="Søg modeller..."
                     value={modelSearch}
                     onChange={(e) => setModelSearch(e.target.value)}
-                    className="pr-4 bg-background text-foreground font-medium"
+                    size="default"
+                    background="primary"
                   />
                   
                   <ScrollArea className="h-80">

@@ -54,8 +54,8 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
           <DropdownMenuTrigger asChild>
             <Button
               variant="outline"
-              size="sm"
-              className="flex items-center gap-2 h-12 border-input focus:border-ring px-4 text-sm"
+              size="lg"
+              className="flex items-center gap-2"
               aria-label={`Sorter efter: ${currentSortLabel}`}
             >
               <ArrowUpDown className="w-4 h-4" />

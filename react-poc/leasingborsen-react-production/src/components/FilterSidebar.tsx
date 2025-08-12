@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { RotateCcw, X } from 'lucide-react'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
@@ -82,9 +83,9 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
                 Filtre
               </CardTitle>
               {activeFiltersCount > 0 && (
-                <div className="bg-gradient-to-r from-primary/20 to-primary/10 text-primary px-2.5 py-1 rounded-full text-xs font-semibold border border-primary/30">
+                <Badge variant="result-count">
                   {activeFiltersCount}
-                </div>
+                </Badge>
               )}
             </div>
             

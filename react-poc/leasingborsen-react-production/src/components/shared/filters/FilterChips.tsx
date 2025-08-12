@@ -37,13 +37,8 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
           return (
             <Badge
               key={option.name}
-              variant={isSelected ? "default" : "outline"}
-              className={cn(
-                "cursor-pointer transition-all duration-200 px-3 py-1.5 text-xs font-medium",
-                isSelected 
-                  ? "bg-gradient-to-r from-primary to-primary/90 text-white border-primary hover:from-primary/90 hover:to-primary/80" 
-                  : "hover:bg-muted/50 border-border hover:border-primary/50"
-              )}
+              variant={isSelected ? "filter-selected" : "filter-unselected"}
+              className="px-3 py-1.5 text-xs font-medium"
               onClick={() => onToggle(option.name)}
             >
               {option.label}

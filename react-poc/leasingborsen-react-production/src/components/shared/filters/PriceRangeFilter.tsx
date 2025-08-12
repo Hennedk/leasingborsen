@@ -83,10 +83,11 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           value={minValue?.toString() || 'all'} 
           onValueChange={onMinChange}
         >
-          <SelectTrigger className={cn(
-            'border-input focus:border-ring justify-between bg-background text-foreground px-4',
-            isMobile ? 'h-12 text-sm' : 'h-12 text-sm'
-          )}>
+          <SelectTrigger 
+            className="justify-between"
+            size="lg" 
+            background="primary"
+          >
             <SelectValue placeholder={effectiveMinPlaceholder} />
           </SelectTrigger>
           <SelectContent>
@@ -105,10 +106,11 @@ export const PriceRangeFilter: React.FC<PriceRangeFilterProps> = ({
           value={maxValue?.toString() || 'all'} 
           onValueChange={onMaxChange}
         >
-          <SelectTrigger className={cn(
-            'border-input focus:border-ring justify-between bg-background text-foreground px-4',
-            isMobile ? 'h-12 text-sm' : 'h-12 text-sm'
-          )}>
+          <SelectTrigger 
+            className="justify-between"
+            size="lg" 
+            background="primary"
+          >
             <SelectValue placeholder={effectiveMaxPlaceholder} />
           </SelectTrigger>
           <SelectContent>

@@ -285,8 +285,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         </h2>
         {currentView === 'filters' && activeFiltersCount > 0 && (
           <Badge 
-            variant="secondary" 
-            className="text-xs bg-gradient-to-r from-primary/20 to-primary/10 text-primary border-primary/30"
+            variant="result-count"
           >
             {activeFiltersCount}
           </Badge>
@@ -314,7 +313,9 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           placeholder={currentView === 'makes' ? 'Søg efter mærke...' : 'Søg efter model...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 pr-4 h-12 border-input focus:border-ring bg-background text-foreground font-medium"
+          className="pl-10"
+          size="lg"
+          background="primary"
         />
       </div>
     </div>
@@ -333,7 +334,11 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             value={mapToSelectValue(sortOrder)}
             onValueChange={handleSortChange}
           >
-            <SelectTrigger className="w-full h-12 border-input focus:border-ring justify-between bg-background text-foreground font-medium px-4">
+            <SelectTrigger 
+              className="w-full justify-between"
+              size="lg"
+              background="primary"
+            >
               <span className="text-left">
                 <SelectValue />
               </span>
@@ -354,7 +359,8 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           <Button
             variant="outline"
             onClick={() => navigateToView('makes')}
-            className="w-full justify-between h-12 border-input focus:border-ring"
+            className="w-full justify-between"
+            size="lg"
           >
             <span>
               {selectedMakes.length > 0 ? (
@@ -379,7 +385,8 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               }
             }}
             disabled={selectedMakes.length === 0}
-            className="w-full justify-between h-12 border-input focus:border-ring disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full justify-between"
+            size="lg"
           >
             <span>
               {selectedModels.length > 0 ? (

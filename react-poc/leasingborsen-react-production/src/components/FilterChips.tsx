@@ -93,8 +93,8 @@ const FilterChipsComponent: React.FC<FilterChipsProps> = ({
                 )}
               >
                 <Badge 
-                  variant="secondary" 
-                  className="flex items-center gap-2 px-3 !py-0 bg-card/95 border border-border/50 hover:bg-muted/50 hover:border-primary/30 transition-all duration-200 whitespace-nowrap h-8"
+                  variant="result-filter" 
+                  className="flex items-center gap-2 whitespace-nowrap h-8"
                 >
                   <span className="text-sm font-medium text-foreground">
                     {filter.label}

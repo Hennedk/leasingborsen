@@ -1,6 +1,7 @@
 import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+import { cva, type VariantProps } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
@@ -22,22 +23,40 @@ function SelectValue({
   return <SelectPrimitive.Value data-slot="select-value" {...props} />
 }
 
+const selectTriggerVariants = cva(
+  "flex w-full items-center justify-between rounded-md border px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
+  {
+    variants: {
+      size: {
+        sm: "h-8 px-2 py-1 text-xs",
+        default: "h-9 px-3 py-2 text-sm",
+        lg: "h-12 px-4 py-2 text-base font-medium",
+      },
+      background: {
+        default: "bg-secondary text-secondary-foreground",
+        primary: "bg-background text-foreground",
+      },
+    },
+    defaultVariants: {
+      size: "default", 
+      background: "default",
+    },
+  }
+)
+
 function SelectTrigger({
   className,
   size = "default",
+  background = "default",
   children,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
-  size?: "sm" | "default"
-}) {
+}: React.ComponentProps<typeof SelectPrimitive.Trigger> & 
+  VariantProps<typeof selectTriggerVariants>) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      className={cn(
-        "flex h-9 w-full items-center justify-between rounded-md border bg-secondary text-secondary-foreground px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-        className
-      )}
+      className={cn(selectTriggerVariants({ size, background }), className)}
       {...props}
     >
       {children}
