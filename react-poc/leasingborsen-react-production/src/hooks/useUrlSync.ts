@@ -29,7 +29,8 @@ export const useUrlSync = () => {
     seats_max,
     sortOrder,
     setFilter,
-    setSortOrder
+    setSortOrder,
+    resetFilters
   } = useFilterStore()
 
   // Parse array parameters from URL
@@ -69,6 +70,74 @@ export const useUrlSync = () => {
     const urlSeatsMax = searchParams.get('seats_max')
     const urlSort = searchParams.get('sort')
 
+    // Check if there are any URL parameters that indicate a fresh search
+    const hasUrlFilters = urlMake || urlModel || urlBodyType || urlFuelType || 
+                         urlTransmission || urlPriceMin || urlPriceMax || 
+                         urlSeatsMin || urlSeatsMax || urlSort
+
+    // If URL parameters exist, reset filters first to ensure clean state
+    if (hasUrlFilters) {
+      resetFilters()
+      
+      // Apply URL parameters after reset
+      setTimeout(() => {
+        // Handle single make parameter
+        if (urlMake) {
+          setFilter('makes', [urlMake])
+        }
+
+        // Handle single model parameter
+        if (urlModel) {
+          setFilter('models', [urlModel])
+        }
+        
+        // Handle array-based filters
+        const urlBodyTypeArray = parseArrayParam(urlBodyType)
+        if (urlBodyTypeArray.length > 0) {
+          setFilter('body_type', urlBodyTypeArray)
+        }
+
+        const urlFuelTypeArray = parseArrayParam(urlFuelType)
+        if (urlFuelTypeArray.length > 0) {
+          setFilter('fuel_type', urlFuelTypeArray)
+        }
+
+        const urlTransmissionArray = parseArrayParam(urlTransmission)
+        if (urlTransmissionArray.length > 0) {
+          setFilter('transmission', urlTransmissionArray)
+        }
+
+        // Handle numeric parameters
+        const parsedPriceMin = parseNumericParam(urlPriceMin)
+        if (parsedPriceMin !== null) {
+          setFilter('price_min', parsedPriceMin)
+        }
+
+        const parsedPriceMax = parseNumericParam(urlPriceMax)
+        if (parsedPriceMax !== null) {
+          setFilter('price_max', parsedPriceMax)
+        }
+
+        const parsedSeatsMin = parseNumericParam(urlSeatsMin)
+        if (parsedSeatsMin !== null) {
+          setFilter('seats_min', parsedSeatsMin)
+        }
+
+        const parsedSeatsMax = parseNumericParam(urlSeatsMax)
+        if (parsedSeatsMax !== null) {
+          setFilter('seats_max', parsedSeatsMax)
+        }
+
+        // Handle sort order
+        if (urlSort) {
+          setSortOrder(urlSort as SortOrder)
+        }
+      }, 0)
+      
+      return // Exit early when URL parameters are detected
+    }
+
+    // Legacy logic for when no URL parameters are present (preserve existing behavior)
     // Handle single make parameter
     if (urlMake && !makes.includes(urlMake)) {
       setFilter('makes', [urlMake])
