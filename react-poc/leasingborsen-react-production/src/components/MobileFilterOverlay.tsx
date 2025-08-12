@@ -314,7 +314,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           placeholder={currentView === 'makes' ? 'Søg efter mærke...' : 'Søg efter model...'}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 h-12 border-input focus:border-ring"
+          className="pl-10 pr-4 h-12 border-input focus:border-ring bg-background text-foreground font-medium"
         />
       </div>
     </div>
@@ -466,6 +466,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                     id={`popular-make-${make.id}`}
                     checked={selectedMakes.includes(make.name)}
                     onCheckedChange={() => toggleMake(make.name)}
+                    className="h-5 w-5"
                   />
                   <Label
                     htmlFor={`popular-make-${make.id}`}
@@ -491,6 +492,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                     id={`other-make-${make.id}`}
                     checked={selectedMakes.includes(make.name)}
                     onCheckedChange={() => toggleMake(make.name)}
+                    className="h-5 w-5"
                   />
                   <Label
                     htmlFor={`other-make-${make.id}`}
@@ -523,7 +525,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           size="lg"
         >
-          Vælg {selectedMakes.length > 0 ? `${selectedMakes.length} ` : ''}mærker
+          Vælg {selectedMakes.length === 1 ? '1 mærke' : selectedMakes.length > 0 ? `${selectedMakes.length} mærker` : 'mærker'}
         </Button>
       </div>
     </div>
@@ -576,6 +578,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               id={`model-${model.id}`}
               checked={selectedModels.includes(model.name)}
               onCheckedChange={() => toggleModel(model.name)}
+              className="h-5 w-5"
             />
             <Label
               htmlFor={`model-${model.id}`}
@@ -604,7 +607,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
           size="lg"
         >
-          Vælg {selectedModelsForCurrentMake > 0 ? `${selectedModelsForCurrentMake} ` : ''}modeller
+          Vælg {selectedModelsForCurrentMake === 1 ? '1 model' : selectedModelsForCurrentMake > 0 ? `${selectedModelsForCurrentMake} modeller` : 'modeller'}
         </Button>
       </div>
     </div>
