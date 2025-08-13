@@ -8,7 +8,6 @@ import {
   Battery, 
   TrendingUp 
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import type { CarListing } from '@/types'
 
 interface KeySpecsProps {
@@ -86,8 +85,10 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
   }
 
   return (
-    <Card className={className}>
-      <CardContent className="p-4">
+    <div className={className}>
+      <div className="h-px bg-border/50 mb-6"></div>
+      
+      <div className="py-2">
         {/* Mobile: 3x2 Grid */}
         <div className="md:hidden">
           <div className="grid grid-cols-2 gap-4">
@@ -129,8 +130,10 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
             ))}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="h-px bg-border/50 mt-6"></div>
+    </div>
   )
 }
 

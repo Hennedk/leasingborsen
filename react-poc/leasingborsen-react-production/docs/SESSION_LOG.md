@@ -1,5 +1,170 @@
 # Session Log
 
+## Session: 2025-08-13 - Key Specs Implementation & Mobile UX Planning
+**Duration**: ~2 hours  
+**Main Focus**: Add responsive key specs section to listing page with professional layout improvements
+
+### What Changed
+
+1. **New Key Specs Component** (`src/components/listing/KeySpecs.tsx`)
+   - **6 Essential Specs**: Fuel type, transmission, horsepower, body type, seats/WLTP, efficiency
+   - **EV Smart Logic**: Automatically shows WLTP for EVs, seats for non-EVs
+   - **Responsive Layout**: Desktop 2×3 grid, Mobile 3×2 fixed grid (no horizontal scroll)
+   - **Danish Localization**: All labels in Danish with proper da-DK formatting
+   - **Typography Hierarchy**: Bold values (text-base) with muted labels (text-xs)
+   - **Large Mobile Icons**: w-8 h-8 icons for better readability on mobile
+   - **Clean Styling**: Removed Card wrapper, added subtle separator lines
+
+2. **Car Title Repositioning** (`src/components/listing/ListingTitle.tsx`)
+   - **Extracted Component**: Make, model, variant display separated from header
+   - **Responsive Position**: Desktop sidebar, mobile below image
+   - **Flexible Integration**: Reusable component with optional className
+
+3. **Layout Structure Updates** (`src/pages/Listing.tsx`)
+   - **Desktop Flow**: Image → Key Specs → Specifications | Sidebar (Title + Calculator)
+   - **Mobile Flow**: Image → Title → Key Specs → Specifications
+   - **Error Boundaries**: All components wrapped for robust error handling
+   - **Responsive Classes**: Proper lg:hidden/lg:block visibility controls
+
+4. **Header Simplification** (`src/components/listing/ListingHeader.tsx`)
+   - **Navigation Only**: Now contains only back navigation button
+   - **Clean Interface**: Removed car title display (moved to ListingTitle)
+
+5. **Mobile UX Planning** (`docs/MOBILE_LISTING_FULLSCREEN_PLAN.md`)
+   - **Full-Screen Design**: Complete mobile takeover with header removal
+   - **Scroll Animations**: Image fade effects and sticky header transitions
+   - **Technical Specs**: Detailed implementation plan for future development
+
+### Technical Improvements
+
+**Key Specs Layout Evolution**:
+```tsx
+// Final implementation: Clean separator-based design
+<div className="h-px bg-border/50 mb-6"></div>
+<div className="py-2">
+  {/* Mobile: 3×2 grid | Desktop: 2×3 grid */}
+</div>
+<div className="h-px bg-border/50 mt-6"></div>
+```
+
+**Mobile Icon Optimization**:
+```tsx
+// Mobile: Larger icons with horizontal layout
+<div className="flex items-start gap-2">
+  <div className="text-muted-foreground">
+    {React.cloneElement(spec.icon, { className: "w-8 h-8" })}
+  </div>
+  <div className="flex-1 min-w-0">
+    <div className="text-xs text-muted-foreground">{spec.label}</div>
+    <div className="text-base font-bold">{spec.value}</div>
+  </div>
+</div>
+```
+
+**EV Detection Logic**:
+```tsx
+const isEV = car.fuel_type?.toLowerCase().includes('el') || 
+             car.fuel_type?.toLowerCase().includes('electric') ||
+             car.fuel_type?.toLowerCase().includes('batteri')
+```
+
+### Build & Quality Assurance
+- **TypeScript**: All compilation errors resolved
+- **ESLint**: Clean linting with no warnings
+- **Responsive Design**: Tested across breakpoints
+- **Performance**: Efficient rendering with React.memo patterns
+
+### Future Implementation Ready
+- **Mobile Full-Screen Plan**: Comprehensive documentation saved for immersive mobile experience
+- **Scroll Animations**: Technical specifications for image fade and sticky header
+- **Component Architecture**: Modular structure ready for advanced features
+
+---
+
+# Previous Sessions
+
+## Session: 2025-08-12 - Design System Showcase Completion & TypeScript Fixes
+**Duration**: ~2 hours  
+**Main Focus**: Complete and fix TypeScript errors in design system showcase, ensure accuracy with actual implementation
+
+### What Changed
+
+1. **Design System Showcase TypeScript Fixes** (`src/pages/DesignSystemShowcase.tsx`)
+   - **Component Types**: Added proper TypeScript interfaces for ComponentSection and ComponentDemo
+   - **Input Components**: Fixed icon prop implementation using positioned Search icons with relative containers
+   - **Checkbox Handler**: Fixed onCheckedChange to properly handle CheckedState type compatibility
+   - **LeaseScoreBadge**: Updated breakdown properties to match correct interface (totalScore, monthlyRateScore, etc.)
+   - **Import Cleanup**: Removed unused React import, kept only needed hooks
+
+2. **Modal Selector Pattern Documentation**
+   - **Accurate Implementation**: Ensured showcase reflects actual /listings page modal-based selectors
+   - **Search Integration**: Added proper search input with positioned icons (pl-10 padding + absolute positioning)
+   - **Multi-select Pattern**: Documented Button triggers with count displays and Dialog components
+   - **Danish Labels**: Maintained full Danish localization ("Vælg mærker", "Søg mærker...", etc.)
+
+3. **Build System Validation**
+   - **TypeScript Compilation**: All TypeScript errors resolved, clean build successful
+   - **Development Server**: Hot module reloading working correctly
+   - **Bundle Size**: Maintained target bundle sizes (~122KB CSS, ~382KB JS main bundle)
+
+### Technical Fixes Applied
+
+**Input Icon Pattern**:
+```tsx
+// Before (incorrect - icon prop doesn't exist)
+<Input placeholder="Søg mærker..." icon={<Search className="w-4 h-4" />} />
+
+// After (correct - positioned icon)
+<div className="relative">
+  <Input placeholder="Søg mærker..." className="pl-10" />
+  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+</div>
+```
+
+**LeaseScoreBadge Interface**:
+```tsx
+// Before (incorrect property names)
+breakdown={{
+  monthly_price_score: 85,
+  down_payment_score: 90,
+  total_cost_score: 92
+}}
+
+// After (correct interface)
+breakdown={{
+  totalScore: 89,
+  monthlyRateScore: 85,
+  monthlyRatePercent: 90,
+  mileageScore: 92,
+  mileageNormalized: 88,
+  flexibilityScore: 85
+}}
+```
+
+### Files Modified
+- `src/pages/DesignSystemShowcase.tsx` - Complete TypeScript fixes and UI corrections
+- `src/hooks/useUrlSync.ts` - Automatic formatting/linting changes
+
+### Commit Details
+- **Hash**: `9845763`
+- **Type**: `feat` (feature completion)
+- **Message**: Complete design system showcase with TypeScript fixes
+
+### Next Steps for Future Sessions
+1. **Design System Usage**: The showcase at `/design-system` can now be used as reference for component implementation
+2. **Modal Pattern**: Apply the documented modal selector pattern to other filter components if needed
+3. **TypeScript Standards**: Use this session's fixes as examples for proper component typing
+4. **Testing**: Consider adding tests for the design system components
+
+### Session Status
+✅ **Completed Successfully**
+- All TypeScript compilation errors resolved
+- Design system showcase fully functional
+- Build process clean and working
+- Development server running smoothly
+
+---
+
 ## Session: 2025-01-11 - Hero Banner Redesign and UI Enhancements
 **Duration**: ~3 hours  
 **Main Focus**: Complete hero banner redesign, homepage optimizations, and category filter UX fixes
@@ -47,96 +212,3 @@
 ### Critical UX Fix: Popular Categories
 
 **Problem Identified**: Categories were adding to existing filters instead of clearing them, defeating their purpose as quick preset options.
-
-**Solution Implemented**: Clear-then-apply approach
-1. `resetFilters()` - Clear all existing filters
-2. `setFilter()` - Apply only the category filters to global state  
-3. `navigate('/listings')` - Navigate with clean URL, filters in state
-
-**Result**: Categories now work as intended - clicking "Elbiler" gives fresh electric car search, not electric + previous filters.
-
-### Technical Improvements
-
-- **Component Architecture**: Extracted SearchForm from monolithic HeroBanner
-- **State Management**: Improved filter state handling with proper clearing logic
-- **Responsive Design**: Different layouts for mobile vs desktop with proper breakpoints
-- **Brand Consistency**: Unified "Leasingbuddy" branding across header and footer
-- **Performance**: Simplified components reduce bundle size and complexity
-
-### Files Modified
-
-**Major Changes**:
-- `src/components/HeroBanner.tsx` - Complete redesign (275→60 lines)
-- `src/components/SearchForm.tsx` - **New file** (215 lines)
-- `src/components/ModernHeader.tsx` - Navigation simplification
-- `src/components/Footer.tsx` - Minimal redesign
-- `src/components/PopularCategories.tsx` - Category filter fix
-- `src/pages/Home.tsx` - Content strategy update
-
-**Minor Updates**:
-- `src/components/CarListingGrid.tsx` - Typography adjustments
-- `src/components/HeroBanner.css` - Animation updates
-
-### Commits Created
-
-1. `44ae6d4` - feat: redesign hero banner with left-aligned search form
-2. `5066880` - refine: update UI components for improved user experience  
-3. `407a460` - feat: enhance homepage layout and visual hierarchy
-4. `0f1bea1` - fix: implement clear-then-apply logic for popular categories
-
-### Known Issues Remaining
-- None identified - all builds pass, functionality tested
-
-### Next Session Recommendations
-
-1. **Test Category Filters**: Verify the clear-then-apply logic works correctly in browser
-2. **Mobile Testing**: Test hero banner and search form across different mobile devices
-3. **Performance**: Consider lazy loading for non-critical components
-4. **Analytics**: Track user engagement with new category preset behavior
-
----
-
-## Previous Session: 2025-01-11 - Listing Card Enhancement and UI Refinements
-**Duration**: ~2 hours  
-**Main Focus**: Complete lease period implementation, UI text improvements, and default sort optimization
-
-### What Changed
-1. **Lease Period Display Implementation** (`src/components/ListingCard.tsx`)
-   - Added lease period to secondary price line: "25.000 km/år • 36 mdr • Udb: 50.000 kr"
-   - Optimized font sizes: text-xl for main price, text-xs (mobile) / text-[11px] (desktop) for details
-   - Abbreviated text for compact display: "måneder" → "mdr", "Udbetaling" → "Udb"
-   - Improved mobile readability while maintaining desktop space efficiency
-
-2. **"Fra" Prefix for Multiple Offers** (`src/lib/supabase.ts`, `src/types/index.ts`)
-   - Fixed critical bug in multiple offers detection logic
-   - Corrected understanding of `full_listing_view` (already aggregates by listing_id)
-   - Use `lease_pricing` JSON array to count offers instead of deduplication
-   - Now correctly shows "Fra 3.500 kr/måned" for listings with multiple pricing options
-   - Added `offer_count` and `has_multiple_offers` fields to CarListing type
-
-3. **UI Text Improvements** (Multiple Components)
-   - Changed filter header: "Filtrér" → "Filtre" (better Danish grammar)
-   - Updated fuel type label: "Brændstof" → "Drivmiddel" (clearer terminology)
-   - Changed price filter: "Pris per måned" → "Ydelse pr. måned" (accurate leasing terminology)
-   - Applied across FilterSidebar, MobileFilterOverlay, and FilterSkeleton
-
-4. **Default Sort Order Optimization** (`src/stores/consolidatedFilterStore.ts`)
-   - Changed default sort from '' (lowest price) to 'lease_score_desc' (highest lease score)
-   - Updated both initial state and URL conflict fallback
-   - Promotes value-based decision making over pure price comparison
-
-### Technical Issues Resolved
-- **"Fra" Prefix Bug**: Root cause was misunderstanding `full_listing_view` structure
-  - View already uses GROUP BY with JSON aggregation of all pricing options
-  - Fixed by using `lease_pricing.length` instead of attempting manual deduplication
-- **Query Optimization**: Simplified count query using proper Supabase count method
-- **Mobile Responsiveness**: Balanced font sizes for optimal readability across devices
-
-### Files Modified
-- `src/components/ListingCard.tsx` - Lease period display and font optimization
-- `src/lib/supabase.ts` - Fixed multiple offers detection and count queries
-- `src/types/index.ts` - Added offer tracking fields to CarListing interface
-- `src/components/FilterSidebar.tsx` - Updated filter labels
-- `src/components/MobileFilterOverlay.tsx` - Updated mobile filter labels
-- `src/components/FilterSkeleton.tsx` - Updated skeleton filter labels
-- `src/stores/consolidatedFilterStore.ts` - Changed default sort order
