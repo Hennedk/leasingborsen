@@ -8,7 +8,7 @@ interface ListingHeaderProps {
   car: CarListing
 }
 
-const ListingHeader: React.FC<ListingHeaderProps> = ({ car }) => {
+const ListingHeader: React.FC<ListingHeaderProps> = ({ car: _ }) => {
   return (
     <div className="mb-3">
       <Link to="/listings">
