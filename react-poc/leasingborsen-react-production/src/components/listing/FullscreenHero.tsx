@@ -16,7 +16,7 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
   resultCount 
 }) => {
   const heroRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null as any)
   const location = useLocation()
   const scrollStore = useScrollStore()
   

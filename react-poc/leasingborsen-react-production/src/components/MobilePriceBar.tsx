@@ -16,7 +16,7 @@ interface MobilePriceBarProps {
 }
 
 const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({ 
-  car, 
+  car: _car, 
   selectedLease,
   onShowSeller 
 }) => {

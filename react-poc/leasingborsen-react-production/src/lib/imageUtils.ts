@@ -1,6 +1,6 @@
 export function getOptimizedImageUrl(
   url: string, 
-  { width, format = 'avif', quality = 80 }: { 
+  _options: { 
     width: number; 
     format?: 'avif' | 'webp' | 'jpg'; 
     quality?: number 

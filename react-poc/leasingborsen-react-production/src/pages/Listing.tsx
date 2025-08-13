@@ -45,16 +45,16 @@ const Listing: React.FC = () => {
     availableMileages,
     availablePeriods,
     availableUpfronts,
-    leaseOptionsWithScores,
+    leaseOptionsWithScores: _leaseOptionsWithScores,
     setSelectedMileage,
     setSelectedPeriod,
     setSelectedUpfront,
     resetToCheapest,
-    selectBestScore,
+    selectBestScore: _selectBestScore,
     isLoading: leaseLoading,
     error: leaseError,
     totalCost,
-    bestScoreOption,
+    bestScoreOption: _bestScoreOption,
     isCheapest,
     priceDifference,
     mileagePriceImpacts,
@@ -251,7 +251,7 @@ const Listing: React.FC = () => {
       {car && (
         <MobilePriceBar 
           car={car}
-          selectedLease={selectedLease}
+          selectedLease={selectedLease || null}
           onShowSeller={() => setSellerModalOpen(true)}
         />
       )}

@@ -1,5 +1,4 @@
 import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
 
 function debounce(func: Function, wait: number) {
   let timeout: NodeJS.Timeout
@@ -10,7 +9,6 @@ function debounce(func: Function, wait: number) {
 }
 
 export function useScrollRestoration(key: string) {
-  const location = useLocation()
   
   // Save scroll position on scroll
   useEffect(() => {
