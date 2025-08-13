@@ -11,7 +11,9 @@ import CarListingGrid from '@/components/CarListingGrid'
 import MobilePriceDrawer from '@/components/MobilePriceDrawer'
 import MobilePriceBar from '@/components/MobilePriceBar'
 import ListingHeader from '@/components/listing/ListingHeader'
+import ListingTitle from '@/components/listing/ListingTitle'
 import ListingImage from '@/components/listing/ListingImage'
+import KeySpecs from '@/components/listing/KeySpecs'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
@@ -119,6 +121,24 @@ const Listing: React.FC = () => {
             <ErrorBoundary fallback={CompactErrorFallback}>
               <ListingImage car={car} />
             </ErrorBoundary>
+            {/* Desktop Key Specs - Show below image on desktop only */}
+            <div className="hidden lg:block">
+              <ErrorBoundary fallback={CompactErrorFallback}>
+                <KeySpecs car={car} />
+              </ErrorBoundary>
+            </div>
+            {/* Mobile Title - Show below image on mobile only */}
+            <div className="lg:hidden">
+              <ErrorBoundary fallback={CompactErrorFallback}>
+                <ListingTitle car={car} />
+              </ErrorBoundary>
+            </div>
+            {/* Mobile Key Specs - Show below title on mobile only */}
+            <div className="lg:hidden">
+              <ErrorBoundary fallback={CompactErrorFallback}>
+                <KeySpecs car={car} />
+              </ErrorBoundary>
+            </div>
             <ErrorBoundary fallback={CompactErrorFallback}>
               <ListingSpecifications car={car} />
             </ErrorBoundary>
@@ -126,7 +146,14 @@ const Listing: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Lease Calculator Card - Hidden on mobile */}
+            {/* Desktop Title - Show in sidebar on desktop only */}
+            <div className="hidden lg:block">
+              <ErrorBoundary fallback={CompactErrorFallback}>
+                <ListingTitle car={car} />
+              </ErrorBoundary>
+            </div>
+            
+            {/* Lease Calculator Card */}
             <ErrorBoundary fallback={CompactErrorFallback}>
               <LeaseCalculatorCard
                 selectedLease={selectedLease}
