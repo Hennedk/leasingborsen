@@ -403,3 +403,106 @@ body {
     letter-spacing: var(--tracking-normal);
   }
 }
+
+/* Mobile Full-Page Takeover Critical Fixes */
+
+/* Modern viewport units with fallbacks (CRITICAL) */
+@supports (height: 100dvh) {
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+}
+
+/* Safe area utilities (iOS/Android notches) */
+.safe-top {
+  padding-top: max(0px, env(safe-area-inset-top, 0px));
+}
+
+.safe-bottom {
+  padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+}
+
+.safe-left {
+  padding-left: max(0px, env(safe-area-inset-left, 0px));
+}
+
+.safe-right {
+  padding-right: max(0px, env(safe-area-inset-right, 0px));
+}
+
+/* Mobile-only responsive utilities (CSS-first) */
+@media (min-width: 1024px) {
+  .mobile-fullscreen-hero,
+  .mobile-sticky-header {
+    display: none !important;
+  }
+  
+  /* Reset mobile-specific styles */
+  .listing-page {
+    --hero-height: 0px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .listing-page {
+    --hero-height: 0px;
+  }
+}
+
+/* Hero scroll animations - triggered by IntersectionObserver */
+.hero-scrolled .mobile-sticky-header {
+  @apply translate-y-0 opacity-100;
+}
+
+/* CSS custom properties for animations */
+:root {
+  --hero-opacity: 1;
+  --header-offset: 0;
+}
+
+/* Smooth scroll for navigation (respect user preference) */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-sticky-header {
+    transition: none !important;
+  }
+  
+  .mobile-fullscreen-hero img {
+    transition: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-fullscreen-hero .floating-button {
+    @apply border-2 border-foreground;
+  }
+}
+
+/* Focus improvements for mobile */
+@media (max-width: 1023px) {
+  .focus-visible\:outline-none:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+}
+
+/* Prevent zoom on double-tap (iOS) while maintaining accessibility */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Performance: contain layout shifts */
+.mobile-fullscreen-hero {
+  contain: layout style paint;
+}
+
+.mobile-sticky-header {
+  contain: layout style paint;
+}

@@ -8,7 +8,6 @@ import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
-import MobilePriceDrawer from '@/components/MobilePriceDrawer'
 import MobilePriceBar from '@/components/MobilePriceBar'
 import ListingHeader from '@/components/listing/ListingHeader'
 import ListingTitle from '@/components/listing/ListingTitle'
@@ -17,7 +16,11 @@ import KeySpecs from '@/components/listing/KeySpecs'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
+import FullscreenHero from '@/components/listing/FullscreenHero'
+import CompactStickyHeader from '@/components/listing/CompactStickyHeader'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { cn } from '@/lib/utils'
 import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
@@ -60,11 +63,14 @@ const Listing: React.FC = () => {
     setHoveredOption
   } = useLeaseCalculator(car)
   
-  // Mobile price overlay state
-  const [mobilePriceOpen, setMobilePriceOpen] = useState(false)
-  
   // Seller modal state
   const [sellerModalOpen, setSellerModalOpen] = useState(false)
+
+  // Scroll restoration for back navigation (CRITICAL)
+  useScrollRestoration('/listings')
+
+  // Calculate result count (would come from actual search results)
+  const resultCount = 37 // TODO: Get from search context
 
   // Seller data
   const seller = {
@@ -111,34 +117,64 @@ const Listing: React.FC = () => {
 
 
   return (
-    <BaseLayout>
-      <Container className="py-8 pb-32 lg:pb-8">
-        <ListingHeader car={car} />
+    <BaseLayout className="listing-page" showHeader={false}>
+      {/* Mobile fullscreen hero (hidden on desktop via CSS) */}
+      <FullscreenHero 
+        images={car?.images || []} 
+        resultCount={resultCount}
+      />
+      
+      {/* Mobile sticky header (hidden on desktop via CSS) */}
+      <CompactStickyHeader 
+        title={`${car?.make} ${car?.model}`}
+        variant={car?.variant}
+        resultCount={resultCount}
+      />
+      
+      {/* Main content with responsive padding */}
+      <Container 
+        className={cn(
+          "pb-32 lg:pb-8",
+          // Mobile: small padding after hero image
+          "pt-4 lg:pt-8"
+        )}
+      >
+        {/* Desktop header (hidden on mobile) */}
+        <div className="hidden lg:block">
+          <ListingHeader car={car} />
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 lg:mt-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            <ErrorBoundary fallback={CompactErrorFallback}>
-              <ListingImage car={car} />
-            </ErrorBoundary>
+            {/* Desktop image (hidden on mobile) */}
+            <div className="hidden lg:block">
+              <ErrorBoundary fallback={CompactErrorFallback}>
+                <ListingImage car={car} />
+              </ErrorBoundary>
+            </div>
+            
             {/* Desktop Key Specs - Show below image on desktop only */}
             <div className="hidden lg:block">
               <ErrorBoundary fallback={CompactErrorFallback}>
                 <KeySpecs car={car} />
               </ErrorBoundary>
             </div>
-            {/* Mobile Title - Show below image on mobile only */}
+            
+            {/* Mobile Title - Show on mobile only */}
             <div className="lg:hidden">
               <ErrorBoundary fallback={CompactErrorFallback}>
                 <ListingTitle car={car} />
               </ErrorBoundary>
             </div>
+            
             {/* Mobile Key Specs - Show below title on mobile only */}
             <div className="lg:hidden">
               <ErrorBoundary fallback={CompactErrorFallback}>
                 <KeySpecs car={car} />
               </ErrorBoundary>
             </div>
+            
             <ErrorBoundary fallback={CompactErrorFallback}>
               <ListingSpecifications car={car} />
             </ErrorBoundary>
@@ -179,7 +215,6 @@ const Listing: React.FC = () => {
                 onHoverOption={setHoveredOption}
               />
             </ErrorBoundary>
-
           </div>
         </div>
 
@@ -210,57 +245,24 @@ const Listing: React.FC = () => {
           </div>
         )}
 
-        {/* Mobile Price Components */}
-        {car && (
-          <>
-            {/* Mobile Sticky Price Bar */}
-            {!mobilePriceOpen && (
-              <MobilePriceBar
-              car={car}
-              seller={seller}
-              selectedLease={selectedLease}
-              onEditPrice={() => setMobilePriceOpen(true)}
-              onShowSeller={() => setSellerModalOpen(true)}
-              isInverted={mobilePriceOpen}
-            />
-            )}
-
-            {/* Mobile Price Drawer */}
-            <MobilePriceDrawer
-              isOpen={mobilePriceOpen}
-              onClose={() => setMobilePriceOpen(false)}
-              car={car}
-              selectedMileage={selectedMileage}
-              selectedPeriod={selectedPeriod}
-              selectedUpfront={selectedUpfront}
-              selectedLease={selectedLease}
-              availableMileages={availableMileages}
-              availablePeriods={availablePeriods}
-              availableUpfronts={availableUpfronts}
-              onMileageChange={setSelectedMileage}
-              onPeriodChange={setSelectedPeriod}
-              onUpfrontChange={setSelectedUpfront}
-              onResetToCheapest={resetToCheapest}
-              onSelectBestScore={selectBestScore}
-              onShowSeller={() => setSellerModalOpen(true)}
-              mileagePriceImpacts={mileagePriceImpacts}
-              periodPriceImpacts={periodPriceImpacts}
-              upfrontPriceImpacts={upfrontPriceImpacts}
-              onHoverOption={setHoveredOption}
-              leaseOptionsWithScores={leaseOptionsWithScores}
-              bestScoreOption={bestScoreOption}
-            />
-
-            {/* Seller Modal */}
-            <SellerModal
-              isOpen={sellerModalOpen}
-              onClose={() => setSellerModalOpen(false)}
-              seller={seller}
-              car={car}
-            />
-          </>
-        )}
       </Container>
+
+      {/* Enhanced mobile price bar with scroll lock */}
+      {car && (
+        <MobilePriceBar 
+          car={car}
+          selectedLease={selectedLease}
+          onShowSeller={() => setSellerModalOpen(true)}
+        />
+      )}
+
+      {/* Seller Modal */}
+      <SellerModal
+        isOpen={sellerModalOpen}
+        onClose={() => setSellerModalOpen(false)}
+        seller={seller}
+        car={car}
+      />
     </BaseLayout>
   )
 }
