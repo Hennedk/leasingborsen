@@ -35,7 +35,7 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
         className="relative w-full lg:hidden mobile-fullscreen-hero bg-gradient-to-br from-muted to-muted/70 overflow-hidden"
         style={{ 
           height: '40vh',  // Fixed moderate height
-          contain: 'layout size style paint'
+          contain: 'layout style paint'  // Removed 'size' to prevent expansion issues
         }}
       >
         {/* Image wrapper with proper padding and flex centering */}
