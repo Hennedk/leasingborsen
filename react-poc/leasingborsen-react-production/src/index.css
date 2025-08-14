@@ -430,9 +430,8 @@ body {
   padding-right: max(0px, env(safe-area-inset-right, 0px));
 }
 
-/* Mobile-only responsive utilities (CSS-first) */
+/*/* Mobile-only responsive utilities (CSS-first) */
 @media (min-width: 1024px) {
-  .mobile-fullscreen-hero,
   .mobile-sticky-header {
     display: none !important;
   }
@@ -495,15 +494,12 @@ body {
   .mobile-sticky-header {
     transition: none !important;
   }
-  
-  .mobile-fullscreen-hero img {
-    transition: none !important;
-  }
+
 }
 
-/* High contrast mode support */
+/*/* High contrast mode support */
 @media (prefers-contrast: high) {
-  .mobile-fullscreen-hero .floating-button {
+  .floating-back-button {
     @apply border-2 border-foreground;
   }
 }
@@ -521,19 +517,7 @@ input, select, textarea {
   font-size: 16px;
 }
 
-/* Performance: contain layout shifts */
-.mobile-fullscreen-hero {
-  contain: layout style paint;
-}
-
-/* Prevent image size changes during scroll */
-.mobile-fullscreen-hero img {
-  transform: translateZ(0); /* Force GPU acceleration */
-  backface-visibility: hidden; /* Prevent flickering */
-  -webkit-backface-visibility: hidden;
-  perspective: 1000px;
-}
-
+/* Performance optimization for sticky header */
 .mobile-sticky-header {
   contain: layout style paint;
 }

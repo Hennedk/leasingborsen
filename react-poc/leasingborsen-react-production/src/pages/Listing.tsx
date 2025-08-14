@@ -16,7 +16,7 @@ import KeySpecs from '@/components/listing/KeySpecs'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
-import FullscreenHero from '@/components/listing/FullscreenHero'
+import MobileHeroImage from '@/components/listing/MobileHeroImage'
 import CompactStickyHeader from '@/components/listing/CompactStickyHeader'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
@@ -141,8 +141,8 @@ const Listing: React.FC = () => {
 
   return (
     <BaseLayout className="listing-page" showHeader={false}>
-      {/* Mobile fullscreen hero (hidden on desktop via CSS) */}
-      <FullscreenHero 
+      {/* Mobile hero image with AspectRatio (hidden on desktop) */}
+      <MobileHeroImage 
         images={car?.images || []} 
         processedImageDetail={car?.processed_image_detail}
         resultCount={resultCount}
