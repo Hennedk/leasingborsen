@@ -43,38 +43,42 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
   return (
     <>
       <div 
-        className="relative w-full lg:hidden mobile-fullscreen-hero bg-gradient-to-br from-muted to-muted/70"
+        className="relative w-full lg:hidden mobile-fullscreen-hero bg-gradient-to-br from-muted to-muted/70 overflow-hidden"
         style={{ 
           height: '40vh',  // Fixed moderate height
+          contain: 'layout size style paint'
         }}
       >
-        {/* Optimized Hero Image with Picture element */}
-        <picture>
-          <source 
-            type="image/avif" 
-            srcSet={srcSets.avif}
-            sizes="100vw"
-          />
-          <source 
-            type="image/webp" 
-            srcSet={srcSets.webp}
-            sizes="100vw"
-          />
-          <img 
-            src={heroImage}
-            srcSet={srcSets.jpg}
-            sizes="100vw"
-            alt="Bil billede"
-            loading="eager"
-            fetchPriority="high"
-            decoding="async"
-            className="w-full h-full object-contain px-4 pt-14 pb-8"
-            style={{
-              opacity: 'var(--hero-opacity, 1)',
-              transition: 'opacity 150ms ease-out'
-            }}
-          />
-        </picture>
+        {/* Image wrapper with proper padding */}
+        <div className="w-full h-full px-4 pt-14 pb-8">
+          {/* Optimized Hero Image with Picture element */}
+          <picture className="block w-full h-full">
+            <source 
+              type="image/avif" 
+              srcSet={srcSets.avif}
+              sizes="100vw"
+            />
+            <source 
+              type="image/webp" 
+              srcSet={srcSets.webp}
+              sizes="100vw"
+            />
+            <img 
+              src={heroImage}
+              srcSet={srcSets.jpg}
+              sizes="100vw"
+              alt="Bil billede"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+              className="w-full h-full object-contain"
+              style={{
+                opacity: 'var(--hero-opacity, 1)',
+                transition: 'opacity 150ms ease-out'
+              }}
+            />
+          </picture>
+        </div>
         
         {/* Gradient overlay for button contrast */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent h-24 pointer-events-none" />
