@@ -1,5 +1,74 @@
 # Session Log
 
+## Session: 2025-01-14 (Part 2) - Image Display Consistency & Mobile Optimizations
+**Duration**: ~3 hours  
+**Main Focus**: Fixed image display inconsistencies, optimized mobile spacing, and resolved image expansion issues
+
+### What Accomplished
+
+1. **Fixed Image Display Inconsistencies**
+   - ✅ Unified image priority logic across mobile and desktop
+   - ✅ Both views now prioritize: processed_image_detail → images[0] → image
+   - ✅ Ensures AI-processed background-removed images shown when available
+   - ✅ Updated ListingImage, FullscreenHero, and Listing components
+
+2. **Optimized Mobile Spacing**
+   - ✅ Reduced space between hero and title from 48px to 24px
+   - ✅ Container padding: pt-2 (8px) on mobile, pt-8 on desktop
+   - ✅ Grid margin: mt-4 (16px) on mobile, mt-8 on desktop
+   - ✅ Section spacing: space-y-4 (16px) on mobile, space-y-6 on desktop
+
+3. **Minimized Staging Debug Component**
+   - ✅ Added toggle between minimized/expanded states
+   - ✅ Default shows small badge ("STAGING" or "DEV")
+   - ✅ Click to expand for full debug information
+   - ✅ Added close button (×) for better UX
+
+4. **Fixed Mobile Image Expansion on Scroll**
+   - ✅ Changed from relative to absolute positioning
+   - ✅ Used auto sizing with max constraints
+   - ✅ Added GPU acceleration and backface-visibility fixes
+   - ✅ Removed problematic CSS opacity variable
+   - ✅ Container maintains fixed 40vh height
+
+### Technical Details
+
+**Image Priority Implementation**:
+```typescript
+// Consistent across mobile and desktop
+const imageUrl = car.processed_image_detail || car.images?.[0] || car.image
+```
+
+**Mobile Scroll Fix**:
+```css
+- Position: absolute with flex centering
+- Size: width/height auto with max constraints
+- GPU: transform: translateZ(0)
+- Flicker fix: backface-visibility: hidden
+```
+
+### Files Modified
+```
+- src/components/listing/ListingImage.tsx
+- src/components/listing/FullscreenHero.tsx
+- src/pages/Listing.tsx
+- src/components/DebugInfo.tsx
+- src/index.css
+```
+
+### Commits Created
+- `b05c3f7` - fix: unify image display logic and optimize mobile spacing
+- `f27066d` - feat: minimize staging debug component for better UX
+- `ebaa7dc` - fix: prevent mobile hero image from expanding on scroll
+- `aa55509` - fix: prevent image expansion on mobile scroll
+
+### Next Steps
+- Push to remote and create PR
+- Test on actual mobile devices
+- Verify on staging environment
+
+---
+
 ## Session: 2025-01-14 - Mobile Sticky Header & UI Fixes
 **Duration**: ~1.5 hours  
 **Main Focus**: Fixed mobile UI issues and implemented smooth sticky header with morphing animation
