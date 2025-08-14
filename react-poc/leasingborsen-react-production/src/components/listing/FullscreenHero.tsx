@@ -2,8 +2,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useScrollStore } from '@/stores/scrollStore'
-import { useRef, useEffect, useMemo } from 'react'
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
+import { useMemo } from 'react'
 import { generateSrcSet } from '@/lib/imageUtils'
 
 interface FullscreenHeroProps {
@@ -15,8 +14,6 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
   images, 
   resultCount 
 }) => {
-  const heroRef = useRef<HTMLDivElement>(null)
-  const sentinelRef = useRef<HTMLDivElement>(null as any)
   const location = useLocation()
   const scrollStore = useScrollStore()
   
@@ -31,18 +28,6 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
     }
   }, [heroImage])
   
-  // Track hero visibility for sticky header animation
-  const heroEntry = useIntersectionObserver(sentinelRef, {
-    threshold: 0.25,
-    rootMargin: '0px'
-  })
-  
-  // Update CSS class for animations
-  useEffect(() => {
-    const isScrolled = heroEntry && !heroEntry.isIntersecting
-    document.documentElement.classList.toggle('hero-scrolled', isScrolled)
-  }, [heroEntry?.isIntersecting])
-  
   // Save scroll position before navigating back
   const handleBackClick = () => {
     scrollStore.savePosition(location.pathname, window.scrollY)
@@ -55,8 +40,7 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
   return (
     <>
       <div 
-        ref={heroRef}
-        className="relative w-full lg:hidden mobile-fullscreen-hero"
+        className="relative w-full lg:hidden mobile-fullscreen-hero bg-gradient-to-br from-muted to-muted/70"
         style={{ 
           height: '40vh',  // Fixed moderate height
         }}
@@ -81,7 +65,7 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
             loading="eager"
             fetchPriority="high"
             decoding="async"
-            className="w-full h-full object-contain p-4"
+            className="w-full h-full object-contain px-4 pt-14 pb-8"
             style={{
               opacity: 'var(--hero-opacity, 1)',
               transition: 'opacity 150ms ease-out'
@@ -90,13 +74,13 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
         </picture>
         
         {/* Gradient overlay for button contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent h-32" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent h-24 pointer-events-none" />
         
-        {/* Floating Back Button with safe areas */}
+        {/* Floating Back Button with safe areas - hides when sticky header appears */}
         <Link 
           to="/listings" 
           onClick={handleBackClick}
-          className="absolute z-30"
+          className="absolute z-30 floating-back-button transition-all duration-200"
           style={{
             top: 'max(1rem, env(safe-area-inset-top, 0px) + 0.5rem)',
             left: '1rem'
@@ -112,14 +96,6 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
           </Button>
         </Link>
       </div>
-      
-      {/* Sentinel for intersection observer - IN DOCUMENT FLOW (CRITICAL) */}
-      <div 
-        ref={sentinelRef} 
-        className="h-0 w-full pointer-events-none"
-        style={{ marginTop: '-25vh' }}
-        aria-hidden="true"
-      />
     </>
   )
 }

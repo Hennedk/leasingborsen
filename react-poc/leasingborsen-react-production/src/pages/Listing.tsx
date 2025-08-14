@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Loader2 } from 'lucide-react'
@@ -26,8 +26,31 @@ import type { CarListing } from '@/types'
 const Listing: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const { data: listingResponse, isLoading, error } = useListing(id || '')
+  const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined
+
+  // Track when mobile title is about to hit sticky header
+  useEffect(() => {
+    if (!mobileTitleRef.current) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show sticky header when title is about to go under where sticky header will be
+        // The sticky header is ~56px (h-14), so we trigger when title is 56px from top
+        const shouldShowHeader = !entry.isIntersecting
+        document.documentElement.classList.toggle('hero-scrolled', shouldShowHeader)
+      },
+      {
+        // rootMargin top value should match sticky header height
+        rootMargin: '-56px 0px 0px 0px',
+        threshold: 1.0
+      }
+    )
+
+    observer.observe(mobileTitleRef.current)
+    return () => observer.disconnect()
+  }, [car]) // Re-run when car changes
 
   // Fetch similar listings using enhanced multi-tier matching
   const { 
@@ -162,7 +185,7 @@ const Listing: React.FC = () => {
             </div>
             
             {/* Mobile Title - Show on mobile only */}
-            <div className="lg:hidden">
+            <div ref={mobileTitleRef} className="lg:hidden">
               <ErrorBoundary fallback={CompactErrorFallback}>
                 <ListingTitle car={car} />
               </ErrorBoundary>
