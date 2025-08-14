@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Edit3 } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
-import MobilePriceBar from '@/components/MobilePriceBar'
+import MobilePriceDrawer from '@/components/MobilePriceDrawer'
 import ListingHeader from '@/components/listing/ListingHeader'
 import ListingTitle from '@/components/listing/ListingTitle'
 import ListingImage from '@/components/listing/ListingImage'
@@ -88,6 +88,9 @@ const Listing: React.FC = () => {
   
   // Seller modal state
   const [sellerModalOpen, setSellerModalOpen] = useState(false)
+  
+  // Mobile price drawer state
+  const [priceDrawerOpen, setPriceDrawerOpen] = useState(false)
 
   // Scroll restoration for back navigation (CRITICAL)
   useScrollRestoration('/listings')
@@ -271,12 +274,72 @@ const Listing: React.FC = () => {
 
       </Container>
 
-      {/* Enhanced mobile price bar with scroll lock */}
+      {/* Mobile price bar footer */}
       {car && (
-        <MobilePriceBar 
+        <footer className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-background border-t">
+          <div className="p-4 space-y-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
+            <button 
+              onClick={() => setPriceDrawerOpen(true)}
+              className="w-full text-left group p-3 -m-3 rounded-lg hover:bg-muted/50 transition-colors"
+              aria-label="Åbn prisindstillinger"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-2">
+                  <p className="text-xl font-bold text-foreground leading-none">
+                    {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed">
+                    <span className="font-medium">{selectedMileage?.toLocaleString('da-DK')} km/år</span>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span className="font-medium">{selectedPeriod} mdr</span>
+                    {selectedLease?.first_payment && (
+                      <>
+                        <span className="text-muted-foreground/50">•</span>
+                        <span className="font-medium">Udb: {selectedLease.first_payment.toLocaleString('da-DK')} kr</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <Edit3 className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
+              </div>
+            </button>
+            
+            <Button 
+              size="lg"
+              onClick={() => setSellerModalOpen(true)}
+              className="w-full min-h-[44px]"
+            >
+              Gå til tilbud
+            </Button>
+          </div>
+        </footer>
+      )}
+
+      {/* Enhanced mobile price drawer */}
+      {car && (
+        <MobilePriceDrawer 
+          isOpen={priceDrawerOpen}
+          onClose={() => setPriceDrawerOpen(false)}
           car={car}
-          selectedLease={selectedLease || null}
+          selectedMileage={selectedMileage}
+          selectedPeriod={selectedPeriod}
+          selectedUpfront={selectedUpfront}
+          selectedLease={selectedLease}
+          availableMileages={availableMileages}
+          availablePeriods={availablePeriods}
+          availableUpfronts={availableUpfronts}
+          onMileageChange={setSelectedMileage}
+          onPeriodChange={setSelectedPeriod}
+          onUpfrontChange={setSelectedUpfront}
+          onResetToCheapest={resetToCheapest}
+          onSelectBestScore={_selectBestScore}
           onShowSeller={() => setSellerModalOpen(true)}
+          mileagePriceImpacts={mileagePriceImpacts}
+          periodPriceImpacts={periodPriceImpacts}
+          upfrontPriceImpacts={upfrontPriceImpacts}
+          onHoverOption={setHoveredOption}
+          leaseOptionsWithScores={_leaseOptionsWithScores}
+          bestScoreOption={_bestScoreOption}
         />
       )}
 
