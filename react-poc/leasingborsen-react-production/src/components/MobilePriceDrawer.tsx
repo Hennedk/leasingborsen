@@ -81,35 +81,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         </DrawerHeader>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto overscroll-contain px-4">
+        <div className="overflow-y-auto overscroll-contain">
           <div className="p-4 space-y-4">
-            {/* Quick Options Section */}
-            <div className="space-y-3">
-              <Label className="text-sm font-semibold text-muted-foreground">
-                Hurtig valg
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={onResetToCheapest}
-                  className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                >
-                  <span>💰</span>
-                  <span className="font-medium">Billigste</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onSelectBestScore}
-                  className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                  disabled={!bestScoreOption}
-                >
-                  <span>⭐</span>
-                  <span className="font-medium">Bedste score</span>
-                </Button>
-              </div>
-              <div className="border-b border-border/50 mt-4"></div>
-            </div>
-
             {/* Configuration Options */}
             <div className="space-y-4">
               {/* Lease Period Selection */}
