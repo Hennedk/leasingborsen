@@ -1,8 +1,15 @@
 import React from 'react'
-import { Drawer } from 'vaul'
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { X, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
@@ -62,257 +69,169 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   bestScoreOption
 }) => {
   return (
-    <Drawer.Root 
+    <Drawer 
       open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
-      modal={true}
-      dismissible={true}
-      snapPoints={[0.9]} // 90% height to match filter overlay
     >
-      <Drawer.Portal>
-        <Drawer.Overlay 
-          className={cn(
-            "fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm",
-            // Only show on mobile
-            "lg:hidden"
-          )} 
-        />
-        <Drawer.Content 
-          className={cn(
-            // Positioning
-            "fixed bottom-0 left-0 right-0 z-[60]",
-            // Layout - Grid for guaranteed footer visibility
-            "grid grid-rows-[auto_auto_1fr_auto]",
-            // Styling
-            "bg-background rounded-t-2xl border-t border-border/50",
-            // Sizing - matches mobile filter overlay
-            "max-h-[90vh]",
-            // Only show on mobile
-            "lg:hidden"
-          )}
-        >
-          {/* Accessibility elements for screen readers */}
-          <VisuallyHidden>
-            <Drawer.Title>Tilpas leasingpris</Drawer.Title>
-            <Drawer.Description>
-              Juster leasingperiode, årligt kilometer og udbetaling for at se forskellige prismuligheder
-            </Drawer.Description>
-          </VisuallyHidden>
+      <DrawerContent className="lg:hidden max-h-[90vh] grid grid-rows-[auto_1fr_auto]">
+        <DrawerHeader>
+          <DrawerTitle>Tilpas pris</DrawerTitle>
+        </DrawerHeader>
 
-          {/* Drag Handle */}
-          <div className="mx-auto mt-3 mb-1 flex items-center justify-center">
-            <Drawer.Handle className="h-1.5 w-12 rounded-full bg-muted-foreground/40 hover:bg-muted-foreground/60 transition-colors cursor-grab active:cursor-grabbing" />
-          </div>
+        {/* Scrollable Content */}
+        <div className="overflow-y-auto overscroll-contain px-4">
+          <div className="p-4 space-y-4">
+            {/* Quick Options Section */}
+            <div className="space-y-3">
+              <Label className="text-sm font-semibold text-muted-foreground">
+                Hurtig valg
+              </Label>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  onClick={onResetToCheapest}
+                  className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                >
+                  <span>💰</span>
+                  <span className="font-medium">Billigste</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={onSelectBestScore}
+                  className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  disabled={!bestScoreOption}
+                >
+                  <span>⭐</span>
+                  <span className="font-medium">Bedste score</span>
+                </Button>
+              </div>
+              <div className="border-b border-border/50 mt-4"></div>
+            </div>
 
-          {/* Header - Grid row 2 */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border/50">
-            <h3 className="text-lg font-bold">Tilpas pris</h3>
-            <Drawer.Close asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-9 p-0 hover:bg-muted/50"
-                aria-label="Luk prisoverlægning"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </Drawer.Close>
-          </div>
-
-          {/* Scrollable Content - Grid row 3 (1fr) */}
-          <div className="overflow-y-auto overscroll-contain">
-              <div className="p-4 space-y-4">
-                {/* Quick Options Section */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-muted-foreground">
-                    Hurtig valg
-                  </Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={onResetToCheapest}
-                      className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                    >
-                      <span>💰</span>
-                      <span className="font-medium">Billigste</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={onSelectBestScore}
-                      className="h-12 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                      disabled={!bestScoreOption}
-                    >
-                      <span>⭐</span>
-                      <span className="font-medium">Bedste score</span>
-                    </Button>
-                  </div>
-                  <div className="border-b border-border/50 mt-4"></div>
-                </div>
-
-                {/* Configuration Options */}
-                <div className="space-y-4">
-                  {/* Lease Period Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-muted-foreground">
-                      Leasingperiode
-                    </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                      {availablePeriods.map((period) => {
-                        const optionWithScore = leaseOptionsWithScores.find(opt => 
-                          opt.mileage_per_year === selectedMileage &&
-                          opt.period_months === period &&
-                          opt.first_payment === selectedUpfront
-                        )
-                        
-                        return (
-                          <LeaseOptionCard
-                            key={`period-${period}`}
-                            value={`${period} måneder`}
-                            label="Periode"
-                            score={optionWithScore?.lease_score}
-                            priceImpact={periodPriceImpacts?.get(period)}
-                            isSelected={period === selectedPeriod}
-                            onClick={() => onPeriodChange(period)}
-                            className="flex-shrink-0 w-32 snap-start"
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Mileage Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-muted-foreground">
-                      Årligt km-forbrug
-                    </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                      {availableMileages.map((mileage) => {
-                        const optionWithScore = leaseOptionsWithScores.find(opt => 
-                          opt.mileage_per_year === mileage &&
-                          opt.period_months === selectedPeriod &&
-                          opt.first_payment === selectedUpfront
-                        )
-                        
-                        return (
-                          <LeaseOptionCard
-                            key={`mileage-${mileage}`}
-                            value={`${mileage.toLocaleString('da-DK')} km`}
-                            label="pr. år"
-                            score={optionWithScore?.lease_score}
-                            priceImpact={mileagePriceImpacts?.get(mileage)}
-                            isSelected={mileage === selectedMileage}
-                            onClick={() => onMileageChange(mileage)}
-                            className="flex-shrink-0 w-32 snap-start"
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Upfront Payment Selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-muted-foreground">
-                      Udbetaling
-                    </Label>
-                    <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                      {availableUpfronts.map((upfront) => {
-                        const optionWithScore = leaseOptionsWithScores.find(opt => 
-                          opt.mileage_per_year === selectedMileage &&
-                          opt.period_months === selectedPeriod &&
-                          opt.first_payment === upfront
-                        )
-                        
-                        return (
-                          <LeaseOptionCard
-                            key={`upfront-${upfront}`}
-                            value={`${upfront.toLocaleString('da-DK')} kr`}
-                            label="udbetaling"
-                            score={optionWithScore?.lease_score}
-                            priceImpact={upfrontPriceImpacts?.get(upfront)}
-                            isSelected={upfront === selectedUpfront}
-                            onClick={() => onUpfrontChange(upfront)}
-                            className="flex-shrink-0 w-32 snap-start"
-                          />
-                        )
-                      })}
-                    </div>
-                  </div>
+            {/* Configuration Options */}
+            <div className="space-y-4">
+              {/* Lease Period Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-muted-foreground">
+                  Leasingperiode
+                </Label>
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
+                  {availablePeriods.map((period) => {
+                    const optionWithScore = leaseOptionsWithScores.find(opt => 
+                      opt.mileage_per_year === selectedMileage &&
+                      opt.period_months === period &&
+                      opt.first_payment === selectedUpfront
+                    )
+                    
+                    return (
+                      <LeaseOptionCard
+                        key={`period-${period}`}
+                        value={`${period} måneder`}
+                        label="Periode"
+                        score={optionWithScore?.lease_score}
+                        priceImpact={periodPriceImpacts?.get(period)}
+                        isSelected={period === selectedPeriod}
+                        onClick={() => onPeriodChange(period)}
+                        className="flex-shrink-0 w-32 snap-start"
+                      />
+                    )
+                  })}
                 </div>
               </div>
-          </div>
 
-          {/* Sticky Footer - Grid row 4 */}
-          <div className={cn(
-            // Inverted styling - dark background with light text
-            "bg-primary text-primary-foreground border-t border-primary/20",
-            // Padding
-            "px-5 py-3",
-            // iOS safe area padding
-            "pb-[max(1rem,env(safe-area-inset-bottom))]"
-          )}>
-            {/* Price Summary and CTA on same line - Inverted */}
-            <div className="flex items-center justify-between gap-4">
-                  {/* Left: Current Lease Summary */}
-                  <div className="flex-1 min-w-0">
-                    <div className="leading-tight mb-1">
-                      <AnimatedPrice 
-                        value={selectedLease?.monthly_price ?? car.monthly_price ?? 0}
-                        className="text-2xl font-bold text-primary-foreground"
-                        showCurrency={true}
-                        showPeriod={true}
-                        animationDuration={300}
-                        disableColorChanges={true}
+              {/* Mileage Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-muted-foreground">
+                  Årligt km-forbrug
+                </Label>
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
+                  {availableMileages.map((mileage) => {
+                    const optionWithScore = leaseOptionsWithScores.find(opt => 
+                      opt.mileage_per_year === mileage &&
+                      opt.period_months === selectedPeriod &&
+                      opt.first_payment === selectedUpfront
+                    )
+                    
+                    return (
+                      <LeaseOptionCard
+                        key={`mileage-${mileage}`}
+                        value={`${mileage.toLocaleString('da-DK')} km`}
+                        label="pr. år"
+                        score={optionWithScore?.lease_score}
+                        priceImpact={mileagePriceImpacts?.get(mileage)}
+                        isSelected={mileage === selectedMileage}
+                        onClick={() => onMileageChange(mileage)}
+                        className="flex-shrink-0 w-32 snap-start"
                       />
-                    </div>
-                    <div className="text-sm text-primary-foreground leading-relaxed truncate flex items-center gap-1">
-                      <AnimatedPrice 
-                        value={selectedLease?.first_payment ?? car.first_payment ?? 0}
-                        className="text-sm text-primary-foreground"
-                        showCurrency={true}
-                        showPeriod={false}
-                        animationDuration={300}
-                        disableColorChanges={true}
-                      />
-                      <span>•</span>
-                      <AnimatedPrice 
-                        value={selectedLease?.period_months ?? car.period_months ?? 0}
-                        className="text-sm text-primary-foreground"
-                        showCurrency={false}
-                        showPeriod={false}
-                        animationDuration={300}
-                        disableColorChanges={true}
-                      />
-                      <span>mdr</span>
-                      <span>•</span>
-                      <AnimatedPrice 
-                        value={selectedLease?.mileage_per_year ?? car.mileage_per_year ?? 0}
-                        className="text-sm text-primary-foreground"
-                        showCurrency={false}
-                        showPeriod={false}
-                        animationDuration={300}
-                        disableColorChanges={true}
-                      />
-                      <span>km</span>
-                    </div>
-                  </div>
+                    )
+                  })}
+                </div>
+              </div>
 
-                  {/* Right: CTA Button - Inverted to light variant */}
-                  <Button 
-                    variant="secondary"
-                    className="flex-shrink-0 bg-primary-foreground text-primary hover:bg-primary-foreground/90" 
-                    size="default"
-                    onClick={onShowSeller}
-                  >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Gå til tilbud
-                  </Button>
+              {/* Upfront Payment Selection */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-muted-foreground">
+                  Udbetaling
+                </Label>
+                <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
+                  {availableUpfronts.map((upfront) => {
+                    const optionWithScore = leaseOptionsWithScores.find(opt => 
+                      opt.mileage_per_year === selectedMileage &&
+                      opt.period_months === selectedPeriod &&
+                      opt.first_payment === upfront
+                    )
+                    
+                    return (
+                      <LeaseOptionCard
+                        key={`upfront-${upfront}`}
+                        value={`${upfront.toLocaleString('da-DK')} kr`}
+                        label="udbetaling"
+                        score={optionWithScore?.lease_score}
+                        priceImpact={upfrontPriceImpacts?.get(upfront)}
+                        isSelected={upfront === selectedUpfront}
+                        onClick={() => onUpfrontChange(upfront)}
+                        className="flex-shrink-0 w-32 snap-start"
+                      />
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
+        </div>
+
+        <div className="bg-background border-t p-4 space-y-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
+          <div className="flex items-start justify-between">
+            <div className="flex-1 space-y-2">
+              <p className="text-xl font-bold text-foreground leading-none">
+                {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
+              </p>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed">
+                <span className="font-medium">{selectedMileage?.toLocaleString('da-DK')} km/år</span>
+                <span className="text-muted-foreground/50">•</span>
+                <span className="font-medium">{selectedPeriod} mdr</span>
+                {selectedLease?.first_payment && (
+                  <>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span className="font-medium">Udb: {selectedLease.first_payment.toLocaleString('da-DK')} kr</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <Button 
+            size="lg"
+            onClick={onShowSeller}
+            className="w-full min-h-[44px]"
+          >
+            Gå til tilbud
+          </Button>
+        </div>
+      </DrawerContent>
+    </Drawer>
   )
 }
 

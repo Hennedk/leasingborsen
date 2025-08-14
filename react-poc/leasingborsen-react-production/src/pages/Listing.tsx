@@ -288,7 +288,7 @@ const Listing: React.FC = () => {
                   <p className="text-xl font-bold text-foreground leading-none">
                     {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed mb-4">
                     <span className="font-medium">{selectedMileage?.toLocaleString('da-DK')} km/år</span>
                     <span className="text-muted-foreground/50">•</span>
                     <span className="font-medium">{selectedPeriod} mdr</span>
