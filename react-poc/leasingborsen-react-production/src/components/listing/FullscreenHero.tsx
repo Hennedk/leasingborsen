@@ -2,8 +2,6 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useScrollStore } from '@/stores/scrollStore'
-import { useMemo } from 'react'
-import { generateSrcSet } from '@/lib/imageUtils'
 
 interface FullscreenHeroProps {
   images: string[]
@@ -19,17 +17,8 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
   const location = useLocation()
   const scrollStore = useScrollStore()
   
-  // Generate optimized image sources
   // Prioritize processed image, then first image from array
   const heroImage = processedImageDetail || images[0]
-  const srcSets = useMemo(() => {
-    if (!heroImage) return { avif: '', webp: '', jpg: '' }
-    return {
-      avif: generateSrcSet(heroImage, 'avif'),
-      webp: generateSrcSet(heroImage, 'webp'),
-      jpg: generateSrcSet(heroImage, 'jpg')
-    }
-  }, [heroImage])
   
   // Save scroll position before navigating back
   const handleBackClick = () => {
@@ -49,35 +38,21 @@ const FullscreenHero: React.FC<FullscreenHeroProps> = ({
           contain: 'layout size style paint'
         }}
       >
-        {/* Image wrapper with proper padding */}
-        <div className="w-full h-full px-4 pt-14 pb-8">
-          {/* Optimized Hero Image with Picture element */}
-          <picture className="block w-full h-full">
-            <source 
-              type="image/avif" 
-              srcSet={srcSets.avif}
-              sizes="100vw"
-            />
-            <source 
-              type="image/webp" 
-              srcSet={srcSets.webp}
-              sizes="100vw"
-            />
-            <img 
-              src={heroImage}
-              srcSet={srcSets.jpg}
-              sizes="100vw"
-              alt="Bil billede"
-              loading="eager"
-              fetchPriority="high"
-              decoding="async"
-              className="w-full h-full object-contain"
-              style={{
-                opacity: 'var(--hero-opacity, 1)',
-                transition: 'opacity 150ms ease-out'
-              }}
-            />
-          </picture>
+        {/* Image wrapper with proper padding and flex centering */}
+        <div className="absolute inset-0 px-4 pt-14 pb-8 flex items-center justify-center">
+          <img 
+            src={heroImage}
+            alt="Bil billede"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            className="max-w-full max-h-full object-contain pointer-events-none"
+            style={{
+              display: 'block',
+              width: 'auto',
+              height: 'auto'
+            }}
+          />
         </div>
         
         {/* Gradient overlay for button contrast */}
