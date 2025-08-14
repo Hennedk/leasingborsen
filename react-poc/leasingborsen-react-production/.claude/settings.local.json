@@ -65,7 +65,8 @@
       "Bash(npx eslint:*)",
       "Bash(npx tsc:*)",
       "mcp__serena__write_memory",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

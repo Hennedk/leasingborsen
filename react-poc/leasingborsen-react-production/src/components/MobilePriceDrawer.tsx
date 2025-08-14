@@ -1,19 +1,13 @@
 import React from 'react'
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { X, ExternalLink } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import LeaseOptionCard from '@/components/listing/LeaseOptionCard'
-import AnimatedPrice from '@/components/listing/AnimatedPrice'
 
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
@@ -48,7 +42,6 @@ interface MobilePriceDrawerProps {
 const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   isOpen,
   onClose,
-  car,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -59,14 +52,11 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   onMileageChange,
   onPeriodChange,
   onUpfrontChange,
-  onResetToCheapest,
-  onSelectBestScore,
   onShowSeller,
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,
-  leaseOptionsWithScores = [],
-  bestScoreOption
+  leaseOptionsWithScores = []
 }) => {
   return (
     <Drawer 
@@ -87,7 +77,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
             <div className="space-y-4">
               {/* Lease Period Selection */}
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-muted-foreground">
+                <Label className="text-sm font-medium text-foreground">
                   Leasingperiode
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
@@ -116,7 +106,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
 
               {/* Mileage Selection */}
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-muted-foreground">
+                <Label className="text-sm font-medium text-foreground">
                   Årligt km-forbrug
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
@@ -145,7 +135,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
 
               {/* Upfront Payment Selection */}
               <div className="space-y-2">
-                <Label className="text-sm font-semibold text-muted-foreground">
+                <Label className="text-sm font-medium text-foreground">
                   Udbetaling
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">

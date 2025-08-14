@@ -26,16 +26,11 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
   
   // Format price impact display
   const renderPriceImpact = () => {
-    if (isSelected) {
-      return (
-        <span className="text-xs font-medium text-primary">
-          Valgt
-        </span>
-      )
-    }
-
     if (!priceImpact || !priceImpact.difference || priceImpact.difference === 0) {
-      return <span className="text-xs text-muted-foreground">–</span>
+      return <span className={cn(
+        "text-xs",
+        isSelected ? "text-primary-foreground/70" : "text-muted-foreground"
+      )}>{isSelected ? "" : "–"}</span>
     }
 
     const { difference } = priceImpact
@@ -45,7 +40,9 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       <span
         className={cn(
           'text-xs font-medium',
-          isPositive ? 'text-red-600' : 'text-green-600'
+          isSelected 
+            ? 'text-primary-foreground' 
+            : isPositive ? 'text-red-600' : 'text-green-600'
         )}
       >
         {isPositive ? '+' : ''}{difference.toLocaleString('da-DK')} kr
@@ -66,9 +63,9 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
           'bg-background border-2 border-gray-200 hover:border-primary/40 hover:bg-muted/50',
           'active:scale-[0.98] active:bg-muted'
         ],
-        // Selected state - same bg as non-selected with solid black border
+        // Selected state - primary background with white text
         isSelected && [
-          'bg-background border-2 !border-black dark:!border-white',
+          'bg-primary text-primary-foreground border-2 border-transparent',
           ''
         ],
         // Custom className
@@ -114,7 +111,7 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
         <div className="absolute inset-0 flex items-center justify-center">
           <span className={cn(
             'text-sm font-bold',
-            isSelected ? 'text-primary' : 'text-foreground'
+            isSelected ? 'text-primary-foreground' : 'text-foreground'
           )}>
             {score || '–'}
           </span>
@@ -125,7 +122,7 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       <div className="text-center mb-1">
         <div className={cn(
           'text-sm font-semibold leading-tight',
-          isSelected ? 'text-primary' : 'text-foreground'
+          isSelected ? 'text-primary-foreground' : 'text-foreground'
         )}>
           {value}
         </div>
