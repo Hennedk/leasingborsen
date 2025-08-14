@@ -45,13 +45,15 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
     <div className="relative lg:hidden">
       <Card className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70 border-0 rounded-none">
         <AspectRatio ratio={16 / 9}>
-          <img 
-            src={heroImage}
-            alt="Bil billede"
-            loading="eager"
-            fetchPriority="high"
-            className="object-contain w-full h-full"
-          />
+          <div className="w-full h-full flex items-center justify-center pt-16 pb-4 px-4">
+            <img 
+              src={heroImage}
+              alt="Bil billede"
+              loading="eager"
+              fetchPriority="high"
+              className="object-contain max-w-full max-h-full"
+            />
+          </div>
         </AspectRatio>
         
         {/* Gradient overlay for button contrast */}
