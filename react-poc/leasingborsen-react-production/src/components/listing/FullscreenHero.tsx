@@ -7,18 +7,21 @@ import { generateSrcSet } from '@/lib/imageUtils'
 
 interface FullscreenHeroProps {
   images: string[]
+  processedImageDetail?: string
   resultCount?: number
 }
 
 const FullscreenHero: React.FC<FullscreenHeroProps> = ({ 
   images, 
+  processedImageDetail,
   resultCount 
 }) => {
   const location = useLocation()
   const scrollStore = useScrollStore()
   
   // Generate optimized image sources
-  const heroImage = images[0]
+  // Prioritize processed image, then first image from array
+  const heroImage = processedImageDetail || images[0]
   const srcSets = useMemo(() => {
     if (!heroImage) return { avif: '', webp: '', jpg: '' }
     return {

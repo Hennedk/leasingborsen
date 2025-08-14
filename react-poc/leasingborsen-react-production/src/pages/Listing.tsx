@@ -144,6 +144,7 @@ const Listing: React.FC = () => {
       {/* Mobile fullscreen hero (hidden on desktop via CSS) */}
       <FullscreenHero 
         images={car?.images || []} 
+        processedImageDetail={car?.processed_image_detail}
         resultCount={resultCount}
       />
       
@@ -158,8 +159,8 @@ const Listing: React.FC = () => {
       <Container 
         className={cn(
           "pb-32 lg:pb-8",
-          // Mobile: small padding after hero image
-          "pt-4 lg:pt-8"
+          // Mobile: minimal padding after hero image
+          "pt-2 lg:pt-8"
         )}
       >
         {/* Desktop header (hidden on mobile) */}
@@ -167,9 +168,9 @@ const Listing: React.FC = () => {
           <ListingHeader car={car} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8 lg:mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-4 lg:mt-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Desktop image (hidden on mobile) */}
             <div className="hidden lg:block">
               <ErrorBoundary fallback={CompactErrorFallback}>

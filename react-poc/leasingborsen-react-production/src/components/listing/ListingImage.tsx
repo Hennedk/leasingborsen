@@ -11,16 +11,20 @@ interface ListingImageProps {
 const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   const [imageLoading, setImageLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
+  
+  // Prioritize processed image, then images array, then legacy image field
+  const imageUrl = car.processed_image_detail || car.images?.[0] || car.image
+  
   return (
     <div>
       <div className="relative overflow-hidden rounded-xl lg:mr-3 xl:mr-7 2xl:mr-10">
-        {(car.processed_image_detail || car.image) && !imageError ? (
+        {imageUrl && !imageError ? (
           <>
             {imageLoading && (
               <Skeleton className="w-full aspect-[16/9] absolute inset-0" />
             )}
             <img 
-              src={car.processed_image_detail || car.image} 
+              src={imageUrl} 
               alt={`${car.make} ${car.model}`}
               className={cn(
                 "w-full aspect-[16/9] object-contain p-4 md:p-6 lg:p-8 transition-opacity duration-500 ease-out",
