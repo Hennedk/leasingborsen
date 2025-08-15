@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ExternalLink, Loader2, AlertTriangle, TrendingDown, Check } from 'lucide-react'
+import { ExternalLink, Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption } from '@/types'
@@ -113,7 +113,10 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             )}
 
             {/* Enhanced Price Display */}
-            <div className="space-y-2 pb-4 border-b border-border/50">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-foreground">
+                Ydelse pr. måned
+              </Label>
               <div className="flex items-baseline gap-2">
                 <AnimatedPrice 
                   value={selectedLease?.monthly_price ?? 0}
@@ -123,31 +126,13 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                 />
               </div>
               
-              {/* Total Cost Display */}
-              {totalCost && selectedPeriod && (
-                <div className="text-sm text-muted-foreground">
-                  <span>I alt: </span>
-                  <span className="font-semibold text-foreground">
-                    {totalCost.toLocaleString('da-DK')} kr
-                  </span>
-                  <span> over {selectedPeriod} mdr</span>
-                </div>
-              )}
-              
-              {/* Subtle indicator when cheapest */}
-              {isCheapest && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Check className="w-3 h-3" />
-                  <span>Billigste konfiguration</span>
-                </div>
-              )}
             </div>
 
         {/* Form Fields */}
         <div className="space-y-4">
           {/* Mileage Selection */}
           <div>
-            <Label className="text-sm font-semibold text-primary">
+            <Label className="text-sm font-medium text-foreground">
               Årligt km-forbrug
             </Label>
             <Select 
@@ -155,7 +140,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onMileageChange(parseInt(value))}
               disabled={availableMileages.length <= 1}
             >
-              <SelectTrigger size="sm" background="primary" className="w-full">
+              <SelectTrigger size="default" background="primary" className="w-full">
                 <SelectValue placeholder="Vælg km-forbrug" />
               </SelectTrigger>
               <SelectContent>
@@ -176,7 +161,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Period Selection */}
           <div>
-            <Label className="text-sm font-semibold text-primary">
+            <Label className="text-sm font-medium text-foreground">
               Leasingperiode
             </Label>
             <Select 
@@ -184,7 +169,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onPeriodChange(parseInt(value))}
               disabled={availablePeriods.length <= 1}
             >
-              <SelectTrigger size="sm" background="primary" className="w-full">
+              <SelectTrigger size="default" background="primary" className="w-full">
                 <SelectValue placeholder="Vælg periode" />
               </SelectTrigger>
               <SelectContent>
@@ -205,7 +190,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Upfront Payment Selection */}
           <div>
-            <Label className="text-sm font-semibold text-primary">
+            <Label className="text-sm font-medium text-foreground">
               Udbetaling
             </Label>
             <Select 
@@ -213,7 +198,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onUpfrontChange(parseInt(value))}
               disabled={availableUpfronts.length <= 1}
             >
-              <SelectTrigger size="sm" background="primary" className="w-full">
+              <SelectTrigger size="default" background="primary" className="w-full">
                 <SelectValue placeholder="Vælg udbetaling" />
               </SelectTrigger>
               <SelectContent>
