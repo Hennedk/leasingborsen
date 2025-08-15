@@ -77,7 +77,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border text-sm font-normal"
+              className="w-full justify-between border text-xs font-normal"
               size="default"
             >
               {selectedMakes.length > 0 
@@ -182,7 +182,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border text-sm font-normal"
+              className="w-full justify-between border text-xs font-normal"
               size="default"
               disabled={selectedMakes.length === 0}
             >
