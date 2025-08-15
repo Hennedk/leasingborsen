@@ -152,7 +152,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.make || 'all'}
                 onValueChange={(value) => handleFilterChange('make', value)}
               >
-                <SelectTrigger size="sm" background="primary" className="justify-between">
+                <SelectTrigger size="default" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg mærke" />
                 </SelectTrigger>
                 <SelectContent>
@@ -191,7 +191,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 onValueChange={(value) => handleFilterChange('model', value)}
                 disabled={!localFilters.make || localFilters.make === 'all'}
               >
-                <SelectTrigger size="sm" background="primary" className={`justify-between ${
+                <SelectTrigger size="default" background="primary" className={`justify-between ${
                   !localFilters.make || localFilters.make === 'all' 
                     ? 'bg-muted text-muted-foreground cursor-not-allowed' 
                     : ''
@@ -215,7 +215,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.body_type || 'all'}
                 onValueChange={(value) => handleFilterChange('body_type', value)}
               >
-                <SelectTrigger size="sm" background="primary" className="justify-between">
+                <SelectTrigger size="default" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg biltype" />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,7 +234,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                 value={localFilters.price_max?.toString() || 'all'}
                 onValueChange={(value) => handleFilterChange('price_max', value)}
               >
-                <SelectTrigger size="sm" background="primary" className="justify-between">
+                <SelectTrigger size="default" background="primary" className="justify-between">
                   <SelectValue placeholder="Vælg maks pris" />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,7 +253,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
         {/* Call-to-Action Button */}
         <Button 
-          className="w-full h-12 text-base font-semibold" 
+          className="w-full h-12 text-base font-semibold !bg-gradient-to-r !from-[oklch(0.65_0.25_50)] !to-[oklch(0.6_0.25_40)] text-white hover:!from-[oklch(0.6_0.25_50)] hover:!to-[oklch(0.55_0.25_40)] active:!from-[oklch(0.55_0.25_50)] active:!to-[oklch(0.5_0.25_40)] transition-all duration-200 ease-in-out" 
           size="lg"
           onClick={handleSearch}
           aria-label="Søg efter biler med de valgte kriterier"

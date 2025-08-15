@@ -1,6 +1,7 @@
 import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
 interface FilterOption {
   readonly name: string
@@ -13,6 +14,7 @@ interface FilterChipsProps {
   selectedValues: string[]
   onToggle: (value: string) => void
   className?: string
+  variant?: 'desktop' | 'mobile'
 }
 
 /**
@@ -25,11 +27,17 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
   options,
   selectedValues,
   onToggle,
-  className = ''
+  className = '',
+  variant = 'desktop'
 }) => {
   return (
     <div className={`space-y-3 ${className}`}>
-      <Label className="text-sm font-medium text-foreground">{label}</Label>
+      <Label className={cn(
+        'font-medium text-foreground',
+        variant === 'mobile' ? 'text-base' : 'text-sm'
+      )}>
+        {label}
+      </Label>
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = selectedValues.includes(option.name)
@@ -37,7 +45,8 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
             <Badge
               key={option.name}
               variant={isSelected ? "filter-selected" : "filter-unselected"}
-              className="px-3 py-1.5 text-xs"
+              size="default"
+              className="cursor-pointer transition-colors"
               onClick={() => onToggle(option.name)}
             >
               {option.label}

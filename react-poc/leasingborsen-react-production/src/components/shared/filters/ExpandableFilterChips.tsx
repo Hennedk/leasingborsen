@@ -17,6 +17,7 @@ interface ExpandableFilterChipsProps {
   selectedValues: string[]
   onToggle: (value: string) => void
   className?: string
+  variant?: 'desktop' | 'mobile'
 }
 
 /**
@@ -29,7 +30,8 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
   remainingOptions,
   selectedValues,
   onToggle,
-  className = ''
+  className = '',
+  variant = 'desktop'
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   
@@ -51,7 +53,8 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
     <Badge
       key={option.name}
       variant={isSelected ? "filter-selected" : "filter-unselected"}
-      className="px-3 py-1.5 text-xs"
+      size="default"
+      className="cursor-pointer transition-colors"
       onClick={() => onToggle(option.name)}
     >
       {option.label}
@@ -60,7 +63,10 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
   
   return (
     <div className={cn('space-y-3', className)}>
-      <Label className="text-sm font-medium text-foreground">
+      <Label className={cn(
+        'font-medium text-foreground',
+        variant === 'mobile' ? 'text-base' : 'text-sm'
+      )}>
         {label}
       </Label>
       
