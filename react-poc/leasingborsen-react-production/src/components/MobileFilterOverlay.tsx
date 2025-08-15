@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -82,6 +82,17 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   const [currentView, setCurrentView] = useState<MobileView>('filters')
   const { searchTerm, debouncedSearchTerm, setSearchTerm, clearSearch } = useDebouncedSearch()
   const [selectedMakeForModels, setSelectedMakeForModels] = useState<string | null>(null)
+  const wasOpenRef = useRef(false)
+  
+  // Reset view when overlay closes
+  useEffect(() => {
+    if (!isOpen && wasOpenRef.current) {
+      setCurrentView('filters')
+      setSelectedMakeForModels(null)
+      clearSearch()
+    }
+    wasOpenRef.current = isOpen
+  }, [isOpen, clearSearch])
   
   // Get selected makes and models
   const selectedMakes = makes
@@ -250,7 +261,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                 <h2 className="text-lg font-bold">Filtre</h2>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="default"
                   onClick={onClose}
                   className="h-9 w-9 p-0 hover:bg-muted/50"
                 >
@@ -272,7 +283,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         {currentView !== 'filters' && (
           <Button
             variant="ghost"
-            size="sm"
+            size="default"
             onClick={goBack}
             className="h-9 w-9 p-0 hover:bg-muted/50"
           >
@@ -338,7 +349,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           >
             <SelectTrigger 
               className="w-full justify-between"
-              size="sm"
+              size="default"
               background="primary"
             >
               <span className="text-left">
@@ -362,7 +373,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             variant="outline"
             onClick={() => navigateToView('makes')}
             className="w-full justify-between text-xs font-normal"
-            size="sm"
+            size="default"
           >
             <span>
               {selectedMakes.length > 0 ? (
@@ -388,7 +399,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             }}
             disabled={selectedMakes.length === 0}
             className="w-full justify-between text-xs font-normal"
-            size="sm"
+            size="default"
           >
             <span>
               {selectedModels.length > 0 ? (
@@ -410,6 +421,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             onToggle={handleFuelTypeToggle}
             label=""
             className="space-y-0"
+            variant="mobile"
           />
         </div>
 
@@ -422,6 +434,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             onToggle={handleTransmissionToggle}
             label=""
             className="space-y-0"
+            variant="mobile"
           />
         </div>
 
@@ -432,6 +445,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           remainingOptions={filterHelpers.getBodyTypesByPopularity().remaining}
           selectedValues={body_type || []}
           onToggle={handleBodyTypeToggle}
+          variant="mobile"
         />
 
         {/* Price Range */}
