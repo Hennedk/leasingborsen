@@ -22,6 +22,11 @@ const queryClient = new QueryClient({
   },
 })
 
+// Disable browser's default scroll restoration for better control
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual'
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

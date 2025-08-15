@@ -196,4 +196,89 @@ export const ListingDetailSkeleton: React.FC = () => {
   )
 }
 
+/**
+ * Mobile-optimized Listing Detail Page Skeleton
+ */
+export const MobileListingDetailSkeleton: React.FC = () => {
+  return (
+    <div className="listing-page">
+      {/* Mobile hero image skeleton */}
+      <div className="lg:hidden">
+        <div className="relative w-full aspect-[4/3] bg-muted">
+          <Skeleton className="w-full h-full" />
+          
+          {/* Back button skeleton */}
+          <div className="absolute top-4 left-4">
+            <Skeleton className="w-10 h-10 rounded-full" />
+          </div>
+          
+          {/* Image counter skeleton */}
+          <div className="absolute bottom-4 right-4">
+            <Skeleton className="h-6 w-12 rounded-full" />
+          </div>
+        </div>
+      </div>
+      
+      {/* Mobile sticky header skeleton */}
+      <div className="lg:hidden h-14 border-b bg-card">
+        <div className="flex items-center h-full px-4">
+          <Skeleton className="w-8 h-8 rounded-full mr-3" />
+          <div className="flex-1">
+            <Skeleton className="h-5 w-32 mb-1" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      </div>
+      
+      {/* Main content */}
+      <div className="container mx-auto px-4 pt-2 pb-32 lg:pt-8 lg:pb-8">
+        <div className="space-y-4">
+          {/* Mobile title section */}
+          <div className="lg:hidden space-y-2">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-6 w-1/2" />
+          </div>
+          
+          {/* Mobile key specs */}
+          <div className="lg:hidden">
+            <div className="grid grid-cols-2 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Skeleton className="w-4 h-4 rounded-full" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Price section */}
+          <div className="space-y-2">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          
+          {/* Specifications */}
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="space-y-1">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Action buttons */}
+          <div className="space-y-3 pt-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default ListingsSkeleton

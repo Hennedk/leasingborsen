@@ -24,12 +24,15 @@ export function useScrollRestoration(key: string) {
   useEffect(() => {
     const saved = sessionStorage.getItem(`scroll-${key}`)
     if (saved && parseInt(saved) > 0) {
-      // Double RAF for reliability with dynamic content
-      requestAnimationFrame(() => {
+      // Delay restoration to allow page transition to complete
+      setTimeout(() => {
+        // Double RAF for reliability with dynamic content
         requestAnimationFrame(() => {
-          window.scrollTo(0, parseInt(saved))
+          requestAnimationFrame(() => {
+            window.scrollTo(0, parseInt(saved))
+          })
         })
-      })
+      }, 200) // Wait for page transition to complete
     }
   }, [key])
   

@@ -2,7 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { 
   AdminErrorBoundary, 
@@ -77,11 +77,43 @@ const PageLoader: React.FC = () => (
   </div>
 )
 
+// Page transition component
+const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation()
+  const [isVisible, setIsVisible] = useState(true)
+
+  useEffect(() => {
+    // Fade out, then fade in on route change
+    setIsVisible(false)
+    const timer = setTimeout(() => setIsVisible(true), 150)
+    return () => clearTimeout(timer)
+  }, [location.pathname])
+
+  return (
+    <div 
+      className={`transition-opacity duration-200 ease-out ${
+        isVisible ? 'opacity-100' : 'opacity-0'
+      }`}
+      style={{ minHeight: '100vh' }}
+    >
+      {children}
+    </div>
+  )
+}
+
 // ScrollRestoration component
 const ScrollRestoration: React.FC = () => {
   const location = useLocation()
 
   useEffect(() => {
+    // Only /listings route keeps its scroll position (uses useScrollRestoration hook)
+    // All other routes including /listing/:id should scroll to top
+    if (location.pathname === '/listings') {
+      // Skip - /listings handles its own scroll restoration
+      return
+    }
+    
+    // All other routes scroll to top
     window.scrollTo(0, 0)
   }, [location.pathname])
 
@@ -96,7 +128,8 @@ function App() {
           <ScrollRestoration />
           <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
             <Suspense fallback={<PageLoader />}>
-              <Routes>
+              <PageTransition>
+                <Routes>
                 {/* Public routes with route-specific error boundaries */}
                 <Route path="/" element={
                   <RouteErrorBoundary routeName="Forside">
@@ -180,7 +213,8 @@ function App() {
                     </BaseLayout>
                   </RouteErrorBoundary>
                 } />
-              </Routes>
+                </Routes>
+              </PageTransition>
             </Suspense>
           </div>
         </Router>

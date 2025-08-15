@@ -18,6 +18,7 @@ import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
 import MobileHeroImage from '@/components/listing/MobileHeroImage'
 import CompactStickyHeader from '@/components/listing/CompactStickyHeader'
+import { MobileListingDetailSkeleton } from '@/components/ListingsSkeleton'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import { cn } from '@/lib/utils'
@@ -51,6 +52,11 @@ const Listing: React.FC = () => {
     observer.observe(mobileTitleRef.current)
     return () => observer.disconnect()
   }, [car]) // Re-run when car changes
+
+  // Always scroll to top when listing ID changes
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [id])
 
   // Fetch similar listings using enhanced multi-tier matching
   const { 
@@ -108,13 +114,8 @@ const Listing: React.FC = () => {
 
   if (isLoading) {
     return (
-      <BaseLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
-            <p className="text-muted-foreground">Indlæser bildetaljer...</p>
-          </div>
-        </div>
+      <BaseLayout showHeader={false}>
+        <MobileListingDetailSkeleton />
       </BaseLayout>
     )
   }
