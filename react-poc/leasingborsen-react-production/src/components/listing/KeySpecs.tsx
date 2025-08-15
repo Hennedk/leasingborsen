@@ -9,6 +9,7 @@ import {
   TrendingUp 
 } from 'lucide-react'
 import type { CarListing } from '@/types'
+import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 
 interface KeySpecsProps {
   car: CarListing
@@ -23,6 +24,8 @@ interface SpecItem {
 }
 
 const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
+  const { translateFuelType, translateTransmission, translateBodyType } = useFilterTranslationFunctions()
+  
   const isEV = car.fuel_type?.toLowerCase().includes('el') || 
                car.fuel_type?.toLowerCase().includes('electric') ||
                car.fuel_type?.toLowerCase().includes('batteri')
@@ -31,13 +34,13 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
     {
       icon: <FuelIcon className="w-4 h-4" />,
       label: 'Drivmiddel',
-      value: car.fuel_type,
+      value: car.fuel_type ? (translateFuelType(car.fuel_type) || car.fuel_type) : null,
       show: !!car.fuel_type
     },
     {
       icon: <Settings2 className="w-4 h-4" />,
       label: 'Gearkasse', 
-      value: car.transmission,
+      value: car.transmission ? (translateTransmission(car.transmission) || car.transmission) : null,
       show: !!car.transmission
     },
     {
@@ -49,7 +52,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
     {
       icon: <Car className="w-4 h-4" />,
       label: 'Karrosseri',
-      value: car.body_type,
+      value: car.body_type ? (translateBodyType(car.body_type) || car.body_type) : null,
       show: !!car.body_type
     },
     {

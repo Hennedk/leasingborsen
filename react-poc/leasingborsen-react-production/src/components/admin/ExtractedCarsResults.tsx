@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft, ChevronDown, ChevronRight, Car, Settings, Save, Clock, Zap, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect'
+import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 
 interface LeaseOffer {
   monthly_price: number
@@ -72,6 +73,7 @@ export const ExtractedCarsResults: React.FC<ExtractedCarsResultsProps> = ({
   isSaving = false,
   className
 }) => {
+  const { translateFuelType, translateTransmission } = useFilterTranslationFunctions()
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [selectedSellerId, setSelectedSellerId] = useState<string>('')
 
@@ -294,12 +296,12 @@ export const ExtractedCarsResults: React.FC<ExtractedCarsResultsProps> = ({
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {car.fuel_type || '–'}
+                            {car.fuel_type ? (translateFuelType(car.fuel_type) || car.fuel_type) : '–'}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">
-                            {car.transmission || '–'}
+                            {car.transmission ? (translateTransmission(car.transmission) || car.transmission) : '–'}
                           </Badge>
                         </TableCell>
                         <TableCell>

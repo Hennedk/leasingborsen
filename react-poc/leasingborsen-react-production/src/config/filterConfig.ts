@@ -1,5 +1,6 @@
 // Filter configuration constants
 // Centralized configuration for filter options and constants
+import { filterTranslations } from '@/lib/translations/filterTranslations'
 
 export const FILTER_CONFIG = {
   // Popular car makes for priority display
@@ -82,11 +83,7 @@ export const FILTER_CONFIG = {
   }
 } as const
 
-// Transmission label mapping for backwards compatibility
-export const TRANSMISSION_LABELS: Record<string, string> = {
-  'Automatic': 'Automatisk',
-  'Manual': 'Manuelt'
-}
+// Note: Transmission labels now handled by centralized translation system
 
 // Helper functions for working with filter constants
 export const filterHelpers = {
@@ -98,21 +95,24 @@ export const filterHelpers = {
 
   /**
    * Get fuel type label by name
+   * @deprecated Use filterTranslations.getFuelTypeLabel instead
    */
   getFuelTypeLabel: (name: string): string => 
-    FILTER_CONFIG.FUEL_TYPES.find(type => type.name === name)?.label || name,
+    filterTranslations.getFuelTypeLabel(name),
 
   /**
    * Get body type label by name
+   * @deprecated Use filterTranslations.getBodyTypeLabel instead
    */
   getBodyTypeLabel: (name: string): string => 
-    FILTER_CONFIG.BODY_TYPES.find(type => type.name === name)?.label || name,
+    filterTranslations.getBodyTypeLabel(name),
 
   /**
    * Get transmission label
+   * @deprecated Use filterTranslations.getTransmissionLabel instead
    */
   getTransmissionLabel: (value: string): string =>
-    TRANSMISSION_LABELS[value] || value,
+    filterTranslations.getTransmissionLabel(value),
 
   /**
    * Check if a body type is in the popular list

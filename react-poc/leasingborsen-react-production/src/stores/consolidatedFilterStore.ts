@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import { filterTranslations } from '@/lib/translations/filterTranslations'
 import type { Filters, FilterChip, SortOrder, CarSelection } from '@/types'
 
 /* Claude Change Summary:
@@ -223,11 +224,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         const body_type = state.body_type || []
         const transmission = state.transmission || []
         
-        // Transmission labels mapping
-        const transmissionLabels: Record<string, string> = {
-          'Automatic': 'Automatisk gear',
-          'Manual': 'Manuelt gear'
-        }
+        // Note: Using centralized translation system instead of hardcoded labels
         
         // Add individual make chips
         makes.forEach(make => {
@@ -267,7 +264,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           fuel_type.forEach(fuelType => {
             activeFilters.push({
               key: `fuel_type:${fuelType}`,
-              label: fuelType,
+              label: filterTranslations.getFuelTypeLabel(fuelType),
               value: fuelType
             })
           })
@@ -278,7 +275,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           body_type.forEach(bodyType => {
             activeFilters.push({
               key: `body_type:${bodyType}`,
-              label: bodyType,
+              label: filterTranslations.getBodyTypeLabel(bodyType),
               value: bodyType
             })
           })
@@ -289,7 +286,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           transmission.forEach(trans => {
             activeFilters.push({
               key: `transmission:${trans}`,
-              label: transmissionLabels[trans] || trans,
+              label: filterTranslations.getTransmissionLabel(trans),
               value: trans
             })
           })

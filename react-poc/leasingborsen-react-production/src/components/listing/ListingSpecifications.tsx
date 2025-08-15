@@ -1,11 +1,14 @@
 import React from 'react'
 import type { CarListing } from '@/types'
+import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 
 interface ListingSpecificationsProps {
   car: CarListing
 }
 
 const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) => {
+  const { translateFuelType, translateTransmission, translateBodyType } = useFilterTranslationFunctions()
+
   return (
     <div className="space-y-8 lg:mr-3 xl:mr-7 2xl:mr-10">
       {/* Description Section */}
@@ -56,19 +59,19 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
           {car.body_type && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Karrosseri</span>
-              <span className="font-semibold text-foreground">{car.body_type}</span>
+              <span className="font-semibold text-foreground">{translateBodyType(car.body_type) || car.body_type}</span>
             </div>
           )}
           {car.fuel_type && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Drivmiddel</span>
-              <span className="font-semibold text-foreground">{car.fuel_type}</span>
+              <span className="font-semibold text-foreground">{translateFuelType(car.fuel_type) || car.fuel_type}</span>
             </div>
           )}
           {car.transmission && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Gearkasse</span>
-              <span className="font-semibold text-foreground">{car.transmission}</span>
+              <span className="font-semibold text-foreground">{translateTransmission(car.transmission) || car.transmission}</span>
             </div>
           )}
           {car.horsepower && car.horsepower > 0 && (
@@ -134,13 +137,13 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
           {car.body_type && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Karrosseri</span>
-              <span className="font-semibold text-foreground">{car.body_type}</span>
+              <span className="font-semibold text-foreground">{translateBodyType(car.body_type) || car.body_type}</span>
             </div>
           )}
           {car.fuel_type && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Drivmiddel</span>
-              <span className="font-semibold text-foreground">{car.fuel_type}</span>
+              <span className="font-semibold text-foreground">{translateFuelType(car.fuel_type) || car.fuel_type}</span>
             </div>
           )}
         </div>
@@ -148,7 +151,7 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
           {car.transmission && (
             <div className="flex justify-between py-3">
               <span className="font-normal text-muted-foreground">Gearkasse</span>
-              <span className="font-semibold text-foreground">{car.transmission}</span>
+              <span className="font-semibold text-foreground">{translateTransmission(car.transmission) || car.transmission}</span>
             </div>
           )}
           {car.horsepower && car.horsepower > 0 && (

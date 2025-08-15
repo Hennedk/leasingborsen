@@ -14,6 +14,7 @@ import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelec
 import { useListingComparison, type ExtractedCar, type ListingMatch } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
+import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 
 interface ExtractedCarsResultsWithComparisonProps {
   cars: ExtractedCar[]
@@ -38,6 +39,7 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
   className,
   initialSellerId = ''
 }) => {
+  const { translateFuelType, translateTransmission } = useFilterTranslationFunctions()
   const navigate = useNavigate()
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set())
   const [selectedSellerId, setSelectedSellerId] = useState<string>(initialSellerId)
@@ -644,12 +646,12 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline">
-                                {car.fuel_type || '–'}
+                                {car.fuel_type ? (translateFuelType(car.fuel_type) || car.fuel_type) : '–'}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <Badge variant="outline">
-                                {car.transmission || '–'}
+                                {car.transmission ? (translateTransmission(car.transmission) || car.transmission) : '–'}
                               </Badge>
                             </TableCell>
                             <TableCell>

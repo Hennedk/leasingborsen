@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { RotateCcw, X } from 'lucide-react'
 import { useReferenceData } from '@/hooks/useReferenceData'
+import { useFilterOptions } from '@/hooks/useFilterTranslations'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import FilterSkeleton from '@/components/FilterSkeleton'
 import {
@@ -40,6 +41,9 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
 }) => {
   const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
   
+  // Get centralized filter options with translations
+  const { simplifiedFuelTypeOptions, transmissionOptions, bodyTypeOptions } = useFilterOptions()
+  
   const {
     selectedMakes,
     selectedModels,
@@ -59,10 +63,18 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     handleResetAllFilters
   } = useFilterOperations()
 
-  // Get consolidated filter options from config and transform to match interface
-  const consolidatedFuelTypes = FILTER_CONFIG.FUEL_TYPES
+  // Get body types organized by popularity for the expandable filter
   const { popular: popularBodyTypes, remaining: remainingBodyTypes } = filterHelpers.getBodyTypesByPopularity()
-  const consolidatedTransmissions = FILTER_CONFIG.TRANSMISSION_TYPES.map(t => ({ name: t.value, label: t.label }))
+  
+  // Transform centralized options to match existing body type structure
+  const popularBodyTypeOptions = popularBodyTypes.map(bt => ({
+    name: bt.name,
+    label: bodyTypeOptions.find(option => option.name === bt.name)?.label || bt.label
+  }))
+  const remainingBodyTypeOptions = remainingBodyTypes.map(bt => ({
+    name: bt.name,
+    label: bodyTypeOptions.find(option => option.name === bt.name)?.label || bt.label
+  }))
 
   // Show skeleton while reference data is loading
   if (referenceDataLoading) {
@@ -133,7 +145,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             {/* Fuel Type Filter */}
             <FilterChips
               label="Drivmiddel"
-              options={consolidatedFuelTypes}
+              options={simplifiedFuelTypeOptions}
               selectedValues={fuelTypes}
               onToggle={(value) => handleArrayFilterToggle('fuel_type', value)}
             />
@@ -141,7 +153,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             {/* Transmission Filter */}
             <FilterChips
               label="Geartype"
-              options={consolidatedTransmissions}
+              options={transmissionOptions}
               selectedValues={transmissions}
               onToggle={(value) => handleArrayFilterToggle('transmission', value)}
             />
@@ -149,8 +161,8 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             {/* Body Type Filter */}
             <ExpandableFilterChips
               label="Biltype"
-              popularOptions={popularBodyTypes}
-              remainingOptions={remainingBodyTypes}
+              popularOptions={popularBodyTypeOptions}
+              remainingOptions={remainingBodyTypeOptions}
               selectedValues={bodyTypes}
               onToggle={(value) => handleArrayFilterToggle('body_type', value)}
             />

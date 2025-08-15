@@ -10,6 +10,7 @@ import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
 import { PriceRangeFilter, ExpandableFilterChips, FilterChips } from '@/components/shared/filters'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
+import { useFilterOptions } from '@/hooks/useFilterTranslations'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
@@ -74,6 +75,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   } = useConsolidatedFilterStore()
   
   const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
+  const { simplifiedFuelTypeOptions, transmissionOptions } = useFilterOptions()
   const activeFilters = getActiveFilters()
   
   // Navigation state
@@ -403,7 +405,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Drivmiddel</Label>
           <FilterChips
-            options={FILTER_CONFIG.FUEL_TYPES}
+            options={simplifiedFuelTypeOptions}
             selectedValues={fuel_type || []}
             onToggle={handleFuelTypeToggle}
             label=""
@@ -415,7 +417,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Geartype</Label>
           <FilterChips
-            options={FILTER_CONFIG.TRANSMISSION_TYPES.map(t => ({ name: t.value, label: t.label }))}
+            options={transmissionOptions}
             selectedValues={transmission || []}
             onToggle={handleTransmissionToggle}
             label=""

@@ -15,6 +15,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
+import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import type { CarListing } from '@/types'
 
@@ -42,6 +43,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   const [showRipple, setShowRipple] = useState(false)
   const [navigating, setNavigating] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
+  
+  // Filter translations for consistent Danish labels
+  const { translateFuelType, translateTransmission, translateBodyType } = useFilterTranslationFunctions()
   
   // Memoized skeleton content for consistent rendering
   const skeletonWidths = useMemo(() => ['w-24', 'w-32', 'w-28', 'w-36', 'w-20', 'w-16'], [])
@@ -298,19 +302,19 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Fuel className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{car.fuel_type || '–'}</span>
+                <span className="font-normal truncate">{translateFuelType(car.fuel_type || '') || '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Settings className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{car.transmission || '–'}</span>
+                <span className="font-normal truncate">{translateTransmission(car.transmission || '') || '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Car className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{car.body_type || '–'}</span>
+                <span className="font-normal truncate">{translateBodyType(car.body_type || '') || '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
