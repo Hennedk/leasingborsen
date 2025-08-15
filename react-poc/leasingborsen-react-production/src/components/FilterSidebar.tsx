@@ -94,24 +94,20 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                 Filtre
               </CardTitle>
-              {activeFiltersCount > 0 && (
-                <Badge variant="result-count">
-                  {activeFiltersCount}
-                </Badge>
-              )}
             </div>
             
             <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleResetAllFilters}
-                disabled={activeFiltersCount === 0}
-                className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive transition-colors duration-200"
-                title="Nulstil alle filtre"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
+              {activeFiltersCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleResetAllFilters}
+                  className="h-8 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary transition-colors duration-200"
+                  title="Nulstil alle filtre"
+                >
+                  Nulstil ({activeFiltersCount})
+                </Button>
+              )}
               
               {onClose && (
                 <Button

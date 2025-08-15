@@ -22,7 +22,7 @@ import type { Make, Model, SortOrder } from '@/types'
 const mobileSelectOptions = [
   { value: 'asc', label: 'Laveste pris' },
   { value: 'desc', label: 'Højeste pris' },
-  { value: 'lease_score_desc', label: 'Bedste værdi' }
+  { value: 'lease_score_desc', label: 'Bedste tilbud' }
 ]
 
 // Map mobile select values to backend sort values
