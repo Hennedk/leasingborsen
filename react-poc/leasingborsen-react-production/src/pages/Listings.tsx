@@ -7,6 +7,7 @@ import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useFilterManagement } from '@/hooks/useFilterManagement'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import FilterSidebar from '@/components/FilterSidebar'
@@ -57,6 +58,9 @@ const Listings: React.FC = () => {
 
   // Use extracted filter management hook
   const { handleRemoveFilter } = useFilterManagement()
+
+  // Enable scroll restoration for this page
+  useScrollRestoration('/listings')
 
   // Check for showFilters URL parameter to automatically open mobile filter overlay
   useEffect(() => {

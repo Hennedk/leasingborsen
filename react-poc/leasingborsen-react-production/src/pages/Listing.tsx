@@ -92,8 +92,7 @@ const Listing: React.FC = () => {
   // Mobile price drawer state
   const [priceDrawerOpen, setPriceDrawerOpen] = useState(false)
 
-  // Scroll restoration for back navigation (CRITICAL)
-  useScrollRestoration('/listings')
+  // Note: Scroll restoration moved to Listings.tsx where it belongs
 
   // Calculate result count (would come from actual search results)
   const resultCount = 37 // TODO: Get from search context
