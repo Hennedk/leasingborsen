@@ -103,8 +103,8 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               
             </div>
 
-        {/* Form Fields */}
-        <div className="space-y-4">
+        {/* Grouped Form Fields */}
+        <div className="border rounded-xl overflow-hidden bg-white">
           {/* Mileage Selection */}
           <div>
             <Select 
@@ -112,12 +112,12 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onMileageChange(parseInt(value))}
               disabled={availableMileages.length <= 1}
             >
-              <SelectTrigger className="h-auto py-3 px-4 text-left">
+              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
                 <div className="flex flex-col items-start w-full">
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                    ÅRLIGT KM-FORBRUG
+                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    Årligt km-forbrug
                   </span>
-                  <span className="text-base font-normal mt-0.5">
+                  <span className="text-sm font-normal mt-0.5">
                     {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : "Vælg km-forbrug"}
                   </span>
                 </div>
@@ -138,6 +138,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             </Select>
           </div>
 
+          {/* Divider */}
+          <div className="border-t"></div>
+
           {/* Period Selection */}
           <div>
             <Select 
@@ -145,12 +148,12 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onPeriodChange(parseInt(value))}
               disabled={availablePeriods.length <= 1}
             >
-              <SelectTrigger className="h-auto py-3 px-4 text-left">
+              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
                 <div className="flex flex-col items-start w-full">
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                    LEASINGPERIODE
+                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    Leasingperiode
                   </span>
-                  <span className="text-base font-normal mt-0.5">
+                  <span className="text-sm font-normal mt-0.5">
                     {selectedPeriod ? `${selectedPeriod} måneder` : "Vælg periode"}
                   </span>
                 </div>
@@ -171,6 +174,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             </Select>
           </div>
 
+          {/* Divider */}
+          <div className="border-t"></div>
+
           {/* Upfront Payment Selection */}
           <div>
             <Select 
@@ -178,12 +184,12 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               onValueChange={(value) => onUpfrontChange(parseInt(value))}
               disabled={availableUpfronts.length <= 1}
             >
-              <SelectTrigger className="h-auto py-3 px-4 text-left">
+              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
                 <div className="flex flex-col items-start w-full">
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground font-medium">
-                    UDBETALING
+                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    Udbetaling
                   </span>
-                  <span className="text-base font-normal mt-0.5">
+                  <span className="text-sm font-normal mt-0.5">
                     {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : "Vælg udbetaling"}
                   </span>
                 </div>

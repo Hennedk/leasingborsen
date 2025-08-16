@@ -113,9 +113,9 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
           </div>
         </div>
 
-        {/* Desktop: Horizontal distribution */}
+        {/* Desktop: 4-column grid layout */}
         <div className="hidden md:block">
-          <div className="flex justify-between items-center gap-4">
+          <div className="grid grid-cols-4 gap-4">
             {visibleSpecs.map((spec, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="text-muted-foreground">

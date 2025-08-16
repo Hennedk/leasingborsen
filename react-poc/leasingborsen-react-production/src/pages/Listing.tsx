@@ -167,9 +167,9 @@ const Listing: React.FC = () => {
           <ListingHeader car={car} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mt-4 lg:mt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-10 mt-4 lg:mt-8">
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-4 lg:space-y-6">
+          <div className="space-y-4 lg:space-y-6">
             {/* Desktop image (hidden on mobile) */}
             <div className="hidden lg:block">
               <ErrorBoundary fallback={CompactErrorFallback}>
@@ -204,7 +204,7 @@ const Listing: React.FC = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Desktop Title - Show in sidebar on desktop only */}
             <div className="hidden lg:block">
               <ErrorBoundary fallback={CompactErrorFallback}>
