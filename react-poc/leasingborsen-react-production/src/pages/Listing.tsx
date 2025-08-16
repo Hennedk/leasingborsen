@@ -227,11 +227,8 @@ const Listing: React.FC = () => {
                 onMileageChange={setSelectedMileage}
                 onPeriodChange={setSelectedPeriod}
                 onUpfrontChange={setSelectedUpfront}
-                onResetToCheapest={resetToCheapest}
                 isLoading={leaseLoading}
                 error={leaseError}
-                isCheapest={isCheapest}
-                priceDifference={priceDifference}
                 mileagePriceImpacts={mileagePriceImpacts}
                 periodPriceImpacts={periodPriceImpacts}
                 upfrontPriceImpacts={upfrontPriceImpacts}

@@ -1,9 +1,8 @@
 import React, { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import LeaseOptionCard from './LeaseOptionCard'
 import { Label } from '@/components/ui/label'
-import { Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
+import { Loader2, AlertTriangle } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
 import type { LeaseOption } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
@@ -19,11 +18,8 @@ interface LeaseCalculatorCardProps {
   onMileageChange: (value: number) => void
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
-  onResetToCheapest: () => void
   isLoading?: boolean
   error?: any
-  isCheapest?: boolean
-  priceDifference?: number
   mileagePriceImpacts?: Map<number, PriceImpactData>
   periodPriceImpacts?: Map<number, PriceImpactData>
   upfrontPriceImpacts?: Map<number, PriceImpactData>
@@ -41,31 +37,13 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onMileageChange,
   onPeriodChange,
   onUpfrontChange,
-  onResetToCheapest,
   isLoading = false,
   error = null,
-  isCheapest = false,
-  priceDifference = 0,
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,
   onHoverOption
 }) => {
-  const handleMileageHover = useCallback((mileage: number) => {
-    onHoverOption?.({ dimension: 'mileage', value: mileage })
-  }, [onHoverOption])
-  
-  const handlePeriodHover = useCallback((period: number) => {
-    onHoverOption?.({ dimension: 'period', value: period })
-  }, [onHoverOption])
-  
-  const handleUpfrontHover = useCallback((upfront: number) => {
-    onHoverOption?.({ dimension: 'upfront', value: upfront })
-  }, [onHoverOption])
-  
-  const handleHoverEnd = useCallback(() => {
-    onHoverOption?.(null)
-  }, [onHoverOption])
   return (
     <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
       <CardContent className="p-5 space-y-4 relative">

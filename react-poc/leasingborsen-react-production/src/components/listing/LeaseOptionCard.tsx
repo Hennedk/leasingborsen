@@ -21,8 +21,6 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
   onClick,
   className
 }) => {
-  // Calculate fill percentage based on score (0-100)
-  const fillPercentage = score ? Math.min(100, Math.max(0, score)) : 0
   
   // Format price impact display
   const renderPriceImpact = () => {
