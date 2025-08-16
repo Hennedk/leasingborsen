@@ -205,16 +205,10 @@ const Listing: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Desktop Title - Show in sidebar on desktop only */}
-            <div className="hidden lg:block">
-              <ErrorBoundary fallback={CompactErrorFallback}>
-                <ListingTitle car={car} />
-              </ErrorBoundary>
-            </div>
-            
             {/* Lease Calculator Card */}
             <ErrorBoundary fallback={CompactErrorFallback}>
               <LeaseCalculatorCard
+                car={car}
                 selectedLease={selectedLease}
                 selectedMileage={selectedMileage}
                 selectedPeriod={selectedPeriod}
@@ -225,6 +219,7 @@ const Listing: React.FC = () => {
                 onMileageChange={setSelectedMileage}
                 onPeriodChange={setSelectedPeriod}
                 onUpfrontChange={setSelectedUpfront}
+                onShowSeller={() => setSellerModalOpen(true)}
                 isLoading={leaseLoading}
                 error={leaseError}
                 mileagePriceImpacts={mileagePriceImpacts}
@@ -233,18 +228,6 @@ const Listing: React.FC = () => {
                 onHoverOption={setHoveredOption}
               />
             </ErrorBoundary>
-            
-            {/* Desktop CTA Button */}
-            <div className="hidden lg:block">
-              <Button 
-                className="w-full gap-2" 
-                size="lg"
-                onClick={() => setSellerModalOpen(true)}
-              >
-                <ExternalLink className="w-4 h-4" />
-                Se tilbud hos leasingselskab
-              </Button>
-            </div>
           </div>
         </div>
 

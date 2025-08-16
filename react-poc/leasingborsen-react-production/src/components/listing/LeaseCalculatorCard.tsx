@@ -2,13 +2,15 @@ import React, { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Loader2, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Loader2, AlertTriangle, ExternalLink } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
-import type { LeaseOption } from '@/types'
+import type { LeaseOption, CarListing } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
 interface LeaseCalculatorCardProps {
+  car: CarListing
   selectedLease: LeaseOption | undefined
   selectedMileage: number | null
   selectedPeriod: number | null
@@ -19,6 +21,7 @@ interface LeaseCalculatorCardProps {
   onMileageChange: (value: number) => void
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
+  onShowSeller: () => void
   isLoading?: boolean
   error?: any
   mileagePriceImpacts?: Map<number, PriceImpactData>
@@ -28,6 +31,7 @@ interface LeaseCalculatorCardProps {
 }
 
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
+  car,
   selectedLease,
   selectedMileage,
   selectedPeriod,
@@ -38,6 +42,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onMileageChange,
   onPeriodChange,
   onUpfrontChange,
+  onShowSeller,
   isLoading = false,
   error = null,
   mileagePriceImpacts,
@@ -85,14 +90,23 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
         {/* Content - Only show when not loading and no error */}
         {!isLoading && !error && (
-          <>
+          <div className="flex flex-col space-y-6">
+            {/* Section 1: Car Title */}
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-foreground leading-tight">
+                {car.make} {car.model}
+              </h1>
+              {car.variant && (
+                <p className="text-sm text-muted-foreground">
+                  {car.variant}
+                </p>
+              )}
+            </div>
 
-            {/* Enhanced Price Display */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-foreground">
-                Ydelse pr. måned
-              </Label>
-              <div className="flex items-baseline gap-2">
+            {/* Section 2: Price + Configuration */}
+            <div className="space-y-3">
+              {/* Price Display */}
+              <div>
                 <AnimatedPrice 
                   value={selectedLease?.monthly_price ?? 0}
                   className="text-3xl font-bold text-foreground"
@@ -100,42 +114,52 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                   showPeriod={true}
                 />
               </div>
-              
-            </div>
 
-        {/* Grouped Form Fields */}
-        <div className="border rounded-xl overflow-hidden bg-white">
+              {/* Grouped Form Fields */}
+              <div className="border rounded-xl overflow-hidden bg-white">
           {/* Mileage Selection */}
           <div>
-            <Select 
-              value={selectedMileage?.toString() || ''} 
-              onValueChange={(value) => onMileageChange(parseInt(value))}
-              disabled={availableMileages.length <= 1}
-            >
-              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
-                <div className="flex flex-col items-start w-full">
-                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
-                    Årligt km-forbrug
-                  </span>
-                  <span className="text-sm font-normal mt-0.5">
-                    {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : "Vælg km-forbrug"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {availableMileages.map((mileage) => (
-                  <PriceImpactSelectItem
-                    key={`mileage-${mileage}`}
-                    value={mileage.toString()}
-                    label={`${mileage.toLocaleString('da-DK')} km/år`}
-                    impact={mileagePriceImpacts?.get(mileage)}
-                    isSelected={mileage === selectedMileage}
-                    onHover={() => handleMileageHover(mileage)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            {availableMileages.length === 1 ? (
+              // Read-only field appearance
+              <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
+                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                  Årligt km-forbrug
+                </span>
+                <span className="text-sm font-normal mt-0.5">
+                  {selectedMileage?.toLocaleString('da-DK')} km/år
+                </span>
+              </div>
+            ) : (
+              // Interactive dropdown
+              <Select 
+                value={selectedMileage?.toString() || ''} 
+                onValueChange={(value) => onMileageChange(parseInt(value))}
+              >
+                <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
+                  <div className="flex flex-col items-start w-full">
+                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                      Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length} muligheder</span>
+                    </span>
+                    <span className="text-sm font-normal mt-0.5">
+                      {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : "Vælg km-forbrug"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMileages.map((mileage) => (
+                    <PriceImpactSelectItem
+                      key={`mileage-${mileage}`}
+                      value={mileage.toString()}
+                      label={`${mileage.toLocaleString('da-DK')} km/år`}
+                      impact={mileagePriceImpacts?.get(mileage)}
+                      isSelected={mileage === selectedMileage}
+                      onHover={() => handleMileageHover(mileage)}
+                      onHoverEnd={handleHoverEnd}
+                    />
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Divider */}
@@ -143,35 +167,47 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Period Selection */}
           <div>
-            <Select 
-              value={selectedPeriod?.toString() || ''} 
-              onValueChange={(value) => onPeriodChange(parseInt(value))}
-              disabled={availablePeriods.length <= 1}
-            >
-              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
-                <div className="flex flex-col items-start w-full">
-                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
-                    Leasingperiode
-                  </span>
-                  <span className="text-sm font-normal mt-0.5">
-                    {selectedPeriod ? `${selectedPeriod} måneder` : "Vælg periode"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {availablePeriods.map((period) => (
-                  <PriceImpactSelectItem
-                    key={`period-${period}`}
-                    value={period.toString()}
-                    label={`${period} måneder`}
-                    impact={periodPriceImpacts?.get(period)}
-                    isSelected={period === selectedPeriod}
-                    onHover={() => handlePeriodHover(period)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            {availablePeriods.length === 1 ? (
+              // Read-only field appearance
+              <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
+                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                  Leasingperiode
+                </span>
+                <span className="text-sm font-normal mt-0.5">
+                  {selectedPeriod} måneder
+                </span>
+              </div>
+            ) : (
+              // Interactive dropdown
+              <Select 
+                value={selectedPeriod?.toString() || ''} 
+                onValueChange={(value) => onPeriodChange(parseInt(value))}
+              >
+                <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
+                  <div className="flex flex-col items-start w-full">
+                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                      Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length} muligheder</span>
+                    </span>
+                    <span className="text-sm font-normal mt-0.5">
+                      {selectedPeriod ? `${selectedPeriod} måneder` : "Vælg periode"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePeriods.map((period) => (
+                    <PriceImpactSelectItem
+                      key={`period-${period}`}
+                      value={period.toString()}
+                      label={`${period} måneder`}
+                      impact={periodPriceImpacts?.get(period)}
+                      isSelected={period === selectedPeriod}
+                      onHover={() => handlePeriodHover(period)}
+                      onHoverEnd={handleHoverEnd}
+                    />
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           {/* Divider */}
@@ -179,39 +215,63 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Upfront Payment Selection */}
           <div>
-            <Select 
-              value={selectedUpfront?.toString() || ''} 
-              onValueChange={(value) => onUpfrontChange(parseInt(value))}
-              disabled={availableUpfronts.length <= 1}
-            >
-              <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0">
-                <div className="flex flex-col items-start w-full">
-                  <span className="text-xs tracking-wide text-muted-foreground font-medium">
-                    Udbetaling
-                  </span>
-                  <span className="text-sm font-normal mt-0.5">
-                    {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : "Vælg udbetaling"}
-                  </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {availableUpfronts.map((upfront) => (
-                  <PriceImpactSelectItem
-                    key={`upfront-${upfront}`}
-                    value={upfront.toString()}
-                    label={`${upfront.toLocaleString('da-DK')} kr`}
-                    impact={upfrontPriceImpacts?.get(upfront)}
-                    isSelected={upfront === selectedUpfront}
-                    onHover={() => handleUpfrontHover(upfront)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            {availableUpfronts.length === 1 ? (
+              // Read-only field appearance
+              <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
+                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                  Udbetaling
+                </span>
+                <span className="text-sm font-normal mt-0.5">
+                  {selectedUpfront?.toLocaleString('da-DK')} kr
+                </span>
+              </div>
+            ) : (
+              // Interactive dropdown
+              <Select 
+                value={selectedUpfront?.toString() || ''} 
+                onValueChange={(value) => onUpfrontChange(parseInt(value))}
+              >
+                <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
+                  <div className="flex flex-col items-start w-full">
+                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                      Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length} muligheder</span>
+                    </span>
+                    <span className="text-sm font-normal mt-0.5">
+                      {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : "Vælg udbetaling"}
+                    </span>
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUpfronts.map((upfront) => (
+                    <PriceImpactSelectItem
+                      key={`upfront-${upfront}`}
+                      value={upfront.toString()}
+                      label={`${upfront.toLocaleString('da-DK')} kr`}
+                      impact={upfrontPriceImpacts?.get(upfront)}
+                      isSelected={upfront === selectedUpfront}
+                      onHover={() => handleUpfrontHover(upfront)}
+                      onHoverEnd={handleHoverEnd}
+                    />
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
-        </div>
+              </div>
+            </div>
 
-          </>
+            {/* Section 3: CTA Button */}
+            <div>
+              <Button 
+                className="w-full gap-2" 
+                size="lg"
+                onClick={onShowSeller}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Se tilbud hos leasingselskab
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
