@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle, ExternalLink } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'

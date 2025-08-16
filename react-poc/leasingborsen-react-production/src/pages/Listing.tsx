@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Edit3, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Edit3 } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
