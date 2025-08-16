@@ -30,7 +30,7 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
       {/* Specifications Section */}
       <div>
         <div className="space-y-0 mb-6 mt-8">
-          <h2 className="text-2xl font-bold text-foreground leading-tight">
+          <h2 className="text-2xl font-semibold text-foreground">
             Specifikationer
           </h2>
         </div>

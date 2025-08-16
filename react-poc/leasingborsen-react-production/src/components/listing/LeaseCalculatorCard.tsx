@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertTriangle, ExternalLink } from 'lucide-react'
+import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption, CarListing } from '@/types'
@@ -91,7 +92,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         {!isLoading && !error && (
           <div className="flex flex-col space-y-6">
             {/* Section 1: Car Title */}
-            <div className="space-y-1">
+            <div className="space-y-1 relative">
               <h1 className="text-xl font-bold text-foreground leading-tight">
                 {car.make} {car.model}
               </h1>
@@ -99,6 +100,15 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                 <p className="text-sm text-muted-foreground">
                   {car.variant}
                 </p>
+              )}
+              
+              {/* LeaseScore Pill - positioned to align with title section */}
+              {car.lease_score && car.retail_price && (
+                <LeaseScorePill 
+                  score={car.lease_score}
+                  size="xs"
+                  className="absolute top-0 right-0 border border-border/20 shadow-sm"
+                />
               )}
             </div>
 

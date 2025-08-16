@@ -139,7 +139,7 @@ const Listing: React.FC = () => {
 
 
   return (
-    <BaseLayout className="listing-page" showHeader={false}>
+    <BaseLayout className="listing-page" showHeader={true}>
       {/* Mobile hero image with AspectRatio (hidden on desktop) */}
       <MobileHeroImage 
         images={car?.images || []} 
@@ -178,7 +178,7 @@ const Listing: React.FC = () => {
             </div>
             
             {/* Desktop Key Specs - Show below image on desktop only */}
-            <div className="hidden lg:block">
+            <div className="hidden lg:block lg:my-8">
               <ErrorBoundary fallback={CompactErrorFallback}>
                 <KeySpecs car={car} />
               </ErrorBoundary>
