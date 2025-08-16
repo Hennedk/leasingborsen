@@ -5,7 +5,6 @@ import type { PriceImpactData } from '@/types/priceImpact'
 interface LeaseOptionCardProps {
   value: string | number
   label: string
-  score?: number
   priceImpact?: PriceImpactData | null
   isSelected: boolean
   onClick: () => void
@@ -15,7 +14,6 @@ interface LeaseOptionCardProps {
 const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
   value,
   label,
-  score,
   priceImpact,
   isSelected,
   onClick,

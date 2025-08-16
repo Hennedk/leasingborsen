@@ -55,8 +55,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   onShowSeller,
   mileagePriceImpacts,
   periodPriceImpacts,
-  upfrontPriceImpacts,
-  leaseOptionsWithScores = []
+  upfrontPriceImpacts
 }) => {
   return (
     <Drawer 
@@ -81,26 +80,17 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   Leasingperiode
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                  {availablePeriods.map((period) => {
-                    const optionWithScore = leaseOptionsWithScores.find(opt => 
-                      opt.mileage_per_year === selectedMileage &&
-                      opt.period_months === period &&
-                      opt.first_payment === selectedUpfront
-                    )
-                    
-                    return (
+                  {availablePeriods.map((period) => (
                       <LeaseOptionCard
                         key={`period-${period}`}
                         value={`${period} måneder`}
                         label="Periode"
-                        score={optionWithScore?.lease_score}
                         priceImpact={periodPriceImpacts?.get(period)}
                         isSelected={period === selectedPeriod}
                         onClick={() => onPeriodChange(period)}
                         className="flex-shrink-0 w-32 snap-start"
                       />
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
 
@@ -110,26 +100,17 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   Årligt km-forbrug
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                  {availableMileages.map((mileage) => {
-                    const optionWithScore = leaseOptionsWithScores.find(opt => 
-                      opt.mileage_per_year === mileage &&
-                      opt.period_months === selectedPeriod &&
-                      opt.first_payment === selectedUpfront
-                    )
-                    
-                    return (
+                  {availableMileages.map((mileage) => (
                       <LeaseOptionCard
                         key={`mileage-${mileage}`}
                         value={`${mileage.toLocaleString('da-DK')} km`}
                         label="pr. år"
-                        score={optionWithScore?.lease_score}
                         priceImpact={mileagePriceImpacts?.get(mileage)}
                         isSelected={mileage === selectedMileage}
                         onClick={() => onMileageChange(mileage)}
                         className="flex-shrink-0 w-32 snap-start"
                       />
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
 
@@ -139,26 +120,17 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   Udbetaling
                 </Label>
                 <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-hide" vaul-drawer-direction="horizontal">
-                  {availableUpfronts.map((upfront) => {
-                    const optionWithScore = leaseOptionsWithScores.find(opt => 
-                      opt.mileage_per_year === selectedMileage &&
-                      opt.period_months === selectedPeriod &&
-                      opt.first_payment === upfront
-                    )
-                    
-                    return (
+                  {availableUpfronts.map((upfront) => (
                       <LeaseOptionCard
                         key={`upfront-${upfront}`}
                         value={`${upfront.toLocaleString('da-DK')} kr`}
                         label="udbetaling"
-                        score={optionWithScore?.lease_score}
                         priceImpact={upfrontPriceImpacts?.get(upfront)}
                         isSelected={upfront === selectedUpfront}
                         onClick={() => onUpfrontChange(upfront)}
                         className="flex-shrink-0 w-32 snap-start"
                       />
-                    )
-                  })}
+                  ))}
                 </div>
               </div>
             </div>

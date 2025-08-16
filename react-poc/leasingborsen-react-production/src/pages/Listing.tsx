@@ -82,8 +82,6 @@ const Listing: React.FC = () => {
     isLoading: leaseLoading,
     error: leaseError,
     bestScoreOption: _bestScoreOption,
-    isCheapest,
-    priceDifference,
     mileagePriceImpacts,
     periodPriceImpacts,
     upfrontPriceImpacts,
