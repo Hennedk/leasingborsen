@@ -75,11 +75,6 @@ const PriceImpactSelectItem = forwardRef<
         </span>
         <div className="flex items-center gap-2 w-full pr-6">
           <SelectPrimitive.ItemText>{label}</SelectPrimitive.ItemText>
-          {isSelected && (
-            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
-              Nuværende
-            </span>
-          )}
         </div>
       </SelectPrimitive.Item>
     )
@@ -89,7 +84,7 @@ const PriceImpactSelectItem = forwardRef<
     const absValue = Math.abs(diff)
     if (diff > 0) return `+${absValue.toLocaleString('da-DK')} kr/md`
     if (diff < 0) return `-${absValue.toLocaleString('da-DK')} kr/md`
-    return 'Samme pris'
+    return isSelected ? 'Nuværende' : 'Samme pris'
   }
   
   const getImpactColor = (): string => {
@@ -122,11 +117,6 @@ const PriceImpactSelectItem = forwardRef<
       <div className="flex items-center justify-between w-full pr-6">
         <div className="flex items-center gap-2 flex-1">
           <SelectPrimitive.ItemText>{label}</SelectPrimitive.ItemText>
-          {isSelected && (
-            <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded">
-              Nuværende
-            </span>
-          )}
           {impact.isCheapest && !isSelected && (
             <span className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 px-1.5 py-0.5 rounded">
               Billigst

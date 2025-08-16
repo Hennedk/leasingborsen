@@ -121,7 +121,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             {availableMileages.length === 1 ? (
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
-                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                <span className="text-xs tracking-wide text-foreground font-medium">
                   Årligt km-forbrug
                 </span>
                 <span className="text-sm font-normal mt-0.5">
@@ -136,7 +136,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
-                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    <span className="text-xs tracking-wide text-foreground font-medium">
                       Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length} muligheder</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
@@ -169,7 +169,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             {availablePeriods.length === 1 ? (
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
-                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                <span className="text-xs tracking-wide text-foreground font-medium">
                   Leasingperiode
                 </span>
                 <span className="text-sm font-normal mt-0.5">
@@ -184,7 +184,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
-                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    <span className="text-xs tracking-wide text-foreground font-medium">
                       Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length} muligheder</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
@@ -217,7 +217,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             {availableUpfronts.length === 1 ? (
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
-                <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                <span className="text-xs tracking-wide text-foreground font-medium">
                   Udbetaling
                 </span>
                 <span className="text-sm font-normal mt-0.5">
@@ -232,7 +232,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
-                    <span className="text-xs tracking-wide text-muted-foreground font-medium">
+                    <span className="text-xs tracking-wide text-foreground font-medium">
                       Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length} muligheder</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
