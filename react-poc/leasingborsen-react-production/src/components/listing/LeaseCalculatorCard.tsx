@@ -24,7 +24,6 @@ interface LeaseCalculatorCardProps {
   onShowSeller: () => void
   isLoading?: boolean
   error?: any
-  totalCost?: number | null
   isCheapest?: boolean
   priceDifference?: number
   mileagePriceImpacts?: Map<number, PriceImpactData>
@@ -48,7 +47,6 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onShowSeller,
   isLoading = false,
   error = null,
-  totalCost = null,
   isCheapest = false,
   priceDifference = 0,
   mileagePriceImpacts,

@@ -81,7 +81,6 @@ const Listing: React.FC = () => {
     selectBestScore: _selectBestScore,
     isLoading: leaseLoading,
     error: leaseError,
-    totalCost,
     bestScoreOption: _bestScoreOption,
     isCheapest,
     priceDifference,
@@ -232,7 +231,6 @@ const Listing: React.FC = () => {
                 onShowSeller={() => setSellerModalOpen(true)}
                 isLoading={leaseLoading}
                 error={leaseError}
-                totalCost={totalCost}
                 isCheapest={isCheapest}
                 priceDifference={priceDifference}
                 mileagePriceImpacts={mileagePriceImpacts}
