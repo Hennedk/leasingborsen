@@ -70,7 +70,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     onHoverOption?.(null)
   }, [onHoverOption])
   return (
-    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
+    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px] shadow-[0_0_20px_rgba(0,0,0,0.08)]">
       <CardContent className="p-5 space-y-4 relative">
         {/* Loading State */}
         {isLoading && (
@@ -130,16 +130,13 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         <div className="space-y-4">
           {/* Mileage Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground">
-              Årligt km-forbrug
-            </Label>
             <Select 
               value={selectedMileage?.toString() || ''} 
               onValueChange={(value) => onMileageChange(parseInt(value))}
               disabled={availableMileages.length <= 1}
             >
-              <SelectTrigger size="default" background="primary" className="w-full">
-                <SelectValue placeholder="Vælg km-forbrug" />
+              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
+                <SelectValue placeholder="Vælg km-forbrug" className="text-foreground" />
               </SelectTrigger>
               <SelectContent>
                 {availableMileages.map((mileage) => (
@@ -159,16 +156,13 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Period Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground">
-              Leasingperiode
-            </Label>
             <Select 
               value={selectedPeriod?.toString() || ''} 
               onValueChange={(value) => onPeriodChange(parseInt(value))}
               disabled={availablePeriods.length <= 1}
             >
-              <SelectTrigger size="default" background="primary" className="w-full">
-                <SelectValue placeholder="Vælg periode" />
+              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
+                <SelectValue placeholder="Vælg periode" className="text-foreground" />
               </SelectTrigger>
               <SelectContent>
                 {availablePeriods.map((period) => (
@@ -188,16 +182,13 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
 
           {/* Upfront Payment Selection */}
           <div>
-            <Label className="text-sm font-medium text-foreground">
-              Udbetaling
-            </Label>
             <Select 
               value={selectedUpfront?.toString() || ''} 
               onValueChange={(value) => onUpfrontChange(parseInt(value))}
               disabled={availableUpfronts.length <= 1}
             >
-              <SelectTrigger size="default" background="primary" className="w-full">
-                <SelectValue placeholder="Vælg udbetaling" />
+              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
+                <SelectValue placeholder="Vælg udbetaling" className="text-foreground" />
               </SelectTrigger>
               <SelectContent>
                 {availableUpfronts.map((upfront) => (
@@ -216,17 +207,6 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
           </div>
         </div>
 
-        {/* Primary CTA Button */}
-        <div className="pt-4">
-          <Button 
-            className="w-full gap-2" 
-            size="lg"
-            onClick={onShowSeller}
-          >
-            <ExternalLink className="w-4 h-4" />
-            Se tilbud hos leasingselskab
-          </Button>
-            </div>
           </>
         )}
       </CardContent>

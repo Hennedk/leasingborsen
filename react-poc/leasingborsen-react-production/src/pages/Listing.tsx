@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Edit3 } from 'lucide-react'
+import { ArrowLeft, Edit3, ExternalLink } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
@@ -239,6 +239,18 @@ const Listing: React.FC = () => {
                 onHoverOption={setHoveredOption}
               />
             </ErrorBoundary>
+            
+            {/* Desktop CTA Button */}
+            <div className="hidden lg:block">
+              <Button 
+                className="w-full gap-2" 
+                size="lg"
+                onClick={() => setSellerModalOpen(true)}
+              >
+                <ExternalLink className="w-4 h-4" />
+                Se tilbud hos leasingselskab
+              </Button>
+            </div>
           </div>
         </div>
 
