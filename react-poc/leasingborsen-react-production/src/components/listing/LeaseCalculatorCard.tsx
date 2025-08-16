@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
+import LeaseOptionCard from './LeaseOptionCard'
 import { Label } from '@/components/ui/label'
 import { Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
-import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
@@ -68,7 +67,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     onHoverOption?.(null)
   }, [onHoverOption])
   return (
-    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px] shadow-[0_0_20px_rgba(0,0,0,0.08)]">
+    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
       <CardContent className="p-5 space-y-4 relative">
         {/* Loading State */}
         {isLoading && (
@@ -93,20 +92,6 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         {/* Content - Only show when not loading and no error */}
         {!isLoading && !error && (
           <>
-            {/* Subtle price indicator */}
-            {!isCheapest && (
-              <div className="mb-3">
-                <Button
-                  variant="ghost"
-                  onClick={onResetToCheapest}
-                  className="w-full h-8 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  size="sm"
-                >
-                  <TrendingDown className="w-3 h-3 mr-1" />
-                  Vælg billigste ({priceDifference > 0 ? `-${priceDifference.toLocaleString('da-DK')} kr/md` : 'tilgængelig'})
-                </Button>
-              </div>
-            )}
 
             {/* Enhanced Price Display */}
             <div className="space-y-2">
@@ -128,80 +113,62 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         <div className="space-y-4">
           {/* Mileage Selection */}
           <div>
-            <Select 
-              value={selectedMileage?.toString() || ''} 
-              onValueChange={(value) => onMileageChange(parseInt(value))}
-              disabled={availableMileages.length <= 1}
-            >
-              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
-                <SelectValue placeholder="Vælg km-forbrug" className="text-foreground" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableMileages.map((mileage) => (
-                  <PriceImpactSelectItem
-                    key={`mileage-${mileage}`}
-                    value={mileage.toString()}
-                    label={`${mileage.toLocaleString('da-DK')} km/år`}
-                    impact={mileagePriceImpacts?.get(mileage)}
-                    isSelected={mileage === selectedMileage}
-                    onHover={() => handleMileageHover(mileage)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+              Årligt km-forbrug
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {availableMileages.map((mileage) => (
+                <LeaseOptionCard
+                  key={`mileage-${mileage}`}
+                  value={`${mileage.toLocaleString('da-DK')} km`}
+                  label="pr. år"
+                  priceImpact={mileagePriceImpacts?.get(mileage)}
+                  isSelected={mileage === selectedMileage}
+                  onClick={() => onMileageChange(mileage)}
+                  className="min-h-[50px]"
+                />
+              ))}
+            </div>
           </div>
 
           {/* Period Selection */}
           <div>
-            <Select 
-              value={selectedPeriod?.toString() || ''} 
-              onValueChange={(value) => onPeriodChange(parseInt(value))}
-              disabled={availablePeriods.length <= 1}
-            >
-              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
-                <SelectValue placeholder="Vælg periode" className="text-foreground" />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePeriods.map((period) => (
-                  <PriceImpactSelectItem
-                    key={`period-${period}`}
-                    value={period.toString()}
-                    label={`${period} måneder`}
-                    impact={periodPriceImpacts?.get(period)}
-                    isSelected={period === selectedPeriod}
-                    onHover={() => handlePeriodHover(period)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+              Leasingperiode
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {availablePeriods.map((period) => (
+                <LeaseOptionCard
+                  key={`period-${period}`}
+                  value={`${period} mdr`}
+                  label="periode"
+                  priceImpact={periodPriceImpacts?.get(period)}
+                  isSelected={period === selectedPeriod}
+                  onClick={() => onPeriodChange(period)}
+                  className="min-h-[50px]"
+                />
+              ))}
+            </div>
           </div>
 
           {/* Upfront Payment Selection */}
           <div>
-            <Select 
-              value={selectedUpfront?.toString() || ''} 
-              onValueChange={(value) => onUpfrontChange(parseInt(value))}
-              disabled={availableUpfronts.length <= 1}
-            >
-              <SelectTrigger size="default" background="primary" className="w-full text-foreground font-medium border-border">
-                <SelectValue placeholder="Vælg udbetaling" className="text-foreground" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableUpfronts.map((upfront) => (
-                  <PriceImpactSelectItem
-                    key={`upfront-${upfront}`}
-                    value={upfront.toString()}
-                    label={`${upfront.toLocaleString('da-DK')} kr`}
-                    impact={upfrontPriceImpacts?.get(upfront)}
-                    isSelected={upfront === selectedUpfront}
-                    onHover={() => handleUpfrontHover(upfront)}
-                    onHoverEnd={handleHoverEnd}
-                  />
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs font-medium text-muted-foreground mb-2 block">
+              Udbetaling
+            </Label>
+            <div className="grid grid-cols-3 gap-2">
+              {availableUpfronts.map((upfront) => (
+                <LeaseOptionCard
+                  key={`upfront-${upfront}`}
+                  value={`${upfront.toLocaleString('da-DK')} kr`}
+                  label="udbetaling"
+                  priceImpact={upfrontPriceImpacts?.get(upfront)}
+                  isSelected={upfront === selectedUpfront}
+                  onClick={() => onUpfrontChange(upfront)}
+                  className="min-h-[50px]"
+                />
+              ))}
+            </div>
           </div>
         </div>
 

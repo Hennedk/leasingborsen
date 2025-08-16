@@ -55,7 +55,7 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       onClick={onClick}
       className={cn(
         // Base styles with vertical layout
-        'flex flex-col items-center justify-between p-3 rounded-xl transition-all duration-200 w-full min-h-[110px]',
+        'flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 w-full',
         // Touch target size for mobile
         'touch-manipulation',
         // Default state with light grey border
@@ -75,60 +75,17 @@ const LeaseOptionCard: React.FC<LeaseOptionCardProps> = ({
       aria-checked={isSelected}
       aria-label={`Vælg ${label}: ${value}`}
     >
-      {/* Top: Score gauge with number inside */}
-      <div className="relative w-12 h-12 mb-2">
-        <svg className="w-12 h-12 transform -rotate-90">
-          {/* Background circle */}
-          <circle
-            cx="24"
-            cy="24"
-            r="20"
-            stroke="currentColor"
-            strokeWidth="3"
-            fill="none"
-            className="text-gray-200"
-          />
-          {/* Filled circle based on score */}
-          <circle
-            cx="24"
-            cy="24"
-            r="20"
-            stroke="currentColor"
-            strokeWidth="3"
-            fill="none"
-            strokeDasharray={`${(fillPercentage * 125.6) / 100} 125.6`}
-            strokeLinecap="round"
-            className={cn(
-              'transition-all duration-500',
-              score && score >= 80 ? 'text-green-500' :
-              score && score >= 60 ? 'text-yellow-500' :
-              score && score >= 40 ? 'text-orange-500' :
-              'text-red-500'
-            )}
-          />
-        </svg>
-        {/* Score number in center */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn(
-            'text-sm font-bold',
-            isSelected ? 'text-primary-foreground' : 'text-foreground'
-          )}>
-            {score || '–'}
-          </span>
-        </div>
-      </div>
-
-      {/* Middle: Option value */}
+      {/* Option value - Bold */}
       <div className="text-center mb-1">
         <div className={cn(
-          'text-sm font-semibold leading-tight',
+          'text-sm font-bold leading-tight',
           isSelected ? 'text-primary-foreground' : 'text-foreground'
         )}>
           {value}
         </div>
       </div>
 
-      {/* Bottom: Price impact or selected state */}
+      {/* Price impact - Non-bold below */}
       <div className="text-center">
         {renderPriceImpact()}
       </div>

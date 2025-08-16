@@ -89,7 +89,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
 
   return (
     <div className={className}>
-      <div className="h-px bg-border/50 mb-6"></div>
+      <div className="h-px bg-border/50 mb-6 md:hidden"></div>
       
       <div className="py-2">
         {/* Mobile: 3x2 Grid */}
@@ -113,9 +113,9 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
           </div>
         </div>
 
-        {/* Desktop: 2x3 Grid layout */}
+        {/* Desktop: Horizontal distribution */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-2 gap-6">
+          <div className="flex justify-between items-center gap-4">
             {visibleSpecs.map((spec, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="text-muted-foreground">
@@ -135,7 +135,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
         </div>
       </div>
 
-      <div className="h-px bg-border/50 mt-6"></div>
+      <div className="h-px bg-border/50 mt-6 md:hidden"></div>
     </div>
   )
 }
