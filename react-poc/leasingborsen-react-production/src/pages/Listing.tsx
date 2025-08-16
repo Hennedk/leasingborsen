@@ -228,7 +228,6 @@ const Listing: React.FC = () => {
                 onPeriodChange={setSelectedPeriod}
                 onUpfrontChange={setSelectedUpfront}
                 onResetToCheapest={resetToCheapest}
-                onShowSeller={() => setSellerModalOpen(true)}
                 isLoading={leaseLoading}
                 error={leaseError}
                 isCheapest={isCheapest}

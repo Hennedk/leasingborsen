@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { ExternalLink, Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
+import { Loader2, AlertTriangle, TrendingDown } from 'lucide-react'
 import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption } from '@/types'
@@ -21,7 +21,6 @@ interface LeaseCalculatorCardProps {
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
   onResetToCheapest: () => void
-  onShowSeller: () => void
   isLoading?: boolean
   error?: any
   isCheapest?: boolean
@@ -44,7 +43,6 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onPeriodChange,
   onUpfrontChange,
   onResetToCheapest,
-  onShowSeller,
   isLoading = false,
   error = null,
   isCheapest = false,
