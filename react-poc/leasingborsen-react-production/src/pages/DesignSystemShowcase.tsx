@@ -12,7 +12,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LeaseScoreBadge } from '@/components/ui/LeaseScoreBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
@@ -716,20 +715,6 @@ export default function DesignSystemShowcase() {
                   <div className="h-48 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
                     <Car className="h-16 w-16 text-slate-400" />
                   </div>
-                  <div className="absolute top-3 right-3">
-                    <LeaseScoreBadge 
-                      score={89}
-                      retailPrice={450000}
-                      breakdown={{
-                        totalScore: 89,
-                        monthlyRateScore: 85,
-                        monthlyRatePercent: 90,
-                        mileageScore: 92,
-                        mileageNormalized: 88,
-                        flexibilityScore: 85
-                      }}
-                    />
-                  </div>
                 </div>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -772,52 +757,6 @@ export default function DesignSystemShowcase() {
             </div>
           </ComponentDemo>
 
-          <ComponentDemo title="Leasing Score" description="Forskellige LeaseScore badges">
-            <div className="flex flex-wrap gap-4">
-              <LeaseScoreBadge 
-                score={95}
-                retailPrice={350000}
-                breakdown={{
-                  totalScore: 95,
-                  monthlyRateScore: 98,
-                  monthlyRatePercent: 92,
-                  mileageScore: 97,
-                  mileageNormalized: 95,
-                  flexibilityScore: 90
-                }}
-                size="default"
-              />
-              <LeaseScoreBadge 
-                score={78}
-                retailPrice={750000}
-                breakdown={{
-                  totalScore: 78,
-                  monthlyRateScore: 65,
-                  monthlyRatePercent: 75,
-                  mileageScore: 83,
-                  mileageNormalized: 80,
-                  flexibilityScore: 85
-                }}
-                size="default"
-              />
-              <LeaseScoreBadge 
-                score={45}
-                retailPrice={1200000}
-                breakdown={{
-                  totalScore: 45,
-                  monthlyRateScore: 35,
-                  monthlyRatePercent: 40,
-                  mileageScore: 50,
-                  mileageNormalized: 45,
-                  flexibilityScore: 50
-                }}
-                size="default"
-              />
-              <Badge variant="outline" className="text-xs">
-                Mangler detailpris
-              </Badge>
-            </div>
-          </ComponentDemo>
 
           <ComponentDemo title="Loading States" description="Skeleton tilstande under indlæsning">
             <div className="max-w-md">

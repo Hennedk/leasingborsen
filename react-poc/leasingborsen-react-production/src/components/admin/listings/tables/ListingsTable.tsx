@@ -22,7 +22,6 @@ import {
 import { cn } from '@/lib/utils'
 import type { AdminListing } from '@/types/admin'
 import { useListingsTableState } from '@/hooks/useListingsTableState'
-import { LeaseScoreBadge } from '@/components/ui/LeaseScoreBadge'
 import { 
   ListingsTableHeader,
   ListingExpandedRow,
@@ -192,13 +191,11 @@ const ListingsTable: React.FC<ListingsTableProps> = ({
         </Badge>
       </TableCell>
       <TableCell>
-        <LeaseScoreBadge
-          score={listing.lease_score}
-          breakdown={listing.lease_score_breakdown}
-          calculatedAt={listing.lease_score_calculated_at}
-          retailPrice={listing.retail_price}
-          size="sm"
-        />
+        {listing.lease_score ? (
+          <span className="text-sm font-medium">{listing.lease_score}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground">–</span>
+        )}
       </TableCell>
       <TableCell>
         <div className="text-sm text-muted-foreground">
