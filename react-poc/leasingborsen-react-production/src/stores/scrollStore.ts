@@ -25,6 +25,7 @@ export const useScrollStore = create<ScrollStore>((set, get) => ({
   clearPosition: (path) => {
     sessionStorage.removeItem(`scroll-${path}`)
     set((state) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [path]: _, ...rest } = state.positions
       return { positions: rest }
     })

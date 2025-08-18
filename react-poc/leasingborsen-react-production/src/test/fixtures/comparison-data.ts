@@ -1,4 +1,4 @@
-import type { ExtractedCar, ExistingListing, ListingMatch } from '@/types'
+import type { ExtractedCar, ExistingListing } from '@/types'
 
 // Real-world test data based on actual production scenarios
 

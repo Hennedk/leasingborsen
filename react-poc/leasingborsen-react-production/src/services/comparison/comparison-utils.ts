@@ -34,8 +34,7 @@ export interface ExistingListing {
  * Generate exact key for Level 1 matching - based on make, model, variant only
  * No listings can have the same make, model, variant combination
  */
-export function generateExactKey(make: string, model: string, variant: string, _transmission?: string): string {
-  // transmission parameter kept for API compatibility but not used in exact matching
+export function generateExactKey(make: string, model: string, variant: string): string {
   return `${make}|${model}|${variant}`.toLowerCase()
 }
 

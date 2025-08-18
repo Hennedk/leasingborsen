@@ -5,18 +5,16 @@ import { cn } from '@/lib/utils'
 import { Info, Edit3 } from 'lucide-react'
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
 import { useLeaseConfigUrlSync } from '@/hooks/useLeaseConfigUrlSync'
-import type { CarListing, LeaseOption } from '@/types'
+import type { LeaseOption } from '@/types'
 
 type PriceState = 'compact' | 'expanded'
 
 interface MobilePriceBarProps {
-  car: CarListing
   selectedLease: LeaseOption | null
   onShowSeller: () => void
 }
 
 const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({ 
-  car: _car, 
   selectedLease,
   onShowSeller 
 }) => {

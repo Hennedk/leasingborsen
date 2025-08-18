@@ -83,18 +83,18 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         <div className="grid grid-rows-[auto_auto]">
           <div className="p-5 border-b border-border/50 flex-shrink-0">
             <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">Tilpas pris</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="h-9 w-9 p-0 hover:bg-muted/50 flex-shrink-0"
-              aria-label="Luk prisindstillinger"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+              <h2 className="text-lg font-bold">Tilpas pris</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-9 w-9 p-0 hover:bg-muted/50 flex-shrink-0"
+                aria-label="Luk prisindstillinger"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
 
           {/* Content */}
           <div>
