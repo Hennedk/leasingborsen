@@ -15,7 +15,7 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
       {car.description && (
         <div>
           <div className="space-y-0 mb-4">
-            <h2 className="text-2xl font-bold text-foreground leading-tight">
+            <h2 className="hidden md:block text-2xl font-bold text-foreground leading-tight">
               Beskrivelse
             </h2>
           </div>
