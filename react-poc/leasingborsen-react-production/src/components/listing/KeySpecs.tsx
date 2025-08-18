@@ -89,8 +89,6 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
 
   return (
     <div className={className}>
-      <div className="h-px bg-border/50 mb-6 md:hidden"></div>
-      
       <div className="py-2">
         {/* Mobile: 3x2 Grid */}
         <div className="md:hidden">

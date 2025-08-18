@@ -11,22 +11,6 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
 
   return (
     <div className="space-y-8 lg:mr-3 xl:mr-7 2xl:mr-10">
-      {/* Description Section */}
-      {car.description && (
-        <div>
-          <div className="space-y-0 mb-4">
-            <h2 className="hidden md:block text-2xl font-bold text-foreground leading-tight">
-              Beskrivelse
-            </h2>
-          </div>
-          <div className="prose prose-sm max-w-none text-foreground">
-            <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {car.description}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Specifications Section */}
       <div>
         <div className="space-y-0 mb-6 mt-8">
