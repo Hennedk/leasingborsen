@@ -293,7 +293,7 @@ const Listing: React.FC = () => {
             <Button 
               size="lg"
               onClick={() => setSellerModalOpen(true)}
-              className="w-full min-h-[44px]"
+              className="w-full h-12"
             >
               Gå til tilbud
             </Button>

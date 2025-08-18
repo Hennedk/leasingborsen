@@ -2,13 +2,11 @@ import React, { useCallback } from 'react'
 import {
   Drawer,
   DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
-import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import PriceImpactSelectItem from '@/components/listing/PriceImpactSelectItem'
+import { X } from 'lucide-react'
 
 import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
@@ -83,41 +81,39 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         if (!open) onClose()
       }}
     >
-      <DrawerContent className="lg:hidden max-h-[90vh] grid grid-rows-[auto_1fr_auto]">
-        <DrawerHeader className="pb-0">
-          <DrawerTitle>Tilpas pris</DrawerTitle>
-        </DrawerHeader>
-
-        {/* Scrollable Content */}
-        <div className="overflow-y-auto overscroll-contain">
-          {/* Car Info Section with LeaseScore */}
-          <div className="px-4 pt-2 pb-4 border-b">
-            <div className="relative">
-              <h2 className="text-lg font-bold text-foreground leading-tight">
-                {car.make} {car.model}
-              </h2>
-              {car.variant && (
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  {car.variant}
-                </p>
-              )}
-              
-              {/* LeaseScore Pill - positioned to align with title */}
-              {car.lease_score && car.retail_price && (
-                <LeaseScorePill 
-                  score={car.lease_score}
-                  size="xs"
-                  className="absolute top-0 right-0 border border-border/20 shadow-sm"
-                />
-              )}
-            </div>
+      <DrawerContent className="lg:hidden h-[min(90vh,100dvh-2rem)] max-h-[90vh] rounded-t-2xl shadow-2xl border-0">
+        <div className="flex-1 grid grid-rows-[auto_1fr] min-h-0">
+          <div className="p-5 border-b border-border/50 flex-shrink-0">
+            <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold">Tilpas pris</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-9 w-9 p-0 hover:bg-muted/50 flex-shrink-0"
+              aria-label="Luk prisindstillinger"
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
 
-          <div className="p-4 space-y-4">
-            {/* Configuration Options - Vertical Select Pattern */}
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto overscroll-contain">
+          <div className="p-4 space-y-6">
+            {/* Price and Configuration Group */}
             <div className="space-y-3">
-              {/* Grouped Form Fields */}
-              <div className="border rounded-xl overflow-hidden bg-white">
+              {/* Price Display */}
+              <div className="px-1 pt-2 pb-1">
+                <p className="text-2xl font-bold text-foreground leading-none">
+                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
+                </p>
+              </div>
+
+              {/* Configuration Options - Vertical Select Pattern */}
+              <div className="space-y-3">
+                {/* Grouped Form Fields */}
+                <div className="border rounded-xl overflow-hidden bg-white">
                 {/* Mileage Selection */}
                 <div>
                   {availableMileages.length === 1 ? (
@@ -260,36 +256,18 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="bg-background border-t p-4 space-y-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1 space-y-2">
-              <p className="text-xl font-bold text-foreground leading-none">
-                {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
-              </p>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed">
-                <span className="font-medium">{selectedMileage?.toLocaleString('da-DK')} km/år</span>
-                <span className="text-muted-foreground/50">•</span>
-                <span className="font-medium">{selectedPeriod} mdr</span>
-                {selectedLease?.first_payment && (
-                  <>
-                    <span className="text-muted-foreground/50">•</span>
-                    <span className="font-medium">Udb: {selectedLease.first_payment.toLocaleString('da-DK')} kr</span>
-                  </>
-                )}
-              </div>
             </div>
+
+            {/* CTA Button */}
+            <Button 
+              size="lg"
+              onClick={onShowSeller}
+              className="w-full h-12"
+            >
+              Gå til tilbud
+            </Button>
           </div>
-          
-          <Button 
-            size="lg"
-            onClick={onShowSeller}
-            className="w-full min-h-[44px]"
-          >
-            Gå til tilbud
-          </Button>
+          </div>
         </div>
       </DrawerContent>
     </Drawer>
