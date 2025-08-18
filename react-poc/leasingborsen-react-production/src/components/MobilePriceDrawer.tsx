@@ -8,13 +8,12 @@ import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
 import PriceImpactSelectItem from '@/components/listing/PriceImpactSelectItem'
 import { X } from 'lucide-react'
 
-import type { LeaseOption, CarListing, LeaseOptionWithScore } from '@/types'
+import type { LeaseOption, LeaseOptionWithScore } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
 interface MobilePriceDrawerProps {
   isOpen: boolean
   onClose: () => void
-  car: CarListing
   selectedMileage: number | null
   selectedPeriod: number | null
   selectedUpfront: number | null
@@ -41,7 +40,6 @@ interface MobilePriceDrawerProps {
 const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   isOpen,
   onClose,
-  car,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,

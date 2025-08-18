@@ -306,7 +306,6 @@ const Listing: React.FC = () => {
         <MobilePriceDrawer 
           isOpen={priceDrawerOpen}
           onClose={() => setPriceDrawerOpen(false)}
-          car={car}
           selectedMileage={selectedMileage}
           selectedPeriod={selectedPeriod}
           selectedUpfront={selectedUpfront}
