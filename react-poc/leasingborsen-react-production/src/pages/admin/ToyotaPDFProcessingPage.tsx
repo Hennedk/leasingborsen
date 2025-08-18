@@ -315,7 +315,7 @@ const ToyotaPDFProcessingPage: React.FC = () => {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">Unique IDs:</span>
-            <Badge variant="default" className="bg-purple-100 text-purple-800">
+            <Badge variant="default" className="bg-primary/10 text-primary">
               {result.items_extracted}
             </Badge>
           </div>

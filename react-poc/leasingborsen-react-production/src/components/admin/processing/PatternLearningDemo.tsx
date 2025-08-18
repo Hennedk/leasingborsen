@@ -451,7 +451,7 @@ Dealer: Toyota Denmark
               <div className="text-sm text-muted-foreground">Opdagede Mønstre</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">85%</div>
+              <div className="text-2xl font-bold text-primary">85%</div>
               <div className="text-sm text-muted-foreground">Gennemsnit Succesrate</div>
             </div>
           </div>

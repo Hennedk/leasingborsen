@@ -34,8 +34,8 @@ Benefits:
 |----------|-------------|----------------|-------------|---------------|
 | `--background` | `oklch(1.0000 0 0)` | `#ffffff` | Pure white | Page backgrounds, main content areas |
 | `--foreground` | `oklch(0.1288 0.0406 264.6952)` | `#1a1625` | Near black | Primary text, body content |
-| `--primary` | `oklch(0.5257 0.2628 279.22)` | `#593cfb` | Purple brand | Primary buttons, links, focus states |
-| `--primary-foreground` | `oklch(1.0000 0 0)` | `#ffffff` | White | Text on primary backgrounds |
+| `--primary` | `0.5896 0.1961 36` | `#D8400D` | Orange brand | Primary buttons, links, focus states |
+| `--primary-foreground` | `1 0 0` | `#ffffff` | White | Text on primary backgrounds |
 | `--secondary` | `oklch(0.9683 0.0069 247.8956)` | `#f4f4f5` | Light gray | Secondary buttons, inactive states |
 | `--secondary-foreground` | `oklch(0.1288 0.0406 264.6952)` | `#1a1625` | Dark gray | Text on secondary backgrounds |
 | `--muted` | `oklch(0.9683 0.0069 247.8956)` | `#f4f4f5` | Light gray | Disabled elements, placeholders |
@@ -46,7 +46,7 @@ Benefits:
 | `--destructive-foreground` | `oklch(1.0000 0 0)` | `#ffffff` | White | Text on destructive backgrounds |
 | `--border` | `oklch(0.9216 0.0000 0)` | `#ebebeb` | Light gray | Borders, dividers |
 | `--input` | `oklch(0.9216 0.0000 0)` | `#ebebeb` | Light gray | Input field borders |
-| `--ring` | `oklch(0.5257 0.2628 279.22)` | `#593cfb` | Purple | Focus rings, active states |
+| `--ring` | `var(--primary)` | `#D8400D` | Orange | Focus rings, active states |
 | `--card` | `oklch(1.0000 0 0)` | `#ffffff` | White | Card backgrounds |
 | `--card-foreground` | `oklch(0.1288 0.0406 264.6952)` | `#1a1625` | Dark gray | Card content text |
 | `--popover` | `oklch(1.0000 0 0)` | `#ffffff` | White | Dropdown, modal backgrounds |
@@ -58,8 +58,8 @@ Benefits:
 |----------|-------------|----------------|-------------|---------------|
 | `--background` | `oklch(0.1469 0.0041 49.2499)` | `#0f0f23` | Near black | Page backgrounds |
 | `--foreground` | `oklch(0.9851 0 0)` | `#fafafa` | Near white | Primary text |
-| `--primary` | `oklch(0.5257 0.2628 279.22)` | `#593cfb` | Purple (unchanged) | Brand consistency |
-| `--primary-foreground` | `oklch(1.0000 0 0)` | `#ffffff` | White | Text on primary |
+| `--primary` | `0.5896 0.1961 36` | `#D8400D` | Orange (unchanged) | Brand consistency |
+| `--primary-foreground` | `1 0 0` | `#ffffff` | White | Text on primary |
 | `--secondary` | `oklch(0.2739 0.0055 286.0326)` | `#27272a` | Dark gray | Secondary elements |
 | `--secondary-foreground` | `oklch(0.9851 0 0)` | `#fafafa` | Near white | Text on secondary |
 | `--muted` | `oklch(0.2739 0.0055 286.0326)` | `#27272a` | Dark gray | Disabled states |
@@ -70,13 +70,13 @@ Benefits:
 | `--destructive-foreground` | `oklch(0.9842 0.0034 247.8575)` | `#f4f4f5` | Off-white | Text on destructive |
 | `--border` | `oklch(0.2739 0.0055 286.0326)` | `#27272a` | Dark gray | Borders |
 | `--input` | `oklch(0.2739 0.0055 286.0326)` | `#27272a` | Dark gray | Input borders |
-| `--ring` | `oklch(0.5257 0.2628 279.22)` | `#593cfb` | Purple (unchanged) | Focus consistency |
+| `--ring` | `var(--primary)` | `#D8400D` | Orange (unchanged) | Focus consistency |
 
 ### Chart Colors (Both Themes)
 
 | Variable | OKLCH Value | Hex Equivalent | Usage |
 |----------|-------------|----------------|-------|
-| `--chart-1` | `oklch(0.5257 0.2628 279.2158)` | `#593cfb` | Primary data series |
+| `--chart-1` | `0.5896 0.1961 36` | `#D8400D` | Primary data series |
 | `--chart-2` | `oklch(0.7960 0.1058 292.3865)` | `#a855f7` | Secondary data series |
 | `--chart-3` | `oklch(0.6540 0.1878 287.0131)` | `#8b5cf6` | Tertiary data series |
 | `--chart-4` | `oklch(0.4749 0.2793 273.5953)` | `#6366f1` | Quaternary data series |
@@ -88,12 +88,12 @@ Benefits:
 |----------|------------|-----------|-------|
 | `--sidebar` | `oklch(0.9842 0.0034 247.8575)` | `oklch(0.1469 0.0041 49.2499)` | Sidebar background |
 | `--sidebar-foreground` | `oklch(0.5544 0.0407 257.4166)` | `oklch(0.7118 0.0129 286.0665)` | Sidebar text |
-| `--sidebar-primary` | `oklch(0.5257 0.2628 279.22)` | `oklch(0.5257 0.2628 279.22)` | Active sidebar items |
+| `--sidebar-primary` | `var(--primary)` | `var(--primary)` | Active sidebar items |
 | `--sidebar-primary-foreground` | `oklch(1.0000 0 0)` | `oklch(1.0000 0 0)` | Text on active items |
 | `--sidebar-accent` | `oklch(1.0000 0 0)` | `oklch(0.3703 0.0119 285.8054)` | Hover states |
 | `--sidebar-accent-foreground` | `oklch(0.1288 0.0406 264.6952)` | `oklch(0.9851 0 0)` | Text on hover |
 | `--sidebar-border` | `oklch(0.9216 0.0000 0)` | `oklch(0.2739 0.0055 286.0326)` | Sidebar borders |
-| `--sidebar-ring` | `oklch(0.5257 0.2628 279.22)` | `oklch(0.5257 0.2628 279.22)` | Focus states |
+| `--sidebar-ring` | `var(--primary)` | `var(--primary)` | Focus states |
 
 ## 🌈 Special Gradient Implementations
 
@@ -103,23 +103,23 @@ The primary button uses a sophisticated multi-state gradient system:
 
 ```css
 /* Default State */
-background: linear-gradient(to right, #593CFB, #4329C7);
+background: linear-gradient(to right, #D8400D, #B2330B);
 
 /* Hover State */
-background: linear-gradient(to right, #4E34E0, #3B24A8);
+background: linear-gradient(to right, #C43A0D, #A93407);
 
 /* Active State */
-background: linear-gradient(to right, #4329C7, #331F94);
+background: linear-gradient(to right, #B2330B, #992C06);
 ```
 
 **State Progression:**
-- **Default**: `#593CFB` → `#4329C7` (Medium to dark purple)
-- **Hover**: `#4E34E0` → `#3B24A8` (Darker progression)
-- **Active**: `#4329C7` → `#331F94` (Darkest progression)
+- **Default**: `#D8400D` → `#B2330B` (Medium to dark orange)
+- **Hover**: `#C43A0D` → `#A93407` (Darker progression)
+- **Active**: `#B2330B` → `#992C06` (Darkest progression)
 
 **Implementation:**
 ```tsx
-<Button className="bg-gradient-to-r from-[#593CFB] to-[#4329C7] hover:from-[#4E34E0] hover:to-[#3B24A8] active:from-[#4329C7] active:to-[#331F94]">
+<Button className="bg-gradient-to-r from-[#D8400D] to-[#B2330B] hover:from-[#C43A0D] hover:to-[#A93407] active:from-[#B2330B] active:to-[#992C06]">
   Primary Action
 </Button>
 ```
@@ -129,12 +129,12 @@ background: linear-gradient(to right, #4329C7, #331F94);
 Three-stop gradient for maximum visual impact:
 
 ```css
-background: linear-gradient(to right, #593CFB, #4E34E0, #4329C7);
+background: linear-gradient(to right, #D8400D, #C43A0D, #B2330B);
 ```
 
 **Implementation:**
 ```tsx
-<div className="bg-gradient-to-r from-[#593CFB] via-[#4E34E0] to-[#4329C7]">
+<div className="bg-gradient-to-r from-[#D8400D] via-[#C43A0D] to-[#B2330B]">
   Hero content
 </div>
 ```
@@ -432,7 +432,7 @@ For specific dark mode styling:
 
 Key brand elements maintain consistency across themes:
 
-- **Primary color** (`#593CFB`) remains identical in both modes
+- **Primary color** (`#D8400D`) remains identical in both modes
 - **Focus rings** use the same primary color
 - **Primary buttons** maintain the same gradient
 - **Charts** use consistent color palette
@@ -448,8 +448,8 @@ Location: `src/index.css`
   /* Light mode colors */
   --background: oklch(1.0000 0 0);
   --foreground: oklch(0.1288 0.0406 264.6952);
-  --primary: oklch(0.5257 0.2628 279.22);
-  --primary-foreground: oklch(1.0000 0 0);
+  --primary: 0.5896 0.1961 36;
+  --primary-foreground: 1 0 0;
   /* ... additional variables */
 }
 
@@ -457,8 +457,8 @@ Location: `src/index.css`
   /* Dark mode overrides */
   --background: oklch(0.1469 0.0041 49.2499);
   --foreground: oklch(0.9851 0 0);
-  --primary: oklch(0.5257 0.2628 279.22); /* Consistent */
-  --primary-foreground: oklch(1.0000 0 0);
+  --primary: 0.5896 0.1961 36; /* Consistent */
+  --primary-foreground: 1 0 0;
   /* ... additional variables */
 }
 ```
@@ -472,38 +472,38 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border) / <alpha-value>)",
-        input: "hsl(var(--input) / <alpha-value>)",
-        ring: "hsl(var(--ring) / <alpha-value>)",
-        background: "hsl(var(--background) / <alpha-value>)",
-        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        border: "oklch(var(--border) / <alpha-value>)",
+        input: "oklch(var(--input) / <alpha-value>)",
+        ring: "oklch(var(--ring) / <alpha-value>)",
+        background: "oklch(var(--background) / <alpha-value>)",
+        foreground: "oklch(var(--foreground) / <alpha-value>)",
         primary: {
-          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
-          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--primary) / <alpha-value>)",
+          foreground: "oklch(var(--primary-foreground) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
-          foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--secondary) / <alpha-value>)",
+          foreground: "oklch(var(--secondary-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
-          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--destructive) / <alpha-value>)",
+          foreground: "oklch(var(--destructive-foreground) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted) / <alpha-value>)",
-          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--muted) / <alpha-value>)",
+          foreground: "oklch(var(--muted-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
-          foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--accent) / <alpha-value>)",
+          foreground: "oklch(var(--accent-foreground) / <alpha-value>)",
         },
         card: {
-          DEFAULT: "hsl(var(--card) / <alpha-value>)",
-          foreground: "hsl(var(--card-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--card) / <alpha-value>)",
+          foreground: "oklch(var(--card-foreground) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover) / <alpha-value>)",
-          foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
+          DEFAULT: "oklch(var(--popover) / <alpha-value>)",
+          foreground: "oklch(var(--popover-foreground) / <alpha-value>)",
         },
       },
     },
@@ -511,19 +511,19 @@ module.exports = {
 }
 ```
 
-### HSL to OKLCH Conversion
+### OKLCH Integration
 
-While CSS variables use OKLCH, Tailwind references them via HSL conversion:
+CSS variables use OKLCH numeric tuples, referenced via OKLCH functions in Tailwind:
 
 ```css
-/* CSS Variable (OKLCH) */
---primary: oklch(0.5257 0.2628 279.22);
+/* CSS Variable (OKLCH tuples) */
+--primary: 0.5896 0.1961 36;
 
-/* Tailwind Usage (HSL conversion) */
-background-color: hsl(var(--primary) / <alpha-value>);
+/* Tailwind Usage (OKLCH function) */
+background-color: oklch(var(--primary) / <alpha-value>);
 ```
 
-The browser automatically converts OKLCH to HSL when used in `hsl()` functions.
+The browser parses OKLCH tuples directly, providing better color accuracy and consistency.
 
 ## 📊 Accessibility & Contrast
 
@@ -690,6 +690,6 @@ When updating existing components:
 
 ---
 
-**Last Updated**: January 2025  
-**Version**: 2.0  
+**Last Updated**: August 2025  
+**Version**: 3.0 (Orange Primary Migration)  
 **Maintainer**: Development Team

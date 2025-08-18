@@ -857,7 +857,7 @@ export default function DesignSystemShowcase() {
               <Badge className="bg-green-100 text-green-800 border-green-200">
                 Hybrid
               </Badge>
-              <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+              <Badge className="bg-primary/10 text-primary border-primary/20">
                 4WD
               </Badge>
               <Badge className="bg-orange-100 text-orange-800 border-orange-200">

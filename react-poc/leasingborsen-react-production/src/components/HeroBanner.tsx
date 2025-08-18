@@ -11,7 +11,7 @@ const HeroBanner: React.FC = () => {
     ================================================= */
     <section className="w-full px-0 md:px-6 lg:px-12">
       <div className="w-full md:mx-auto md:max-w-[1440px]">
-        <div className="relative overflow-hidden w-full bg-gradient-to-r from-[#593CFB] via-[#4E34E0] to-[#4329C7] md:rounded-3xl">
+        <div className="relative overflow-hidden w-full bg-gradient-to-r from-[#D8400D] via-[#C43A0D] to-[#B2330B] md:rounded-3xl">
           {/* =================
               CONTENT CONTAINER - Main content wrapper with padding
           ================= */}
