@@ -195,10 +195,10 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         }`}
       >
         {/* Progressive Image Loading with Enhanced Error States */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-muted to-muted/70">
+        <div className="relative overflow-hidden bg-surface-alt">
           {/* Enhanced placeholder for missing images */}
           {!car.image && !car.processed_image_grid ? (
-            <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] w-full flex items-center justify-center text-muted-foreground">
+            <div className="bg-surface-alt aspect-[4/3] w-full flex items-center justify-center text-muted-foreground">
               <div className="text-center space-y-2">
                 <div className="w-12 h-12 mx-auto bg-muted-foreground/10 rounded-full flex items-center justify-center">
                   <Car className="w-6 h-6 opacity-50" />
@@ -223,7 +223,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               
               {/* Gradient placeholder if no thumbnail */}
               {!car.thumbnail_base64 && !imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/70 animate-pulse z-10 aspect-[4/3]" />
+                <div className="absolute inset-0 bg-surface-alt animate-pulse z-10 aspect-[4/3]" />
               )}
               
               {/* High-resolution image - prefer processed grid image */}
@@ -239,7 +239,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
             </>
           ) : (
             /* Enhanced error state with recovery actions */
-            <div className="bg-gradient-to-br from-muted to-muted/70 aspect-[4/3] w-full flex flex-col items-center justify-center p-4">
+            <div className="bg-surface-alt aspect-[4/3] w-full flex flex-col items-center justify-center p-4">
               <div className="w-12 h-12 bg-destructive/10 rounded-full flex items-center justify-center mb-3">
                 <AlertCircle className="w-6 h-6 text-destructive" />
               </div>

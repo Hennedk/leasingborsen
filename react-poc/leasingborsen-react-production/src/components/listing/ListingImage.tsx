@@ -17,7 +17,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
   
   return (
     <div>
-      <div className="relative overflow-hidden rounded-xl lg:mr-3 xl:mr-7 2xl:mr-10 bg-gradient-to-br from-muted to-muted/70">
+      <div className="relative overflow-hidden rounded-xl lg:mr-3 xl:mr-7 2xl:mr-10 bg-surface-alt">
         {imageUrl && !imageError ? (
           <>
             {imageLoading && (
@@ -39,7 +39,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
             />
           </>
         ) : (
-          <div className="w-full aspect-[16/9] flex items-center justify-center bg-gradient-to-br from-muted to-muted/70">
+          <div className="w-full aspect-[16/9] flex items-center justify-center bg-surface-alt">
             <div className="text-center text-muted-foreground">
               <Car className="w-16 h-16 mx-auto mb-4 opacity-50" />
               <p>{imageError ? 'Billede kunne ikke indlæses' : 'Billede ikke tilgængeligt'}</p>

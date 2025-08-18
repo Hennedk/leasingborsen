@@ -11,7 +11,7 @@ const HeroBanner: React.FC = () => {
     ================================================= */
     <section className="w-full px-0 md:px-6 lg:px-12">
       <div className="w-full md:mx-auto md:max-w-[1440px]">
-        <div className="relative overflow-hidden w-full bg-gradient-to-r from-[#D8400D] via-[#C43A0D] to-[#B2330B] md:rounded-3xl">
+        <div className="relative overflow-hidden w-full bg-surface-brand md:rounded-3xl">
           {/* =================
               CONTENT CONTAINER - Main content wrapper with padding
           ================= */}
@@ -33,12 +33,12 @@ const HeroBanner: React.FC = () => {
               {/* Main Headline & Description - Outside search form */}
               <div className="space-y-3 mb-8">
                 {/* Primary Headline - 38px */}
-                <h1 className="font-bold text-white leading-[1.1] tracking-tight" style={{fontSize: '38px', fontWeight: 800}}>
+                <h1 className="font-bold text-surface-brandForeground leading-[1.1] tracking-tight" style={{fontSize: '38px', fontWeight: 800}}>
                   Din buddy i leasingjunglen
                 </h1>
                 
                 {/* Descriptive Subtitle - 16px */}
-                <p className="text-white/90 leading-relaxed" style={{fontSize: '16px'}}>
+                <p className="text-surface-brandForeground/80 leading-relaxed" style={{fontSize: '16px'}}>
                   Få overblik over de bedste privatleasingtilbud og find det tilbud, der passer perfekt til dine behov.
                 </p>
               </div>

@@ -16,7 +16,7 @@ const badgeVariants = cva(
         destructive:
           "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "text-foreground border-border [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "text-foreground border-border [a&]:hover:bg-surface-alt [a&]:hover:text-foreground",
         // New variants for filter chips
         "filter-selected":
           "bg-gradient-to-r from-primary to-primary/90 text-white !border-border hover:from-primary/90 hover:to-primary/80 cursor-pointer font-normal",

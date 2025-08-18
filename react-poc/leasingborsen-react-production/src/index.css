@@ -7,12 +7,12 @@
 
 :root {
   --background: oklch(1.0000 0 0);
-  --foreground: oklch(0.1288 0.0406 264.6952);
+  --foreground: oklch(0.1895 0.0397 161.82);
   --card: oklch(1.0000 0 0);
   --card-foreground: oklch(0.1288 0.0406 264.6952);
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0.1288 0.0406 264.6952);
-  --primary: oklch(0.5896 0.1961 36);
+  --primary: oklch(0.5892 0.2031 33.92);
   --primary-foreground: oklch(1 0 0);
   --primary-soft: oklch(0.6649 0.1945 37.7);
   --secondary: oklch(0.9683 0.0069 247.8956);
@@ -25,11 +25,15 @@
   --destructive-foreground: oklch(1.0000 0 0);
   
   /* Surface colors (Cazoo-like celadon) */
-  --surface-brand: oklch(0.9532 0.0206 156.82);
-  --surface-brand-foreground: oklch(0.1288 0.0406 264.70);
+  --surface-brand: oklch(0.9594 0.0492 154.3);
+  --surface-brand-foreground: 0.145 0.041 157;
   
   /* Alt surface (very soft tint for cards/stripes) */
   --surface-alt: oklch(0.9842 0.0058 153.78);
+  
+  /* Dark surface (darker celadon for footers/emphasis sections) */
+  --surface-dark: oklch(0.2841 0.0614 148.8);
+  --surface-dark-foreground: oklch(0.98 0 0);
   
   /* Supporting brand green (deep teal for small anchors/icons, NOT CTAs) */
   --brand-green: oklch(0.5365 0.0924 208.56);
@@ -86,7 +90,7 @@
   --card-foreground: oklch(0.9851 0 0);
   --popover: oklch(0.1469 0.0041 49.2499);
   --popover-foreground: oklch(0.9851 0 0);
-  --primary: oklch(0.5896 0.1961 36);
+  --primary: oklch(0.5892 0.2031 33.92);
   --primary-foreground: oklch(1 0 0);
   --primary-soft: oklch(0.6649 0.1945 37.7);
   --secondary: oklch(0.2739 0.0055 286.0326);
@@ -104,6 +108,10 @@
   
   /* Alt surface - subtle in dark mode */
   --surface-alt: oklch(0.2000 0.0058 153.78);
+  
+  /* Dark surface - lighter in dark mode for contrast */
+  --surface-dark: oklch(0.4500 0.0614 148.8);
+  --surface-dark-foreground: oklch(0.98 0 0);
   
   /* Brand green - slightly adjusted for dark mode visibility */
   --brand-green: oklch(0.6365 0.0924 208.56);

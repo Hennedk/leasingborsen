@@ -77,7 +77,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border text-xs font-normal"
+              className="w-full justify-between border text-sm font-normal"
               size="default"
             >
               {selectedMakes.length > 0 
@@ -109,7 +109,9 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                   {/* Popular Makes */}
                   {popularMakesList.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">Populære mærker</h4>
+                      <div className="bg-surface-alt px-3 py-1.5 -mx-2 mb-2 rounded-sm">
+                        <h4 className="text-sm font-medium text-muted-foreground">Populære mærker</h4>
+                      </div>
                       <div className="space-y-2">
                         {popularMakesList.map((make: Make) => {
                           const isSelected = selectedMakes.includes(make.name)
@@ -134,7 +136,9 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                   {otherMakesList.length > 0 && (
                     <div className="space-y-2">
                       {popularMakesList.length > 0 && <Separator />}
-                      <h4 className="text-sm font-medium text-muted-foreground">Andre mærker</h4>
+                      <div className="bg-surface-alt px-3 py-1.5 -mx-2 mb-2 rounded-sm">
+                        <h4 className="text-sm font-medium text-muted-foreground">Andre mærker</h4>
+                      </div>
                       <div className="space-y-2">
                         {otherMakesList.map((make: Make) => {
                           const isSelected = selectedMakes.includes(make.name)
@@ -182,7 +186,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
           <DialogTrigger asChild>
             <Button
               variant="outline"
-              className="w-full justify-between border text-xs font-normal"
+              className="w-full justify-between border text-sm font-normal"
               size="default"
               disabled={selectedMakes.length === 0}
             >

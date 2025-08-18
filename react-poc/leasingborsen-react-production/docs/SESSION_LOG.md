@@ -1,5 +1,86 @@
 # Session Log
 
+## Session 2025-08-18: Cazoo-Style Design System Refinement
+
+**Duration**: ~2.5 hours  
+**Focus**: Complete design system overhaul implementing Cazoo-inspired celadon surface colors and removing blue accent hover states
+
+### 🎯 Session Objectives
+- Replace hero banner orange gradient with calm celadon surface background
+- Implement comprehensive surface color hierarchy (surface-brand, surface-alt, surface-dark)
+- Remove all blue accent hover states across UI components
+- Create visual consistency across car images, dropdowns, and interactive elements
+- Update color values for improved accessibility and cohesion
+
+### ✅ Completed Tasks
+
+#### 1. Hero Banner Transformation
+- **From**: Orange gradient (`bg-gradient-to-r from-[#D8400D] via-[#C43A0D] to-[#B2330B]`)
+- **To**: Celadon surface (`bg-surface-brand text-surface-brandForeground`)
+- **File**: `src/components/HeroBanner.tsx`
+- **Philosophy**: Calm surfaces with attention-grabbing orange CTAs (Cazoo approach)
+
+#### 2. Surface Color System Implementation
+- **Added `surface-dark`**: New semantic color for footers and emphasis sections
+  - Light: `oklch(0.2841 0.0614 148.8)` - Dark teal/celadon
+  - Dark: `oklch(0.4500 0.0614 148.8)` - Lighter for contrast
+- **Updated Footer**: Now uses `bg-surface-dark text-surface-dark-foreground`
+- **Car Image Backgrounds**: All updated to `bg-surface-alt` for consistency
+- **Section Headers**: Applied `bg-surface-alt` to dropdown section headers
+
+#### 3. Global Hover State Updates
+Replaced `bg-accent` (blue) with `bg-surface-alt` (celadon) across all components:
+- **dropdown-menu.tsx**: All dropdown items and triggers
+- **select.tsx**: Select dropdown items  
+- **command.tsx**: Command menu items
+- **button.tsx**: Ghost and outline button variants
+- **badge.tsx**: Outline badge hover states
+
+#### 4. Color Refinements
+- **Primary orange**: Updated to `oklch(0.5892 0.2031 33.92)` (warmer, more saturated)
+- **Foreground text**: Updated to `oklch(0.1895 0.0397 161.82)` (dark green tone)
+- **Celadon surface**: Enhanced to `oklch(0.9594 0.0492 154.3)` (more vibrant)
+- **Surface-brand-foreground**: Set to dark green for proper contrast
+
+#### 5. Visual Consistency Improvements
+- **FilterChips**: "Ingen filtre anvendt" chip made lighter (`bg-muted/30`)
+- **MakeModelSelector**: Text size increased from 12px to 14px for better readability
+- **Car Images**: Consistent `bg-surface-alt` across ListingCard, ListingImage, MobileHeroImage
+- **Documentation**: Cleaned up remaining purple references in COLOR_SYSTEM.md
+
+### 📁 Files Modified
+- `src/components/HeroBanner.tsx`
+- `src/components/Footer.tsx`
+- `src/components/ListingCard.tsx`
+- `src/components/listing/ListingImage.tsx`
+- `src/components/listing/MobileHeroImage.tsx`
+- `src/components/FilterChips.tsx`
+- `src/components/SearchForm.tsx`
+- `src/components/shared/filters/MakeModelSelector.tsx`
+- `src/components/ui/dropdown-menu.tsx`
+- `src/components/ui/select.tsx`
+- `src/components/ui/command.tsx`
+- `src/components/ui/button.tsx`
+- `src/components/ui/badge.tsx`
+- `src/index.css`
+- `tailwind.config.js`
+- `docs/COLOR_SYSTEM.md`
+
+### 🎨 Design Philosophy Shift
+Implemented a cohesive surface-based color system inspired by Cazoo's approach:
+- **Calm backgrounds**: Subtle celadon surfaces that don't compete for attention
+- **Vibrant CTAs**: Orange buttons and primary actions provide clear focal points
+- **Consistent interactions**: All hover states use the same surface color family
+- **Visual hierarchy**: Surface colors create depth without overwhelming content
+
+### 📈 Impact
+- More sophisticated and professional appearance
+- Better accessibility with improved color contrast
+- Consistent user experience across all interactive elements
+- Reduced visual noise while maintaining clear action points
+
+---
+
 ## Session 2025-08-18: Orange Primary Color Migration
 
 **Duration**: ~2 hours  

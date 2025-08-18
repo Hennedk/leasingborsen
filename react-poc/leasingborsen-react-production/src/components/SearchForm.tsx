@@ -161,7 +161,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   {/* Popular makes section */}
                   {organizedMakes.popular.length > 0 && (
                     <>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50">
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-surface-alt">
                         Mest populære
                       </div>
                       {organizedMakes.popular.map((make: { name: string; id: string }) => (
@@ -173,7 +173,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
                   {/* Remaining makes section */}
                   {organizedMakes.remaining.length > 0 && (
                     <>
-                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-muted/50">
+                      <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground bg-surface-alt">
                         Alle mærker
                       </div>
                       {organizedMakes.remaining.map((make: { name: string; id: string }) => (

@@ -61,6 +61,10 @@ export default {
           foreground: "oklch(var(--surface-brand-foreground) / <alpha-value>)",
         },
         "surface-alt": "oklch(var(--surface-alt) / <alpha-value>)",
+        "surface-dark": {
+          DEFAULT: "oklch(var(--surface-dark) / <alpha-value>)",
+          foreground: "oklch(var(--surface-dark-foreground) / <alpha-value>)",
+        },
         "brand-green": {
           DEFAULT: "oklch(var(--brand-green) / <alpha-value>)",
           foreground: "oklch(var(--brand-green-foreground) / <alpha-value>)",
