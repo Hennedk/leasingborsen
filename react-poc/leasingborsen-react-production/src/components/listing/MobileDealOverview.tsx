@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 
 interface MobileDealOverviewProps {
-  selectedMileage: number
-  selectedPeriod: number
-  selectedUpfront: number
+  selectedMileage: number | null
+  selectedPeriod: number | null
+  selectedUpfront: number | null
   availableMileages: number[]
   availablePeriods: number[]
   availableUpfronts: number[]
@@ -43,7 +43,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
             Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length} muligheder</span>
           </span>
           <span className="text-sm font-normal mt-0.5">
-            {selectedMileage?.toLocaleString('da-DK')} km/år
+            {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : '–'}
           </span>
         </div>
         
@@ -56,7 +56,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
             Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length} muligheder</span>
           </span>
           <span className="text-sm font-normal mt-0.5">
-            {selectedPeriod} måneder
+            {selectedPeriod ? `${selectedPeriod} måneder` : '–'}
           </span>
         </div>
         
@@ -69,7 +69,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
             Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length} muligheder</span>
           </span>
           <span className="text-sm font-normal mt-0.5">
-            {selectedUpfront?.toLocaleString('da-DK') || '0'} kr
+            {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : '0 kr'}
           </span>
         </div>
       </div>
