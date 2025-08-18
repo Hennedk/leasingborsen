@@ -6,7 +6,7 @@ const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-surface-dark text-surface-dark-foreground border-t md:border-t-0 border-border/50 mt-auto">
+    <footer className="bg-surface-dark text-surface-dark-foreground border-t md:border-t-0 border-border/50 mt-auto" style={{backgroundColor: 'oklch(0.1895 0.0397 161.82)'}}>
       <Container className="py-8">
         <div className="text-center space-y-4">
           {/* Logo */}
@@ -17,12 +17,12 @@ const Footer: React.FC = () => {
           </Link>
           
           {/* Payload - Similar to hero banner */}
-          <p className="text-foreground/70 max-w-2xl mx-auto">
+          <p className="text-white/90 max-w-2xl mx-auto">
             Få overblik over hele markedets privatleasingtilbud, sammenlign priser og vilkår, og vælg den bil, der passer perfekt til dine behov.
           </p>
           
           {/* Copyright */}
-          <p className="text-foreground/60 text-sm pt-4">
+          <p className="text-white/80 text-sm pt-4">
             © {currentYear} Leasingbuddy. Alle rettigheder forbeholdes.
           </p>
         </div>
