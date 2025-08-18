@@ -14,6 +14,7 @@ import ListingTitle from '@/components/listing/ListingTitle'
 import ListingImage from '@/components/listing/ListingImage'
 import KeySpecs from '@/components/listing/KeySpecs'
 import ListingSpecifications from '@/components/listing/ListingSpecifications'
+import MobileDealOverview from '@/components/listing/MobileDealOverview'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
 import MobileHeroImage from '@/components/listing/MobileHeroImage'
@@ -197,6 +198,19 @@ const Listing: React.FC = () => {
                 <KeySpecs car={car} />
               </ErrorBoundary>
             </div>
+            
+            {/* Mobile Deal Overview - Show below key specs on mobile only */}
+            <ErrorBoundary fallback={CompactErrorFallback}>
+              <MobileDealOverview
+                selectedMileage={selectedMileage}
+                selectedPeriod={selectedPeriod}
+                selectedUpfront={selectedUpfront}
+                availableMileages={availableMileages}
+                availablePeriods={availablePeriods}
+                availableUpfronts={availableUpfronts}
+                onOpenPriceDrawer={() => setPriceDrawerOpen(true)}
+              />
+            </ErrorBoundary>
             
             <ErrorBoundary fallback={CompactErrorFallback}>
               <ListingSpecifications car={car} />
