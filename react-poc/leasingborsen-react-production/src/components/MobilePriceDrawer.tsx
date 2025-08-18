@@ -81,8 +81,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         if (!open) onClose()
       }}
     >
-      <DrawerContent className="lg:hidden h-[min(90vh,100dvh-2rem)] max-h-[90vh] rounded-t-2xl shadow-2xl border-0">
-        <div className="flex-1 grid grid-rows-[auto_1fr] min-h-0">
+      <DrawerContent className="lg:hidden max-h-[90vh] rounded-t-2xl shadow-2xl border-0">
+        <div className="grid grid-rows-[auto_auto]">
           <div className="p-5 border-b border-border/50 flex-shrink-0">
             <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Tilpas pris</h2>
@@ -98,8 +98,8 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
           </div>
         </div>
 
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto overscroll-contain">
+          {/* Content */}
+          <div>
           <div className="p-4 space-y-6">
             {/* Price and Configuration Group */}
             <div className="space-y-3">

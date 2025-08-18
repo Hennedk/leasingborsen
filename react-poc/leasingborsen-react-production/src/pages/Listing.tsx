@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Edit3 } from 'lucide-react'
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
@@ -263,18 +263,18 @@ const Listing: React.FC = () => {
       {/* Mobile price bar footer */}
       {car && (
         <footer className="fixed bottom-0 inset-x-0 z-50 lg:hidden bg-background border-t">
-          <div className="p-4 space-y-4" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
+          <div className="p-4 space-y-3" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
             <button 
               onClick={() => setPriceDrawerOpen(true)}
-              className="w-full text-left group p-3 -m-3 rounded-lg hover:bg-muted/50 transition-colors"
+              className="w-full text-left group p-3 -m-3 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors"
               aria-label="Åbn prisindstillinger"
             >
               <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-1">
                   <p className="text-xl font-bold text-foreground leading-none">
                     {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
                   </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed mb-4">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed pb-2">
                     <span className="font-medium">{selectedMileage?.toLocaleString('da-DK')} km/år</span>
                     <span className="text-muted-foreground/50">•</span>
                     <span className="font-medium">{selectedPeriod} mdr</span>
@@ -286,7 +286,7 @@ const Listing: React.FC = () => {
                     )}
                   </div>
                 </div>
-                <Edit3 className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
+                <SlidersHorizontal className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors mt-1" />
               </div>
             </button>
             
