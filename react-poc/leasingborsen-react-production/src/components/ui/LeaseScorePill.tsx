@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
+import { HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAnimateOnScroll } from '@/hooks/useAnimateOnScroll'
+import { LeaseScoreInfoModal } from './LeaseScoreInfoModal'
+import { LeaseScoreInfoSheet } from './LeaseScoreInfoSheet'
 
 interface LeaseScorePillProps {
   score: number
@@ -19,6 +22,15 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
   enableScoreAnimation = true,
   enableCircleAnimation = true
 }) => {
+  // State for info modal/sheet visibility
+  const [showInfo, setShowInfo] = useState(false)
+
+  // Handle info icon click
+  const handleInfoClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowInfo(true)
+  }
+
   // Animation hook for scroll-triggered animation
   const { elementRef, isInView } = useAnimateOnScroll({ 
     threshold: 0.1, 
@@ -251,13 +263,32 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
 
       {/* Text Labels - Horizontal Layout */}
       <div className="flex flex-col">
-        <div className={cn('font-semibold text-gray-900 leading-tight', sizeConfig.labelSize)}>
+        <div className={cn('font-semibold text-gray-900 leading-tight flex items-center gap-1', sizeConfig.labelSize)}>
           LeaseScore
+          <button
+            onClick={handleInfoClick}
+            className="inline-flex items-center justify-center hover:text-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 rounded-full"
+            aria-label="Få mere information om LeaseScore"
+          >
+            <HelpCircle className="h-3 w-3" />
+          </button>
         </div>
         <div className={cn('text-gray-600 leading-tight', sizeConfig.descriptorSize)}>
           {descriptor}
         </div>
       </div>
+
+      {/* Info Modal for Desktop */}
+      <LeaseScoreInfoModal 
+        open={showInfo} 
+        onOpenChange={setShowInfo} 
+      />
+
+      {/* Info Sheet for Mobile */}
+      <LeaseScoreInfoSheet 
+        open={showInfo} 
+        onOpenChange={setShowInfo} 
+      />
     </div>
   )
 }

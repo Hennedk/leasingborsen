@@ -92,7 +92,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
         {!isLoading && !error && (
           <div className="flex flex-col space-y-6">
             {/* Section 1: Car Title */}
-            <div className="space-y-1 relative">
+            <div className="space-y-1">
               <h1 className="text-xl font-bold text-foreground leading-tight">
                 {car.make} {car.model}
               </h1>
@@ -101,27 +101,28 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                   {car.variant}
                 </p>
               )}
-              
-              {/* LeaseScore Pill - positioned to align with title section */}
-              {car.lease_score && car.retail_price && (
-                <LeaseScorePill 
-                  score={car.lease_score}
-                  size="xs"
-                  className="absolute top-0 right-0 border border-border/20 shadow-sm"
-                />
-              )}
             </div>
 
             {/* Section 2: Price + Configuration */}
             <div className="space-y-3">
-              {/* Price Display */}
-              <div>
-                <AnimatedPrice 
-                  value={selectedLease?.monthly_price ?? 0}
-                  className="text-3xl font-bold text-foreground"
-                  showCurrency={true}
-                  showPeriod={true}
-                />
+              {/* Price Display with Lease Score Pill */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <AnimatedPrice 
+                    value={selectedLease?.monthly_price ?? 0}
+                    className="text-3xl font-bold text-foreground"
+                    showCurrency={true}
+                    showPeriod={true}
+                  />
+                </div>
+                {/* LeaseScore Pill - positioned horizontally with price */}
+                {car.lease_score && car.retail_price && (
+                  <LeaseScorePill 
+                    score={car.lease_score}
+                    size="xs"
+                    className="border border-border/20 shadow-sm"
+                  />
+                )}
               </div>
 
               {/* Grouped Form Fields */}
