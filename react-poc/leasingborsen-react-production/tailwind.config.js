@@ -56,6 +56,19 @@ export default {
           DEFAULT: "oklch(var(--popover) / <alpha-value>)",
           foreground: "oklch(var(--popover-foreground) / <alpha-value>)",
         },
+        "surface-brand": {
+          DEFAULT: "oklch(var(--surface-brand) / <alpha-value>)",
+          foreground: "oklch(var(--surface-brand-foreground) / <alpha-value>)",
+        },
+        "surface-alt": "oklch(var(--surface-alt) / <alpha-value>)",
+        "brand-green": {
+          DEFAULT: "oklch(var(--brand-green) / <alpha-value>)",
+          foreground: "oklch(var(--brand-green-foreground) / <alpha-value>)",
+        },
+        success: {
+          DEFAULT: "oklch(var(--success) / <alpha-value>)",
+          foreground: "oklch(var(--success-foreground) / <alpha-value>)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
