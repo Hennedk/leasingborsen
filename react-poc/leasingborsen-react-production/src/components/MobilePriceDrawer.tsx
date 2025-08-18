@@ -6,14 +6,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
 import PriceImpactSelectItem from '@/components/listing/PriceImpactSelectItem'
+import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { X } from 'lucide-react'
 
-import type { LeaseOption, LeaseOptionWithScore } from '@/types'
+import type { LeaseOption, LeaseOptionWithScore, CarListing } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 
 interface MobilePriceDrawerProps {
   isOpen: boolean
   onClose: () => void
+  car: CarListing
   selectedMileage: number | null
   selectedPeriod: number | null
   selectedUpfront: number | null
@@ -40,6 +42,7 @@ interface MobilePriceDrawerProps {
 const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   isOpen,
   onClose,
+  car,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -101,11 +104,19 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
           <div className="p-4 space-y-6">
             {/* Price and Configuration Group */}
             <div className="space-y-3">
-              {/* Price Display */}
-              <div className="px-1 pt-2 pb-1">
+              {/* Price Display with LeaseScore Pill */}
+              <div className="px-1 pt-2 pb-1 flex items-center justify-between">
                 <p className="text-2xl font-bold text-foreground leading-none">
                   {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
                 </p>
+                {/* LeaseScore Pill - positioned to the right of price */}
+                {car.lease_score && car.retail_price && (
+                  <LeaseScorePill 
+                    score={car.lease_score}
+                    size="xs"
+                    className="border border-border/20 shadow-sm"
+                  />
+                )}
               </div>
 
               {/* Configuration Options - Vertical Select Pattern */}

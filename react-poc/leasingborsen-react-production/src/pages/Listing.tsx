@@ -146,6 +146,7 @@ const Listing: React.FC = () => {
         images={car?.images || []} 
         processedImageDetail={car?.processed_image_detail}
         resultCount={resultCount}
+        car={car}
       />
       
       {/* Mobile sticky header (hidden on desktop via CSS) */}
@@ -320,6 +321,7 @@ const Listing: React.FC = () => {
         <MobilePriceDrawer 
           isOpen={priceDrawerOpen}
           onClose={() => setPriceDrawerOpen(false)}
+          car={car}
           selectedMileage={selectedMileage}
           selectedPeriod={selectedPeriod}
           selectedUpfront={selectedUpfront}

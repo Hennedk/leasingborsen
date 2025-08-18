@@ -1,20 +1,24 @@
 import { Card } from '@/components/ui/card'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Button } from '@/components/ui/button'
+import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { ArrowLeft } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import { useScrollStore } from '@/stores/scrollStore'
+import type { CarListing } from '@/types'
 
 interface MobileHeroImageProps {
   images: string[]
   processedImageDetail?: string
   resultCount?: number
+  car: CarListing
 }
 
 const MobileHeroImage: React.FC<MobileHeroImageProps> = ({ 
   images, 
   processedImageDetail,
-  resultCount 
+  resultCount,
+  car
 }) => {
   const location = useLocation()
   const scrollStore = useScrollStore()
@@ -74,6 +78,17 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
+        
+        {/* LeaseScore Pill - Top Right Corner */}
+        {car.lease_score && car.retail_price && (
+          <div className="absolute top-4 right-4 z-30">
+            <LeaseScorePill 
+              score={car.lease_score}
+              size="sm"
+              className="shadow-lg backdrop-blur-sm"
+            />
+          </div>
+        )}
       </Card>
     </div>
   )
