@@ -224,7 +224,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
       onKeyDown={isMobile ? (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          handleInfoClick(e)
+          setShowInfo(true)
         }
       } : undefined}
       tabIndex={isMobile ? 0 : undefined}

@@ -90,6 +90,13 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
           </div>
         )}
       </Card>
+      
+      {/* Image disclaimer */}
+      <div className="mt-2 px-4">
+        <p className="text-xs text-muted-foreground text-center">
+          Billede kun til illustration
+        </p>
+      </div>
     </div>
   )
 }
