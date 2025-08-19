@@ -73,6 +73,14 @@ export default {
           DEFAULT: "oklch(var(--success) / <alpha-value>)",
           foreground: "oklch(var(--success-foreground) / <alpha-value>)",
         },
+        "status-info": {
+          DEFAULT: "oklch(var(--status-info) / <alpha-value>)",
+          foreground: "oklch(var(--status-info-foreground) / <alpha-value>)",
+        },
+        "status-warning": {
+          DEFAULT: "oklch(var(--status-warning) / <alpha-value>)",
+          foreground: "oklch(var(--status-warning-foreground) / <alpha-value>)",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

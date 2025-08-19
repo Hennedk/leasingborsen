@@ -253,7 +253,7 @@ const SearchForm: React.FC<SearchFormProps> = ({
 
         {/* Call-to-Action Button */}
         <Button 
-          className="w-full h-12 text-base font-semibold !bg-gradient-to-r !from-[#E14A10] !to-[#B2330B] text-white hover:!from-[#D8400D] hover:!to-[#A93407] active:!from-[#B2330B] active:!to-[#992C06] transition-all duration-200 ease-in-out" 
+          className="w-full h-12 text-base font-semibold" 
           size="lg"
           onClick={handleSearch}
           aria-label="Søg efter biler med de valgte kriterier"
