@@ -1,11 +1,12 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
+import type { LeaseOption } from '@/types'
 
 interface MobileDealOverviewProps {
   selectedMileage: number | null
   selectedPeriod: number | null
-  selectedUpfront: number | null
+  selectedLease: LeaseOption | null
   availableMileages: number[]
   availablePeriods: number[]
   availableUpfronts: number[]
@@ -15,74 +16,93 @@ interface MobileDealOverviewProps {
 const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
   selectedMileage,
   selectedPeriod,
-  selectedUpfront,
+  selectedLease,
   availableMileages,
   availablePeriods,
   availableUpfronts,
   onOpenPriceDrawer
 }) => {
   return (
-    <div className="lg:hidden space-y-4">
-      {/* Grouped dropdown - read-only, tappable */}
-      <div 
-        className="border rounded-xl overflow-hidden bg-white cursor-pointer hover:bg-gray-50/50 active:bg-gray-100/50 transition-colors"
-        onClick={onOpenPriceDrawer}
-        role="button"
-        tabIndex={0}
-        aria-label="Åbn prisindstillinger"
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            onOpenPriceDrawer()
-          }
-        }}
-      >
-        {/* Annual mileage field */}
-        <div className="h-[66px] py-3 px-4 flex flex-col justify-center">
-          <span className="text-xs tracking-wide text-foreground font-medium">
-            Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length} muligheder</span>
+    <div className="lg:hidden space-y-1">
+      {/* Section heading */}
+      <h3 className="text-lg font-semibold text-foreground">
+        Leasingdetaljer
+      </h3>
+
+      {/* Specs-like display */}
+      <div className="divide-y divide-border">
+        {/* Yearly mileage */}
+        <div className="flex justify-between py-3">
+          <span className="font-normal text-muted-foreground">
+            Inkl. km/år
+            {availableMileages.length > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                · {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}
+              </span>
+            )}
           </span>
-          <span className="text-sm font-normal mt-0.5">
-            {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : '–'}
+          <span className="font-semibold text-foreground">
+            {selectedMileage ? selectedMileage.toLocaleString('da-DK') : '–'}
           </span>
         </div>
-        
-        {/* Divider */}
-        <div className="border-t"></div>
-        
-        {/* Lease period field */}
-        <div className="h-[66px] py-3 px-4 flex flex-col justify-center">
-          <span className="text-xs tracking-wide text-foreground font-medium">
-            Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length} muligheder</span>
+
+        {/* Lease period */}
+        <div className="flex justify-between py-3">
+          <span className="font-normal text-muted-foreground">
+            Leasingperiode
+            {availablePeriods.length > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                · {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}
+              </span>
+            )}
           </span>
-          <span className="text-sm font-normal mt-0.5">
-            {selectedPeriod ? `${selectedPeriod} måneder` : '–'}
-          </span>
-        </div>
-        
-        {/* Divider */}
-        <div className="border-t"></div>
-        
-        {/* Down payment field */}
-        <div className="h-[66px] py-3 px-4 flex flex-col justify-center">
-          <span className="text-xs tracking-wide text-foreground font-medium">
-            Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length} muligheder</span>
-          </span>
-          <span className="text-sm font-normal mt-0.5">
-            {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : '0 kr'}
+          <span className="font-semibold text-foreground">
+            {selectedPeriod ? `${selectedPeriod} mdr` : '–'}
           </span>
         </div>
+
+        {/* First payment */}
+        <div className="flex justify-between py-3">
+          <span className="font-normal text-muted-foreground">
+            Udbetaling
+            {availableUpfronts.length > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                · {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}
+              </span>
+            )}
+          </span>
+          <span className="font-semibold text-foreground">
+            {selectedLease?.first_payment ? `${selectedLease.first_payment.toLocaleString('da-DK')} kr` : '0 kr'}
+          </span>
+        </div>
+
+        {/* Total cost */}
+        {selectedLease && selectedPeriod && (
+          <div className="flex justify-between py-3">
+            <span className="font-normal text-muted-foreground">Samlet pris i perioden</span>
+            <span className="font-semibold text-foreground">
+              {(() => {
+                const totalCost = (selectedLease.monthly_price * selectedPeriod) + (selectedLease.first_payment || 0)
+                return `${totalCost.toLocaleString('da-DK')} kr`
+              })()}
+            </span>
+          </div>
+        )}
       </div>
       
-      {/* Secondary CTA button with white background */}
-      <Button 
-        variant="outline" 
-        className="w-full bg-white"
-        onClick={onOpenPriceDrawer}
-      >
-        <SlidersHorizontal className="h-4 w-4 mr-2" />
-        Tilpas pris
-      </Button>
+      {/* CTA button - only show if options exist */}
+      {(availableMileages.length > 1 || availablePeriods.length > 1 || availableUpfronts.length > 1) && (
+        <div className="pb-2">
+          <Button 
+            variant="outline" 
+            className="w-full bg-white"
+            onClick={onOpenPriceDrawer}
+          >
+            <SlidersHorizontal className="h-4 w-4 mr-2" />
+            Tilpas pris
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

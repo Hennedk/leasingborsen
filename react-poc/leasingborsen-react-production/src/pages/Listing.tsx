@@ -198,7 +198,7 @@ const Listing: React.FC = () => {
               <MobileDealOverview
                 selectedMileage={selectedMileage}
                 selectedPeriod={selectedPeriod}
-                selectedUpfront={selectedUpfront}
+                selectedLease={selectedLease || null}
                 availableMileages={availableMileages}
                 availablePeriods={availablePeriods}
                 availableUpfronts={availableUpfronts}
