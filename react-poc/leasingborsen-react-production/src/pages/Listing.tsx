@@ -18,7 +18,6 @@ import MobileDealOverview from '@/components/listing/MobileDealOverview'
 import LeaseCalculatorCard from '@/components/listing/LeaseCalculatorCard'
 import SellerModal from '@/components/SellerModal'
 import MobileHeroImage from '@/components/listing/MobileHeroImage'
-import CompactStickyHeader from '@/components/listing/CompactStickyHeader'
 import { MobileListingDetailSkeleton } from '@/components/ListingsSkeleton'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import { cn } from '@/lib/utils'
@@ -149,12 +148,6 @@ const Listing: React.FC = () => {
         car={car}
       />
       
-      {/* Mobile sticky header (hidden on desktop via CSS) */}
-      <CompactStickyHeader 
-        title={`${car?.make} ${car?.model}`}
-        variant={car?.variant}
-        resultCount={resultCount}
-      />
       
       {/* Main content with responsive padding */}
       <Container 
