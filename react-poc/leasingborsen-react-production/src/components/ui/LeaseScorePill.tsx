@@ -111,11 +111,11 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
 
   // Get score color based on 5-tier system
   const getScoreColor = (score: number): string => {
-    if (score >= 90) return 'oklch(var(--score-exceptional))' // Exceptional
-    if (score >= 80) return 'oklch(var(--score-great))'       // Great
-    if (score >= 60) return 'oklch(var(--score-good))'        // Good
-    if (score >= 40) return 'oklch(var(--score-fair))'        // Fair
-    return 'oklch(var(--score-poor))'                         // Poor
+    if (score >= 90) return 'var(--score-exceptional)' // Exceptional
+    if (score >= 80) return 'var(--score-great)'       // Great
+    if (score >= 60) return 'var(--score-good)'        // Good
+    if (score >= 40) return 'var(--score-fair)'        // Fair
+    return 'var(--score-poor)'                         // Poor
   }
 
   // Get score descriptor in Danish based on 5-tier system
