@@ -1,5 +1,133 @@
 # Session Log
 
+## Session 2025-08-19: Mobile Navigation & UX Improvements
+
+**Duration**: ~1 hour  
+**Focus**: Clean up mobile navigation and improve UX consistency across listing pages
+
+### 🎯 Session Objectives
+- Remove redundant mobile navigation elements
+- Improve mobile UX with better touch targets and visual hierarchy
+- Align color scheme across all interactive elements
+- Add missing image disclaimers and improve alignment
+
+### ✅ Completed Tasks
+
+#### 1. Mobile Navigation Cleanup
+- **ModernHeader.tsx**: Removed redundant burger menu (only contained Admin link)
+- **ModernHeader.tsx**: Changed header from sticky to static on mobile (`lg:sticky lg:top-0 static`)
+- **Listing.tsx**: Removed CompactStickyHeader component entirely
+- **Result**: Cleaner mobile interface, no unnecessary sticky elements
+
+#### 2. LeaseScore Pill Improvements
+- **Size reduction**: Changed from `size="sm"` to `size="xs"` on mobile hero image
+- **Full clickability**: Made entire pill clickable on mobile (not just tiny info icon)
+- **Mobile detection**: Added responsive behavior with proper touch targets
+- **TypeScript fix**: Resolved keyboard event handler compilation error
+
+#### 3. Visual Hierarchy Refinements
+- **KeySpecs values**: Reduced from `font-bold` to `font-semibold` (e.g., "Elektrisk")
+- **Filter spacing**: Fixed inconsistent spacing between labels and filter options
+- **Color alignment**: Changed SelectItem focus from blue-tinted to surface-brand
+
+#### 4. Image Disclaimer Consistency
+- **Desktop**: Right-aligned disclaimer with proper padding alignment
+- **Mobile**: Added missing disclaimer text to hero image
+- **Alignment**: Desktop disclaimer now aligns perfectly with image border
+
+### 🔧 Technical Quality
+- ✅ **Build success**: Fixed TypeScript compilation error
+- ✅ **Component cleanup**: Removed unused imports and components
+- ✅ **Accessibility**: Improved keyboard navigation and touch targets
+- ✅ **Responsive design**: Proper mobile detection and behavior
+
+### 📋 Commit History
+1. **ef3e6b5** - Remove redundant mobile burger menu and disable sticky header
+2. **97333d5** - Improve mobile UX with smaller LeaseScore pill and consistent filter spacing
+3. **6e6e211** - Fix image disclaimer alignment and resolve build errors
+4. **93ed093** - Align desktop image disclaimer with image border padding
+
+### 🔄 Next Session Recommendations
+- Test mobile navigation flow end-to-end
+- Consider if Admin link needs alternative mobile access
+- Monitor user feedback on simplified mobile interface
+
+---
+
+## Session 2025-08-19: Surface-Brand Filter Color System & Mobile UX Complete
+
+**Duration**: ~1.5 hours  
+**Focus**: Implement surface-brand filter color system and optimize mobile typography hierarchy
+
+### 🎯 Session Objectives
+- Replace orange filter selections with surface-brand (celadon) for better UX hierarchy
+- Achieve visual consistency between mobile filter states (open/closed)
+- Standardize mobile font sizing following established responsive patterns
+- Create clear distinction between exploration (celadon) vs commitment (orange)
+
+### ✅ Completed Tasks
+
+#### 1. Filter Color System Redesign
+- **Analysis**: Identified UX issue - orange overuse created cognitive overload
+- **Strategy**: Two-tier color hierarchy - surface-brand for selection, primary for application
+- **Implementation**: Updated all filter selection components to use surface-brand
+
+#### 2. Badge Component Updates
+- **File**: `src/components/ui/badge.tsx`
+- **Changes**:
+  - filter-selected variant: `bg-gradient-to-r from-primary to-primary/90` → `bg-surface-brand text-foreground`
+  - Maintained hover states with `hover:bg-surface-brand/80`
+  - Preserved component design patterns
+
+#### 3. Mobile Filter Count Alignment
+- **Files**: `src/pages/Listings.tsx`, `src/components/MobileFilterOverlay.tsx`
+- **Changes**:
+  - Unified filter count badges to use surface-brand consistently
+  - Aligned open/closed state visual appearance with identical circular styling
+  - Improved visual continuity during overlay transitions
+
+#### 4. Mobile Typography Hierarchy
+- **File**: `src/components/MobileFilterOverlay.tsx`
+- **Changes**:
+  - Section labels: `text-base` (16px) for better mobile readability
+  - Make/model selections: `text-base` (16px) for touch target clarity
+  - Action buttons: Removed `text-xs` overrides to restore proper `text-sm` (14px)
+  - Followed centralized responsive pattern: mobile = 16px, desktop = 14px
+
+### 🎨 Design Impact
+
+#### Color Strategy Achievement
+- **Surface-brand (celadon)**: Used for filter exploration - calm, encouraging experimentation
+- **Primary (orange)**: Reserved for commitment actions - decisive, conversion-focused  
+- **Clear user journey**: Selection (explore) → Application (commit)
+- **Cohesive branding**: Aligns with Cazoo-inspired hero section colors
+
+#### Typography Hierarchy
+- **Labels/Headers**: 16px (`text-base`) - "Mærke", "Model", "Drivmiddel"
+- **Interactive Lists**: 16px (`text-base`) - Make/model item names
+- **Selection Buttons**: 14px (`text-sm`) - "Vælg mærker", "Vælg modeller"  
+- **Primary CTAs**: 16px (`text-base`) - "Vis X resultater"
+
+### 🔧 Technical Quality
+- ✅ **TypeScript compilation**: No errors
+- ✅ **Component integrity**: Used design system patterns, no hardcoded overrides
+- ✅ **Accessibility**: Proper contrast ratios, 16px mobile text prevents iOS zoom
+- ✅ **Performance**: Uses CSS variables, no runtime color calculations
+
+### 📋 Commit Summary
+**Commit**: `a073814` - `feat: implement surface-brand color system and improve mobile filter UX`
+- Badge filter-selected variant updated to surface-brand  
+- Mobile filter count badges unified with surface-brand theming
+- Font hierarchy improvements: 16px labels, 14px buttons, 16px selections
+- Removed text-xs overrides for proper component behavior
+
+### 🔄 Next Session Recommendations
+- Consider extending surface-brand consistency to desktop filter components
+- Monitor user engagement with new celadon selection states
+- Evaluate similar color hierarchy patterns for other exploration vs commitment flows
+
+---
+
 ## Session 2025-08-19: Color System Implementation Week 1 Complete
 
 **Duration**: ~3 hours  
