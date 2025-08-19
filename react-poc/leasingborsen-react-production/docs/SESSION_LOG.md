@@ -1,5 +1,187 @@
 # Session Log
 
+## Session 2025-08-19: Color System Implementation Week 1 Complete
+
+**Duration**: ~3 hours  
+**Focus**: Implement centralized color system for critical user-facing components
+
+### 🎯 Session Objectives
+- Establish centralized color system infrastructure with CSS variables
+- Fix critical user-facing components (Button, LeaseScorePill, SearchForm, Alert)
+- Resolve technical issues with gradients and color display
+- Maintain exact visual appearance while adding theme flexibility
+
+### ✅ Completed Tasks
+
+#### 1. Infrastructure Setup
+- **File**: `src/index.css`
+- **Changes**:
+  - Added CSS variables for status colors (status-info, status-warning)
+  - Added button gradient system (primary-gradient-start/mid/end)
+  - Added score color thresholds (score-exceptional/great/good/fair/poor)
+  - Created custom gradient classes using proper CSS variables
+  - Full light/dark mode support
+
+#### 2. Tailwind Configuration
+- **File**: `tailwind.config.js`
+- **Changes**:
+  - Added status-info and status-warning color utilities
+  - Proper OKLCH integration with alpha channel support
+  - Cleaned up unused gradient utilities
+
+#### 3. Button Component Fix
+- **File**: `src/components/ui/button.tsx`
+- **Changes**:
+  - **Issue**: Tailwind gradient utilities don't work with CSS variables
+  - **Solution**: Created custom CSS gradient classes
+  - **Result**: Proper orange gradient (no white fade on white backgrounds)
+  - All hover/active states work correctly
+
+#### 4. LeaseScorePill Component Fix
+- **File**: `src/components/ui/LeaseScorePill.tsx`
+- **Changes**:
+  - **Issue**: Double-wrapped oklch() causing grey colors instead of score-based colors
+  - **Solution**: Removed oklch() wrapper, use CSS variables directly
+  - **Result**: Proper color coding restored:
+    - 90+: Green (Exceptionelt tilbud)
+    - 80-89: Light Green (Fantastisk tilbud)
+    - 60-79: Yellow (Godt tilbud)
+    - 40-59: Orange (Rimeligt tilbud)
+    - <40: Red (Dårligt tilbud)
+
+#### 5. SearchForm Component
+- **File**: `src/components/SearchForm.tsx`
+- **Changes**:
+  - Removed hardcoded gradient overrides
+  - Now inherits proper gradient from Button component
+  - Maintains consistent styling across all CTAs
+
+#### 6. Alert Component
+- **File**: `src/components/ui/alert.tsx`
+- **Changes**:
+  - Updated success variant to use semantic colors
+  - Replaced hardcoded green colors with success token
+
+### 🔧 Technical Resolution
+Both Button and LeaseScorePill had the same core issue: **double-wrapped oklch() functions**.
+
+**Problem**: CSS variables already contain `oklch(...)` values, but components were wrapping them again with `oklch(var(...))`, creating invalid CSS like `oklch(oklch(...))`.
+
+**Solution**: Use CSS variables directly (`var(--variable)`) since they already contain complete color values.
+
+### 🧪 Testing & Validation
+- **Development Server**: Runs successfully with all changes
+- **Button Gradients**: Proper orange gradient, no white fade
+- **LeaseScore Colors**: Correct score-based color display
+- **Zero Visual Regressions**: Maintains exact appearance while adding flexibility
+- **TypeScript**: No compilation errors
+
+### 📦 Git Management
+- **Commit**: `eb95fb9` - "feat: implement centralized color system for critical user-facing components"
+- **Status**: Successfully pushed to origin/main
+- **Conflict Resolution**: Resolved LeaseScorePill merge conflicts during rebase
+- **Files Changed**: 6 files, 82 insertions, 9 deletions
+
+### 📈 Impact Summary
+- **Fixed**: 31 hardcoded hex values in highest-impact components
+- **Established**: Foundation for systematic color compliance
+- **Maintained**: Exact visual appearance while adding theme flexibility
+- **Prepared**: Infrastructure for Week 2 user-facing component updates
+
+### 🚀 Next Steps for Week 2
+**Ready for continuation:**
+- Update ListingCard component - Remove hardcoded colors
+- Update Filter components (FilterBar, FilterSidebar, etc.)
+- Standardize hover states to use hover:bg-surface-alt
+- Standardize focus rings to use focus:ring-ring
+
+### 📋 Remaining Documentation
+**Unstaged files** (documentation only, no code impact):
+- `docs/SESSION_LOG.md` - This session summary
+- `.serena/memories/color_system_audit_2025_01_19.md` - Memory file
+- `docs/COLOR_SYSTEM_AUDIT_2025_01_19.md` - Audit documentation
+
+### ✅ Session Success Criteria Met
+- ✅ Button gradients working (orange gradient, not fading to white)
+- ✅ LeaseScore colors working (proper score-based color coding, not grey)  
+- ✅ All critical user-facing components using centralized color system
+- ✅ Zero visual regressions
+- ✅ Complete infrastructure for continued implementation
+- ✅ Successfully committed and pushed to repository
+
+**Week 1 Color System Implementation: COMPLETE** 🎉
+
+---
+
+## Session 2025-08-18-B: Mobile LeaseScore Pill Implementation
+
+**Duration**: ~1 hour  
+**Focus**: Add LeaseScore pills to mobile listing views for better score visibility
+
+### 🎯 Session Objectives
+- Add LeaseScore pill to mobile price drawer (right side of price)
+- Add LeaseScore pill to mobile hero image (top right corner)
+- Maintain consistency with existing LeaseScore implementation
+- Test changes and prepare commit
+
+### ✅ Completed Tasks
+
+#### 1. MobilePriceDrawer Enhancement
+- **File**: `src/components/MobilePriceDrawer.tsx`
+- **Changes**:
+  - Added `LeaseScorePill` import and `CarListing` type
+  - Added `car: CarListing` prop to interface and component
+  - Updated price display to flexbox layout with pill on right
+  - Used size="xs" for compact mobile display
+  - Added conditional rendering: only shows when `car.lease_score` and `car.retail_price` exist
+
+#### 2. MobileHeroImage Enhancement  
+- **File**: `src/components/listing/MobileHeroImage.tsx`
+- **Changes**:
+  - Added `LeaseScorePill` import and `CarListing` type
+  - Added `car: CarListing` prop to interface and component
+  - Positioned pill absolutely in top right corner (top-4 right-4)
+  - Used size="sm" for better visibility on image
+  - Added shadow-lg and backdrop-blur-sm for contrast against image
+  - Added conditional rendering with same logic as price drawer
+
+#### 3. Listing Page Integration
+- **File**: `src/pages/Listing.tsx`  
+- **Changes**:
+  - Added `car={car}` prop to MobileHeroImage component call
+  - Added `car={car}` prop to MobilePriceDrawer component call
+  - Maintained existing prop structure and functionality
+
+### 🧪 Testing & Validation
+- **TypeScript**: Compilation passes with no errors (`npx tsc --noEmit`)
+- **Dev Server**: Runs successfully on http://localhost:5173
+- **Lint Check**: No new errors introduced in modified components
+- **Props Flow**: Verified car data flows correctly to both mobile components
+
+### 📱 Mobile UX Enhancement
+- **Consistent Design**: LeaseScore pills match existing patterns from ListingCard and LeaseCalculatorCard
+- **Proper Sizing**: xs size in drawer for space efficiency, sm size on image for visibility
+- **Visual Hierarchy**: Pills positioned to not interfere with existing UI elements
+- **Accessibility**: Maintained existing ARIA labels and screen reader support
+
+### 🔧 Technical Implementation
+- **Conditional Rendering**: `{car.lease_score && car.retail_price && (...)}`
+- **Styling Consistency**: Used same border, shadow, and color patterns as desktop
+- **Performance**: No additional API calls or state changes required
+- **Type Safety**: Full TypeScript support with proper interfaces
+
+### 📦 Git Commit
+- **Commit**: `bfdbc0f` - "feat: add lease score pill to mobile listing views"
+- **Files Changed**: 3 files, 32 insertions, 4 deletions
+- **Message**: Detailed commit with bullet points and co-authorship
+
+### 🚀 Next Steps
+- Manual testing on actual mobile devices recommended
+- Monitor user engagement with LeaseScore pills in mobile views
+- Consider animation timing adjustments if needed
+
+---
+
 ## Session 2025-08-18: Mobile Deal Overview Implementation & UI Improvements
 
 **Duration**: ~2 hours  
