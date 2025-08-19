@@ -92,7 +92,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   
   // Memoized utility functions for better performance
   const formatPrice = useCallback((price?: number) => {
-    return price ? `${price.toLocaleString('da-DK')} kr/måned` : 'Pris ikke tilgængelig'
+    return price ? `${price.toLocaleString('da-DK')} kr. / md.` : 'Pris ikke tilgængelig'
   }, [])
   
   const formatMileage = useCallback((mileage?: number) => {

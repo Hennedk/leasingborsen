@@ -107,7 +107,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
               {/* Price Display with LeaseScore Pill */}
               <div className="px-1 pt-2 pb-1 flex items-center justify-between">
                 <p className="text-2xl font-bold text-foreground leading-none">
-                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
+                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr. / md.
                 </p>
                 {/* LeaseScore Pill - positioned to the right of price */}
                 {car.lease_score && car.retail_price && (
