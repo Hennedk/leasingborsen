@@ -166,7 +166,7 @@ const Listings: React.FC = () => {
             >
               <SlidersHorizontal className="w-4 h-4" />
               {activeFilters.length > 0 && (
-                <span className="bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                <span className="bg-surface-brand text-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
                   {activeFilters.length}
                 </span>
               )}

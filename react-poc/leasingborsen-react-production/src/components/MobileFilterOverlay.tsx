@@ -297,11 +297,9 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           {currentView === 'models' && `${selectedMakeForModels} modeller`}
         </h2>
         {currentView === 'filters' && activeFiltersCount > 0 && (
-          <Badge 
-            variant="result-count"
-          >
+          <span className="bg-surface-brand text-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
             {activeFiltersCount}
-          </Badge>
+          </span>
         )}
       </div>
       <Button
@@ -372,7 +370,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           <Button
             variant="outline"
             onClick={() => navigateToView('makes')}
-            className="w-full justify-between text-xs font-normal"
+            className="w-full justify-between font-normal"
             size="default"
           >
             <span>
@@ -398,7 +396,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
               }
             }}
             disabled={selectedMakes.length === 0}
-            className="w-full justify-between text-xs font-normal"
+            className="w-full justify-between font-normal"
             size="default"
           >
             <span>
@@ -493,7 +491,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                   />
                   <Label
                     htmlFor={`popular-make-${make.id}`}
-                    className="flex-1 text-sm cursor-pointer font-medium"
+                    className="flex-1 text-base cursor-pointer font-medium"
                   >
                     {make.name}
                   </Label>
@@ -519,7 +517,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
                   />
                   <Label
                     htmlFor={`other-make-${make.id}`}
-                    className="flex-1 text-sm cursor-pointer font-medium"
+                    className="flex-1 text-base cursor-pointer font-medium"
                   >
                     {make.name}
                   </Label>
@@ -605,7 +603,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             />
             <Label
               htmlFor={`model-${model.id}`}
-              className="flex-1 text-sm cursor-pointer font-medium"
+              className="flex-1 text-base cursor-pointer font-medium"
             >
               {model.name}
             </Label>

@@ -19,7 +19,7 @@ const badgeVariants = cva(
           "text-foreground border-border [a&]:hover:bg-surface-alt [a&]:hover:text-foreground",
         // New variants for filter chips
         "filter-selected":
-          "bg-gradient-to-r from-primary to-primary/90 text-white !border-border hover:from-primary/90 hover:to-primary/80 cursor-pointer font-normal",
+          "bg-surface-brand text-foreground !border-border hover:bg-surface-brand/80 cursor-pointer font-normal",
         "filter-unselected":
           "hover:bg-muted/50 !border-border hover:!border-border cursor-pointer font-normal",
         // Result context badges (subtle, non-intrusive)
