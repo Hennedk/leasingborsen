@@ -32,12 +32,14 @@ export const FilterChips: React.FC<FilterChipsProps> = ({
 }) => {
   return (
     <div className={`space-y-3 ${className}`}>
-      <Label className={cn(
-        'font-medium text-foreground',
-        variant === 'mobile' ? 'text-base' : 'text-sm'
-      )}>
-        {label}
-      </Label>
+      {label && (
+        <Label className={cn(
+          'font-medium text-foreground',
+          variant === 'mobile' ? 'text-base' : 'text-sm'
+        )}>
+          {label}
+        </Label>
+      )}
       <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const isSelected = selectedValues.includes(option.name)

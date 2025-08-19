@@ -84,7 +84,7 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
           <div className="absolute top-4 right-4 z-30">
             <LeaseScorePill 
               score={car.lease_score}
-              size="sm"
+              size="xs"
               className="shadow-lg backdrop-blur-sm"
             />
           </div>

@@ -363,7 +363,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           </Select>
         </div>
 
-        {/* Make and Model Selection */}
+        {/* Make Selection */}
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Mærke</Label>
           <Button
@@ -381,7 +381,10 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             </span>
             <Plus className="h-4 w-4 ml-2 flex-shrink-0" />
           </Button>
+        </div>
 
+        {/* Model Selection */}
+        <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Model</Label>
           <Button
             variant="outline"
@@ -417,7 +420,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             selectedValues={fuel_type || []}
             onToggle={handleFuelTypeToggle}
             label=""
-            className="space-y-0"
             variant="mobile"
           />
         </div>
@@ -430,7 +432,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             selectedValues={transmission || []}
             onToggle={handleTransmissionToggle}
             label=""
-            className="space-y-0"
             variant="mobile"
           />
         </div>

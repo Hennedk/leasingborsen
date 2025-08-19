@@ -24,12 +24,26 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
 }) => {
   // State for info modal/sheet visibility
   const [showInfo, setShowInfo] = useState(false)
+  
+  // Mobile detection state
+  const [isMobile, setIsMobile] = useState(false)
 
   // Handle info icon click
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     setShowInfo(true)
   }
+
+  // Mobile detection logic
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024) // lg breakpoint
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // Animation hook for scroll-triggered animation
   const { elementRef, isInView } = useAnimateOnScroll({ 
@@ -201,10 +215,19 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
         sizeConfig.paddingX,
         sizeConfig.paddingY,
         sizeConfig.gap,
+        isMobile && 'cursor-pointer hover:bg-gray-50 transition-colors',
         className
       )}
-      role="img"
-      aria-label={`LeaseScore: ${score}, ${descriptor}`}
+      role={isMobile ? 'button' : 'img'}
+      aria-label={isMobile ? `Åbn information om LeaseScore: ${score}, ${descriptor}` : `LeaseScore: ${score}, ${descriptor}`}
+      onClick={isMobile ? handleInfoClick : undefined}
+      onKeyDown={isMobile ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleInfoClick(e)
+        }
+      } : undefined}
+      tabIndex={isMobile ? 0 : undefined}
     >
       {/* Circular Progress Indicator */}
       <div 
