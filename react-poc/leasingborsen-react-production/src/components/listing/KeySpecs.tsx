@@ -96,7 +96,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
             {visibleSpecs.map((spec, index) => (
               <div key={index} className="flex items-center gap-2.5">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                  {React.cloneElement(spec.icon as React.ReactElement, { className: "w-4 h-4" })}
+                  {spec.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-muted-foreground font-medium leading-tight">
@@ -117,7 +117,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
             {visibleSpecs.map((spec, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                  {React.cloneElement(spec.icon as React.ReactElement, { className: "w-4 h-4" })}
+                  {spec.icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-muted-foreground font-medium leading-tight">
