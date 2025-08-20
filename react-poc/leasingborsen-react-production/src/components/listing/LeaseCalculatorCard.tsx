@@ -274,7 +274,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
             <div>
               <Button 
                 className="w-full gap-2" 
-                size="lg"
+                size="default"
                 onClick={onShowSeller}
               >
                 <ExternalLink className="w-4 h-4" />

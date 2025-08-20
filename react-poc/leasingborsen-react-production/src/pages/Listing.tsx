@@ -99,14 +99,8 @@ const Listing: React.FC = () => {
   // Calculate result count (would come from actual search results)
   const resultCount = 37 // TODO: Get from search context
 
-  // Seller data
-  const seller = {
-    name: 'Leasingselskab A/S',
-    website: 'https://example.com',
-    phone: '+45 12 34 56 78',
-    email: 'kontakt@leasingselskab.dk',
-    description: 'Professionel leasingudbyder med over 10 års erfaring'
-  }
+  // External URL for seller (could come from listing data or be configured)
+  const externalUrl = 'https://example.com' // TODO: Get actual URL from seller/listing data
 
   if (isLoading) {
     return (
@@ -341,8 +335,8 @@ const Listing: React.FC = () => {
       <SellerModal
         isOpen={sellerModalOpen}
         onClose={() => setSellerModalOpen(false)}
-        seller={seller}
         car={car}
+        externalUrl={externalUrl}
       />
     </BaseLayout>
   )

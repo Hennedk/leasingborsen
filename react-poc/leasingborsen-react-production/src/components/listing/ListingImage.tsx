@@ -60,7 +60,7 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
     
     {/* Image disclaimer */}
     <div className="mt-2 pr-4 md:pr-6 lg:pr-8">
-      <p className="text-xs text-muted-foreground text-right">
+      <p className="text-xs text-muted-foreground text-right md:text-center">
         Billede kun til illustration
       </p>
     </div>
