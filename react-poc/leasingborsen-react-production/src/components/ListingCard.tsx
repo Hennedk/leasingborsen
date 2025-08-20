@@ -291,7 +291,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-sm text-foreground font-medium line-clamp-2 break-words min-h-[2.5rem]">{car.variant}</p>
+              <p className="text-sm text-foreground font-normal line-clamp-2 break-words min-h-[2.5rem]">{car.variant}</p>
             )}
           </div>
 
@@ -302,25 +302,25 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Fuel className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate text-foreground">{translateFuelType(car.fuel_type || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateFuelType(car.fuel_type || '') || '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Settings className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate text-foreground">{translateTransmission(car.transmission || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateTransmission(car.transmission || '') || '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Gauge className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate text-foreground">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
+                <span className="font-normal truncate text-foreground">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
               </div>
               <div className="flex items-center gap-2.5 text-sm">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Car className="w-4 h-4" />
                 </div>
-                <span className="font-medium truncate text-foreground">{translateBodyType(car.body_type || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateBodyType(car.body_type || '') || '–'}</span>
               </div>
             </div>
           </div>
