@@ -14,7 +14,7 @@ export function getCarId(car: CarListing): string {
 // Danish number formatting utility
 export function formatPrice(price: number | null | undefined): string {
   if (!price) return '–'
-  return `${price.toLocaleString('da-DK')} kr/måned`
+  return `${price.toLocaleString('da-DK')} kr./md.`
 }
 
 // Danish date formatting utility

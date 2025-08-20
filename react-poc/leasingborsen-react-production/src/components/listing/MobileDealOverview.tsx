@@ -35,11 +35,9 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         <div className="flex justify-between py-3">
           <span className="font-normal text-muted-foreground">
             Inkl. km/år
-            {availableMileages.length > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                · {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}
-              </span>
-            )}
+<span className="ml-2 text-xs text-muted-foreground">
+              · {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}
+            </span>
           </span>
           <span className="font-semibold text-foreground">
             {selectedMileage ? selectedMileage.toLocaleString('da-DK') : '–'}
@@ -50,11 +48,9 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         <div className="flex justify-between py-3">
           <span className="font-normal text-muted-foreground">
             Leasingperiode
-            {availablePeriods.length > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                · {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}
-              </span>
-            )}
+<span className="ml-2 text-xs text-muted-foreground">
+              · {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}
+            </span>
           </span>
           <span className="font-semibold text-foreground">
             {selectedPeriod ? `${selectedPeriod} mdr` : '–'}
@@ -65,11 +61,9 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         <div className="flex justify-between py-3">
           <span className="font-normal text-muted-foreground">
             Udbetaling
-            {availableUpfronts.length > 0 && (
-              <span className="ml-2 text-xs text-muted-foreground">
-                · {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}
-              </span>
-            )}
+<span className="ml-2 text-xs text-muted-foreground">
+              · {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}
+            </span>
           </span>
           <span className="font-semibold text-foreground">
             {selectedLease?.first_payment ? `${selectedLease.first_payment.toLocaleString('da-DK')} kr` : '0 kr'}

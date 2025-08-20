@@ -51,7 +51,7 @@ const ComponentDemo = ({ title, description, children }: { title: string; descri
 );
 
 // Utility functions for Danish formatting
-const formatPrice = (price: number) => `${price.toLocaleString('da-DK')} kr/måned`;
+const formatPrice = (price: number) => `${price.toLocaleString('da-DK')} kr./md.`;
 const formatMileage = (mileage: number) => `${mileage.toLocaleString('da-DK')} km/år`;
 const formatYear = (year: number) => `${year}`;
 

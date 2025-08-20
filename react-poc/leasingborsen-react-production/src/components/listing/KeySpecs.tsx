@@ -102,7 +102,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
                   <div className="text-xs text-muted-foreground font-medium leading-tight">
                     {spec.label}
                   </div>
-                  <div className="text-sm font-normal text-foreground truncate">
+                  <div className="text-sm font-medium text-foreground truncate">
                     {spec.value}
                   </div>
                 </div>
@@ -123,7 +123,7 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
                   <div className="text-sm text-muted-foreground font-medium leading-tight">
                     {spec.label}
                   </div>
-                  <div className="text-base font-normal text-foreground truncate">
+                  <div className="text-base font-medium text-foreground truncate">
                     {spec.value}
                   </div>
                 </div>

@@ -45,7 +45,7 @@ export const UnmappedDealerListings: React.FC<UnmappedDealerListingsProps> = ({
 
   const formatPrice = (price?: number): string => {
     if (!price) return '–'
-    return `${price.toLocaleString('da-DK')} kr/md`
+    return `${price.toLocaleString('da-DK')} kr./md.`
   }
 
   const getDaysSince = (dateString: string): number => {

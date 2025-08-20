@@ -84,7 +84,7 @@ const AnimatedPrice: React.FC<AnimatedPriceProps> = ({
       >
         {formattedValue}
         {showCurrency && ' kr'}
-        {showPeriod && '/md'}
+        {showPeriod && './md.'}
       </span>
       
       {/* Price change indicator */}

@@ -56,7 +56,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
             <div className="flex items-start justify-between">
               <div className="flex-1 space-y-2">
                 <p className="text-xl font-bold text-foreground leading-none">
-                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/måned
+                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed mb-4">
                   <span className="font-medium">{config.km.toLocaleString('da-DK')} km/år</span>
@@ -106,7 +106,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
             {/* Current price display */}
             <div className="text-center p-4 bg-muted rounded-lg">
               <div className="text-3xl font-bold">
-                {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr/md
+                {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
               </div>
               <div className="text-sm text-muted-foreground mt-1">
                 Baseret på din konfiguration

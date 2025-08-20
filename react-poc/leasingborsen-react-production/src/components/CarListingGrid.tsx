@@ -40,8 +40,8 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
       {/* =========================================
           SECTION HEADER - Left aligned title with desktop CTA button
       ========================================= */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h2 className="text-2xl font-semibold text-foreground">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h2 className="text-xl md:text-2xl font-semibold text-foreground">
           {title}
         </h2>
         {/* Desktop CTA Button - Only show on desktop */}

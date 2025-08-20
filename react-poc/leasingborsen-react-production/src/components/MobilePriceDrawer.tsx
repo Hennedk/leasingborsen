@@ -107,7 +107,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
               {/* Price Display with LeaseScore Pill */}
               <div className="px-1 pt-2 pb-1 flex items-center justify-between">
                 <p className="text-2xl font-bold text-foreground leading-none">
-                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr. / md.
+                  {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
                 </p>
                 {/* LeaseScore Pill - positioned to the right of price */}
                 {car.lease_score && car.retail_price && (
@@ -129,7 +129,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Read-only field appearance
                     <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                       <span className="text-xs tracking-wide text-foreground font-medium">
-                        Årligt km-forbrug
+                        Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                       </span>
                       <span className="text-sm font-normal mt-0.5">
                         {selectedMileage?.toLocaleString('da-DK')} km/år
@@ -177,7 +177,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Read-only field appearance
                     <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                       <span className="text-xs tracking-wide text-foreground font-medium">
-                        Leasingperiode
+                        Leasingperiode <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                       </span>
                       <span className="text-sm font-normal mt-0.5">
                         {selectedPeriod} måneder
@@ -225,7 +225,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Read-only field appearance
                     <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                       <span className="text-xs tracking-wide text-foreground font-medium">
-                        Udbetaling
+                        Udbetaling <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                       </span>
                       <span className="text-sm font-normal mt-0.5">
                         {selectedUpfront?.toLocaleString('da-DK')} kr

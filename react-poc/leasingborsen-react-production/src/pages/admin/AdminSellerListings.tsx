@@ -109,7 +109,7 @@ const AdminSellerListings: React.FC = () => {
   }
 
   const formatPrice = (price?: number) => {
-    return price ? `${price.toLocaleString('da-DK')} kr/md` : '–'
+    return price ? `${price.toLocaleString('da-DK')} kr./md.` : '–'
   }
 
   const formatDate = (dateString: string) => {

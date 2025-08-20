@@ -73,7 +73,7 @@ export const OfferFormDialog = React.memo<OfferFormDialogProps>(({
                   type="number"
                   min="1"
                   max="50000"
-                  placeholder="kr/måned"
+                  placeholder="kr./md."
                   {...form.register('monthly_price', { 
                     valueAsNumber: true 
                   })}

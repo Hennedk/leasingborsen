@@ -13,11 +13,9 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
     <div className="space-y-8 lg:mr-3 xl:mr-7 2xl:mr-10">
       {/* Specifications Section */}
       <div>
-        <div className="space-y-0 mb-6 mt-8">
-          <h2 className="text-2xl font-semibold text-foreground">
-            Specifikationer
-          </h2>
-        </div>
+        <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-4">
+          Specifikationer
+        </h2>
       
       {/* Mobile: Single column with all specs */}
       <div className="md:hidden">

@@ -66,7 +66,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     onHoverOption?.(null)
   }, [onHoverOption])
   return (
-    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-[90px]">
+    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
       <CardContent className="p-5 space-y-4 relative">
         {/* Loading State */}
         {isLoading && (
@@ -133,7 +133,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                 <span className="text-xs tracking-wide text-foreground font-medium">
-                  Årligt km-forbrug
+                  Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                 </span>
                 <span className="text-sm font-normal mt-0.5">
                   {selectedMileage?.toLocaleString('da-DK')} km/år
@@ -148,7 +148,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
                     <span className="text-xs tracking-wide text-foreground font-medium">
-                      Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length} muligheder</span>
+                      Årligt km-forbrug <span className="text-[11px] font-normal opacity-60">· {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
                       {selectedMileage ? `${selectedMileage.toLocaleString('da-DK')} km/år` : "Vælg km-forbrug"}
@@ -181,7 +181,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                 <span className="text-xs tracking-wide text-foreground font-medium">
-                  Leasingperiode
+                  Leasingperiode <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                 </span>
                 <span className="text-sm font-normal mt-0.5">
                   {selectedPeriod} måneder
@@ -196,7 +196,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
                     <span className="text-xs tracking-wide text-foreground font-medium">
-                      Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length} muligheder</span>
+                      Leasingperiode <span className="text-[11px] font-normal opacity-60">· {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
                       {selectedPeriod ? `${selectedPeriod} måneder` : "Vælg periode"}
@@ -229,7 +229,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Read-only field appearance
               <div className="h-[66px] py-3 px-4 border-0 bg-white flex flex-col justify-center">
                 <span className="text-xs tracking-wide text-foreground font-medium">
-                  Udbetaling
+                  Udbetaling <span className="text-[11px] font-normal opacity-60">· 1 mulighed</span>
                 </span>
                 <span className="text-sm font-normal mt-0.5">
                   {selectedUpfront?.toLocaleString('da-DK')} kr
@@ -244,7 +244,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
                     <span className="text-xs tracking-wide text-foreground font-medium">
-                      Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length} muligheder</span>
+                      Udbetaling <span className="text-[11px] font-normal opacity-60">· {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}</span>
                     </span>
                     <span className="text-sm font-normal mt-0.5">
                       {selectedUpfront ? `${selectedUpfront.toLocaleString('da-DK')} kr` : "Vælg udbetaling"}

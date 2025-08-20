@@ -82,8 +82,8 @@ const PriceImpactSelectItem = forwardRef<
   
   const formatPriceDifference = (diff: number): string => {
     const absValue = Math.abs(diff)
-    if (diff > 0) return `+${absValue.toLocaleString('da-DK')} kr/md`
-    if (diff < 0) return `-${absValue.toLocaleString('da-DK')} kr/md`
+    if (diff > 0) return `+${absValue.toLocaleString('da-DK')} kr./md.`
+    if (diff < 0) return `-${absValue.toLocaleString('da-DK')} kr./md.`
     return isSelected ? 'Nuværende' : 'Samme pris'
   }
   

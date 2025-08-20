@@ -314,11 +314,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         if (state.price_min !== null || state.price_max !== null) {
           let label = ''
           if (state.price_min !== null && state.price_max !== null) {
-            label = `${state.price_min.toLocaleString('da-DK')} - ${state.price_max.toLocaleString('da-DK')} kr/md`
+            label = `${state.price_min.toLocaleString('da-DK')} - ${state.price_max.toLocaleString('da-DK')} kr./md.`
           } else if (state.price_min !== null) {
-            label = `Fra ${state.price_min.toLocaleString('da-DK')} kr/md`
+            label = `Fra ${state.price_min.toLocaleString('da-DK')} kr./md.`
           } else if (state.price_max !== null) {
-            label = `Maks ${state.price_max.toLocaleString('da-DK')} kr/md`
+            label = `Maks ${state.price_max.toLocaleString('da-DK')} kr./md.`
           }
           
           activeFilters.push({

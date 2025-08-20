@@ -139,6 +139,6 @@ export const useListingsTableState = ({ onBulkAction }: UseListingsTableStatePro
     isPricingLoading,
     
     // Utils
-    formatPrice: (price?: number) => price ? `${price.toLocaleString('da-DK')} kr/md` : '–'
+    formatPrice: (price?: number) => price ? `${price.toLocaleString('da-DK')} kr./md.` : '–'
   }
 }
