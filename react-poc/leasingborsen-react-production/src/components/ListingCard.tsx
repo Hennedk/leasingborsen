@@ -291,36 +291,36 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               {car.make} {car.model}
             </h3>
             {car.variant && (
-              <p className="text-sm text-muted-foreground font-normal line-clamp-2 break-words min-h-[2.5rem]">{car.variant}</p>
+              <p className="text-sm text-foreground font-normal line-clamp-2 break-words min-h-[2.5rem]">{car.variant}</p>
             )}
           </div>
 
           {/* Enhanced Specs Grid */}
           <div className="mb-4">
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Fuel className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{translateFuelType(car.fuel_type || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateFuelType(car.fuel_type || '') || '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Settings className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{translateTransmission(car.transmission || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateTransmission(car.transmission || '') || '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Gauge className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
+                <span className="font-normal truncate text-foreground">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
               </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-center gap-2.5 text-sm">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
                   <Car className="w-4 h-4" />
                 </div>
-                <span className="font-normal truncate">{translateBodyType(car.body_type || '') || '–'}</span>
+                <span className="font-normal truncate text-foreground">{translateBodyType(car.body_type || '') || '–'}</span>
               </div>
             </div>
           </div>

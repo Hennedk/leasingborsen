@@ -13,7 +13,7 @@ const ListingTitle: React.FC<ListingTitleProps> = ({ car, className = "" }) => {
         {car.make} {car.model}
       </h1>
       {car.variant && (
-        <p className="text-base lg:text-lg text-muted-foreground font-normal leading-relaxed">{car.variant}</p>
+        <p className="text-base lg:text-lg text-foreground font-normal leading-relaxed">{car.variant}</p>
       )}
     </div>
   )

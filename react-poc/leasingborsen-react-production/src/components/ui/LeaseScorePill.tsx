@@ -286,7 +286,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
 
       {/* Text Labels - Horizontal Layout */}
       <div className="flex flex-col">
-        <div className={cn('font-semibold text-gray-900 leading-tight flex items-center gap-1', sizeConfig.labelSize)}>
+        <div className={cn('font-medium text-gray-600 leading-tight flex items-center gap-1', sizeConfig.labelSize)}>
           LeaseScore
           <button
             onClick={handleInfoClick}
@@ -296,7 +296,7 @@ export const LeaseScorePill: React.FC<LeaseScorePillProps> = ({
             <HelpCircle className="h-3 w-3" />
           </button>
         </div>
-        <div className={cn('text-gray-600 leading-tight', sizeConfig.descriptorSize)}>
+        <div className={cn('text-gray-900 font-medium leading-tight', sizeConfig.descriptorSize)}>
           {descriptor}
         </div>
       </div>
