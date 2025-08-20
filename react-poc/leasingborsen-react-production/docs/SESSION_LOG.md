@@ -1,5 +1,118 @@
 # Session Log
 
+## Session 2025-08-19: Price Format Standardization Across Mobile Components
+
+**Duration**: ~30 minutes  
+**Scope**: Standardize price display format across mobile UI  
+**Status**: ✅ Complete - All components updated consistently
+
+### Overview
+Standardized price display format from "kr/måned" to "kr. / md." across all mobile components for better UX and consistency. This creates a more compact, readable format suitable for mobile screens.
+
+### Key Changes Made
+
+#### 1. **MobilePriceDrawer Component**
+- **File**: `src/components/MobilePriceDrawer.tsx`
+- **Change**: Price display format from "kr/måned" → "kr. / md."
+- **Location**: Main price display in drawer header
+- **Impact**: More compact price display in mobile configuration overlay
+
+#### 2. **Listing Page Mobile Footer**
+- **File**: `src/pages/Listing.tsx`
+- **Change**: Sticky footer price format from "kr/måned" → "kr. / md."
+- **Location**: Mobile sticky price footer (fixed bottom)
+- **Impact**: Consistent format in critical mobile CTA area
+
+#### 3. **ListingCard Price Format**
+- **File**: `src/components/ListingCard.tsx`
+- **Change**: `formatPrice` function updated to use "kr. / md."
+- **Location**: Primary price display on all listing cards
+- **Impact**: Consistent abbreviation across grid and list views
+
+### Technical Implementation
+- **Pattern**: Replaced all instances of `kr/måned` with `kr. / md.`
+- **Spacing**: Maintained spaces around "/" for readability
+- **Consistency**: Applied across mobile-first components
+- **Localization**: Preserved Danish number formatting with `toLocaleString('da-DK')`
+
+### Files Modified
+- `src/components/MobilePriceDrawer.tsx` - Price drawer format
+- `src/pages/Listing.tsx` - Mobile sticky footer
+- `src/components/ListingCard.tsx` - Card price format
+
+### Commit Details
+- **Commit ID**: `3f20361`
+- **Message**: "feat: standardize price format to 'kr. / md.' across mobile components"
+- **Files changed**: 3 files, 3 insertions, 3 deletions
+
+### Next Steps
+- No immediate follow-up required
+- Consider applying same format to desktop components if needed
+- Monitor user feedback on abbreviated format
+
+---
+
+## Session 2025-08-19: MobileDealOverview Redesign - Specs-like Layout Implementation
+
+**Duration**: ~45 minutes  
+**Scope**: Mobile lease details component redesign  
+**Status**: ✅ Complete - Core functionality implemented
+
+### Overview
+Redesigned the mobile lease details component from a dropdown interface to a clean specs-like display with conditional interactions and improved visual hierarchy.
+
+### Key Changes Made
+
+#### 1. **Layout Transformation** (MobileDealOverview.tsx)
+- **From**: Bordered dropdown with stacked fields and dividers
+- **To**: Clean specs-like display using `flex justify-between` layout
+- Added "Leasingdetaljer" section heading
+- Implemented `divide-y divide-border` for subtle row separation
+
+#### 2. **Option Count Display**
+- Shows total available options (not additional options)
+- **Format**: "· 1 mulighed" or "· N muligheder"
+- **Logic**: `availableOptions.length === 1 ? '1 mulighed' : '${count} muligheder'`
+- Applied to mileage, period, and upfront payment options
+
+#### 3. **Label Updates**
+- **Mileage**: "Årligt km-forbrug" → "Inkl. km/år" (removed unit from value)
+- **Period**: Kept "Leasingperiode" with "mdr" unit
+- **Payment**: Kept "Udbetaling" with "kr" unit
+- **Total**: "Samlet pris" → "Samlet pris i perioden"
+
+#### 4. **Total Cost Calculation**
+- **Formula**: `(monthly_price × period_months) + first_payment`
+- **Display**: Only when both `selectedLease` and `selectedPeriod` available
+- **Fixed**: Updated props from `selectedUpfront` to `selectedLease` in parent
+
+#### 5. **Conditional CTA Button**
+- **Logic**: Only show "Tilpas pris" when multiple options exist
+- **Condition**: `availableMileages.length > 1 || availablePeriods.length > 1 || availableUpfronts.length > 1`
+- **Spacing**: Reduced above CTA (`space-y-1`), maintained below (`pb-2`)
+
+#### 6. **Interface Updates**
+- **Props**: `selectedUpfront` → `selectedLease: LeaseOption | null`
+- **Import**: Added `type { LeaseOption } from '@/types'`
+- **Parent call**: Fixed prop passing in Listing.tsx
+
+### Files Modified
+- `src/components/listing/MobileDealOverview.tsx` - Complete redesign
+- `src/pages/Listing.tsx` - Updated prop passing
+
+### Commit Created
+```
+52571b9 feat: redesign MobileDealOverview with specs-like layout and conditional CTA
+```
+
+### Remaining Tasks (Future Session)
+- Apply `tabular-nums` to numeric values
+- Implement proper `&nbsp;` spacing
+- Add row-level interactivity
+- Consider grid layout optimization
+
+---
+
 ## Session 2025-08-19: Mobile Navigation & UX Improvements
 
 **Duration**: ~1 hour  

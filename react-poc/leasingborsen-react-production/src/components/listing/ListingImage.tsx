@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Car } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import type { CarListing } from '@/types'
 
 interface ListingImageProps {
@@ -45,6 +46,15 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
               <p>{imageError ? 'Billede kunne ikke indlæses' : 'Billede ikke tilgængeligt'}</p>
             </div>
           </div>
+        )}
+        
+        {/* Lease Score Pill - positioned absolutely in top-right corner */}
+        {car.lease_score && car.retail_price && (
+          <LeaseScorePill 
+            score={car.lease_score}
+            size="sm"
+            className="absolute top-4 right-4 z-10"
+          />
         )}
       </div>
     

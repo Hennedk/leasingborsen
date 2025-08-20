@@ -90,19 +90,19 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
   return (
     <div className={className}>
       <div className="py-2">
-        {/* Mobile: 3x2 Grid */}
+        {/* Mobile: 2-column Grid */}
         <div className="md:hidden">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-4">
             {visibleSpecs.map((spec, index) => (
-              <div key={index} className="flex items-center gap-2">
-                <div className="text-muted-foreground flex-shrink-0">
-                  {React.cloneElement(spec.icon as React.ReactElement, { className: "w-5 h-5" } as any)}
+              <div key={index} className="flex items-center gap-2.5">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                  {React.cloneElement(spec.icon as React.ReactElement, { className: "w-4 h-4" })}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs text-muted-foreground font-medium leading-tight">
                     {spec.label}
                   </div>
-                  <div className="text-base font-semibold text-foreground">
+                  <div className="text-sm font-normal text-foreground truncate">
                     {spec.value}
                   </div>
                 </div>
@@ -111,19 +111,19 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
           </div>
         </div>
 
-        {/* Desktop: 4-column grid layout */}
+        {/* Desktop: 3-column grid layout */}
         <div className="hidden md:block">
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 gap-x-6 gap-y-4">
             {visibleSpecs.map((spec, index) => (
               <div key={index} className="flex items-center gap-3">
-                <div className="text-muted-foreground">
-                  {spec.icon}
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                  {React.cloneElement(spec.icon as React.ReactElement, { className: "w-4 h-4" })}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-muted-foreground font-medium mb-0.5">
+                  <div className="text-xs text-muted-foreground font-medium leading-tight">
                     {spec.label}
                   </div>
-                  <div className="text-base font-semibold text-foreground truncate">
+                  <div className="text-sm font-normal text-foreground truncate">
                     {spec.value}
                   </div>
                 </div>

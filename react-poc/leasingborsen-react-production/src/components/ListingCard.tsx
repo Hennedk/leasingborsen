@@ -312,15 +312,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               </div>
               <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-                  <Car className="w-4 h-4" />
-                </div>
-                <span className="font-normal truncate">{translateBodyType(car.body_type || '') || '–'}</span>
-              </div>
-              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
-                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
                   <Gauge className="w-4 h-4" />
                 </div>
                 <span className="font-normal truncate">{car.horsepower ? `${car.horsepower} hk` : '–'}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-sm text-muted-foreground/80 group-hover:text-foreground transition-colors duration-200">
+                <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
+                  <Car className="w-4 h-4" />
+                </div>
+                <span className="font-normal truncate">{translateBodyType(car.body_type || '') || '–'}</span>
               </div>
             </div>
           </div>
