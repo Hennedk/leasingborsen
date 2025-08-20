@@ -12,6 +12,7 @@ import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
 interface LeaseCalculatorCardProps {
   car: CarListing
   selectedLease: LeaseOption | undefined
+  selectedLeaseScore?: number
   selectedMileage: number | null
   selectedPeriod: number | null
   selectedUpfront: number | null
@@ -33,6 +34,7 @@ interface LeaseCalculatorCardProps {
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   car,
   selectedLease,
+  selectedLeaseScore,
   selectedMileage,
   selectedPeriod,
   selectedUpfront,
@@ -116,9 +118,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                   />
                 </div>
                 {/* LeaseScore Pill - positioned horizontally with price */}
-                {car.lease_score && car.retail_price && (
+                {(selectedLeaseScore || car.lease_score) && car.retail_price && (
                   <LeaseScorePill 
-                    score={car.lease_score}
+                    score={selectedLeaseScore || car.lease_score}
                     size="xs"
                     className="border border-border/20 shadow-sm"
                   />

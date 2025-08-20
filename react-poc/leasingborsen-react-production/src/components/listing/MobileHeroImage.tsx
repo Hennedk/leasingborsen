@@ -12,13 +12,15 @@ interface MobileHeroImageProps {
   processedImageDetail?: string
   resultCount?: number
   car: CarListing
+  selectedLeaseScore?: number
 }
 
 const MobileHeroImage: React.FC<MobileHeroImageProps> = ({ 
   images, 
   processedImageDetail,
   resultCount,
-  car
+  car,
+  selectedLeaseScore
 }) => {
   const location = useLocation()
   const scrollStore = useScrollStore()
@@ -80,10 +82,10 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
         </Link>
         
         {/* LeaseScore Pill - Top Right Corner */}
-        {car.lease_score && car.retail_price && (
+        {(selectedLeaseScore || car.lease_score) && car.retail_price && (
           <div className="absolute top-4 right-4 z-30">
             <LeaseScorePill 
-              score={car.lease_score}
+              score={selectedLeaseScore || car.lease_score}
               size="xs"
               className="shadow-lg backdrop-blur-sm"
             />

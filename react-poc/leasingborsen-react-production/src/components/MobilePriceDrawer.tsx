@@ -20,6 +20,7 @@ interface MobilePriceDrawerProps {
   selectedPeriod: number | null
   selectedUpfront: number | null
   selectedLease: LeaseOption | undefined
+  selectedLeaseScore?: number
   availableMileages: number[]
   availablePeriods: number[]
   availableUpfronts: number[]
@@ -47,6 +48,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   selectedPeriod,
   selectedUpfront,
   selectedLease,
+  selectedLeaseScore,
   availableMileages,
   availablePeriods,
   availableUpfronts,
@@ -110,9 +112,9 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
                 </p>
                 {/* LeaseScore Pill - positioned to the right of price */}
-                {car.lease_score && car.retail_price && (
+                {(selectedLeaseScore || car.lease_score) && car.retail_price && (
                   <LeaseScorePill 
-                    score={car.lease_score}
+                    score={selectedLeaseScore || car.lease_score}
                     size="xs"
                     className="border border-border/20 shadow-sm"
                   />

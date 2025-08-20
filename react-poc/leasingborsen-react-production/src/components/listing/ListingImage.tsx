@@ -7,9 +7,10 @@ import type { CarListing } from '@/types'
 
 interface ListingImageProps {
   car: CarListing
+  selectedLeaseScore?: number
 }
 
-const ListingImage = React.memo<ListingImageProps>(({ car }) => {
+const ListingImage = React.memo<ListingImageProps>(({ car, selectedLeaseScore }) => {
   const [imageLoading, setImageLoading] = useState(true)
   const [imageError, setImageError] = useState(false)
   
@@ -49,9 +50,9 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
         )}
         
         {/* Lease Score Pill - positioned absolutely in top-right corner (mobile only) */}
-        {car.lease_score && car.retail_price && (
+        {(selectedLeaseScore || car.lease_score) && car.retail_price && (
           <LeaseScorePill 
-            score={car.lease_score}
+            score={selectedLeaseScore || car.lease_score}
             size="sm"
             className="absolute top-4 right-4 z-10 md:hidden"
           />

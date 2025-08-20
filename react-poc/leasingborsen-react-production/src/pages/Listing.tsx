@@ -70,6 +70,7 @@ const Listing: React.FC = () => {
     selectedPeriod,
     selectedUpfront,
     selectedLease,
+    selectedLeaseScore,
     availableMileages,
     availablePeriods,
     availableUpfronts,
@@ -140,6 +141,7 @@ const Listing: React.FC = () => {
         processedImageDetail={car?.processed_image_detail}
         resultCount={resultCount}
         car={car}
+        selectedLeaseScore={selectedLeaseScore}
       />
       
       
@@ -162,7 +164,7 @@ const Listing: React.FC = () => {
             {/* Desktop image (hidden on mobile) */}
             <div className="hidden lg:block">
               <ErrorBoundary fallback={CompactErrorFallback}>
-                <ListingImage car={car} />
+                <ListingImage car={car} selectedLeaseScore={selectedLeaseScore} />
               </ErrorBoundary>
             </div>
             
@@ -212,6 +214,7 @@ const Listing: React.FC = () => {
               <LeaseCalculatorCard
                 car={car}
                 selectedLease={selectedLease}
+                selectedLeaseScore={selectedLeaseScore}
                 selectedMileage={selectedMileage}
                 selectedPeriod={selectedPeriod}
                 selectedUpfront={selectedUpfront}
@@ -313,6 +316,7 @@ const Listing: React.FC = () => {
           selectedPeriod={selectedPeriod}
           selectedUpfront={selectedUpfront}
           selectedLease={selectedLease}
+          selectedLeaseScore={selectedLeaseScore}
           availableMileages={availableMileages}
           availablePeriods={availablePeriods}
           availableUpfronts={availableUpfronts}

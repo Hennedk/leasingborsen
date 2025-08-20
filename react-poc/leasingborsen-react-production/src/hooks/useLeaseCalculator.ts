@@ -60,6 +60,7 @@ export interface LeaseCalculatorData {
   selectedPeriod: number | null
   selectedUpfront: number | null
   selectedLease: LeaseOption | undefined
+  selectedLeaseScore: number | undefined
   availableMileages: number[]
   availablePeriods: number[]
   availableUpfronts: number[]
@@ -285,6 +286,19 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     )
   }, [leaseOptionsWithScores])
 
+  // Calculate selected lease score
+  const selectedLeaseScore = useMemo(() => {
+    if (!selectedLease || leaseOptionsWithScores.length === 0) return undefined
+    
+    const selectedWithScore = leaseOptionsWithScores.find(option =>
+      option.mileage_per_year === selectedLease.mileage_per_year &&
+      option.period_months === selectedLease.period_months &&
+      option.first_payment === selectedLease.first_payment
+    )
+    
+    return selectedWithScore?.lease_score
+  }, [selectedLease, leaseOptionsWithScores])
+
   // Reset to cheapest option
   const resetToCheapest = useCallback(() => {
     if (!cheapestOption) return
@@ -315,6 +329,7 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     selectedPeriod,
     selectedUpfront,
     selectedLease,
+    selectedLeaseScore,
     availableMileages,
     availablePeriods,
     availableUpfronts,
