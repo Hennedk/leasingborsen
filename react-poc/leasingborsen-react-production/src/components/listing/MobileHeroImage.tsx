@@ -82,10 +82,10 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
         </Link>
         
         {/* LeaseScore Pill - Top Right Corner */}
-        {(selectedLeaseScore || car.lease_score) && car.retail_price && (
+        {(selectedLeaseScore !== undefined || car.lease_score !== undefined) && car.retail_price && (
           <div className="absolute top-4 right-4 z-30">
             <LeaseScorePill 
-              score={selectedLeaseScore || car.lease_score}
+              score={selectedLeaseScore ?? car.lease_score!}
               size="xs"
               className="shadow-lg backdrop-blur-sm"
             />
