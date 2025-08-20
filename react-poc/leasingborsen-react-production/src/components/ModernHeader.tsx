@@ -9,7 +9,7 @@ const ModernHeader: React.FC = () => {
   const isHomepage = location.pathname === '/'
 
   return (
-    <header className={`lg:sticky lg:top-0 static z-50 w-full ${borderVariants.header.standard} ${isHomepage ? 'md:border-b-0' : ''} bg-card`}>
+    <header className={`static z-50 w-full ${borderVariants.header.standard} ${isHomepage ? 'md:border-b-0' : ''} bg-card`}>
       <Container className="flex h-16 items-center justify-between">
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 flex-1">

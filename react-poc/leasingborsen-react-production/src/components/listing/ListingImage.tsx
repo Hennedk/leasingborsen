@@ -48,12 +48,12 @@ const ListingImage = React.memo<ListingImageProps>(({ car }) => {
           </div>
         )}
         
-        {/* Lease Score Pill - positioned absolutely in top-right corner */}
+        {/* Lease Score Pill - positioned absolutely in top-right corner (mobile only) */}
         {car.lease_score && car.retail_price && (
           <LeaseScorePill 
             score={car.lease_score}
             size="sm"
-            className="absolute top-4 right-4 z-10"
+            className="absolute top-4 right-4 z-10 md:hidden"
           />
         )}
       </div>

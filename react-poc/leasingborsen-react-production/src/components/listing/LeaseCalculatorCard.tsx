@@ -93,11 +93,11 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
           <div className="flex flex-col space-y-6">
             {/* Section 1: Car Title */}
             <div className="space-y-1">
-              <h1 className="text-xl font-bold text-foreground leading-tight">
+              <h1 className="text-xl md:text-2xl font-bold text-foreground leading-tight">
                 {car.make} {car.model}
               </h1>
               {car.variant && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm md:text-base text-foreground">
                   {car.variant}
                 </p>
               )}
