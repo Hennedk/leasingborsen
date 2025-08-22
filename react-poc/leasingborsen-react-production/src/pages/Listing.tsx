@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
+import { useListingPositioning } from '@/hooks/useListingPositioning'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
@@ -25,7 +26,9 @@ import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { data: listingResponse, isLoading, error } = useListing(id || '')
+  const { isPositioned } = useListingPositioning(id)
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined
@@ -52,10 +55,7 @@ const Listing: React.FC = () => {
     return () => observer.disconnect()
   }, [car]) // Re-run when car changes
 
-  // Always scroll to top when listing ID changes
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [id])
+  // Scroll to top is now handled by useListingPositioning hook
 
   // Fetch similar listings using enhanced multi-tier matching
   const { 
@@ -120,12 +120,16 @@ const Listing: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               Bilen du leder efter eksisterer ikke eller er ikke længere tilgængelig.
             </p>
-            <Link to="/listings">
-              <Button>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Tilbage til søgning
-              </Button>
-            </Link>
+            <Button onClick={() => {
+              if (window.history.length > 1) {
+                navigate(-1); // True back (POP)
+              } else {
+                navigate("/listings", { replace: true, state: { backLike: true } });
+              }
+            }}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Tilbage til søgning
+            </Button>
           </div>
         </div>
       </BaseLayout>
@@ -134,7 +138,11 @@ const Listing: React.FC = () => {
 
 
   return (
-    <BaseLayout className="listing-page" showHeader={true}>
+    <BaseLayout 
+      className="listing-page" 
+      showHeader={true}
+      style={{ visibility: isPositioned ? 'visible' : 'hidden' }}
+    >
       {/* Mobile hero image with AspectRatio (hidden on desktop) */}
       <MobileHeroImage 
         images={car?.images || []} 

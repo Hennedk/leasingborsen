@@ -17,6 +17,7 @@ interface ListingsGridProps {
   onLoadMore: () => void
   onResetFilters: () => void
   onNavigateToListings: () => void
+  currentPage?: number
   className?: string
 }
 
@@ -34,6 +35,7 @@ const ListingsGrid: React.FC<ListingsGridProps> = ({
   loadMoreRef,
   onLoadMore,
   onResetFilters,
+  currentPage = 1,
   className
 }) => {
   // Memoize skeleton count to prevent unnecessary re-renders
@@ -97,6 +99,7 @@ const ListingsGrid: React.FC<ListingsGridProps> = ({
               ...car,
               id: car.listing_id || car.id
             }}
+            currentPage={currentPage}
           />
         ))}
       </div>

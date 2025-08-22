@@ -12,16 +12,22 @@ interface BaseLayoutProps {
   showHeader?: boolean
   /** Additional CSS classes for the main content area */
   className?: string
+  /** Inline styles for the layout wrapper */
+  style?: React.CSSProperties
 }
 
 const BaseLayout: React.FC<BaseLayoutProps> = ({
   children,
   showFooter = true,
   showHeader = true,
-  className = ''
+  className = '',
+  style
 }) => {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div 
+      className="min-h-screen flex flex-col bg-background text-foreground"
+      style={style}
+    >
       {/* Preview Environment Banner */}
       <PreviewBanner />
       

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -16,15 +16,19 @@ import {
 } from 'lucide-react'
 import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
 import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
+import { useNavigationContext } from '@/hooks/useNavigationContext'
 import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import type { CarListing } from '@/types'
 
 interface ListingCardProps {
   car?: CarListing | null
   loading?: boolean
+  currentPage?: number
 }
 
-const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false }) => {
+const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1 }) => {
+  const [searchParams] = useSearchParams()
+  const { prepareListingNavigation } = useNavigationContext()
   
   // Optimized image loading with shared intersection observer
   const {
@@ -67,6 +71,13 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   
   // Optimized interaction handlers with useCallback
   const onCardClick = useCallback(() => {
+    // Prepare navigation context before navigation
+    prepareListingNavigation(
+      window.scrollY,
+      currentPage,
+      searchParams
+    )
+    
     // Immediate visual feedback
     setShowRipple(true)
     setIsPressed(true)
@@ -88,7 +99,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       clearTimeout(navigationTimer)
       setNavigating(false)
     }
-  }, [])
+  }, [prepareListingNavigation, currentPage, searchParams])
   
   // Memoized utility functions for better performance
   const formatPrice = useCallback((price?: number) => {

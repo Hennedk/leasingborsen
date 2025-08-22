@@ -67,7 +67,8 @@
       "mcp__serena__write_memory",
       "Bash(npm run dev:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "mcp__serena__replace_symbol_body"
     ]
   },
   "enableAllProjectMcpServers": true,

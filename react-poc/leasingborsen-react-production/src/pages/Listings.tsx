@@ -7,7 +7,7 @@ import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { useUrlSync } from '@/hooks/useUrlSync'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useFilterManagement } from '@/hooks/useFilterManagement'
-import { useScrollRestoration } from '@/hooks/useScrollRestoration'
+import { useListingsScrollRestoration } from '@/hooks/useListingsScrollRestoration'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import FilterSidebar from '@/components/FilterSidebar'
@@ -59,9 +59,6 @@ const Listings: React.FC = () => {
   // Use extracted filter management hook
   const { handleRemoveFilter } = useFilterManagement()
 
-  // Enable scroll restoration for this page
-  useScrollRestoration('/listings')
-
   // Check for showFilters URL parameter to automatically open mobile filter overlay
   useEffect(() => {
     if (searchParams.get('showFilters') === 'true') {
@@ -89,6 +86,9 @@ const Listings: React.FC = () => {
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters, sortOrder)
   
+  // Enable scroll restoration for this page (wait for data to load)
+  useListingsScrollRestoration(!isLoading)
+  
   // Memoize expensive calculations for performance
   const listings = useMemo(
     () => infiniteData?.pages.flatMap(page => page.data || []) || [],
@@ -113,6 +113,11 @@ const Listings: React.FC = () => {
     seats_max
   ])
   
+  // Calculate current page for navigation context
+  const currentPage = useMemo(() => {
+    return infiniteData?.pages.length || 1
+  }, [infiniteData?.pages.length])
+  
   // Infinite scroll setup
   const { loadMoreRef } = useInfiniteScroll({
     hasNextPage: hasNextPage || false,
@@ -121,6 +126,7 @@ const Listings: React.FC = () => {
     rootMargin: '200px', // Load more when 200px from bottom
     enabled: !isLoading && !isError
   })
+  
   
   // Manual load more setup as fallback
   const { handleLoadMore, canLoadMore, isLoading: isLoadingMore } = useLoadMore({
@@ -213,7 +219,11 @@ const Listings: React.FC = () => {
           </SearchErrorBoundary>
 
           {/* Main Content Area */}
-          <main className={listingStyles.mainContent} role="main" aria-label="Billeasing søgning">
+          <main 
+            className={listingStyles.mainContent} 
+            role="main" 
+            aria-label="Billeasing søgning"
+          >
             
             {/* Mobile: Result count, sort status and sort button */}
             <div className="lg:hidden mb-4 flex items-end justify-between">
@@ -277,6 +287,7 @@ const Listings: React.FC = () => {
                     onLoadMore={handleLoadMore}
                     onResetFilters={resetFilters}
                     onNavigateToListings={handleNavigateToListings}
+                    currentPage={currentPage}
                   />
                 </DataErrorBoundary>
               </section>

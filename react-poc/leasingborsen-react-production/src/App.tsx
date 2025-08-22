@@ -77,21 +77,31 @@ const PageLoader: React.FC = () => (
   </div>
 )
 
-// Page transition component
+// Page transition component with navigation-aware transitions
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation()
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
+    // Detect navigation type
+    const isBackNavigation = sessionStorage.getItem('leasingborsen-navigation')
+    const isListingsPage = location.pathname === '/listings'
+    
+    // Skip fade animation for back navigation to listings
+    if (isBackNavigation && isListingsPage) {
+      setIsVisible(true)
+      return
+    }
+    
     // Fade out, then fade in on route change
     setIsVisible(false)
-    const timer = setTimeout(() => setIsVisible(true), 150)
+    const timer = setTimeout(() => setIsVisible(true), 100) // Reduced from 150ms
     return () => clearTimeout(timer)
   }, [location.pathname])
 
   return (
     <div 
-      className={`transition-opacity duration-200 ease-out ${
+      className={`transition-opacity duration-150 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
       style={{ minHeight: '100vh' }}
@@ -101,31 +111,12 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
   )
 }
 
-// ScrollRestoration component
-const ScrollRestoration: React.FC = () => {
-  const location = useLocation()
-
-  useEffect(() => {
-    // Only /listings route keeps its scroll position (uses useScrollRestoration hook)
-    // All other routes including /listing/:id should scroll to top
-    if (location.pathname === '/listings') {
-      // Skip - /listings handles its own scroll restoration
-      return
-    }
-    
-    // All other routes scroll to top
-    window.scrollTo(0, 0)
-  }, [location.pathname])
-
-  return null
-}
 
 function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <Router>
-          <ScrollRestoration />
           <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
             <Suspense fallback={<PageLoader />}>
               <PageTransition>

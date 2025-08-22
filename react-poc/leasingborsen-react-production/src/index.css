@@ -604,6 +604,22 @@ body {
   }
 }
 
+/* Temporary override for instant navigation positioning */
+html.instant-nav,
+html.instant-nav body {
+  scroll-behavior: auto !important;
+  overflow-anchor: none;
+}
+
+/* Hide scrollbar during positioning (1-2 frames only) */
+html.instant-nav { 
+  scrollbar-width: none; 
+}
+html.instant-nav::-webkit-scrollbar,
+html.instant-nav body::-webkit-scrollbar { 
+  display: none; 
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .mobile-sticky-header {
@@ -635,4 +651,45 @@ input, select, textarea {
 /* Performance optimization for sticky header */
 .mobile-sticky-header {
   contain: layout style paint;
+}
+
+/* Navigation positioning utilities */
+.navigation-positioning {
+  scroll-behavior: auto !important;
+}
+
+.navigation-hidden {
+  visibility: hidden !important;
+}
+
+.navigation-visible {
+  visibility: visible !important;
+}
+
+/* Prevent flashing during navigation */
+.navigation-instant-scroll {
+  scroll-behavior: auto !important;
+}
+
+/* Smooth transitions for content visibility */
+.navigation-fade-in {
+  opacity: 0;
+  animation: navigationFadeIn 0.15s ease-out forwards;
+}
+
+@keyframes navigationFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Navigation positioning utilities for preventing visible scroll */
+.positioning-in-progress {
+  overflow: hidden !important;
+  scroll-behavior: auto !important;
+}
+
+.positioning-in-progress body {
+  overflow: hidden !important;
+  scroll-behavior: auto !important;
 }
