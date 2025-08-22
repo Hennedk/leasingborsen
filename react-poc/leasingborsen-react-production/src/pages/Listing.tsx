@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'

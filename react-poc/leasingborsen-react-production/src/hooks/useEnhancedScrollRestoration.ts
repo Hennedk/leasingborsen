@@ -17,8 +17,6 @@ export function useEnhancedScrollRestoration(key: string) {
   const [isPositioned, setIsPositioned] = useState(false)
   const isRestoringRef = useRef(false)
   const mutationObserverRef = useRef<MutationObserver | null>(null)
-  const restorationAttempts = useRef(0)
-  const maxRestorationAttempts = 10
   
   // Save current scroll state with debouncing
   const saveScrollState = useCallback((loadedPages: number = 1) => {
@@ -70,43 +68,6 @@ export function useEnhancedScrollRestoration(key: string) {
     setIsPositioned(true)
   }, [])
   
-  // Set up content mutation observer for dynamic content detection
-  const setupContentObserver = useCallback((targetPosition: number) => {
-    if (mutationObserverRef.current) {
-      mutationObserverRef.current.disconnect()
-    }
-    
-    mutationObserverRef.current = new MutationObserver((mutations) => {
-      // Check if significant content was added
-      const hasSignificantChanges = mutations.some(mutation => 
-        mutation.type === 'childList' && 
-        mutation.addedNodes.length > 0 &&
-        Array.from(mutation.addedNodes).some(node => 
-          node.nodeType === Node.ELEMENT_NODE && 
-          (node as Element).getBoundingClientRect().height > 100
-        )
-      )
-      
-      if (hasSignificantChanges) {
-        // Content added - attempt restoration
-        restoreScrollPosition(targetPosition)
-      }
-    })
-    
-    // Observe body for content changes
-    mutationObserverRef.current.observe(document.body, {
-      childList: true,
-      subtree: true
-    })
-    
-    // Auto-cleanup after 5 seconds
-    setTimeout(() => {
-      if (mutationObserverRef.current) {
-        mutationObserverRef.current.disconnect()
-        mutationObserverRef.current = null
-      }
-    }, 5000)
-  }, [restoreScrollPosition])
   
   // Initialize positioning state and restore scroll position on mount
   useEffect(() => {
