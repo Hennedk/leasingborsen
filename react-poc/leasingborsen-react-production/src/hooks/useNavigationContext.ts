@@ -108,10 +108,10 @@ export function useNavigationContext() {
       // Go back to listings and restore state
       const params = info.filters.toString()
       const targetUrl = params ? `/listings?${params}` : '/listings'
-      navigate(targetUrl)
+      navigate(targetUrl, { state: { backLike: true } })
     } else {
       // No history or direct entry - navigate to clean listings
-      navigate('/listings')
+      navigate('/listings', { state: { backLike: true } })
     }
     
     // Clear navigation state after use

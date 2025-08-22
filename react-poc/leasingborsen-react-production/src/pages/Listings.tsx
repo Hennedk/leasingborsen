@@ -86,8 +86,8 @@ const Listings: React.FC = () => {
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters, sortOrder)
   
-  // Enable scroll restoration for this page (wait for data to load)
-  useListingsScrollRestoration(!isLoading)
+  // Enable scroll restoration for this page (always enabled - handles content stability internally)
+  useListingsScrollRestoration(true)
   
   // Memoize expensive calculations for performance
   const listings = useMemo(

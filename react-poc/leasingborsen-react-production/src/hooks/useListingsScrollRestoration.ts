@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 const KEY_PREFIX = "listings-scroll:";
@@ -13,12 +13,41 @@ export function useListingsScrollRestoration(ready = true) {
   const location = useLocation();
   const navType = useNavigationType(); // "POP" | "PUSH" | "REPLACE"
 
-  useEffect(() => {
+  // Run pre-paint to avoid any visible jump on restore
+  useLayoutEffect(() => {
     if (location.pathname !== "/listings" || !ready) return;
 
     const key = KEY_PREFIX + normalizeSearch(location.search);
     const saved = sessionStorage.getItem(key);
-    const isBackLike = navType === "POP" || location.state?.backLike === true;
+    const isBackLike = navType === "POP" || (location.state as any)?.backLike === true;
+
+    // Set navigation context for other components to detect back navigation
+    if (isBackLike) {
+      sessionStorage.setItem('leasingborsen-navigation', JSON.stringify({
+        from: 'listings',
+        timestamp: Date.now(),
+        isBack: true
+      }));
+    }
+
+    // Fallback: also consider navigation context storage if list-specific key is missing
+    let fallbackPos: number | null = null;
+    if (!saved) {
+      try {
+        const raw = sessionStorage.getItem('leasingborsen-navigation');
+        if (raw) {
+          const st = JSON.parse(raw) as { from?: string; scrollPosition?: number; filters?: string; timestamp?: number };
+          const MAX_AGE = 30 * 60 * 1000;
+          if (st && st.from === 'listings' && typeof st.scrollPosition === 'number' && st.timestamp && (Date.now() - st.timestamp) <= MAX_AGE) {
+            const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
+            const normalizedCurrent = normalizeSearch(location.search);
+            if (normalizedStored === normalizedCurrent) {
+              fallbackPos = st.scrollPosition | 0;
+            }
+          }
+        }
+      } catch {}
+    }
 
     const save = () => sessionStorage.setItem(key, String((window.scrollY || 0) | 0));
     window.addEventListener("scroll", save, { passive: true });
@@ -42,7 +71,7 @@ export function useListingsScrollRestoration(ready = true) {
 
         const notAtTarget = Math.abs(window.scrollY - target) > 1;
         const unstable = stable < 2; // need two stable frames
-        if ((notAtTarget || unstable) && tries++ < 20) {
+        if ((notAtTarget || unstable) && tries++ < 40) {
           requestAnimationFrame(loop);
         } else {
           requestAnimationFrame(() => html.classList.remove("instant-nav"));
@@ -51,8 +80,9 @@ export function useListingsScrollRestoration(ready = true) {
       requestAnimationFrame(loop);
     };
 
-    if (isBackLike && saved) {
-      restoreInstant(parseInt(saved, 10) || 0);
+    if (isBackLike && (saved || fallbackPos != null)) {
+      const pos = saved ? (parseInt(saved, 10) || 0) : (fallbackPos as number);
+      restoreInstant(pos);
     } else if (navType !== "POP") {
       // true forward visit → clear and go to top (no smooth animation)
       sessionStorage.removeItem(key);

@@ -83,19 +83,30 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
-    // Detect navigation type
-    const isBackNavigation = sessionStorage.getItem('leasingborsen-navigation')
+    const backFlag = (location.state as any)?.backLike
+    const navContext = sessionStorage.getItem('leasingborsen-navigation')
+    let isBackNavigation = false
+    
+    if (navContext) {
+      try {
+        const parsed = JSON.parse(navContext)
+        isBackNavigation = parsed.isBack && (Date.now() - parsed.timestamp) < 1000 // 1 second window
+      } catch {}
+    }
+    
     const isListingsPage = location.pathname === '/listings'
     
     // Skip fade animation for back navigation to listings
-    if (isBackNavigation && isListingsPage) {
+    if ((isBackNavigation || backFlag) && isListingsPage) {
       setIsVisible(true)
+      // Clear the navigation context after use
+      sessionStorage.removeItem('leasingborsen-navigation')
       return
     }
     
-    // Fade out, then fade in on route change
+    // Normal fade transition for other navigations
     setIsVisible(false)
-    const timer = setTimeout(() => setIsVisible(true), 100) // Reduced from 150ms
+    const timer = setTimeout(() => setIsVisible(true), 100)
     return () => clearTimeout(timer)
   }, [location.pathname])
 
