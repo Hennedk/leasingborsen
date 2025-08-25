@@ -124,10 +124,7 @@ export const useUrlSync = () => {
         }
       })
       
-      // Reset filters first to ensure clean state
-      resetFilters()
-      
-      // Apply URL parameters synchronously to avoid re-render issues
+      // Apply URL parameters synchronously to override existing state
       // Handle single make parameter
       if (urlMake) {
         setFilter('makes', [urlMake])
@@ -269,7 +266,7 @@ export const useUrlSync = () => {
     }
     
     // Handle sort order
-    if (sortOrder !== 'newest') {
+    if (sortOrder !== 'lease_score_desc') {
       newSearch.sort = sortOrder
     } else {
       delete newSearch.sort

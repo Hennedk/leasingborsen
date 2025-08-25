@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import type { FilterOptions } from '@/types'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
@@ -7,6 +6,7 @@ import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
 import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useFilterManagement } from '@/hooks/useFilterManagement'
+import { useUrlSync } from '@/hooks/useUrlSync'
 import { useListingsScrollRestoration } from '@/hooks/useListingsScrollRestoration'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
@@ -40,38 +40,13 @@ const Listings: React.FC = () => {
   const search = listingsRoute.useSearch()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   
-  // Extract current filters and sort from search params
-  const currentFilters = useMemo(() => {
-    // Convert TanStack Router search params to FilterOptions format
-    return {
-      makes: search.make ? [search.make] : [],
-      models: search.model ? [search.model] : [],
-      body_type: Array.isArray(search.body_type) ? search.body_type : (search.body_type ? [search.body_type] : []),
-      fuel_type: search.fuel_type ? [search.fuel_type] : [],
-      transmission: search.transmission ? [search.transmission] : [],
-      price_min: search.price_min || null,
-      price_max: search.price_max || null,
-      seats_min: search.seats_min || null,
-      seats_max: search.seats_max || null,
-      horsepower_min: search.horsepower_min || null,
-      horsepower_max: search.horsepower_max || null,
-    } as FilterOptions
-  }, [search])
-  const sortOrder = search.sort || 'newest'
+  // Use URL sync hook for bidirectional filter synchronization
+  const { currentFilters, sortOrder } = useUrlSync()
   
   const { 
-    setSortOrder,
     getActiveFilters,
     resetFilters,
-    makes,
-    models,
-    body_type,
-    fuel_type,
-    transmission,
-    price_min,
-    price_max,
-    seats_min,
-    seats_max
+    setSortOrder
   } = usePersistentFilterStore()
 
   // Use extracted filter management hook
@@ -122,15 +97,7 @@ const Listings: React.FC = () => {
   
   const activeFilters = useMemo(() => getActiveFilters(), [
     getActiveFilters,
-    makes,
-    models,
-    body_type,
-    fuel_type, 
-    transmission,
-    price_min,
-    price_max,
-    seats_min,
-    seats_max
+    currentFilters
   ])
   
   // Calculate current page for navigation context

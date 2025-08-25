@@ -37,7 +37,7 @@ const listingsSearchSchema = z.object({
   udb: z.number().catch(0), // down payment
   
   // Sorting
-  sort: z.enum(['price_asc','price_desc','newest','score_desc']).catch('newest'),
+  sort: z.enum(['lease_score_desc','asc','desc']).catch('lease_score_desc'),
   
   // View preferences  
   view: z.enum(['grid','list']).catch('grid'),
@@ -50,7 +50,7 @@ const listingsSearchSchema = z.object({
 }).catch(() => ({
   page: 1,
   limit: 20,
-  sort: 'newest' as const,
+  sort: 'lease_score_desc' as const,
   view: 'grid' as const,
   km: 15000,
   mdr: 36,
