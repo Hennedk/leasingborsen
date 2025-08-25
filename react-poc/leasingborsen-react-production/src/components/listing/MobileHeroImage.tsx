@@ -3,8 +3,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Button } from '@/components/ui/button'
 import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { ArrowLeft } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
-import { useScrollStore } from '@/stores/scrollStore'
+import { useNavigationContext } from '@/hooks/useNavigationContext'
 import type { CarListing } from '@/types'
 
 interface MobileHeroImageProps {
@@ -22,16 +21,10 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
   car,
   selectedLeaseScore
 }) => {
-  const location = useLocation()
-  const scrollStore = useScrollStore()
+  const { smartBack } = useNavigationContext()
   
   // Prioritize processed image, then first image from array
   const heroImage = processedImageDetail || images[0]
-  
-  // Save scroll position before navigating back
-  const handleBackClick = () => {
-    scrollStore.savePosition(location.pathname, window.scrollY)
-  }
   
   if (!heroImage) {
     return (
@@ -66,20 +59,15 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/20 via-transparent to-transparent pointer-events-none" />
         
         {/* Floating Back Button */}
-        <Link 
-          to="/listings" 
-          onClick={handleBackClick}
-          className="absolute top-4 left-4 z-30 floating-back-button"
+        <Button 
+          onClick={smartBack}
+          variant="secondary"
+          size="icon"
+          className="absolute top-4 left-4 z-30 bg-background/90 backdrop-blur shadow-lg hover:bg-background/95 h-12 w-12"
+          aria-label={`Gå tilbage til resultater${resultCount ? ` (${resultCount})` : ''}`}
         >
-          <Button 
-            variant="secondary"
-            size="icon"
-            className="bg-background/90 backdrop-blur shadow-lg hover:bg-background/95 h-12 w-12"
-            aria-label={`Gå tilbage til resultater${resultCount ? ` (${resultCount})` : ''}`}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
         
         {/* LeaseScore Pill - Top Right Corner */}
         {(selectedLeaseScore !== undefined || car.lease_score !== undefined) && car.retail_price && (

@@ -17,9 +17,10 @@ export function useListingsScrollRestoration(ready = true) {
   useLayoutEffect(() => {
     if (location.pathname !== "/listings" || !ready) return;
 
-    const key = KEY_PREFIX + normalizeSearch(location.search);
+    const normalizedSearch = normalizeSearch(location.search);
+    const key = KEY_PREFIX + normalizedSearch;
     const saved = sessionStorage.getItem(key);
-    const isBackLike = navType === "POP" || (location.state as any)?.backLike === true;
+    const isBackLike = navType === "POP" || (location.state as { backLike?: boolean })?.backLike === true;
 
     // Set navigation context for other components to detect back navigation
     if (isBackLike) {
@@ -46,10 +47,18 @@ export function useListingsScrollRestoration(ready = true) {
             }
           }
         }
-      } catch {}
+      } catch {
+        // Ignore parse errors
+      }
     }
 
-    const save = () => sessionStorage.setItem(key, String((window.scrollY || 0) | 0));
+    // Don't save position 0 during initial mount/restoration
+    const save = () => {
+      const scrollY = window.scrollY || 0;
+      if (scrollY > 0 || sessionStorage.getItem(key) === null) {
+        sessionStorage.setItem(key, String(scrollY | 0));
+      }
+    };
     window.addEventListener("scroll", save, { passive: true });
     window.addEventListener("pagehide", save);
 

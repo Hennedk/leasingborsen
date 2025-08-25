@@ -64,6 +64,7 @@ export function useNavigationContext() {
   
   // Set navigation source before navigating to listing detail
   const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams) => {
+    // Save to navigation context
     saveNavigationState({
       from: 'listings',
       scrollPosition,
@@ -71,6 +72,19 @@ export function useNavigationContext() {
       filters: filters.toString(),
       timestamp: Date.now()
     })
+    
+    // ALSO save to the listings scroll restoration storage for consistency
+    // This ensures scroll position is available in the primary storage system
+    const normalizeSearch = (search: string) => {
+      const p = new URLSearchParams(search);
+      const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
+      return new URLSearchParams(entries).toString();
+    };
+    
+    const searchString = filters.toString();
+    const normalizedSearch = normalizeSearch(searchString);
+    const key = `listings-scroll:${normalizedSearch}`;
+    sessionStorage.setItem(key, String(scrollPosition | 0));
   }, [saveNavigationState])
   
   // Get navigation info for current page
@@ -104,18 +118,14 @@ export function useNavigationContext() {
   const smartBack = useCallback(() => {
     const info = getNavigationInfo()
     
+    // If we have history from listings, use browser back for real POP navigation
+    // This is more reliable for scroll restoration than programmatic navigation
     if (info.hasHistory && info.from === 'listings') {
-      // Go back to listings and restore state
-      const params = info.filters.toString()
-      const targetUrl = params ? `/listings?${params}` : '/listings'
-      navigate(targetUrl, { state: { backLike: true } })
+      navigate(-1);
     } else {
-      // No history or direct entry - navigate to clean listings
+      // No history - do programmatic navigation with backLike state
       navigate('/listings', { state: { backLike: true } })
     }
-    
-    // Clear navigation state after use
-    sessionStorage.removeItem(STORAGE_KEY)
   }, [getNavigationInfo, navigate])
   
   // Clear old navigation state on route change (except listings ↔ listing)
