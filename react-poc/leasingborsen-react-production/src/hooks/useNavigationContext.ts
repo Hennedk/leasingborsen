@@ -8,6 +8,7 @@ interface NavigationState {
   filters: string
   timestamp: number
   referrer?: string
+  isNavigatingAway?: boolean
 }
 
 const STORAGE_KEY = 'leasingborsen-navigation'
@@ -64,13 +65,14 @@ export function useNavigationContext() {
   
   // Set navigation source before navigating to listing detail
   const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams) => {
-    // Save to navigation context
+    // Save to navigation context with flag indicating we're navigating away
     saveNavigationState({
       from: 'listings',
       scrollPosition,
       loadedPages,
       filters: filters.toString(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      isNavigatingAway: true  // Flag to prevent saving during scroll animation
     })
     
     // ALSO save to the listings scroll restoration storage for consistency
@@ -84,6 +86,7 @@ export function useNavigationContext() {
     const searchString = filters.toString();
     const normalizedSearch = normalizeSearch(searchString);
     const key = `listings-scroll:${normalizedSearch}`;
+    
     sessionStorage.setItem(key, String(scrollPosition | 0));
   }, [saveNavigationState])
   

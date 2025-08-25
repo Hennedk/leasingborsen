@@ -1,4 +1,4 @@
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 const KEY_PREFIX = "listings-scroll:";
@@ -12,23 +12,50 @@ const normalizeSearch = (search: string) => {
 export function useListingsScrollRestoration(ready = true) {
   const location = useLocation();
   const navType = useNavigationType(); // "POP" | "PUSH" | "REPLACE"
+  const lastRestoredRef = useRef<string>("");
+  const navigationStartRef = useRef<number>(0);
 
   // Run pre-paint to avoid any visible jump on restore
   useLayoutEffect(() => {
     if (location.pathname !== "/listings" || !ready) return;
+    
+    // Flag to prevent saving during restoration
+    let isRestoring = false;
 
     const normalizedSearch = normalizeSearch(location.search);
     const key = KEY_PREFIX + normalizedSearch;
     const saved = sessionStorage.getItem(key);
     const isBackLike = navType === "POP" || (location.state as { backLike?: boolean })?.backLike === true;
+    
 
     // Set navigation context for other components to detect back navigation
     if (isBackLike) {
-      sessionStorage.setItem('leasingborsen-navigation', JSON.stringify({
-        from: 'listings',
-        timestamp: Date.now(),
-        isBack: true
-      }));
+      // Clear the navigating away flag when we arrive back
+      const currentNav = sessionStorage.getItem('leasingborsen-navigation');
+      if (currentNav) {
+        try {
+          const state = JSON.parse(currentNav);
+          delete state.isNavigatingAway;
+          sessionStorage.setItem('leasingborsen-navigation', JSON.stringify({
+            ...state,
+            from: 'listings',
+            timestamp: Date.now(),
+            isBack: true
+          }));
+        } catch {
+          sessionStorage.setItem('leasingborsen-navigation', JSON.stringify({
+            from: 'listings',
+            timestamp: Date.now(),
+            isBack: true
+          }));
+        }
+      } else {
+        sessionStorage.setItem('leasingborsen-navigation', JSON.stringify({
+          from: 'listings',
+          timestamp: Date.now(),
+          isBack: true
+        }));
+      }
     }
 
     // Fallback: also consider navigation context storage if list-specific key is missing
@@ -52,10 +79,55 @@ export function useListingsScrollRestoration(ready = true) {
       }
     }
 
-    // Don't save position 0 during initial mount/restoration
+    // Check if we're navigating away (to prevent saving during exit animations)
+    const isNavigatingAway = () => {
+      // If navigation was just started, we're navigating away
+      if (navigationStartRef.current > 0 && (Date.now() - navigationStartRef.current) < 3000) {
+        return true;
+      }
+      
+      // Check if prepareListingNavigation was called recently
+      const navState = sessionStorage.getItem('leasingborsen-navigation');
+      if (navState) {
+        try {
+          const state = JSON.parse(navState);
+          // Check both the flag and timestamp
+          if (state.isNavigatingAway || (state.timestamp && (Date.now() - state.timestamp) < 2000)) {
+            return true;
+          }
+        } catch {}
+      }
+      return false;
+    };
+
+    // Don't save during restoration or when navigating away
     const save = () => {
+      if (isRestoring) {
+        return;
+      }
+      
+      // Don't save if we're navigating away (prevents saving scroll animation positions)
+      if (isNavigatingAway()) {
+        return;
+      }
+      
       const scrollY = window.scrollY || 0;
-      if (scrollY > 0 || sessionStorage.getItem(key) === null) {
+      const currentSaved = sessionStorage.getItem(key);
+      
+      // Don't overwrite a good saved position with 0 or very small values during mount
+      if (scrollY === 0 && currentSaved && parseInt(currentSaved) > 100) {
+        return;
+      }
+      
+      // Don't save positions that are decreasing rapidly (scroll animation)
+      if (currentSaved) {
+        const savedPos = parseInt(currentSaved);
+        if (savedPos > 100 && scrollY < savedPos - 50) {
+          return;
+        }
+      }
+      
+      if (scrollY > 0 || currentSaved === null) {
         sessionStorage.setItem(key, String(scrollY | 0));
       }
     };
@@ -63,6 +135,7 @@ export function useListingsScrollRestoration(ready = true) {
     window.addEventListener("pagehide", save);
 
     const restoreInstant = (y: number) => {
+      isRestoring = true;
       const html = document.documentElement;
       html.classList.add("instant-nav");
 
@@ -83,20 +156,40 @@ export function useListingsScrollRestoration(ready = true) {
         if ((notAtTarget || unstable) && tries++ < 40) {
           requestAnimationFrame(loop);
         } else {
-          requestAnimationFrame(() => html.classList.remove("instant-nav"));
+          requestAnimationFrame(() => {
+            html.classList.remove("instant-nav");
+            // Allow saving again after restoration is complete
+            setTimeout(() => {
+              isRestoring = false;
+            }, 100);
+          });
         }
       };
       requestAnimationFrame(loop);
     };
 
+    // Create a unique restoration ID for this navigation
+    const restorationId = `${navType}-${key}-${Date.now()}`;
+    
     if (isBackLike && (saved || fallbackPos != null)) {
       const pos = saved ? (parseInt(saved, 10) || 0) : (fallbackPos as number);
+      
+      // Skip if we just restored this exact same thing (prevents double restoration)
+      if (lastRestoredRef.current === `${key}-${pos}`) {
+        return;
+      }
+      
+      lastRestoredRef.current = `${key}-${pos}`;
       restoreInstant(pos);
     } else if (navType !== "POP") {
       // true forward visit → clear and go to top (no smooth animation)
       sessionStorage.removeItem(key);
+      lastRestoredRef.current = `${key}-0`;
       restoreInstant(0);
     }
+
+    // Reset navigation start ref when we arrive at listings
+    navigationStartRef.current = 0;
 
     return () => {
       window.removeEventListener("scroll", save);
