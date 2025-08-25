@@ -26,7 +26,7 @@ import { Save, ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useCreateSeller, useUpdateSeller, type CreateSellerData } from '@/hooks/useSellerMutations'
 import type { Seller } from '@/hooks/useSellers'
 import { useMakes } from '@/hooks/useReferenceData'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 
 const sellerSchema = z.object({
   name: z.string().min(1, 'Navn er påkrævet'),
@@ -104,7 +104,7 @@ const SellerForm = React.memo<SellerFormProps>(({
       }
 
       // Navigate back to sellers list on success
-      navigate('/admin/sellers')
+      navigate({ to: '/admin/sellers' })
     } catch (error) {
       // Error handling is done in the mutation hooks
       console.error('Form submission error:', error)
@@ -112,7 +112,7 @@ const SellerForm = React.memo<SellerFormProps>(({
   }
 
   const handleCancel = () => {
-    navigate('/admin/sellers')
+    navigate({ to: '/admin/sellers' })
   }
 
   const countries = [

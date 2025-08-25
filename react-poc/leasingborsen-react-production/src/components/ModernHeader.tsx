@@ -1,5 +1,5 @@
 import React from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from '@tanstack/react-router'
 import Container from '@/components/Container'
 import { Button } from '@/components/ui/button'
 import { borderVariants } from '@/lib/borderStyles'

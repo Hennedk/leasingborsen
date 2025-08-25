@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
+import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
@@ -25,7 +26,7 @@ import { cn } from '@/lib/utils'
 import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
-  const { id } = useParams<{ id: string }>()
+  const { id } = useListingParams()
   const navigate = useNavigate()
   const { data: listingResponse, isLoading, error } = useListing(id || '')
   const { isPositioned } = useListingPositioning(id)
@@ -122,9 +123,9 @@ const Listing: React.FC = () => {
             </p>
             <Button onClick={() => {
               if (window.history.length > 1) {
-                navigate(-1); // True back (POP)
+                window.history.back(); // True back (POP)
               } else {
-                navigate("/listings", { replace: true, state: { backLike: true } });
+                navigate({ to: "/listings", replace: true });
               }
             }}>
               <ArrowLeft className="w-4 h-4 mr-2" />

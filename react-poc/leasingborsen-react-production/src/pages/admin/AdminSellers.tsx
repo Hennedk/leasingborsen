@@ -7,7 +7,7 @@ import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { useSellers } from '@/hooks/useSellers'
 import { useDeleteSeller, useBulkDeleteSellers } from '@/hooks/useSellerMutations'
 import { Plus, RefreshCw } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import {
   AlertDialog,

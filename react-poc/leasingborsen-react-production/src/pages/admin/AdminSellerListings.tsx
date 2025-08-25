@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Search, Car, Eye, Edit, RefreshCw, Download } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useSellers } from '@/hooks/useSellers'
 import { useAdminListings } from '@/hooks/useAdminListings'
@@ -25,9 +25,10 @@ interface SellerListingsFilters {
 
 
 const AdminSellerListings: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
+  const searchParams = useSearch({ strict: false })
   const [filters, setFilters] = useState<SellerListingsFilters>({
-    sellerId: searchParams.get('seller') || '',
+    sellerId: searchParams.seller || '',
     search: '',
     make: '',
     status: 'all'

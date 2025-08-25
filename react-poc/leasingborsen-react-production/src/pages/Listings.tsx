@@ -1,10 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
 import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
-import { useUrlSync } from '@/hooks/useUrlSync'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useFilterManagement } from '@/hooks/useFilterManagement'
 import { useListingsScrollRestoration } from '@/hooks/useListingsScrollRestoration'
@@ -33,13 +32,16 @@ const sortOptions: SortOption[] = [
   { value: 'desc', label: 'Højeste pris' }
 ]
 
+const listingsRoute = getRouteApi('/listings')
+
 const Listings: React.FC = () => {
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate({ from: '/listings' })
+  const search = listingsRoute.useSearch()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   
-  // Use optimized URL sync hook
-  const { currentFilters, sortOrder } = useUrlSync()
+  // Extract current filters and sort from search params
+  const currentFilters = useMemo(() => search, [search])
+  const sortOrder = search.sort || 'newest'
   
   const { 
     setSortOrder,
@@ -61,15 +63,17 @@ const Listings: React.FC = () => {
 
   // Check for showFilters URL parameter to automatically open mobile filter overlay
   useEffect(() => {
-    if (searchParams.get('showFilters') === 'true') {
+    if (search.showFilters === 'true') {
       setMobileFilterOpen(true)
       
       // Clean up the showFilters parameter from URL
-      const newParams = new URLSearchParams(searchParams)
-      newParams.delete('showFilters')
-      setSearchParams(newParams, { replace: true })
+      const { showFilters, ...cleanSearch } = search
+      navigate({ 
+        search: cleanSearch,
+        replace: true 
+      })
     }
-  }, [searchParams, setSearchParams])
+  }, [search, navigate])
 
   // Use infinite query for listings
   const {
@@ -154,7 +158,7 @@ const Listings: React.FC = () => {
 
   // Handle navigation to clean listings page
   const handleNavigateToListings = useCallback(() => {
-    navigate('/listings')
+    navigate({ to: '/listings' })
   }, [navigate])
 
   return (

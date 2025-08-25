@@ -15,7 +15,7 @@ import {
   Loader2,
   Layers
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import type { Seller, SellerPDFUrl } from '@/hooks/useSellers'
 import { useReferenceData } from '@/hooks/useReferenceData'
@@ -921,10 +921,16 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
     
     if (completedExtractions.length === 1 && completedExtractions[0].extractionSessionId) {
       // Single extraction or merged - go directly to the session
-      navigate(`/admin/extraction-sessions/${completedExtractions[0].extractionSessionId}`)
+      navigate({ 
+        to: '/admin/extraction-sessions/$sessionId',
+        params: { sessionId: completedExtractions[0].extractionSessionId }
+      })
     } else {
       // Multiple separate extractions - go to the filtered list
-      navigate(`/admin/extraction-sessions?seller=${seller.id}`)
+      navigate({ 
+        to: '/admin/extraction-sessions',
+        search: { seller: seller.id }
+      })
     }
     
     onOpenChange(false)

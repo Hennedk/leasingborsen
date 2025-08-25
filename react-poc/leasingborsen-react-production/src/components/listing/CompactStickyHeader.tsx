@@ -1,5 +1,5 @@
 import { ArrowLeft } from 'lucide-react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useSearch } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -14,7 +14,7 @@ const CompactStickyHeader: React.FC<CompactStickyHeaderProps> = ({
   variant,
   resultCount 
 }) => {
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearch({ strict: false })
   
   return (
     <header 

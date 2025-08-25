@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
@@ -46,14 +46,14 @@ const BatchReviewPage: React.FC = () => {
             </div>
             <div className="flex gap-2 pt-2">
               <Button 
-                onClick={() => navigate('/admin/extraction')}
+                onClick={() => navigate({ to: '/admin/extraction' })}
                 className="flex items-center gap-2"
               >
                 Gå til AI Ekstraktion <ArrowRight className="h-4 w-4" />
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => navigate('/admin/sellers')}
+                onClick={() => navigate({ to: '/admin/sellers' })}
               >
                 Tilbage til Sælgere
               </Button>

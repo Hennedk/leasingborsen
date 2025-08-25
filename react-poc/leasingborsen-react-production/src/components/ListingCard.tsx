@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, getRouteApi } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -26,8 +26,17 @@ interface ListingCardProps {
   currentPage?: number
 }
 
+const listingsRoute = getRouteApi('/listings')
+
 const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1 }) => {
-  const [searchParams] = useSearchParams()
+  // Try to get search params, fallback to empty object if not on listings route
+  let searchParams = {}
+  try {
+    searchParams = listingsRoute.useSearch()
+  } catch {
+    // Not on listings route, use empty search params
+    searchParams = {}
+  }
   const { prepareListingNavigation } = useNavigationContext()
   
   // Optimized image loading with shared intersection observer
@@ -71,11 +80,19 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   
   // Optimized interaction handlers with useCallback
   const onCardClick = useCallback(() => {
+    // Convert search object to URLSearchParams for compatibility
+    const urlSearchParams = new URLSearchParams()
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        urlSearchParams.set(key, String(value))
+      }
+    })
+    
     // Prepare navigation context before navigation
     prepareListingNavigation(
       window.scrollY,
       currentPage,
-      searchParams
+      urlSearchParams
     )
     
     // Immediate visual feedback
@@ -180,7 +197,8 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
   return (
     <Link
-      to={`/listing/${car.id || car.listing_id}`}
+      to="/listing/$id"
+      params={{ id: car.id || car.listing_id || '' }}
       className="block group no-underline relative"
       onClick={onCardClick}
     >

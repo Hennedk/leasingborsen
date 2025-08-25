@@ -11,7 +11,7 @@ import {
   Clock, CheckCircle, XCircle, GitCommit, AlertTriangle
 } from 'lucide-react'
 import { useExtractionSessions } from '@/hooks/useListingComparison'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from '@tanstack/react-router'
 import { ExtractionSessionReview } from '@/components/admin/ExtractionSessionReview'
 
 export const AdminExtractionSessions: React.FC = () => {
@@ -90,7 +90,7 @@ export const AdminExtractionSessions: React.FC = () => {
             onBack={() => {
               if (sessionId) {
                 // If we came via URL, navigate back to sessions list
-                navigate('/admin/extraction-sessions')
+                navigate({ to: '/admin/extraction-sessions' })
               } else {
                 // If we came via state, just clear the selection
                 setSelectedSessionId(null)
@@ -398,7 +398,7 @@ export const AdminExtractionSessions: React.FC = () => {
               <p className="text-muted-foreground mb-4">
                 Extraction sessions are created automatically when processing PDFs from seller pages.
               </p>
-              <Button onClick={() => navigate('/admin/sellers')}>
+              <Button onClick={() => navigate({ to: '/admin/sellers' })}>
                 <Plus className="h-4 w-4 mr-2" />
                 Go to Sellers
               </Button>

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Upload, FileText, CheckCircle, AlertCircle, Info, Settings, ExternalLink, Link, X } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useJobProgress } from '@/hooks/useJobProgress'
 import { toast } from 'sonner'
 import type { Seller } from '@/hooks/useSellers'
@@ -959,15 +959,21 @@ export const SellerPDFUploadModal: React.FC<SellerPDFUploadModalProps> = ({
     if (state.extractionResult?.extractionSessionId) {
       const targetUrl = `/admin/extraction-sessions/${state.extractionResult.extractionSessionId}`
       console.log('🔗 Navigation - going to extraction session:', targetUrl)
-      navigate(targetUrl)
+      navigate({ 
+        to: '/admin/extraction-sessions/$sessionId',
+        params: { sessionId: state.extractionResult.extractionSessionId }
+      })
       onOpenChange(false)
     } else if (state.extractionResult?.jobId) {
       console.log('🔗 Navigation - fallback to admin listings')
-      navigate('/admin/listings')
+      navigate({ to: '/admin/listings' })
       onOpenChange(false)
     } else if (state.extractionResult?.batchId) {
       console.log('🔗 Navigation - fallback to batch review')
-      navigate(`/admin/batches/${state.extractionResult.batchId}/review`)
+      navigate({ 
+        to: '/admin/batches/$batchId/review',
+        params: { batchId: state.extractionResult.batchId }
+      })
       onOpenChange(false)
     } else {
       console.log('🔗 Navigation - no valid navigation option found!')

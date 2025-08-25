@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils'
 import { StandaloneSellerSelect } from '@/components/admin/StandaloneSellerSelect'
 import { useListingComparison, type ExtractedCar, type ListingMatch } from '@/hooks/useListingComparison'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 
 interface ExtractedCarsResultsWithComparisonProps {
@@ -125,7 +125,7 @@ export const ExtractedCarsResultsWithComparison: React.FC<ExtractedCarsResultsWi
       })
 
       // Navigate to extraction sessions page to review changes
-      navigate('/admin/extraction-sessions')
+      navigate({ to: '/admin/extraction-sessions' })
     } catch (error) {
       console.error('Save error:', error)
       toast.error('Fejl ved gemning', {

@@ -1,12 +1,21 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { getRouteApi } from '@tanstack/react-router'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { AdminListingFormNew as AdminListingFormComponent } from '@/components/admin/listings/forms'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { useAdminListing } from '@/hooks/useAdminListings'
 
+const editRoute = getRouteApi('/admin/listings/edit/$id')
+
 const AdminListingFormPage: React.FC = () => {
-  const { id } = useParams()
+  // Try to get id from edit route, fallback to empty string for create
+  let id = ''
+  try {
+    id = editRoute.useParams().id
+  } catch {
+    // Not on edit route, this is create mode
+    id = ''
+  }
   const isEditing = Boolean(id)
   
   const { data: listingData, isLoading } = useAdminListing(id || '')

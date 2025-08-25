@@ -1,12 +1,21 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { getRouteApi } from '@tanstack/react-router'
 import AdminLayout from '@/components/admin/AdminLayout'
 import SellerForm from '@/components/admin/SellerForm'
 import { Breadcrumb } from '@/components/ui/breadcrumb'
 import { useSeller } from '@/hooks/useSellers'
 
+const editRoute = getRouteApi('/admin/sellers/edit/$id')
+
 const AdminSellerForm: React.FC = () => {
-  const { id } = useParams()
+  // Try to get id from edit route, fallback to empty string for create
+  let id = ''
+  try {
+    id = editRoute.useParams().id
+  } catch {
+    // Not on edit route, this is create mode
+    id = ''
+  }
   const isEditing = Boolean(id)
   
   const { data: sellerData, isLoading } = useSeller(id || '')

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
@@ -242,7 +242,7 @@ export const useAdminFormState = ({ listing, isEditing = false }: UseAdminFormSt
       const confirmed = confirm('Du har ikke-gemte ændringer. Er du sikker på, at du vil forlade siden?')
       if (!confirmed) return
     }
-    navigate('/admin/listings')
+    navigate({ to: '/admin/listings' })
   }, [hasUnsavedChanges, navigate])
 
   const handleReset = useCallback(() => {

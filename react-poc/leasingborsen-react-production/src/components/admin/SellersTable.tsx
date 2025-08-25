@@ -13,7 +13,7 @@ import {
   MapPin,
   Car
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import type { Seller } from '@/hooks/useSellers'
 import { SellerImportButton } from './sellers/SellerImportButton'
 import { ComponentErrorBoundary } from '@/components/ErrorBoundaries'
@@ -205,7 +205,7 @@ const SellersTable = React.memo<SellersTableProps>(({
               asChild
               title="Se annoncer"
             >
-              <Link to={`/admin/sellers/listings?seller=${seller.id}`}>
+              <Link to="/admin/sellers/listings" search={{ seller: seller.id }}>
                 <Eye className="h-4 w-4" />
               </Link>
             </Button>
@@ -216,7 +216,7 @@ const SellersTable = React.memo<SellersTableProps>(({
               asChild
               title="Rediger sælger"
             >
-              <Link to={`/admin/sellers/edit/${seller.id}`}>
+              <Link to="/admin/sellers/edit/$id" params={{ id: seller.id }}>
                 <Edit className="h-4 w-4" />
               </Link>
             </Button>

@@ -24,7 +24,7 @@ import {
   ComponentErrorBoundary 
 } from '@/components/ErrorBoundaries'
 import { Plus, X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import {
   AlertDialog,

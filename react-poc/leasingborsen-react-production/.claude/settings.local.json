@@ -68,7 +68,9 @@
       "Bash(npm run dev:*)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(npm run:*)",
-      "mcp__serena__replace_symbol_body"
+      "mcp__serena__replace_symbol_body",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

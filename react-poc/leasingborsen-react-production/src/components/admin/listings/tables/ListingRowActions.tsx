@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
 import { Edit, Trash2, Eye, Copy } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link } from '@tanstack/react-router'
 import type { CarListing } from '@/lib/supabase'
 
 interface ListingRowActionsProps {
@@ -42,7 +42,7 @@ export const ListingRowActions = React.memo<ListingRowActionsProps>(({
         asChild
         aria-label={`Rediger ${listing.make} ${listing.model} annonce`}
       >
-        <Link to={`/admin/listings/edit/${listing.listing_id}`}>
+        <Link to="/admin/listings/edit/$id" params={{ id: listing.listing_id }}>
           <Edit className="h-4 w-4" aria-hidden="true" />
         </Link>
       </Button>

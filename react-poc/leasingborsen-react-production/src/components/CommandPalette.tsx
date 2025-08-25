@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import {
   CommandDialog,
   CommandEmpty,
@@ -57,7 +57,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Gå til dashboard',
       icon: LayoutDashboard,
       action: () => {
-        navigate('/admin')
+        navigate({ to: '/admin' })
         onOpenChange(false)
       },
       keywords: ['dashboard', 'hjem', 'oversigt'],
@@ -68,7 +68,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Se alle annoncer',
       icon: Car,
       action: () => {
-        navigate('/admin/listings')
+        navigate({ to: '/admin/listings' })
         onOpenChange(false)
       },
       keywords: ['annoncer', 'biler', 'listings'],
@@ -79,7 +79,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Administrer sælgere',
       icon: Users,
       action: () => {
-        navigate('/admin/sellers')
+        navigate({ to: '/admin/sellers' })
         onOpenChange(false)
       },
       keywords: ['sælgere', 'brugere', 'sellers'],
@@ -90,7 +90,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Systemindstillinger',
       icon: Settings,
       action: () => {
-        navigate('/admin/settings')
+        navigate({ to: '/admin/settings' })
         onOpenChange(false)
       },
       keywords: ['indstillinger', 'settings', 'konfiguration'],
@@ -103,7 +103,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Tilføj en ny bil til platformen',
       icon: Plus,
       action: () => {
-        navigate('/admin/listings/create')
+        navigate({ to: '/admin/listings/create' })
         onOpenChange(false)
       },
       keywords: ['opret', 'ny', 'annonce', 'bil', 'create'],
@@ -114,7 +114,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       description: 'Tilføj en ny sælger',
       icon: Plus,
       action: () => {
-        navigate('/admin/sellers/create')
+        navigate({ to: '/admin/sellers/create' })
         onOpenChange(false)
       },
       keywords: ['opret', 'ny', 'sælger', 'bruger', 'create'],

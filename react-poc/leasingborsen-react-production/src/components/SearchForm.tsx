@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useListingCount } from '@/hooks/useListings'
@@ -94,14 +94,17 @@ const SearchForm: React.FC<SearchFormProps> = ({
     })
     
     // Navigate to listings with filters
-    const searchParams = new URLSearchParams()
+    const searchObject: any = {}
     Object.entries(localFilters).forEach(([key, value]) => {
       if (value && value !== '' && value !== null) {
-        searchParams.set(key, value.toString())
+        searchObject[key] = value
       }
     })
     
-    navigate(`/listings?${searchParams.toString()}`)
+    navigate({ 
+      to: '/listings',
+      search: searchObject
+    })
   }
 
   const handleMoreFilters = () => {
@@ -121,17 +124,20 @@ const SearchForm: React.FC<SearchFormProps> = ({
     })
     
     // Navigate to listings with filters and show filter overlay on mobile
-    const searchParams = new URLSearchParams()
+    const searchObject: any = {}
     Object.entries(localFilters).forEach(([key, value]) => {
       if (value && value !== '' && value !== null) {
-        searchParams.set(key, value.toString())
+        searchObject[key] = value
       }
     })
     
     // Add parameter to show filter overlay on mobile
-    searchParams.set('showFilters', 'true')
+    searchObject.showFilters = 'true'
     
-    navigate(`/listings?${searchParams.toString()}`)
+    navigate({ 
+      to: '/listings',
+      search: searchObject
+    })
   }
 
   const cardPadding = size === 'compact' ? 'p-4' : 'p-6'

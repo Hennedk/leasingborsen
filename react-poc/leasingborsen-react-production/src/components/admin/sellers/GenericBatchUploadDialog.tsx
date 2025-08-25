@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Upload, FileText, CheckCircle, AlertCircle, Info } from 'lucide-react'
 import { pdfExtractor } from '@/services/PDFExtractor'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 // import { supabase } from '@/lib/supabase'
 import { useJobProgress } from '@/hooks/useJobProgress'
 
@@ -254,7 +254,10 @@ export const GenericBatchUploadDialog = React.memo<GenericBatchUploadDialogProps
 
   const handleViewBatch = useCallback(() => {
     if (state.result?.batchId) {
-      navigate(`/admin/batches/${state.result.batchId}/review`)
+      navigate({ 
+        to: '/admin/batches/$batchId/review',
+        params: { batchId: state.result.batchId }
+      })
       onOpenChange(false)
     }
   }, [state.result, navigate, onOpenChange])

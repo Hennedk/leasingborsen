@@ -1,7 +1,32 @@
 import { useEffect, useCallback, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import type { SortOrder } from '@/types'
+
+const listingsRoute = getRouteApi('/listings')
+
+// Type for search parameters returned by the listings route
+type ListingsSearchParams = {
+  page?: number
+  limit?: number
+  make?: string
+  model?: string
+  makes?: string[]
+  models?: string[]
+  body_type?: string
+  fuel_type?: string
+  transmission?: string
+  price_min?: number
+  price_max?: number
+  seats_min?: number
+  seats_max?: number
+  horsepower_min?: number
+  horsepower_max?: number
+  sort?: SortOrder
+  view?: 'grid' | 'list'
+  q?: string
+  showFilters?: string
+} | Record<string, never> // Allow empty object for fallback
 
 /**
  * Custom hook for URL synchronization with filter state
@@ -14,7 +39,16 @@ import type { SortOrder } from '@/types'
  * - Sort order synchronization
  */
 export const useUrlSync = () => {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate({ from: '/listings' })
+  // Try to get search params, fallback to empty object if not on listings route
+  let searchParams: ListingsSearchParams = {}
+  try {
+    searchParams = listingsRoute.useSearch()
+  } catch {
+    // Not on listings route, use empty search params
+    searchParams = {}
+  }
+  
   const isInitialLoad = useRef(true)
   const isUpdatingUrl = useRef(false)
   
@@ -64,16 +98,16 @@ export const useUrlSync = () => {
       return
     }
     
-    const urlMake = searchParams.get('make')
-    const urlModel = searchParams.get('model')
-    const urlBodyType = searchParams.get('body_type')
-    const urlFuelType = searchParams.get('fuel_type')
-    const urlTransmission = searchParams.get('transmission')
-    const urlPriceMin = searchParams.get('price_min')
-    const urlPriceMax = searchParams.get('price_max')
-    const urlSeatsMin = searchParams.get('seats_min')
-    const urlSeatsMax = searchParams.get('seats_max')
-    const urlSort = searchParams.get('sort')
+    const urlMake = searchParams.make
+    const urlModel = searchParams.model
+    const urlBodyType = searchParams.body_type
+    const urlFuelType = searchParams.fuel_type
+    const urlTransmission = searchParams.transmission
+    const urlPriceMin = searchParams.price_min
+    const urlPriceMax = searchParams.price_max
+    const urlSeatsMin = searchParams.seats_min
+    const urlSeatsMax = searchParams.seats_max
+    const urlSort = searchParams.sort
 
     // Check if there are any URL parameters that indicate a fresh search
     const hasUrlFilters = urlMake || urlModel || urlBodyType || urlFuelType || 
@@ -81,8 +115,13 @@ export const useUrlSync = () => {
                          urlSeatsMin || urlSeatsMax || urlSort
 
     if (hasUrlFilters) {
-      // Take snapshot of URL
-      urlSnapshot.current = new URLSearchParams(searchParams)
+      // Take snapshot of URL - create URLSearchParams from searchParams object
+      urlSnapshot.current = new URLSearchParams()
+      Object.entries(searchParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          urlSnapshot.current?.set(key, String(value))
+        }
+      })
       
       // Reset filters first to ensure clean state
       resetFilters()
@@ -167,75 +206,79 @@ export const useUrlSync = () => {
     // Set flag to prevent circular updates
     isUpdatingUrl.current = true
     
-    const params = new URLSearchParams(searchParams)
+    // Create new search object
+    const newSearch: Partial<ListingsSearchParams> = { ...searchParams }
     
     // Handle make parameter
     if (makes.length > 0) {
-      params.set('make', makes[0]) // Use first make for now
+      newSearch.make = makes[0] // Use first make for now
     } else {
-      params.delete('make')
+      delete newSearch.make
     }
     
     // Handle model parameter  
     if (models.length > 0) {
-      params.set('model', models[0]) // Use first model for now
+      newSearch.model = models[0] // Use first model for now
     } else {
-      params.delete('model')
+      delete newSearch.model
     }
     
     // Handle array-based filters with proper removal
     if (body_type && body_type.length > 0) {
-      params.set('body_type', body_type.join(','))
+      newSearch.body_type = body_type.join(',')
     } else {
-      params.delete('body_type')
+      delete newSearch.body_type
     }
     
     if (fuel_type && fuel_type.length > 0) {
-      params.set('fuel_type', fuel_type.join(','))
+      newSearch.fuel_type = fuel_type.join(',')
     } else {
-      params.delete('fuel_type')
+      delete newSearch.fuel_type
     }
     
     if (transmission && transmission.length > 0) {
-      params.set('transmission', transmission.join(','))
+      newSearch.transmission = transmission.join(',')
     } else {
-      params.delete('transmission')
+      delete newSearch.transmission
     }
     
     // Handle numeric filters with proper removal
     if (price_min !== null && price_min !== undefined) {
-      params.set('price_min', price_min.toString())
+      newSearch.price_min = price_min
     } else {
-      params.delete('price_min')
+      delete newSearch.price_min
     }
     
     if (price_max !== null && price_max !== undefined) {
-      params.set('price_max', price_max.toString())
+      newSearch.price_max = price_max
     } else {
-      params.delete('price_max')
+      delete newSearch.price_max
     }
     
     if (seats_min !== null && seats_min !== undefined) {
-      params.set('seats_min', seats_min.toString())
+      newSearch.seats_min = seats_min
     } else {
-      params.delete('seats_min')
+      delete newSearch.seats_min
     }
     
     if (seats_max !== null && seats_max !== undefined) {
-      params.set('seats_max', seats_max.toString())
+      newSearch.seats_max = seats_max
     } else {
-      params.delete('seats_max')
+      delete newSearch.seats_max
     }
     
     // Handle sort order
-    if (sortOrder !== 'lease_score_desc') {
-      params.set('sort', sortOrder)
+    if (sortOrder !== 'newest') {
+      newSearch.sort = sortOrder
     } else {
-      params.delete('sort')
+      delete newSearch.sort
     }
     
-    // Always update URL to reflect current state
-    setSearchParams(params, { replace: true })
+    // Always update URL to reflect current state using TanStack Router navigation
+    navigate({ 
+      search: newSearch,
+      replace: true 
+    })
   }, [
     makes,
     models,
@@ -247,8 +290,7 @@ export const useUrlSync = () => {
     seats_min,
     seats_max,
     sortOrder,
-    searchParams,
-    setSearchParams
+    navigate
   ])
 
   return {

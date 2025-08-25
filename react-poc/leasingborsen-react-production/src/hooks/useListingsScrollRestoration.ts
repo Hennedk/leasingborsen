@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef } from "react";
-import { useLocation, useNavigationType } from "react-router-dom";
+import { useLocation } from "@tanstack/react-router";
 
 const KEY_PREFIX = "listings-scroll:";
 
@@ -11,13 +11,18 @@ const normalizeSearch = (search: string) => {
 
 export function useListingsScrollRestoration(ready = true) {
   const location = useLocation();
-  const navType = useNavigationType(); // "POP" | "PUSH" | "REPLACE"
+  // TanStack Router doesn't have useNavigationType, so we'll use location.state as fallback
+  const navType = "PUSH"; // Default to PUSH, will be handled by other logic
   const lastRestoredRef = useRef<string>("");
   const navigationStartRef = useRef<number>(0);
+  const hasRestoredRef = useRef<boolean>(false);
 
   // Run pre-paint to avoid any visible jump on restore
   useLayoutEffect(() => {
     if (location.pathname !== "/listings" || !ready) return;
+    
+    // Track mount time for this effect
+    const effectMountTime = Date.now();
     
     // Flag to prevent saving during restoration
     let isRestoring = false;
@@ -111,31 +116,52 @@ export function useListingsScrollRestoration(ready = true) {
         return;
       }
       
-      const scrollY = window.scrollY || 0;
-      const currentSaved = sessionStorage.getItem(key);
-      
-      // Don't overwrite a good saved position with 0 or very small values during mount
-      if (scrollY === 0 && currentSaved && parseInt(currentSaved) > 100) {
+      // Don't save within first 500ms of mount to prevent race conditions
+      if (Date.now() - effectMountTime < 500) {
         return;
       }
       
-      // Don't save positions that are decreasing rapidly (scroll animation)
-      if (currentSaved) {
-        const savedPos = parseInt(currentSaved);
-        if (savedPos > 100 && scrollY < savedPos - 50) {
+      const scrollY = window.scrollY || 0;
+      const currentSaved = sessionStorage.getItem(key);
+      const currentSavedNum = currentSaved ? parseInt(currentSaved) : null;
+      
+      // Don't overwrite a good saved position with 0 or very small values during mount
+      // Enhanced check: only save 0 if we explicitly scrolled to top, not on initial mount
+      if (scrollY === 0) {
+        // If we have a saved position > 100 and we just mounted (< 2 seconds), don't overwrite
+        if (currentSavedNum && currentSavedNum > 100 && (Date.now() - effectMountTime) < 2000) {
+          return;
+        }
+        // If we just restored a position, don't immediately overwrite with 0
+        if (hasRestoredRef.current && (Date.now() - effectMountTime) < 3000) {
           return;
         }
       }
       
+      // Don't save positions that are decreasing rapidly (scroll animation)
+      if (currentSavedNum && currentSavedNum > 100 && scrollY < currentSavedNum - 50) {
+        return;
+      }
+      
+      // Only save if we have a meaningful scroll position or if there's no saved value
       if (scrollY > 0 || currentSaved === null) {
         sessionStorage.setItem(key, String(scrollY | 0));
       }
     };
-    window.addEventListener("scroll", save, { passive: true });
+    
+    // Debounced save handler
+    let saveTimer: NodeJS.Timeout;
+    const debouncedSave = () => {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(save, 100);
+    };
+    
+    window.addEventListener("scroll", debouncedSave, { passive: true });
     window.addEventListener("pagehide", save);
 
     const restoreInstant = (y: number) => {
       isRestoring = true;
+      hasRestoredRef.current = true;
       const html = document.documentElement;
       html.classList.add("instant-nav");
 
@@ -159,18 +185,16 @@ export function useListingsScrollRestoration(ready = true) {
           requestAnimationFrame(() => {
             html.classList.remove("instant-nav");
             // Allow saving again after restoration is complete
+            // Increased delay to prevent immediate overwrite
             setTimeout(() => {
               isRestoring = false;
-            }, 100);
+            }, 300);
           });
         }
       };
       requestAnimationFrame(loop);
     };
 
-    // Create a unique restoration ID for this navigation
-    const restorationId = `${navType}-${key}-${Date.now()}`;
-    
     if (isBackLike && (saved || fallbackPos != null)) {
       const pos = saved ? (parseInt(saved, 10) || 0) : (fallbackPos as number);
       
@@ -192,7 +216,8 @@ export function useListingsScrollRestoration(ready = true) {
     navigationStartRef.current = 0;
 
     return () => {
-      window.removeEventListener("scroll", save);
+      clearTimeout(saveTimer);
+      window.removeEventListener("scroll", debouncedSave);
       window.removeEventListener("pagehide", save);
       save();
     };

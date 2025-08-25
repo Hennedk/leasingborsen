@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation } from '@tanstack/react-router'
 import { useScrollStore } from '@/stores/scrollStore'
 
 interface FullscreenHeroProps {

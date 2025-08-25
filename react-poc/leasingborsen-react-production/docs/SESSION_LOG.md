@@ -1,5 +1,55 @@
 # Session Log
 
+## Session 2025-01-25: Scroll Restoration Race Condition Fix
+
+**Duration**: ~45 minutes  
+**Scope**: Fix scroll position restoration when navigating back to listings  
+**Status**: ✅ Complete - Race condition resolved
+
+### Problem
+- Scroll position not restored when navigating back from `/listing` to `/listings`
+- Console showed position 526px being saved, but 0 being restored  
+- Race condition causing saved position to be overwritten
+
+### Root Cause Analysis
+1. **Race Condition**: Scroll save handler running before restoration completed
+2. **Timing Issue**: Position 0 saved immediately on mount, overwriting stored value
+3. **Flag Management**: `isNavigatingAway` flag not properly cleared/checked
+
+### Solution Implemented
+
+#### Files Modified
+1. **`src/hooks/useListingsScrollRestoration.ts`**
+   - Added debounced save handler (100ms delay)
+   - Mount time tracking prevents saves within first 500ms
+   - Enhanced position 0 protection logic
+   - Extended `isRestoring` flag duration to 300ms
+   - Added `hasRestoredRef` to track restoration state
+
+2. **`src/hooks/useNavigationContext.ts`**
+   - Added timestamp saving for freshness checks
+   - Save both position and timestamp to sessionStorage
+
+### Technical Details
+- **Debouncing**: Prevents rapid saves during mount/restoration
+- **Mount Protection**: Won't save 0 if saved position > 100 within 2 seconds
+- **Restoration Protection**: Won't save 0 within 3 seconds after restoration
+- **Timestamp Tracking**: Ensures fresh data for restoration
+
+### Testing Verified
+- ✅ Navigation flow: `/listings` → `/listing/:id` → back
+- ✅ Browser back button works correctly
+- ✅ Programmatic navigation with `backLike` state
+- ✅ Different filter combinations maintain separate positions
+- ✅ No visible scroll jumps during restoration
+
+### Next Steps
+- Monitor for any edge cases in production
+- Consider adding telemetry for scroll restoration success rate
+- May want to add visual indicator when scroll is restored
+
+---
+
 ## Session 2025-08-19: Price Format Standardization Across Mobile Components
 
 **Duration**: ~30 minutes  

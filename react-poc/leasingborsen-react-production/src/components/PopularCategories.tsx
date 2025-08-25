@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from '@tanstack/react-router'
 import { useFilterStore } from '@/stores/consolidatedFilterStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { Zap, DollarSign, Users, Building, Settings } from 'lucide-react'
@@ -189,7 +189,7 @@ const PopularCategories: React.FC<PopularCategoriesProps> = ({
       })
       
       // Step 3: Navigate to listings page (filters are now in global state)
-      navigate('/listings')
+      navigate({ to: '/listings' })
       
     } catch (error) {
       console.error('Navigation error:', error)

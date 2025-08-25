@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from '@tanstack/react-router'
 
 interface NavigationState {
   from: 'listings' | 'direct' | 'other'
@@ -87,7 +87,11 @@ export function useNavigationContext() {
     const normalizedSearch = normalizeSearch(searchString);
     const key = `listings-scroll:${normalizedSearch}`;
     
+    // Save the position with a timestamp to ensure it's fresh
     sessionStorage.setItem(key, String(scrollPosition | 0));
+    
+    // Also save a backup timestamp to verify freshness
+    sessionStorage.setItem(`${key}:timestamp`, String(Date.now()));
   }, [saveNavigationState])
   
   // Get navigation info for current page
@@ -124,10 +128,10 @@ export function useNavigationContext() {
     // If we have history from listings, use browser back for real POP navigation
     // This is more reliable for scroll restoration than programmatic navigation
     if (info.hasHistory && info.from === 'listings') {
-      navigate(-1);
+      window.history.back();
     } else {
-      // No history - do programmatic navigation with backLike state
-      navigate('/listings', { state: { backLike: true } })
+      // No history - do programmatic navigation
+      navigate({ to: '/listings' })
     }
   }, [getNavigationInfo, navigate])
   
