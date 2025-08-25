@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
 import { 
   useNavigate, 
-  useRouter,
   useLocation,
   getRouteApi 
 } from '@tanstack/react-router'

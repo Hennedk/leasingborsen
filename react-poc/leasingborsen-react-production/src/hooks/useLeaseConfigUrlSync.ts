@@ -8,8 +8,8 @@ interface ConfigState {
 }
 
 export function useLeaseConfigUrlSync(): [ConfigState, (key: keyof ConfigState, value: number) => void] {
-  const navigate = useNavigate()
-  const search = useSearch({ strict: false }) // Allow usage from any route
+  const navigate = useNavigate({ from: '/listings' })
+  const search = useSearch({ from: '/listings' })
   
   const config = useMemo(() => ({
     km: Number(search.km) || 15000,
@@ -18,12 +18,11 @@ export function useLeaseConfigUrlSync(): [ConfigState, (key: keyof ConfigState, 
   }), [search])
   
   const updateConfig = useCallback((key: keyof ConfigState, value: number) => {
-    const newSearch = { ...search, [key]: value }
     navigate({ 
-      search: newSearch,
+      search: { ...search, [key]: value },
       replace: true 
     })
-  }, [search, navigate])
+  }, [navigate, search])
   
   return [config, updateConfig]
 }

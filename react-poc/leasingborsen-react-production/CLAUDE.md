@@ -8,7 +8,7 @@ Building Denmark's premier car leasing comparison platform for consumers.
 
 - **MVP Goal**: Validate that Danish consumers want centralized leasing offer comparisons
 - **Core Value**: Automated PDF extraction of dealer inventories for real-time pricing
-- **Tech Stack**: React 19 + TypeScript + Vite + Supabase + shadcn/ui
+- **Tech Stack**: React 19 + TypeScript + Vite + TanStack Router v2 + Supabase + shadcn/ui
 - **Language**: Danish-first interface (da-DK localization)
 
 ## 🔄 Session Management & Handover
@@ -132,6 +132,22 @@ Deploy to Vercel    PR + Review         npm run dev
 - **Extract** components over 300 lines
 - **Memoize** expensive list renders
 - **Example**: See `docs/CODE_PATTERNS.md`
+
+### Navigation & Routing (TanStack Router v2)
+```typescript
+// Type-safe navigation
+import { useNavigate, Link } from '@tanstack/react-router'
+
+// Navigate with parameters
+const navigate = useNavigate()
+navigate({ to: '/listing/$id', params: { id: 'abc-123' } })
+
+// Links with search params
+<Link to="/listings" search={{ make: 'Toyota' }}>View Toyota Cars</Link>
+
+// Search params with validation (Zod schemas in route files)
+const search = listingsRoute.useSearch() // Fully typed
+```
 
 ### State Management
 ```typescript

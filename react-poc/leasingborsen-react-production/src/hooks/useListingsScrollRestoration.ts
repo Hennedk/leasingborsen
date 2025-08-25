@@ -11,8 +11,6 @@ const normalizeSearch = (search: string) => {
 
 export function useListingsScrollRestoration(ready = true) {
   const location = useLocation();
-  // TanStack Router doesn't have useNavigationType, so we'll use location.state as fallback
-  const navType = "PUSH"; // Default to PUSH, will be handled by other logic
   const lastRestoredRef = useRef<string>("");
   const navigationStartRef = useRef<number>(0);
   const hasRestoredRef = useRef<boolean>(false);
@@ -27,10 +25,13 @@ export function useListingsScrollRestoration(ready = true) {
     // Flag to prevent saving during restoration
     let isRestoring = false;
 
-    const normalizedSearch = normalizeSearch(location.search);
+    const searchString = typeof location.search === 'string' ? location.search : new URLSearchParams(location.search as any).toString();
+    const normalizedSearch = normalizeSearch(searchString);
     const key = KEY_PREFIX + normalizedSearch;
     const saved = sessionStorage.getItem(key);
-    const isBackLike = navType === "POP" || (location.state as { backLike?: boolean })?.backLike === true;
+    
+    // Detect back navigation from location state
+    const isBackLike = (location.state as { backLike?: boolean })?.backLike === true;
     
 
     // Set navigation context for other components to detect back navigation
@@ -73,7 +74,7 @@ export function useListingsScrollRestoration(ready = true) {
           const MAX_AGE = 30 * 60 * 1000;
           if (st && st.from === 'listings' && typeof st.scrollPosition === 'number' && st.timestamp && (Date.now() - st.timestamp) <= MAX_AGE) {
             const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
-            const normalizedCurrent = normalizeSearch(location.search);
+            const normalizedCurrent = normalizeSearch(searchString);
             if (normalizedStored === normalizedCurrent) {
               fallbackPos = st.scrollPosition | 0;
             }
@@ -205,7 +206,7 @@ export function useListingsScrollRestoration(ready = true) {
       
       lastRestoredRef.current = `${key}-${pos}`;
       restoreInstant(pos);
-    } else if (navType !== "POP") {
+    } else if (!isBackLike) {
       // true forward visit → clear and go to top (no smooth animation)
       sessionStorage.removeItem(key);
       lastRestoredRef.current = `${key}-0`;
@@ -221,5 +222,5 @@ export function useListingsScrollRestoration(ready = true) {
       window.removeEventListener("pagehide", save);
       save();
     };
-  }, [location.pathname, location.search, location.state, navType, ready]);
+  }, [location.pathname, location.search, location.state, ready]);
 }

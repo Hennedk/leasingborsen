@@ -15,7 +15,7 @@ const listingsSearchSchema = z.object({
   model: z.string().optional(),
   makes: z.array(z.string()).optional(),
   models: z.array(z.string()).optional(),
-  body_type: z.string().optional(),
+  body_type: z.union([z.string(), z.array(z.string())]).optional(),
   fuel_type: z.enum(['petrol','diesel','hybrid','plugin_hybrid','electric']).optional(),
   transmission: z.enum(['manual','automatic']).optional(),
   
@@ -30,6 +30,11 @@ const listingsSearchSchema = z.object({
   // Other filters
   horsepower_min: z.number().optional(),
   horsepower_max: z.number().optional(),
+  
+  // Lease configuration parameters
+  km: z.number().int().catch(15000), // km per year
+  mdr: z.number().int().catch(36), // lease months
+  udb: z.number().catch(0), // down payment
   
   // Sorting
   sort: z.enum(['price_asc','price_desc','newest','score_desc']).catch('newest'),
@@ -47,7 +52,10 @@ const listingsSearchSchema = z.object({
   limit: 20,
   sort: 'newest' as const,
   view: 'grid' as const,
-})) // Fallback with defaults for invalid searches
+  km: 15000,
+  mdr: 36,
+  udb: 0,
+})) // Fallback with defaults for invalid searches // Fallback with defaults for invalid searches
 
 export const Route = createFileRoute('/listings')({
   validateSearch: listingsSearchSchema,

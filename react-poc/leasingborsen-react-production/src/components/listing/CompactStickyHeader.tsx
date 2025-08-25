@@ -30,7 +30,7 @@ const CompactStickyHeader: React.FC<CompactStickyHeaderProps> = ({
     >
       <div className="flex items-center gap-3 px-3 h-14">
         {/* Back button - matches floating button position */}
-        <Link to={`/listings?${searchParams.toString()}`}>
+        <Link to="/listings" search={searchParams}>
           <Button 
             variant="secondary" 
             size="icon"

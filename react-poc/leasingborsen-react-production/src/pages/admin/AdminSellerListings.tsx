@@ -25,10 +25,10 @@ interface SellerListingsFilters {
 
 
 const AdminSellerListings: React.FC = () => {
-  const navigate = useNavigate()
+  const navigate = useNavigate({ from: '/admin/sellers/listings' })
   const searchParams = useSearch({ strict: false })
   const [filters, setFilters] = useState<SellerListingsFilters>({
-    sellerId: searchParams.seller || '',
+    sellerId: (searchParams as any).seller || '',
     search: '',
     make: '',
     status: 'all'
@@ -103,9 +103,9 @@ const AdminSellerListings: React.FC = () => {
     const actualSellerId = sellerId === 'all' ? '' : sellerId
     setFilters(prev => ({ ...prev, sellerId: actualSellerId }))
     if (actualSellerId) {
-      setSearchParams({ seller: actualSellerId })
+      navigate({ search: { seller: actualSellerId }, replace: true })
     } else {
-      setSearchParams({})
+      navigate({ search: {}, replace: true })
     }
   }
 
@@ -499,7 +499,7 @@ const AdminSellerListings: React.FC = () => {
                               size="sm"
                               asChild
                             >
-                              <Link to={`/listing/${listing.listing_id}`}>
+                              <Link to="/listing/$id" params={{ id: listing.listing_id || '' }}>
                                 <Eye className="h-4 w-4" />
                               </Link>
                             </Button>
@@ -508,7 +508,7 @@ const AdminSellerListings: React.FC = () => {
                               size="sm"
                               asChild
                             >
-                              <Link to={`/admin/listings/edit/${listing.listing_id}`}>
+                              <Link to="/admin/listings/edit/$id" params={{ id: listing.listing_id || '' }}>
                                 <Edit className="h-4 w-4" />
                               </Link>
                             </Button>

@@ -42,7 +42,7 @@ export const ListingRowActions = React.memo<ListingRowActionsProps>(({
         asChild
         aria-label={`Rediger ${listing.make} ${listing.model} annonce`}
       >
-        <Link to="/admin/listings/edit/$id" params={{ id: listing.listing_id }}>
+        <Link to="/admin/listings/edit/$id" params={{ id: listing.listing_id || '' }}>
           <Edit className="h-4 w-4" aria-hidden="true" />
         </Link>
       </Button>

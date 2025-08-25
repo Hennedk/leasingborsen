@@ -19,7 +19,7 @@ export const AdminExtractionSessions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const navigate = useNavigate()
-  const { sessionId } = useParams<{ sessionId?: string }>()
+  const { sessionId } = useParams({ from: '/admin/extraction-sessions/$sessionId' })
 
   const { data: sessions = [], isLoading, error } = useExtractionSessions(
     selectedSellerId === 'all' ? undefined : selectedSellerId

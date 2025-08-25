@@ -73,15 +73,16 @@ export const useUrlSync = () => {
   } = useFilterStore()
 
   // Parse array parameters from URL
-  const parseArrayParam = useCallback((param: string | null): string[] => {
+  const parseArrayParam = useCallback((param: string | string[] | undefined | null): string[] => {
     if (!param) return []
-    return param.split(',').filter(Boolean)
+    if (Array.isArray(param)) return param
+    return String(param).split(',').filter(Boolean)
   }, [])
 
   // Parse numeric parameter from URL
-  const parseNumericParam = useCallback((param: string | null): number | null => {
-    if (!param) return null
-    const parsed = parseInt(param)
+  const parseNumericParam = useCallback((param: string | number | undefined): number | null => {
+    if (param === undefined || param === null) return null
+    const parsed = typeof param === 'number' ? param : parseInt(String(param))
     return isNaN(parsed) ? null : parsed
   }, [])
 
