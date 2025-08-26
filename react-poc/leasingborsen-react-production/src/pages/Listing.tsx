@@ -101,8 +101,8 @@ const Listing: React.FC = () => {
   // Calculate result count (would come from actual search results)
   const resultCount = 37 // TODO: Get from search context
 
-  // External URL for seller (could come from listing data or be configured)
-  const externalUrl = 'https://example.com' // TODO: Get actual URL from seller/listing data
+  // External URL for seller from listing data
+  const externalUrl = car?.external_url
 
   if (isLoading) {
     return (

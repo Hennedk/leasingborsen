@@ -1131,3 +1131,102 @@ This session followed a **explore → implement → cleanup** pattern:
 
 **Session Status**: ✅ **COMPLETE**  
 **Next Session**: Ready for user testing and feedback integration
+
+## Session 2025-08-26: Scroll Restoration Enhancement
+
+**Duration**: ~1 hour  
+**Scope**: Fix and enhance scroll restoration for seamless back navigation  
+**Status**: ✅ Complete - Scroll restoration working correctly
+
+### Problem Analysis
+User requirement: "When returning back to /listings from /listing, it should be in the same scroll position as when user left /listings"
+
+The existing scroll restoration system had issues with:
+- Back navigation detection not working reliably
+- Scroll positions not being restored when returning from listing details
+- Navigation state flags not being set properly for programmatic navigation
+
+### Solution Implemented
+
+#### 1. Enhanced Back Navigation Detection (`useListingsScrollRestoration.ts`)
+- **Added robust detection using multiple methods**:
+  ```typescript
+  const detectNavigationType = () => {
+    if (explicitBackLike) return 'back';                    // Programmatic state
+    if (performance.navigation?.type === 2) return 'back';   // Browser back
+    if (saved || fallbackPos !== null) return 'back';       // Has saved position
+    return 'forward';
+  };
+  ```
+- **Enhanced scroll restoration logic**: Always restore if saved position exists
+- **Improved navigation context integration**: Better fallback position handling
+- **Added proper state management**: Clear navigation flags on arrival
+
+#### 2. Improved Smart Back Navigation (`useNavigationContext.ts`)
+- **Enhanced `smartBack()` function**: Sets explicit `backLike: true` state for programmatic navigation
+- **Added `isNavigatingBack` flag**: Helps scroll restoration detect back navigation
+- **Better timestamp management**: More reliable navigation state tracking
+
+#### 3. Optimized Data Caching (`useListings.ts`)
+- **Enhanced cache settings**: 10-minute staleTime, 30-minute gcTime
+- **Disabled unnecessary refetching**: `refetchOnReconnect: false` to preserve scroll during network changes
+- **Better data persistence**: Supports instant navigation with cached data
+
+### Technical Implementation
+
+#### Files Modified
+- **`src/hooks/useListingsScrollRestoration.ts`** - Enhanced back navigation detection
+- **`src/hooks/useNavigationContext.ts`** - Improved `smartBack()` with explicit state
+- **`src/hooks/useListings.ts`** - Optimized caching for better performance
+- **`src/pages/Listings.tsx`** - Minor cleanup and type fixes
+- **`src/routes/__root.tsx`** - Increased global gcTime to 20 minutes
+
+#### Key Behavioral Changes
+1. **Browser back button**: Now properly detected and scroll position restored
+2. **Programmatic back navigation**: `smartBack()` sets explicit state flags
+3. **Multiple detection methods**: Fallback system ensures reliable detection
+4. **Instant data loading**: Cached data provides immediate navigation
+
+### Current Routing Architecture
+
+**Three-Layer Navigation System**:
+1. **URL State** - Filters synchronized with search params (deep linkable)
+2. **Navigation Context** - Tracks scroll position, pages loaded, timestamps
+3. **Scroll Restoration** - Multi-method detection with immediate restoration
+
+**Navigation Flow**:
+```
+/listings (scroll: 1200px) → prepareListingNavigation() → /listing/$id
+                                     ↓
+              smartBack() or browser back → detectNavigationType() → restoreInstant(1200px)
+```
+
+### Testing Results
+- ✅ Browser back button restores scroll position correctly
+- ✅ "Tilbage" button (smartBack) works with programmatic navigation
+- ✅ Filter state preserved across navigation
+- ✅ Cached data provides instant loading without loading states
+- ✅ Multiple filter combinations maintain separate scroll positions
+
+### Performance Impact
+- **Instant navigation**: Cached data eliminates loading states
+- **Smooth restoration**: Frame-based scroll restoration prevents jumps
+- **Memory efficient**: 30-minute gcTime balances performance vs memory usage
+- **Network optimized**: Reduced refetching preserves scroll during connectivity changes
+
+### Commit Details
+- **Commit**: `f6a0a02` - "fix: enhance scroll restoration for seamless back navigation"
+- **Files Changed**: 5 files, 88 insertions(+), 36 deletions
+- **Impact**: Addresses core UX requirement for preserved scroll position
+
+### Session Success Criteria
+- ✅ **Core requirement met**: Scroll position preserved when returning to /listings
+- ✅ **Multiple navigation methods**: Both browser back and programmatic work
+- ✅ **Performance optimized**: Instant navigation with cached data
+- ✅ **Build successful**: No TypeScript errors or compilation issues
+- ✅ **Implementation complete**: Ready for production use
+
+---
+
+**Session Status**: ✅ **COMPLETE**  
+**Next Session**: Ready for user testing or new feature development

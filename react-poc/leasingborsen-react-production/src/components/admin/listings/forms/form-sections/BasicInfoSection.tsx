@@ -295,6 +295,38 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
           )}
         />
         
+        {/* External URL - full width */}
+        <div className="col-span-full mt-4">
+          <FormField
+            control={control as any}
+            name="external_url"
+            render={({ field }) => (
+              <FormItem className="space-y-1">
+                <FormLabel className="flex items-center gap-1 text-base font-medium">
+                  Ekstern URL
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Link til forhandlerens tilbudsside for denne bil</p>
+                      <p className="text-xs mt-1">Vises som "Gå til tilbud" knap på detaljeside</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </FormLabel>
+                <FormControl>
+                  <Input 
+                    type="url"
+                    placeholder="https://forhandler.dk/bil/tilbud/123"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
         {/* Description - full width */}
         <div className="col-span-full mt-4">
           <FormField

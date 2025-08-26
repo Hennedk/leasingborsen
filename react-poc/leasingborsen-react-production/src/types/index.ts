@@ -138,6 +138,7 @@ export interface CarMedia {
   processed_image_detail?: string
   thumbnail_base64?: string
   description?: string
+  external_url?: string
 }
 
 // Seller information

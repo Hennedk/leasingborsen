@@ -100,6 +100,10 @@ export const mediaSchema = z.object({
     z.string().url("Detail billede URL skal være en gyldig URL"),
     z.literal("")
   ]).optional(),
+  external_url: z.union([
+    z.string().url("Ekstern URL skal være en gyldig URL"),
+    z.literal("")
+  ]).optional(),
 })
 
 // Individual Offer Schema - flexible to handle both string and number inputs

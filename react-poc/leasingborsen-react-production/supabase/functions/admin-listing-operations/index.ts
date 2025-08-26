@@ -178,6 +178,7 @@ interface AdminListingRequest {
     high_beam_assist?: boolean
     fog_lights?: boolean
     additional_lights?: string[]
+    external_url?: string
   }
   listingId?: string
   offers?: Array<{
