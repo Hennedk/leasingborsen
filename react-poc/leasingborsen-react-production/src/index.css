@@ -625,6 +625,14 @@ html.instant-nav body::-webkit-scrollbar {
   .mobile-sticky-header {
     transition: none !important;
   }
+  
+  /* Disable page transitions for users who prefer reduced motion */
+  .page-transition-enter,
+  .page-transition-exit {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
+  }
 
 }
 

@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react'
-import { createRootRoute, Outlet } from '@tanstack/react-router'
+import React, { Suspense, useState, useEffect } from 'react'
+import { createRootRoute, Outlet, useLocation } from '@tanstack/react-router'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -40,12 +40,39 @@ const queryClient = new QueryClient({
   },
 })
 
-// Page transition component with navigation-aware transitions
+// Enhanced page transition component with improved timing and subtle scale effects
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const location = useLocation()
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [currentPath, setCurrentPath] = useState(location.pathname)
+
+  useEffect(() => {
+    if (location.pathname !== currentPath) {
+      // Start exit animation
+      setIsTransitioning(true)
+      
+      // After a short delay, update the path and start entrance animation
+      const timer = setTimeout(() => {
+        setCurrentPath(location.pathname)
+        setIsTransitioning(false)
+      }, 140) // Slightly less than total transition time for smooth overlap
+      
+      return () => clearTimeout(timer)
+    }
+  }, [location.pathname, currentPath])
+
   return (
     <div 
-      className="transition-opacity duration-150 ease-out opacity-100"
-      style={{ minHeight: '100vh' }}
+      className={`transition-all duration-[280ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
+        isTransitioning 
+          ? 'opacity-0 scale-[0.98] page-transition-exit' 
+          : 'opacity-100 scale-100 page-transition-enter'
+      }`}
+      style={{ 
+        minHeight: '100vh',
+        transformOrigin: 'center top',
+        willChange: 'transform, opacity'
+      }}
     >
       {children}
     </div>
