@@ -30,7 +30,7 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
     return (
       <div className="lg:hidden">
         <Card className="relative overflow-hidden bg-surface-alt">
-          <AspectRatio ratio={16 / 9}>
+          <AspectRatio ratio={4 / 3}>
             <div className="flex items-center justify-center w-full h-full bg-muted">
               <span className="text-muted-foreground">Ingen billede</span>
             </div>
@@ -43,8 +43,8 @@ const MobileHeroImage: React.FC<MobileHeroImageProps> = ({
   return (
     <div className="relative lg:hidden">
       <Card className="relative overflow-hidden bg-surface-alt border-0 rounded-none">
-        <AspectRatio ratio={16 / 9}>
-          <div className="w-full h-full flex items-center justify-center pt-16 pb-4 px-4">
+        <AspectRatio ratio={4 / 3}>
+          <div className="w-full h-full flex items-center justify-center px-4 pt-14 pb-8">
             <img 
               src={heroImage}
               alt="Bil billede"
