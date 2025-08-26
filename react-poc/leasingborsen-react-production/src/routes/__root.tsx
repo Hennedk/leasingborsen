@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react'
 import { createRootRoute, Outlet } from '@tanstack/react-router'
+import SafeContentFade from '@/components/SafeContentFade'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import ErrorBoundary from '@/components/ErrorBoundary'
@@ -55,7 +56,9 @@ function RootComponent() {
         <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
           {/* Normal route content */}
           <Suspense fallback={<PageLoader />}>
-            <Outlet />
+            <SafeContentFade>
+              <Outlet />
+            </SafeContentFade>
           </Suspense>
         </div>
         <ReactQueryDevtools initialIsOpen={false} />

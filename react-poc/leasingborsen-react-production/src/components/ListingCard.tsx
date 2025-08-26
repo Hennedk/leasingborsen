@@ -78,6 +78,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     console.error('Issue reported for car:', car?.id || car?.listing_id)
   }, [car?.id, car?.listing_id])
   
+  // Image preloading for better perceived performance
+  const preloadDetailImage = useCallback(() => {
+    if (!car?.processed_image_detail && !car?.image) return
+    
+    const img = new Image()
+    img.src = car.processed_image_detail || car.image || ''
+    // Silently preload - no need to handle errors here
+  }, [car?.processed_image_detail, car?.image])
+  
   // Optimized interaction handlers with useCallback
   const onCardClick = useCallback(() => {
     // Convert search object to URLSearchParams for compatibility
@@ -201,6 +210,8 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       params={{ id: car.id || car.listing_id || '' }}
       className="block group no-underline relative"
       onClick={onCardClick}
+      onPointerEnter={preloadDetailImage}
+      onPointerDown={preloadDetailImage}
     >
       {/* Click ripple effect */}
       {showRipple && (

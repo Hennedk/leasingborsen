@@ -626,12 +626,27 @@ html.instant-nav body::-webkit-scrollbar {
     transition: none !important;
   }
   
-  /* Disable page transitions for users who prefer reduced motion */
+  /* Disable all page transitions for users who prefer reduced motion */
   .page-transition-enter,
-  .page-transition-exit {
+  .page-transition-exit,
+  .transition-opacity {
     transition: none !important;
     transform: none !important;
     opacity: 1 !important;
+  }
+  
+  /* Disable card hover animations */
+  .hover\:border-primary\/30:hover,
+  .hover\:-translate-y-1:hover {
+    transform: none !important;
+    border-color: inherit !important;
+  }
+  
+  /* Disable other motion effects */
+  .animate-pulse,
+  .animate-spin,
+  .animate-ping {
+    animation: none !important;
   }
 
 }
