@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
 
 const KEY_PREFIX = "listings-scroll:";
+const MAX_AGE = 30 * 60 * 1000; // 30 minutes
 
 const normalizeSearch = (search: string) => {
   const p = new URLSearchParams(search);
@@ -30,9 +31,60 @@ export function useListingsScrollRestoration(ready = true) {
     const key = KEY_PREFIX + normalizedSearch;
     const saved = sessionStorage.getItem(key);
     
-    // Detect back navigation from location state
-    const isBackLike = (location.state as { backLike?: boolean })?.backLike === true;
+    // Fallback: also consider navigation context storage if list-specific key is missing
+    let fallbackPos: number | null = null;
+    if (!saved) {
+      try {
+        const raw = sessionStorage.getItem('leasingborsen-navigation');
+        if (raw) {
+          const st = JSON.parse(raw) as { from?: string; scrollPosition?: number; filters?: string; timestamp?: number };
+          if (st && st.from === 'listings' && typeof st.scrollPosition === 'number' && st.timestamp && (Date.now() - st.timestamp) <= MAX_AGE) {
+            const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
+            const normalizedCurrent = normalizeSearch(searchString);
+            if (normalizedStored === normalizedCurrent) {
+              fallbackPos = st.scrollPosition | 0;
+            }
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
     
+    // Enhanced back navigation detection
+    const detectNavigationType = () => {
+      // Check explicit state first
+      const explicitBackLike = (location.state as { backLike?: boolean })?.backLike === true;
+      if (explicitBackLike) return 'back';
+      
+      // Check Performance Navigation API (type 2 = back_forward)
+      if (typeof performance !== 'undefined' && performance.navigation && performance.navigation.type === 2) {
+        return 'back';
+      }
+      
+      // Check if we have saved position for current filters - indicates potential back navigation
+      if (saved || fallbackPos !== null) {
+        // Additional check: look at navigation context
+        const navState = sessionStorage.getItem('leasingborsen-navigation');
+        if (navState) {
+          try {
+            const state = JSON.parse(navState);
+            // Check for back navigation flag or from listings with recent timestamp
+            if ((state.isNavigatingBack || state.from === 'listings') && state.timestamp && (Date.now() - state.timestamp) < MAX_AGE) {
+              return 'back';
+            }
+          } catch {}
+        }
+        
+        // If we have a saved position and no clear forward navigation indicators, assume back
+        return 'back';
+      }
+      
+      return 'forward';
+    };
+    
+    const navigationType = detectNavigationType();
+    const isBackLike = navigationType === 'back';
 
     // Set navigation context for other components to detect back navigation
     if (isBackLike) {
@@ -61,27 +113,6 @@ export function useListingsScrollRestoration(ready = true) {
           timestamp: Date.now(),
           isBack: true
         }));
-      }
-    }
-
-    // Fallback: also consider navigation context storage if list-specific key is missing
-    let fallbackPos: number | null = null;
-    if (!saved) {
-      try {
-        const raw = sessionStorage.getItem('leasingborsen-navigation');
-        if (raw) {
-          const st = JSON.parse(raw) as { from?: string; scrollPosition?: number; filters?: string; timestamp?: number };
-          const MAX_AGE = 30 * 60 * 1000;
-          if (st && st.from === 'listings' && typeof st.scrollPosition === 'number' && st.timestamp && (Date.now() - st.timestamp) <= MAX_AGE) {
-            const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
-            const normalizedCurrent = normalizeSearch(searchString);
-            if (normalizedStored === normalizedCurrent) {
-              fallbackPos = st.scrollPosition | 0;
-            }
-          }
-        }
-      } catch {
-        // Ignore parse errors
       }
     }
 
@@ -196,7 +227,8 @@ export function useListingsScrollRestoration(ready = true) {
       requestAnimationFrame(loop);
     };
 
-    if (isBackLike && (saved || fallbackPos != null)) {
+    // Always attempt to restore if we have a saved position, regardless of navigation type
+    if (saved || fallbackPos !== null) {
       const pos = saved ? (parseInt(saved, 10) || 0) : (fallbackPos as number);
       
       // Skip if we just restored this exact same thing (prevents double restoration)
@@ -206,8 +238,8 @@ export function useListingsScrollRestoration(ready = true) {
       
       lastRestoredRef.current = `${key}-${pos}`;
       restoreInstant(pos);
-    } else if (!isBackLike) {
-      // true forward visit → clear and go to top (no smooth animation)
+    } else if (navigationType === 'forward') {
+      // Only clear and go to top for explicit forward navigation
       sessionStorage.removeItem(key);
       lastRestoredRef.current = `${key}-0`;
       restoreInstant(0);

@@ -9,6 +9,7 @@ interface NavigationState {
   timestamp: number
   referrer?: string
   isNavigatingAway?: boolean
+  isNavigatingBack?: boolean
 }
 
 const STORAGE_KEY = 'leasingborsen-navigation'
@@ -128,12 +129,29 @@ export function useNavigationContext() {
     // If we have history from listings, use browser back for real POP navigation
     // This is more reliable for scroll restoration than programmatic navigation
     if (info.hasHistory && info.from === 'listings') {
+      // Set a flag to help scroll restoration detect this as back navigation
+      try {
+        const currentState = getCurrentState()
+        if (currentState) {
+          saveNavigationState({
+            ...currentState,
+            isNavigatingBack: true,
+            timestamp: Date.now()
+          })
+        }
+      } catch (error) {
+        console.error('Failed to set back navigation state:', error)
+      }
+      
       window.history.back();
     } else {
-      // No history - do programmatic navigation
-      navigate({ to: '/listings' })
+      // No history - do programmatic navigation with explicit state
+      navigate({ 
+        to: '/listings',
+        state: { backLike: true } as any
+      })
     }
-  }, [getNavigationInfo, navigate])
+  }, [getNavigationInfo, navigate, getCurrentState, saveNavigationState])
   
   // Clear old navigation state on route change (except listings ↔ listing)
   useEffect(() => {

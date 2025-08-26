@@ -28,11 +28,12 @@ export function useInfiniteListings(filters: Partial<FilterOptions> = {}, sortOr
       // Stop loading if we have less than a full page
       return undefined
     },
-    staleTime: 3 * 60 * 1000, // 3 minutes - same as regular listings
-    gcTime: 15 * 60 * 1000, // 15 minutes for infinite queries
+    staleTime: 10 * 60 * 1000, // 10 minutes - longer stale time for better navigation
+    gcTime: 30 * 60 * 1000, // 30 minutes for infinite queries - keep data longer
     maxPages: 50, // Increased limit for better UX (1000 total listings max)
     refetchOnWindowFocus: false, // Don't refetch infinite queries on focus
     refetchOnMount: false, // Don't refetch on mount to preserve scroll position
+    refetchOnReconnect: false, // Don't refetch on network reconnection
   })
 }
 

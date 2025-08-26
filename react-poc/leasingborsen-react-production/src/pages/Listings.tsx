@@ -81,7 +81,7 @@ const Listings: React.FC = () => {
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters, sortOrder)
   
-  // Enable scroll restoration for this page (always enabled - handles content stability internally)
+  // Enable scroll restoration for this page with enhanced settings for better UX
   useListingsScrollRestoration(true)
   
   // Memoize expensive calculations for performance
@@ -146,8 +146,8 @@ const Listings: React.FC = () => {
 
   return (
     <BaseLayout>
-      {/* Mobile: Sticky Filter Bar */}
-      <div className={listingStyles.stickyFilterBar}>
+        {/* Mobile: Sticky Filter Bar */}
+        <div className={listingStyles.stickyFilterBar}>
         <div className="px-4 py-3">
           <div className="flex items-center gap-3 h-8">
             <Button

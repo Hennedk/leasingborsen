@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 15 * 60 * 1000, // 15 minutes
+      gcTime: 20 * 60 * 1000, // 20 minutes - increased for better back navigation
       retry: (failureCount, error: any) => {
         // Don't retry on 4xx errors (client errors)
         if (error?.status >= 400 && error?.status < 500) {
@@ -64,6 +64,7 @@ function RootComponent() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <div className="App" style={{backgroundColor: 'hsl(var(--background))', color: 'hsl(var(--foreground))'}}>
+          {/* Normal route content */}
           <Suspense fallback={<PageLoader />}>
             <PageTransition>
               <Outlet />
