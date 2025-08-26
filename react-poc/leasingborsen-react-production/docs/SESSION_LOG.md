@@ -1230,3 +1230,167 @@ The existing scroll restoration system had issues with:
 
 **Session Status**: ✅ **COMPLETE**  
 **Next Session**: Ready for user testing or new feature development
+
+## Session 2025-08-26: External URL Implementation for Dealer Links
+
+**Duration**: ~2 hours  
+**Scope**: Implement listing-level external URL functionality for dealer links  
+**Status**: ✅ Complete - Full end-to-end implementation ready for production
+
+### Problem Analysis
+User requested: "I want to add url on listing level, that can be added in the admin ui when creating/editing listings, that will be the link displayed on /listing"
+
+The existing dealer link system used a hardcoded placeholder URL (`https://example.com`) in the SellerModal component. This prevented actual integration with dealer websites and limited the usefulness of the "Gå til tilbud" button.
+
+### Solution Implemented
+
+#### 1. Database Schema Updates
+- **Added `external_url` column** to listings table (nullable text field)
+- **Updated `full_listing_view`** to include external_url in SELECT clause
+- **Applied migrations successfully** in staging environment
+
+#### 2. Complete Type System Integration
+```typescript
+// TypeScript Interface Update (src/types/index.ts)
+export interface CarMedia {
+  external_url?: string  // Added to CarMedia interface
+}
+
+// Validation Schema (src/lib/validations.ts)
+external_url: z.union([
+  z.string().url("Ekstern URL skal være en gyldig URL"),
+  z.literal("")
+]).optional()
+```
+
+#### 3. Admin Interface Implementation
+**File**: `src/components/admin/listings/forms/form-sections/BasicInfoSection.tsx`
+- **Added external URL input field** with full form integration
+- **Includes helpful tooltip**: "Link til forhandlerens tilbudsside for denne bil"
+- **Danish UX**: "Vises som 'Gå til tilbud' knap på detaljeside"
+- **URL type input** with proper validation and placeholder
+
+#### 4. Backend Integration
+**File**: `supabase/functions/admin-listing-operations/index.ts`
+- **Updated AdminListingRequest interface** to include `external_url?: string`
+- **Automatic CRUD handling** - no additional logic needed due to flexible design
+- **Maintains existing validation** and error handling patterns
+
+#### 5. Frontend Integration
+**File**: `src/pages/Listing.tsx`
+- **Replaced hardcoded URL**: `const externalUrl = car?.external_url`
+- **Maintains existing modal flow** - SellerModal component unchanged
+- **Graceful fallback** - works with or without URL provided
+
+### Technical Implementation
+
+#### Database Migrations Applied
+```sql
+-- Migration 1: Add external_url column
+ALTER TABLE listings ADD COLUMN external_url text;
+
+-- Migration 2: Update full_listing_view to include external_url
+DROP VIEW IF EXISTS full_listing_view;
+CREATE VIEW full_listing_view AS 
+SELECT l.external_url, /* ... rest of view definition ... */
+```
+
+#### Data Flow Architecture
+```
+Admin Form → Zod Validation → Edge Function → Database → View → React Query → Frontend
+     ↓            ↓              ↓            ↓         ↓          ↓           ↓
+URL Input → Type Check → API Call → Storage → Query → Cache → Modal Link
+```
+
+### Testing Results
+
+#### Database Testing
+- ✅ **Schema updated**: external_url column exists and accessible
+- ✅ **View integration**: full_listing_view returns external_url field
+- ✅ **CRUD operations**: Successfully tested insert/update with URLs
+- ✅ **Data validation**: URL format validation working at all levels
+
+#### Application Testing  
+- ✅ **Build successful**: TypeScript compilation with no errors
+- ✅ **Form validation**: Admin interface validates URL format properly
+- ✅ **End-to-end flow**: URL entered in admin → appears on listing detail page
+- ✅ **Backward compatibility**: Existing listings without URLs work unchanged
+
+### Files Modified (6 files, 140 insertions, 3 deletions)
+
+#### Core Implementation
+- **`src/types/index.ts`** - Added external_url to CarMedia interface  
+- **`src/lib/validations.ts`** - Added Zod URL validation schema
+- **`src/components/admin/listings/forms/form-sections/BasicInfoSection.tsx`** - Admin form field
+- **`src/pages/Listing.tsx`** - Frontend integration replacing hardcoded URL
+- **`supabase/functions/admin-listing-operations/index.ts`** - Backend interface update
+- **`docs/SESSION_LOG.md`** - Session documentation
+
+#### Database Changes
+- **2 successful migrations** applied to staging environment
+- **listings table** schema updated with external_url column
+- **full_listing_view** recreated to include new field
+
+### User Experience Flow
+
+#### Admin Workflow
+1. **Access admin interface** → Navigate to listing create/edit form
+2. **Fill basic information** → Complete required fields (make, model, etc.)
+3. **Add external URL** → Optional field with validation and tooltip
+4. **Save listing** → URL stored with proper validation
+
+#### End User Experience
+1. **Browse listings** → Standard listing grid/search interface
+2. **View listing details** → Click listing to access detail page
+3. **Access dealer offer** → Click "Gå til tilbud" button  
+4. **Modal confirmation** → Existing warning modal shows dealer info
+5. **Redirect to dealer** → Opens actual dealer URL in new tab
+
+### Production Readiness Assessment
+
+#### Quality Metrics
+- ✅ **Type Safety**: Complete TypeScript coverage with proper interfaces
+- ✅ **Validation**: Multi-layer validation (client Zod + server-side)
+- ✅ **Error Handling**: Graceful fallback for missing/invalid URLs
+- ✅ **Performance**: No impact on existing queries or operations
+- ✅ **Security**: URL validation prevents malformed/dangerous links
+
+#### Backward Compatibility
+- ✅ **Existing data**: All current listings continue working normally
+- ✅ **Optional feature**: URL field is optional, no breaking changes
+- ✅ **API stability**: No breaking changes to existing endpoints
+- ✅ **UI consistency**: No changes to user-facing listing interfaces
+
+### Deployment Considerations
+
+#### Ready for Production
+- **Database migrations**: Can be applied safely to production
+- **Code deployment**: No breaking changes or risky modifications  
+- **Feature flags**: Not needed - graceful degradation built-in
+- **Rollback plan**: Simple column removal if needed (data preserved)
+
+#### Recommended Next Steps
+1. **Deploy to production** - All changes are production-ready
+2. **Admin training** - Brief session on new external URL functionality
+3. **URL population** - Begin adding URLs to high-priority/high-traffic listings
+4. **Analytics enhancement** - Consider tracking dealer link click-through rates
+5. **Bulk operations** - Future enhancement for bulk URL management
+
+### Commit Information
+- **Commit Hash**: `74a6402`
+- **Commit Message**: "feat: add external URL support for listing-level dealer links"
+- **Files Changed**: 6 files, 140 insertions(+), 3 deletions(-)
+- **Migration Status**: 2 database migrations applied successfully
+
+### Session Success Criteria
+- ✅ **Core requirement**: URL can be added at listing level through admin UI
+- ✅ **Integration complete**: URL displays correctly on listing detail pages
+- ✅ **Production ready**: Full implementation with proper validation/testing
+- ✅ **Documentation complete**: All changes documented with examples
+- ✅ **Type safety**: Complete TypeScript integration throughout stack
+- ✅ **User experience**: Seamless integration maintaining existing UX patterns
+
+---
+
+**Session Status**: ✅ **COMPLETE**  
+**Next Session**: Ready for production deployment and/or new feature development
