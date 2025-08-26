@@ -51,6 +51,7 @@ export const useUrlSync = () => {
   
   const isInitialLoad = useRef(true)
   const isUpdatingUrl = useRef(false)
+  const isUpdatingFilters = useRef(false) // New flag to track filter updates
   
   // Fix for React error #185 - track URL sync state
   const hasAppliedUrlFilters = useRef(false)
@@ -86,7 +87,18 @@ export const useUrlSync = () => {
     return isNaN(parsed) ? null : parsed
   }, [])
 
-
+  // Store filter change context in sessionStorage for scroll restoration hook
+  const setFilterChangeContext = useCallback((isFilterChange: boolean) => {
+    try {
+      const context = {
+        isFilterChange,
+        timestamp: Date.now()
+      }
+      sessionStorage.setItem('leasingborsen-filter-context', JSON.stringify(context))
+    } catch {
+      // Ignore storage errors
+    }
+  }, [])
 
   // Initialize filters from URL params (URL → Filters, one-time only)
   useEffect(() => {
@@ -116,6 +128,9 @@ export const useUrlSync = () => {
                          urlSeatsMin || urlSeatsMax || urlSort
 
     if (hasUrlFilters) {
+      // This is URL-driven filter change, not user interaction
+      setFilterChangeContext(false)
+      
       // Take snapshot of URL - create URLSearchParams from searchParams object
       urlSnapshot.current = new URLSearchParams()
       Object.entries(searchParams).forEach(([key, value]) => {
@@ -186,7 +201,7 @@ export const useUrlSync = () => {
     
     // Mark initial load as complete
     isInitialLoad.current = false
-  }, [searchParams, setFilter, setSortOrder, resetFilters, parseArrayParam, parseNumericParam]) // ← Only depend on searchParams and functions, not filter values
+  }, [searchParams, setFilter, setSortOrder, resetFilters, parseArrayParam, parseNumericParam, setFilterChangeContext]) // ← Only depend on searchParams and functions, not filter values
 
   // Sync filter state changes back to URL (after initial load)
   useEffect(() => {
@@ -200,6 +215,10 @@ export const useUrlSync = () => {
     }
     
     if (isInitialLoad.current) return
+    
+    // This is a filter change triggered by user interaction
+    isUpdatingFilters.current = true
+    setFilterChangeContext(true)
     
     // Set flag to prevent circular updates
     isUpdatingUrl.current = true
@@ -277,6 +296,11 @@ export const useUrlSync = () => {
       search: newSearch,
       replace: true 
     })
+    
+    // Reset filter update flag after navigation
+    setTimeout(() => {
+      isUpdatingFilters.current = false
+    }, 0)
   }, [
     makes,
     models,
@@ -288,7 +312,8 @@ export const useUrlSync = () => {
     seats_min,
     seats_max,
     sortOrder,
-    navigate
+    navigate,
+    setFilterChangeContext
   ])
 
   return {
@@ -304,6 +329,7 @@ export const useUrlSync = () => {
       seats_min,
       seats_max
     },
-    sortOrder
+    sortOrder,
+    isUpdatingFilters: isUpdatingFilters.current
   }
 }

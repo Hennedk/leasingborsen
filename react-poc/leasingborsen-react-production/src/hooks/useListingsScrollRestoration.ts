@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
 
 const KEY_PREFIX = "listings-scroll:";
@@ -16,9 +16,29 @@ export function useListingsScrollRestoration(ready = true) {
   const navigationStartRef = useRef<number>(0);
   const hasRestoredRef = useRef<boolean>(false);
 
+  // Helper function to check if this is a filter change vs navigation
+  const isFilterChange = useCallback(() => {
+    try {
+      const contextRaw = sessionStorage.getItem('leasingborsen-filter-context');
+      if (!contextRaw) return false;
+      
+      const context = JSON.parse(contextRaw);
+      // Consider it a filter change if the flag is set and it's recent (within 1 second)
+      const isRecent = context.timestamp && (Date.now() - context.timestamp) < 1000;
+      return context.isFilterChange && isRecent;
+    } catch {
+      return false;
+    }
+  }, []);
+
   // Run pre-paint to avoid any visible jump on restore
   useLayoutEffect(() => {
     if (location.pathname !== "/listings" || !ready) return;
+    
+    // Skip scroll restoration if this is a filter change
+    if (isFilterChange()) {
+      return;
+    }
     
     // Track mount time for this effect
     const effectMountTime = Date.now();
@@ -137,9 +157,9 @@ export function useListingsScrollRestoration(ready = true) {
       return false;
     };
 
-    // Don't save during restoration or when navigating away
+    // Don't save during restoration or when navigating away or during filter changes
     const save = () => {
-      if (isRestoring) {
+      if (isRestoring || isFilterChange()) {
         return;
       }
       
@@ -254,5 +274,5 @@ export function useListingsScrollRestoration(ready = true) {
       window.removeEventListener("pagehide", save);
       save();
     };
-  }, [location.pathname, location.search, location.state, ready]);
+  }, [location.pathname, location.search, location.state, ready, isFilterChange]);
 }
