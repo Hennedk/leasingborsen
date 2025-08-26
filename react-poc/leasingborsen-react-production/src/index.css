@@ -629,7 +629,9 @@ html.instant-nav body::-webkit-scrollbar {
   /* Disable all page transitions for users who prefer reduced motion */
   .page-transition-enter,
   .page-transition-exit,
-  .transition-opacity {
+  .transition-opacity,
+  .duration-150,
+  .duration-300 {
     transition: none !important;
     transform: none !important;
     opacity: 1 !important;
