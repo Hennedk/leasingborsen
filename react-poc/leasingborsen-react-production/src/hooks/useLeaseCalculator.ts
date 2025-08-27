@@ -13,7 +13,7 @@ export interface LeaseOption {
 }
 
 // Lease score calculation function (simplified version of Edge Function logic)
-const calculateLeaseScore = (
+export const calculateLeaseScore = (
   monthlyPrice: number,
   retailPrice: number,
   mileagePerYear: number,
