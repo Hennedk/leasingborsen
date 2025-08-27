@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { Link, getRouteApi } from '@tanstack/react-router'
+import { Link, getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -38,6 +38,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     searchParams = {}
   }
   const { prepareListingNavigation } = useNavigationContext()
+  const navigate = useNavigate()
   
   // Optimized image loading with shared intersection observer
   const {
@@ -88,7 +89,13 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   }, [car?.processed_image_detail, car?.image])
   
   // Optimized interaction handlers with useCallback
-  const onCardClick = useCallback(() => {
+  const onCardClick = useCallback((e?: React.MouseEvent | React.KeyboardEvent) => {
+    // Prevent any default behavior to avoid race conditions
+    e?.preventDefault()
+    e?.stopPropagation()
+    
+    if (!car?.id && !car?.listing_id) return
+    
     // Convert search object to URLSearchParams for compatibility
     const urlSearchParams = new URLSearchParams()
     Object.entries(searchParams).forEach(([key, value]) => {
@@ -108,6 +115,14 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     setShowRipple(true)
     setIsPressed(true)
     
+    // Navigate after ensuring context is prepared
+    setTimeout(() => {
+      navigate({ 
+        to: '/listing/$id', 
+        params: { id: car.id || car.listing_id || '' } 
+      })
+    }, 0)
+    
     // Clear ripple after animation
     const rippleTimer = setTimeout(() => {
       setShowRipple(false)
@@ -125,7 +140,14 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       clearTimeout(navigationTimer)
       setNavigating(false)
     }
-  }, [prepareListingNavigation, currentPage, searchParams])
+  }, [car, navigate, prepareListingNavigation, currentPage, searchParams])
+  
+  // Keyboard navigation handler for accessibility
+  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      onCardClick(e)
+    }
+  }, [onCardClick])
   
   // Memoized utility functions for better performance
   const formatPrice = useCallback((price?: number) => {
@@ -205,13 +227,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   }
 
   return (
-    <Link
-      to="/listing/$id"
-      params={{ id: car.id || car.listing_id || '' }}
-      className="block group no-underline relative"
+    <div
+      className="block group no-underline relative cursor-pointer"
       onClick={onCardClick}
       onPointerEnter={preloadDetailImage}
       onPointerDown={preloadDetailImage}
+      onKeyDown={onKeyDown}
+      role="link"
+      tabIndex={0}
+      aria-label={`View details for ${car.make} ${car.model}`}
     >
       {/* Click ripple effect */}
       {showRipple && (
@@ -391,7 +415,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   )
 }
 
