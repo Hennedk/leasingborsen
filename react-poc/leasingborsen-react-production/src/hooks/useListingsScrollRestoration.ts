@@ -50,7 +50,7 @@ export function useListingsScrollRestoration(ready = true) {
       
       return isUserFilterChange;
     } catch (e) {
-      console.log('[ScrollRestore] Filter change check error:', e.message);
+      console.log('[ScrollRestore] Filter change check error:', e instanceof Error ? e.message : 'Unknown error');
       return false;
     }
   }, []);
@@ -69,17 +69,18 @@ export function useListingsScrollRestoration(ready = true) {
     }
     
     // 2. Check Navigation API currentEntry for history traversal (most modern approach)
-    if (typeof navigation !== 'undefined' && navigation.currentEntry) {
+    if (typeof (window as any).navigation !== 'undefined' && (window as any).navigation.currentEntry) {
       try {
         // Check if this is a traverse operation (back/forward)
-        if (performance.getEntriesByType?.('navigation')?.[0]?.type === 'back_forward') {
+        const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+        if (navEntry?.type === 'back_forward') {
           debugInfo.reason = 'navigation-api-traverse';
           debugInfo.result = 'back';
           console.log('[ScrollRestore] Navigation type:', debugInfo);
           return 'back';
         }
       } catch (e) {
-        debugInfo.navigationApiError = e.message;
+        debugInfo.navigationApiError = e instanceof Error ? e.message : 'Unknown error';
       }
     }
     
@@ -115,7 +116,7 @@ export function useListingsScrollRestoration(ready = true) {
           return 'back';
         }
       } catch (e) {
-        debugInfo.sessionStorageError = e.message;
+        debugInfo.sessionStorageError = e instanceof Error ? e.message : 'Unknown error';
       }
     }
     
@@ -191,7 +192,7 @@ export function useListingsScrollRestoration(ready = true) {
           }
         }
       } catch (e) {
-        console.log('[ScrollRestore] Fallback position error:', e.message);
+        console.log('[ScrollRestore] Fallback position error:', e instanceof Error ? e.message : 'Unknown error');
       }
     }
     

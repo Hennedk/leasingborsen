@@ -10,6 +10,7 @@ interface NavigationState {
   referrer?: string
   isNavigatingAway?: boolean
   isNavigatingBack?: boolean
+  version?: number
 }
 
 const STORAGE_KEY = 'leasingborsen-navigation'
