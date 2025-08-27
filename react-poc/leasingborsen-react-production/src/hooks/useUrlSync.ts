@@ -88,13 +88,16 @@ export const useUrlSync = () => {
   }, [])
 
   // Store filter change context in sessionStorage for scroll restoration hook
-  const setFilterChangeContext = useCallback((isFilterChange: boolean) => {
+  const setFilterChangeContext = useCallback((isFilterChange: boolean, source?: string) => {
     try {
       const context = {
         isFilterChange,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        source: source || 'unknown',
+        pathname: window.location.pathname // Track which page triggered the change
       }
       sessionStorage.setItem('leasingborsen-filter-context', JSON.stringify(context))
+      console.log('[FilterContext] Set filter change context:', context)
     } catch {
       // Ignore storage errors
     }
@@ -129,7 +132,7 @@ export const useUrlSync = () => {
 
     if (hasUrlFilters) {
       // This is URL-driven filter change, not user interaction
-      setFilterChangeContext(false)
+      setFilterChangeContext(false, 'url-sync-complete')
       
       // Take snapshot of URL - create URLSearchParams from searchParams object
       urlSnapshot.current = new URLSearchParams()
@@ -218,7 +221,7 @@ export const useUrlSync = () => {
     
     // This is a filter change triggered by user interaction
     isUpdatingFilters.current = true
-    setFilterChangeContext(true)
+    setFilterChangeContext(true, 'user-filter-change')
     
     // Set flag to prevent circular updates
     isUpdatingUrl.current = true

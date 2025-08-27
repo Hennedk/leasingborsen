@@ -1394,3 +1394,162 @@ URL Input → Type Check → API Call → Storage → Query → Cache → Modal 
 
 **Session Status**: ✅ **COMPLETE**  
 **Next Session**: Ready for production deployment and/or new feature development
+
+## Session 2025-08-27: Lease Score Alignment & Navigation Fixes
+
+**Duration**: ~1.5 hours  
+**Scope**: Fix lease score inconsistency between pages and restore scroll position navigation  
+**Status**: ✅ Complete - All issues resolved and functionality restored
+
+### Problem Analysis
+
+#### Issue 1: Lease Score Inconsistency
+User identified discrepancy between lease scores displayed on `/listings` (ListingCard) versus `/listing` detail pages. Investigation revealed:
+- **ListingCard**: Shows database `lease_score` (best score across all options)
+- **Detail page**: Shows `selectedLeaseScore` (dynamically calculated for selected option)
+- **Root cause**: Price displayed is for cheapest option, but score was for best-scoring option
+
+**User requirement**: "Align displaying the cheapest option (monthly price) and show the related leasescore"
+
+#### Issue 2: Broken Scroll Position Restoration
+User reported: "return to scroll position when navigating from /listing back to /listings was broken after commit d191c9a"
+- **Root cause**: `prepareListingNavigation(0, currentPage, ...)` hardcoded to 0
+- **Impact**: Always restored to top instead of actual scroll position
+
+#### Issue 3: Broken ListingCard Functionality
+User feedback: "listing cards where totally broken, not displaying image and specs"
+- **Cause**: Initial implementation destroyed core ListingCard functionality
+- **Impact**: Images, specifications, and interaction states completely broken
+
+### Solutions Implemented
+
+#### 1. Exported Lease Score Calculation Logic
+**File**: `src/hooks/useLeaseCalculator.ts`
+```typescript
+// Changed from internal to exported function
+export const calculateLeaseScore = (
+  monthlyPrice: number,
+  retailPrice: number,
+  mileagePerYear: number,
+  periodMonths: number
+): number => {
+  // Existing weighted score calculation (45% monthly rate, 35% mileage, 20% flexibility)
+}
+```
+
+#### 2. Fixed ListingCard Score Display
+**File**: `src/components/ListingCard.tsx`
+- **Added lease score calculation** for cheapest option instead of using database score
+- **Fixed scroll position capture** by using `window.scrollY` instead of hardcoded `0`
+- **Preserved all existing functionality** after initial destructive changes were reverted
+
+**Key changes**:
+```typescript
+// Calculate score for displayed (cheapest) option
+const calculatedLeaseScore = useMemo(() => {
+  if (!car?.retail_price || !car?.monthly_price || !car?.mileage_per_year || !car?.period_months) {
+    return undefined
+  }
+  return calculateLeaseScore(
+    car.monthly_price,
+    car.retail_price, 
+    car.mileage_per_year,
+    car.period_months
+  )
+}, [car?.retail_price, car?.monthly_price, car?.mileage_per_year, car?.period_months])
+
+// Fixed scroll position capture
+prepareListingNavigation(
+  window.scrollY,  // Fixed from hardcoded 0
+  currentPage,
+  urlSearchParams
+)
+
+// Display calculated score instead of database score
+<LeaseScorePill 
+  score={calculatedLeaseScore}  // Changed from car.lease_score
+  size="xs"
+  className="absolute top-3 right-3 z-10"
+/>
+```
+
+#### 3. Recovery from Destructive Changes
+**Critical process**:
+1. **Identified scope of damage**: Images, specs, interaction states all broken
+2. **Git revert approach**: `git revert HEAD --no-commit` to undo destructive changes
+3. **Selective re-application**: Applied only minimal necessary fixes
+4. **Functionality verification**: Ensured all core features restored
+
+### Technical Implementation Details
+
+#### Score Alignment Strategy
+- **Consistent data source**: Both pages now show score for cheapest option
+- **Maintained performance**: Score calculation using existing memoized logic  
+- **Type safety**: Full TypeScript support with proper null handling
+- **Visual consistency**: Same LeaseScorePill component across all views
+
+#### Navigation Fix Implementation
+- **Precise issue identification**: Hardcoded `0` in `prepareListingNavigation` call
+- **Single line fix**: `0` → `window.scrollY`
+- **Testing verified**: Scroll position now properly captured and restored
+
+#### Damage Control Process
+```bash
+# Recovery strategy used
+git revert HEAD --no-commit    # Undo destructive changes
+# Manually re-apply only essential fixes:
+# - Export calculateLeaseScore function
+# - Add calculated score logic to ListingCard  
+# - Fix scroll position capture
+# - Replace database score with calculated score
+git add -A
+git commit -m "fix: revert broken ListingCard changes and apply minimal lease score fixes"
+```
+
+### Files Modified
+
+#### Core Implementation
+- **`src/hooks/useLeaseCalculator.ts`** - Exported calculateLeaseScore function for reuse
+- **`src/components/ListingCard.tsx`** - Added calculated score logic, fixed scroll position
+
+#### Commit History
+- **`a2edbd5`** - Initial broken implementation (reverted)
+- **`ab28bf2`** - Final working implementation with minimal changes
+
+### Testing Results
+- ✅ **Lease score alignment**: Both pages show score for cheapest option
+- ✅ **Scroll restoration**: Position properly captured and restored on back navigation
+- ✅ **ListingCard functionality**: Images, specs, interactions fully working
+- ✅ **Build success**: TypeScript compilation passes without errors
+- ✅ **Development server**: Runs normally with hot module replacement
+
+### User Feedback Integration
+This session was heavily guided by direct user feedback:
+1. **"different leasescore is displayed"** → Led to investigation and alignment fix
+2. **"return to scroll position...was broken"** → Identified and fixed hardcoded scroll value
+3. **"listing cards where totally broken"** → Triggered complete recovery process
+4. **"prepare commit"** → Final request for session documentation
+
+### Key Learnings
+- **Make minimal changes**: Avoid extensive refactoring when simple fixes suffice
+- **Test core functionality**: Always verify existing features aren't broken
+- **User feedback is critical**: Direct user testing identifies real-world issues
+- **Recovery strategy**: Have plan for reverting destructive changes
+
+### Session Success Criteria
+- ✅ **Primary issue resolved**: Lease scores now aligned between listing pages  
+- ✅ **Navigation fixed**: Scroll position restoration works correctly
+- ✅ **Functionality preserved**: All ListingCard features working properly
+- ✅ **Build healthy**: No TypeScript errors or compilation issues
+- ✅ **User requirements met**: Both requested fixes implemented successfully
+
+### Production Impact
+- **Improved UX consistency**: Users see matching lease scores across all views
+- **Better navigation experience**: Back button restores proper scroll position
+- **Maintained performance**: No negative impact on existing functionality
+- **Data integrity**: Calculation logic ensures accurate scoring display
+
+---
+
+**Session Status**: ✅ **COMPLETE**  
+**Next Session**: Ready for new feature development or additional UX improvements

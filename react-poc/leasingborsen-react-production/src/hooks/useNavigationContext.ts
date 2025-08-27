@@ -66,18 +66,9 @@ export function useNavigationContext() {
   
   // Set navigation source before navigating to listing detail
   const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams) => {
-    // Save to navigation context with flag indicating we're navigating away
-    saveNavigationState({
-      from: 'listings',
-      scrollPosition,
-      loadedPages,
-      filters: filters.toString(),
-      timestamp: Date.now(),
-      isNavigatingAway: true  // Flag to prevent saving during scroll animation
-    })
+    const timestamp = Date.now();
     
-    // ALSO save to the listings scroll restoration storage for consistency
-    // This ensures scroll position is available in the primary storage system
+    // Normalize search params for consistent storage key
     const normalizeSearch = (search: string) => {
       const p = new URLSearchParams(search);
       const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
@@ -86,13 +77,33 @@ export function useNavigationContext() {
     
     const searchString = filters.toString();
     const normalizedSearch = normalizeSearch(searchString);
-    const key = `listings-scroll:${normalizedSearch}`;
     
-    // Save the position with a timestamp to ensure it's fresh
-    sessionStorage.setItem(key, String(scrollPosition | 0));
+    // Consolidated storage format with metadata
+    const scrollData = {
+      position: scrollPosition | 0,
+      timestamp,
+      filters: normalizedSearch,
+      loadedPages,
+      version: 2, // For future compatibility
+      navigationType: 'prepare' // Indicates this was set during navigation preparation
+    };
     
-    // Also save a backup timestamp to verify freshness
-    sessionStorage.setItem(`${key}:timestamp`, String(Date.now()));
+    // Primary storage: filter-specific scroll position with metadata
+    const scrollKey = `listings-scroll:${normalizedSearch}`;
+    sessionStorage.setItem(scrollKey, JSON.stringify(scrollData));
+    
+    // Save to navigation context for immediate access and backward compatibility
+    saveNavigationState({
+      from: 'listings',
+      scrollPosition,
+      loadedPages,
+      filters: searchString,
+      timestamp,
+      isNavigatingAway: true,  // Flag to prevent saving during scroll animation
+      version: 2
+    });
+    
+    console.log('[NavigationContext] Prepared navigation - position:', scrollPosition, 'key:', scrollKey);
   }, [saveNavigationState])
   
   // Get navigation info for current page
