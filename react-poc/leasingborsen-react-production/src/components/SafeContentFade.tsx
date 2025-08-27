@@ -45,6 +45,7 @@ export const SafeContentFade: React.FC<SafeContentFadeProps> = ({ children }) =>
     // Skip entrance transitions on listing detail pages
     // Let useListingPositioning hook handle visibility there
     if (isListingDetail) {
+      setIsExiting(false) // Clear any leftover exit state immediately
       setVisible(true)
       prevPathRef.current = location.pathname
       return
