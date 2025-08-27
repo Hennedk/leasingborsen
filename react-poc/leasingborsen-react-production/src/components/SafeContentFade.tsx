@@ -81,18 +81,23 @@ export const SafeContentFade: React.FC<SafeContentFadeProps> = ({ children }) =>
   
   // Handle listing detail pages with optional exit fade
   if (isListingDetail) {
-    return (
-      <div 
-        className={`${isExiting ? 'transition-opacity duration-150 ease-out opacity-0' : ''}`}
-        style={{
-          // Ensure no stacking context issues
-          transform: 'none',
-          willChange: isExiting ? 'opacity' : 'auto'
-        }}
-      >
-        {children}
-      </div>
-    )
+    // Only wrap in div when actually exiting
+    if (isExiting) {
+      return (
+        <div 
+          className="transition-opacity duration-150 ease-out opacity-0"
+          style={{
+            // Ensure no stacking context issues
+            transform: 'none',
+            willChange: 'opacity'
+          }}
+        >
+          {children}
+        </div>
+      )
+    }
+    // No wrapper when not exiting - clean DOM for scroll positioning
+    return <>{children}</>
   }
   
   // Opacity-only transition for other routes
