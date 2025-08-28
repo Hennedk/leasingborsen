@@ -13,7 +13,6 @@ import Container from '@/components/Container'
 import FilterSidebar from '@/components/FilterSidebar'
 import FilterChips from '@/components/FilterChips'
 import MobileFilterOverlay from '@/components/MobileFilterOverlay'
-import { MileageChips } from '@/components/filters/MileageChips'
 import ListingsHeader from '@/components/listings/ListingsHeader'
 import ListingsErrorState from '@/components/listings/ListingsErrorState'
 import ListingsGrid from '@/components/listings/ListingsGrid'
@@ -25,7 +24,7 @@ import {
   ComponentErrorBoundary 
 } from '@/components/ErrorBoundaries'
 import { listingStyles } from '@/lib/listingStyles'
-import type { SortOrder, SortOption, MileageOption } from '@/types'
+import type { SortOrder, SortOption } from '@/types'
 
 // Sort options configuration
 const sortOptions: SortOption[] = [
@@ -47,9 +46,7 @@ const Listings: React.FC = () => {
   const { 
     getActiveFilters,
     resetFilters,
-    setSortOrder,
-    setFilter,
-    mileage_selected
+    setSortOrder
   } = usePersistentFilterStore()
 
   // Use extracted filter management hook
@@ -214,15 +211,6 @@ const Listings: React.FC = () => {
             role="main" 
             aria-label="Billeasing søgning"
           >
-            
-            {/* Mobile: Mileage chips */}
-            <div className="lg:hidden mb-4">
-              <MileageChips
-                selectedMileage={(mileage_selected || 15000) as MileageOption}
-                onMileageChange={(mileage: MileageOption) => setFilter('mileage_selected', mileage)}
-                className=""
-              />
-            </div>
 
             {/* Mobile: Result count, sort status and sort button */}
             <div className="lg:hidden mb-4 flex items-end justify-between">
@@ -251,14 +239,6 @@ const Listings: React.FC = () => {
               />
             </ComponentErrorBoundary>
 
-            {/* Desktop: Mileage chips */}
-            <div className="hidden lg:block mb-6">
-              <MileageChips
-                selectedMileage={(mileage_selected || 15000) as MileageOption}
-                onMileageChange={(mileage: MileageOption) => setFilter('mileage_selected', mileage)}
-                className=""
-              />
-            </div>
 
             {/* Desktop: Filter chips */}
             <div className="hidden lg:block mb-8">

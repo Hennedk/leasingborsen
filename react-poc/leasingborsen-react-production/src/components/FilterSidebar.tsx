@@ -13,6 +13,7 @@ import {
   PriceRangeFilter,
   useFilterOperations
 } from '@/components/shared/filters'
+import { MileageChips } from '@/components/filters/MileageChips'
 
 /* Claude Change Summary:
  * Refactored FilterSidebar (591→120 lines) using shared filter components.
@@ -53,6 +54,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
     priceMax,
     seatsMin,
     seatsMax,
+    mileageSelected,
     activeFiltersCount,
     getModelsForMake,
     toggleMake,
@@ -152,6 +154,16 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               selectedValues={transmissions}
               onToggle={(value) => handleArrayFilterToggle('transmission', value)}
             />
+
+            {/* Mileage Filter */}
+            <div className="space-y-3">
+              <span className="text-sm font-medium text-foreground">Km pr. år</span>
+              <MileageChips
+                selectedMileage={mileageSelected as any}
+                onMileageChange={(mileage) => handleFilterChange('mileage_selected', mileage)}
+                variant="desktop"
+              />
+            </div>
 
             {/* Body Type Filter */}
             <ExpandableFilterChips

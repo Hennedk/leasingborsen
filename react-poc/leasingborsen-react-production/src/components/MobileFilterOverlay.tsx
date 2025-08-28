@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
 import { X, ChevronLeft, Plus, Search, ChevronRight } from 'lucide-react'
 import { PriceRangeFilter, ExpandableFilterChips, FilterChips } from '@/components/shared/filters'
+import { MileageChips } from '@/components/filters/MileageChips'
 import { useConsolidatedFilterStore } from '@/stores/consolidatedFilterStore'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useFilterOptions } from '@/hooks/useFilterTranslations'
@@ -67,6 +68,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
     price_max,
     seats_min,
     seats_max,
+    mileage_selected,
     setFilter,
     toggleArrayFilter,
     resetFilters, 
@@ -432,6 +434,16 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
             selectedValues={transmission || []}
             onToggle={handleTransmissionToggle}
             label=""
+            variant="mobile"
+          />
+        </div>
+
+        {/* Mileage */}
+        <div className="space-y-3">
+          <Label className="text-base font-medium text-foreground">Km pr. år</Label>
+          <MileageChips
+            selectedMileage={(mileage_selected || 15000) as any}
+            onMileageChange={(mileage) => setFilter('mileage_selected', mileage)}
             variant="mobile"
           />
         </div>

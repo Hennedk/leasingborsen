@@ -6,12 +6,14 @@ interface MileageChipsProps {
   selectedMileage: MileageOption
   onMileageChange: (mileage: MileageOption) => void
   className?: string
+  variant?: 'desktop' | 'mobile'
 }
 
 export const MileageChips: React.FC<MileageChipsProps> = ({
   selectedMileage,
   onMileageChange,
-  className
+  className,
+  variant = 'desktop'
 }) => {
   const formatLabel = (mileage: MileageOption) => {
     if (mileage === 35000) return '35k+'
@@ -20,9 +22,11 @@ export const MileageChips: React.FC<MileageChipsProps> = ({
   
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
-      <div className="text-sm font-medium text-muted-foreground mb-2 w-full">
-        Årlig kørselsgrænse
-      </div>
+      {variant === 'desktop' && (
+        <div className="text-sm font-medium text-muted-foreground mb-2 w-full">
+          Årlig kørselsgrænse
+        </div>
+      )}
       {MILEAGE_OPTIONS.map((mileage) => (
         <button
           key={mileage}
