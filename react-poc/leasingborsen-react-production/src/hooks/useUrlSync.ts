@@ -22,11 +22,12 @@ type ListingsSearchParams = {
   seats_max?: number
   horsepower_min?: number
   horsepower_max?: number
+  km?: number  // Selected annual mileage (numeric only)
   sort?: SortOrder
   view?: 'grid' | 'list'
   q?: string
   showFilters?: string
-} | Record<string, never> // Allow empty object for fallback
+} | Record<string, never> // Allow empty object for fallback // Allow empty object for fallback
 
 /**
  * Custom hook for URL synchronization with filter state
@@ -67,6 +68,7 @@ export const useUrlSync = () => {
     price_max,
     seats_min,
     seats_max,
+    mileage_selected,
     sortOrder,
     setFilter,
     setSortOrder,
@@ -123,12 +125,13 @@ export const useUrlSync = () => {
     const urlPriceMax = searchParams.price_max
     const urlSeatsMin = searchParams.seats_min
     const urlSeatsMax = searchParams.seats_max
+    const urlKm = searchParams.km
     const urlSort = searchParams.sort
 
     // Check if there are any URL parameters that indicate a fresh search
     const hasUrlFilters = urlMake || urlModel || urlBodyType || urlFuelType || 
                          urlTransmission || urlPriceMin || urlPriceMax || 
-                         urlSeatsMin || urlSeatsMax || urlSort
+                         urlSeatsMin || urlSeatsMax || urlKm || urlSort
 
     if (hasUrlFilters) {
       // This is URL-driven filter change, not user interaction
@@ -190,6 +193,18 @@ export const useUrlSync = () => {
         setFilter('seats_max', parsedSeatsMax)
       }
 
+      // Handle mileage parameter
+      const parsedKm = parseNumericParam(urlKm)
+      if (parsedKm !== null) {
+        const validMileages = [10000, 15000, 20000, 25000, 30000, 35000]
+        if (validMileages.includes(parsedKm)) {
+          setFilter('mileage_selected', parsedKm as any)
+        }
+      } else if (!urlSnapshot.current) {
+        // Default to 15k if no URL param
+        setFilter('mileage_selected', 15000)
+      }
+
       // Handle sort order
       if (urlSort) {
         setSortOrder(urlSort as SortOrder)
@@ -197,6 +212,9 @@ export const useUrlSync = () => {
       
       // Mark as applied to prevent re-run
       hasAppliedUrlFilters.current = true
+    } else {
+      // No URL filters, set default mileage
+      setFilter('mileage_selected', 15000)
     }
     
     // Mark hydration complete
@@ -287,6 +305,13 @@ export const useUrlSync = () => {
       delete newSearch.seats_max
     }
     
+    // Handle mileage parameter (only include if not default)
+    if (mileage_selected && mileage_selected !== 15000) {
+      newSearch.km = mileage_selected  // Always numeric (35000 for 35k+)
+    } else {
+      delete newSearch.km  // Remove parameter when default
+    }
+    
     // Handle sort order
     if (sortOrder !== 'lease_score_desc') {
       newSearch.sort = sortOrder
@@ -314,6 +339,7 @@ export const useUrlSync = () => {
     price_max,
     seats_min,
     seats_max,
+    mileage_selected,
     sortOrder,
     navigate,
     setFilterChangeContext
@@ -330,7 +356,8 @@ export const useUrlSync = () => {
       price_min,
       price_max,
       seats_min,
-      seats_max
+      seats_max,
+      mileage_selected
     },
     sortOrder,
     isUpdatingFilters: isUpdatingFilters.current

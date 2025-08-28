@@ -3,6 +3,7 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { filterTranslations } from '@/lib/translations/filterTranslations'
 import type { Filters, FilterChip, SortOrder, CarSelection } from '@/types'
+import { DEFAULT_MILEAGE } from '@/types'
 
 /* Claude Change Summary:
  * Consolidated filterStore.ts (274 lines) + persistentFilterStore.ts (143 lines) 
@@ -43,7 +44,8 @@ const defaultFilters: Filters = {
   seats_min: null,
   seats_max: null,
   horsepower_min: null,
-  horsepower_max: null
+  horsepower_max: null,
+  mileage_selected: DEFAULT_MILEAGE
 }
 
 const persistenceConfig = {
@@ -62,6 +64,7 @@ const persistenceConfig = {
     seats_max: state.seats_max,
     horsepower_min: state.horsepower_min,
     horsepower_max: state.horsepower_max,
+    mileage_selected: state.mileage_selected,
     sortOrder: state.sortOrder,
     filterOrder: state.filterOrder
   }),
@@ -328,6 +331,17 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           })
         }
         
+        // Mileage filter (only show if not default)
+        if (state.mileage_selected && state.mileage_selected !== DEFAULT_MILEAGE) {
+          activeFilters.push({
+            key: 'mileage',
+            label: state.mileage_selected === 35000 
+              ? '35k+ km/år'  // Special label for 35k+
+              : `${(state.mileage_selected / 1000).toFixed(0)}k km/år`,
+            value: state.mileage_selected.toString()
+          })
+        }
+        
         return activeFilters
       },
 
@@ -340,9 +354,10 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           const state = parsed.state
           if (!state) return false
           
-          // Check if there are any active filters
+          // Check if there are any active filters (excluding default values)
           const hasActiveFilters = Object.entries(state).some(([key, value]) => {
             if (key === 'sortOrder') return value !== ''
+            if (key === 'mileage_selected') return value !== null && value !== DEFAULT_MILEAGE
             if (Array.isArray(value)) return value.length > 0
             if (typeof value === 'string') return value !== ''
             return value !== null && value !== undefined

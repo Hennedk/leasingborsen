@@ -53,7 +53,7 @@ export const useListingById = (id: string) => {
 export const useListingCount = (filters: Partial<FilterOptions> = {}, sortOrder = '') => {
   return useQuery({
     queryKey: QUERY_KEYS.listingCount(filters, sortOrder),
-    queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
+    queryFn: () => CarListingQueries.getListingCount(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,

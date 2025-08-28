@@ -64,7 +64,13 @@ export interface FilterOptions {
   seats_max: number | null
   horsepower_min: number | null
   horsepower_max: number | null
+  mileage_selected: number | null  // Selected annual mileage (10000, 15000, etc.)
 }
+
+// Mileage filter types
+export type MileageOption = 10000 | 15000 | 20000 | 25000 | 30000 | 35000 // 35000 represents 35k+
+export const MILEAGE_OPTIONS: MileageOption[] = [10000, 15000, 20000, 25000, 30000, 35000]
+export const DEFAULT_MILEAGE: MileageOption = 15000
 
 // Legacy alias for backward compatibility
 export type Filters = FilterOptions
@@ -178,6 +184,17 @@ export interface CarListing extends
   // Multiple offers tracking
   offer_count?: number
   has_multiple_offers?: boolean
+  
+  // Selected offer details (populated by query logic)
+  selected_mileage?: number
+  selected_term?: number
+  selected_deposit?: number
+  selected_monthly_price?: number
+  selected_lease_score?: number | null
+  offer_selection_method?: 'exact' | 'fallback' | 'none'
+  
+  // Preserve original pricing for reference
+  all_lease_pricing?: any[]
 }
 
 // API Response Types

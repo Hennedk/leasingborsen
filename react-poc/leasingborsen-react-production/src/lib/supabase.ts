@@ -12,6 +12,7 @@ import type {
   SupabaseSingleResponse
 } from '@/types'
 import { getEnvironmentConfig } from '@/config/environments'
+import { calculateLeaseScore } from '@/hooks/useLeaseCalculator'
 
 const config = getEnvironmentConfig()
 
@@ -118,8 +119,79 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
   if (filters.horsepower_max !== null && filters.horsepower_max !== undefined) {
     query = query.lte('horsepower', filters.horsepower_max)
   }
+  
+  // Mileage filtering - prefer scalar column for performance
+  if (filters.mileage_selected) {
+    if (filters.mileage_selected === 35000) {
+      // 35k+ includes 35k, 40k, 45k, 50k - use IN clause
+      query = query.in('mileage_per_year', [35000, 40000, 45000, 50000])
+    } else {
+      // Exact match for other mileage options
+      query = query.eq('mileage_per_year', filters.mileage_selected)
+    }
+  }
 
   return query
+}
+
+// Helper function for selecting the best offer based on mileage and term preferences
+function selectBestOffer(
+  leasePricing: any,
+  targetMileage: number,
+  standardDeposit: number = 0
+): any {
+  if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
+    return null
+  }
+  
+  // Handle 35k+ group - accept any of these mileages
+  const acceptableMileages = targetMileage === 35000 
+    ? [35000, 40000, 45000, 50000]
+    : [targetMileage]
+  
+  // Filter to matching mileage options
+  const matchingOffers = leasePricing.filter(offer => 
+    acceptableMileages.includes(offer.mileage_per_year)
+  )
+  
+  if (matchingOffers.length === 0) {
+    return null // No offers at target mileage - exclude listing
+  }
+  
+  // Term preference order: 36 → 24 → 48
+  const termPreference = [36, 24, 48]
+  
+  for (const preferredTerm of termPreference) {
+    const termOffers = matchingOffers.filter(offer => 
+      offer.period_months === preferredTerm
+    )
+    
+    if (termOffers.length > 0) {
+      // Find offer with standard deposit (0 kr) or closest higher
+      let selectedOffer = termOffers.find(offer => 
+        offer.first_payment === standardDeposit
+      )
+      
+      if (!selectedOffer) {
+        // Get offer with lowest deposit that's >= standard
+        const validOffers = termOffers
+          .filter(offer => offer.first_payment >= standardDeposit)
+          .sort((a, b) => a.first_payment - b.first_payment)
+        
+        // If no deposit >= standard, take the lowest available
+        selectedOffer = validOffers[0] || termOffers
+          .sort((a, b) => a.first_payment - b.first_payment)[0]
+      }
+      
+      return {
+        ...selectedOffer,
+        selection_method: preferredTerm === 36 ? 'exact' : 'fallback'
+      }
+    }
+  }
+  
+  // No offers with preferred terms - exclude listing
+  return null
 }
 
 // Export types for external use
@@ -128,18 +200,18 @@ export type { CarListing, FilterOptions, Make, Model, BodyType, FuelType, Transm
 // Query Builders with Types
 export class CarListingQueries {
   static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0): Promise<SupabaseResponse<CarListing>> {
-    // Use a subquery to get unique listings with their lowest monthly price
-    // This prevents duplicates from the full_listing_view which has one row per pricing option
+    // Set default mileage if not provided
+    const selectedMileage = filters.mileage_selected || 15000
+    
     let query = supabase
       .from('full_listing_view')
       .select('*')
-      .not('monthly_price', 'is', null) // Only show listings with offers
+      .not('monthly_price', 'is', null)
 
-    // Apply filters using shared function
+    // Apply filters including mileage
     query = applyFilters(query, filters)
 
-    // Get all data first, then deduplicate in JavaScript to get unique listings with lowest price
-    const { data: allData, error } = await query.order('monthly_price', { ascending: true })
+    const { data: allData, error } = await query.order('id') // Ensure deterministic order
 
     if (error) {
       return { data: null, error }
@@ -149,51 +221,127 @@ export class CarListingQueries {
       return { data: [], error: null }
     }
 
-    // Add offer metadata since full_listing_view already aggregates by listing
-    const enrichedData = allData.map((listing: any) => {
-      // The lease_pricing field contains all pricing options as JSON array
-      const leasePricingArray = Array.isArray(listing.lease_pricing) ? listing.lease_pricing : []
-      const offerCount = leasePricingArray.length
+    // CRITICAL FIX: Deduplicate by listing ID first
+    const deduplicatedMap = new Map<string, any>()
+    
+    allData.forEach((listing: any) => {
+      const listingId = listing.id
+      if (!deduplicatedMap.has(listingId)) {
+        deduplicatedMap.set(listingId, listing)
+      }
+    })
+    
+    const uniqueListings = Array.from(deduplicatedMap.values())
+
+    // Process each unique listing to select appropriate offer
+    const processedData = uniqueListings.map((listing: any) => {
+      const selectedOffer = selectBestOffer(
+        listing.lease_pricing,
+        selectedMileage,
+        0 // Standard deposit (0 kr default)
+      )
+      
+      if (!selectedOffer) {
+        return null // Exclude listings without matching offers
+      }
+      
+      // CRITICAL FIX: Correct lease score parameter order
+      const leaseScore = selectedOffer.monthly_price && listing.retail_price
+        ? calculateLeaseScore(
+            selectedOffer.monthly_price,  // FIXED: monthlyPrice first
+            listing.retail_price,         // FIXED: retailPrice second
+            selectedOffer.mileage_per_year,
+            selectedOffer.period_months
+          )
+        : null
       
       return {
         ...listing,
-        offer_count: offerCount,
-        has_multiple_offers: offerCount > 1
+        // Override with selected offer values
+        monthly_price: selectedOffer.monthly_price,
+        mileage_per_year: selectedOffer.mileage_per_year,
+        period_months: selectedOffer.period_months,
+        first_payment: selectedOffer.first_payment,
+        lease_score: leaseScore,
+        
+        // Add metadata about selection
+        selected_mileage: selectedOffer.mileage_per_year,
+        selected_term: selectedOffer.period_months,
+        selected_deposit: selectedOffer.first_payment,
+        selected_monthly_price: selectedOffer.monthly_price,
+        selected_lease_score: leaseScore,
+        offer_selection_method: selectedOffer.selection_method,
+        
+        // Preserve original pricing array for reference
+        all_lease_pricing: listing.lease_pricing,
+        offer_count: Array.isArray(listing.lease_pricing) ? listing.lease_pricing.length : 0,
+        has_multiple_offers: Array.isArray(listing.lease_pricing) && listing.lease_pricing.length > 1
       }
-    })
-
-    // Convert to array and apply sorting based on sortOrder
-    let deduplicatedData = enrichedData
+    }).filter(Boolean) // Remove nulls (listings without matching offers)
     
-    // Apply final sorting based on sortOrder
+    // Apply sorting based on selected offer values
+    let sortedData = processedData
+    
     if (sortOrder === 'lease_score_desc') {
-      // Filter out listings without scores when sorting by score
-      deduplicatedData = deduplicatedData.filter(listing => 
-        listing.lease_score !== null && 
-        listing.lease_score !== undefined
-      )
-      
-      // Sort by score (highest first), then by price as tiebreaker
-      deduplicatedData.sort((a, b) => {
-        const scoreDiff = (b.lease_score || 0) - (a.lease_score || 0)
-        if (scoreDiff !== 0) return scoreDiff
-        return (a.monthly_price || 0) - (b.monthly_price || 0) // Price as tiebreaker
+      sortedData = sortedData.sort((a, b) => {
+        // Listings with scores come first
+        if (a.selected_lease_score !== null && b.selected_lease_score === null) return -1
+        if (a.selected_lease_score === null && b.selected_lease_score !== null) return 1
+        
+        // Both have scores: sort by score descending
+        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+          const scoreDiff = b.selected_lease_score - a.selected_lease_score
+          if (scoreDiff !== 0) return scoreDiff
+        }
+        
+        // Tie-breaker: lower monthly price
+        const priceDiff = (a.selected_monthly_price || 0) - (b.selected_monthly_price || 0)
+        if (priceDiff !== 0) return priceDiff
+        
+        // Final tie-breaker: alphabetical by make+model
+        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
+        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
+        return makeModelA.localeCompare(makeModelB, 'da-DK')
+      })
+    } else if (sortOrder === 'price_asc' || sortOrder === 'asc') {
+      sortedData = sortedData.sort((a, b) => {
+        // Sort by price ascending
+        const priceDiff = (a.selected_monthly_price || 0) - (b.selected_monthly_price || 0)
+        if (priceDiff !== 0) return priceDiff
+        
+        // Tie-breaker: higher lease score
+        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+          const scoreDiff = b.selected_lease_score - a.selected_lease_score
+          if (scoreDiff !== 0) return scoreDiff
+        }
+        
+        // Final tie-breaker: alphabetical by make+model
+        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
+        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
+        return makeModelA.localeCompare(makeModelB, 'da-DK')
       })
     } else {
-      // Handle regular price sorting
-      const isDescending = sortOrder === 'desc'
-      deduplicatedData.sort((a, b) => {
-        if (isDescending) {
-          return (b.monthly_price || 0) - (a.monthly_price || 0)
-        } else {
-          return (a.monthly_price || 0) - (b.monthly_price || 0)
+      // Default sort: price descending
+      sortedData = sortedData.sort((a, b) => {
+        const priceDiff = (b.selected_monthly_price || 0) - (a.selected_monthly_price || 0)
+        if (priceDiff !== 0) return priceDiff
+        
+        // Tie-breaker: higher lease score
+        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+          const scoreDiff = b.selected_lease_score - a.selected_lease_score
+          if (scoreDiff !== 0) return scoreDiff
         }
+        
+        // Final tie-breaker: alphabetical by make+model
+        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
+        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
+        return makeModelA.localeCompare(makeModelB, 'da-DK')
       })
     }
-
-    // Apply pagination to deduplicated data
-    const paginatedData = deduplicatedData.slice(offset, offset + limit)
-
+    
+    // Apply pagination after sorting unique listings
+    const paginatedData = sortedData.slice(offset, offset + limit)
+    
     return { data: paginatedData as CarListing[], error: null }
   }
 
@@ -229,46 +377,54 @@ export class CarListingQueries {
     return { data: enrichedListing as CarListing, error: null }
   }
 
-  static async getListingCount(filters: Partial<FilterOptions> = {}, sortOrder = ''): Promise<{ data: number; error: any }> {
-    // When sorting by lease score, we need to exclude listings without scores
-    // to match the behavior of getListings method
-    if (sortOrder === 'lease_score_desc') {
-      // For lease score sorting, we need to get actual data to filter out null scores
-      // since PostgreSQL count with complex filtering is less reliable
-      let query = supabase
-        .from('full_listing_view')
-        .select('id, lease_score')
-        .not('monthly_price', 'is', null) // Only count listings with offers
-        .not('lease_score', 'is', null) // Only count listings with lease scores
+  static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
+    const selectedMileage = filters.mileage_selected || 15000
+    
+    let query = supabase
+      .from('full_listing_view')
+      .select('id, lease_pricing', { count: 'exact' })
+      .not('monthly_price', 'is', null)
 
-      // Apply same filters using shared function
-      query = applyFilters(query, filters)
+    // Apply same filters as getListings
+    query = applyFilters(query, filters)
 
-      const { data, error } = await query
+    const { data, count, error } = await query
 
-      if (error) {
-        return { data: 0, error }
-      }
-
-      return { data: data?.length || 0, error: null }
-    } else {
-      // For other sort orders, use the standard count approach
-      let query = supabase
-        .from('full_listing_view')
-        .select('id', { count: 'exact', head: true })
-        .not('monthly_price', 'is', null) // Only count listings with offers
-
-      // Apply same filters using shared function
-      query = applyFilters(query, filters)
-
-      const { count, error } = await query
-
-      if (error) {
-        return { data: 0, error }
-      }
-
-      return { data: count || 0, error: null }
+    if (error) {
+      return { data: 0, error }
     }
+
+    // For mileage filtering with offer selection, we need to count client-side
+    // since we exclude listings without matching offers
+    if (filters.mileage_selected) {
+      if (!data) return { data: 0, error: null }
+      
+      // Deduplicate by listing ID
+      const deduplicatedMap = new Map<string, any>()
+      data.forEach((listing: any) => {
+        const listingId = listing.id
+        if (!deduplicatedMap.has(listingId)) {
+          deduplicatedMap.set(listingId, listing)
+        }
+      })
+      
+      const uniqueListings = Array.from(deduplicatedMap.values())
+      
+      // Count listings that have matching offers
+      const validListings = uniqueListings.filter((listing: any) => {
+        const selectedOffer = selectBestOffer(
+          listing.lease_pricing,
+          selectedMileage,
+          0
+        )
+        return selectedOffer !== null
+      })
+      
+      return { data: validListings.length, error: null }
+    }
+
+    // For other filtering, use the database count
+    return { data: count || 0, error: null }
   }
 }
 

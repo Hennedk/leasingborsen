@@ -162,13 +162,19 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   // Memoized computed values
   const displayPrice = useMemo(() => {
     const price = formatPrice(car?.monthly_price)
-    // Add "Fra" prefix if there are multiple offers and this is the lowest
-    return car?.has_multiple_offers ? `Fra ${price}` : price
-  }, [car?.monthly_price, car?.has_multiple_offers, formatPrice])
+    // Remove the "fra" prefix logic completely - show actual offer price
+    return price
+  }, [car?.monthly_price, formatPrice])
   const displayMileage = useMemo(() => formatMileage(car?.mileage_per_year), [car?.mileage_per_year, formatMileage])
   
   // Calculate lease score for the cheapest option (displayed price)
   const calculatedLeaseScore = useMemo(() => {
+    // Prefer pre-calculated selected lease score
+    if (car?.selected_lease_score !== undefined) {
+      return car.selected_lease_score
+    }
+    
+    // Fallback to calculation (shouldn't happen with new logic)
     if (!car?.retail_price || !car?.monthly_price || !car?.mileage_per_year || !car?.period_months) {
       return undefined
     }
@@ -179,7 +185,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       car.mileage_per_year,
       car.period_months
     )
-  }, [car?.retail_price, car?.monthly_price, car?.mileage_per_year, car?.period_months])
+  }, [car?.selected_lease_score, car?.retail_price, car?.monthly_price, car?.mileage_per_year, car?.period_months])
   
   const carAltText = useMemo(() => 
     `${car?.make} ${car?.model} ${car?.variant} - ${car?.fuel_type} - ${displayPrice}`,
@@ -414,18 +420,30 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               {displayPrice}
             </p>
             <div className="flex items-center gap-2 text-xs sm:text-[11px] text-muted-foreground leading-relaxed">
-              <span className="font-medium">{displayMileage}</span>
-              {car.period_months && (
+              {car.selected_mileage && (
                 <>
+                  <span className="font-medium">
+                    {(car.selected_mileage / 1000).toFixed(0)}.000 km/år
+                  </span>
                   <span className="text-muted-foreground/50">•</span>
-                  <span className="font-medium">{car.period_months} mdr</span>
                 </>
               )}
-              {car.first_payment && (
+              {car.selected_term && (
                 <>
+                  <span className="font-medium">{car.selected_term} mdr</span>
                   <span className="text-muted-foreground/50">•</span>
-                  <span className="font-medium">Udb: {car.first_payment.toLocaleString('da-DK')} kr</span>
                 </>
+              )}
+              {car.selected_deposit !== undefined && (
+                <span className="font-medium">
+                  {car.selected_deposit === 0 
+                    ? 'udb. 0 kr' 
+                    : `udb. ${car.selected_deposit.toLocaleString('da-DK')} kr`}
+                </span>
+              )}
+              {/* Fallback to old format if no selected offer data */}
+              {!car.selected_mileage && car.mileage_per_year && (
+                <span className="font-medium">{displayMileage}</span>
               )}
             </div>
           </div>

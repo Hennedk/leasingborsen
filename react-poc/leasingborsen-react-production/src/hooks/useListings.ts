@@ -71,10 +71,12 @@ export function useListing(id: string) {
 export function useListingCount(filters: Partial<FilterOptions> = {}, sortOrder: SortOrder = 'lease_score_desc') {
   return useQuery({
     queryKey: queryKeys.listingsCount(filters, sortOrder),
-    queryFn: () => CarListingQueries.getListingCount(filters, sortOrder),
+    queryFn: () => CarListingQueries.getListingCount(filters),
     staleTime: 2 * 60 * 1000, // 2 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
     // Keep previous data while refetching for smooth UX
     placeholderData: (previousData) => previousData,
+    refetchOnWindowFocus: false,
+    retry: (failureCount) => failureCount < 2,
   })
 }
