@@ -1,5 +1,126 @@
 # Session Log
 
+## 2025-08-28: Mileage Filter Implementation
+
+### Summary
+Successfully implemented exact-match mileage filtering feature based on MILEAGE_FILTER_IMPLEMENTATION_PLAN.md, replacing "fra" pricing with deterministic offer selection.
+
+### Changes Made
+
+#### 1. Type System Updates
+- **File**: `src/types/index.ts`
+- **Changes**: 
+  - Added `MileageOption` type (10k-35k km/år)
+  - Added `mileage_selected` to `FilterOptions`
+  - Extended `CarListing` with selected offer fields
+  - Exported `DEFAULT_MILEAGE = 15000`
+
+#### 2. State Management
+- **File**: `src/stores/consolidatedFilterStore.ts`
+- **Changes**:
+  - Fixed DEFAULT_MILEAGE import (type + value)
+  - Added mileage_selected to defaultFilters
+  - Updated hasStoredFilters to ignore default mileage
+  - Enhanced getActiveFilters for mileage chip display
+
+#### 3. Database Layer
+- **File**: `src/lib/supabase.ts`
+- **Changes**:
+  - Implemented `selectBestOffer` helper with term fallback chain (36→24→48 months)
+  - Added exact-match mileage filtering in `applyFilters`
+  - Map-based deduplication by listing_id in `getListings`
+  - Fixed lease score parameter order (monthlyPrice, retailPrice, mileage, months)
+
+#### 4. UI Components
+- **File**: `src/components/filters/MileageChips.tsx` (NEW)
+- **Changes**: Complete mileage selection component with accessibility
+
+- **File**: `src/pages/Listings.tsx`
+- **Changes**: Integrated MileageChips for mobile/desktop views
+
+- **File**: `src/components/ListingCard.tsx`
+- **Changes**: 
+  - Removed "fra" prefix from pricing
+  - Added meta line showing selected mileage/term/deposit
+  - Use selected_lease_score when available
+
+#### 5. URL State Management
+- **File**: `src/hooks/useUrlSync.ts`
+- **Changes**: Added km parameter persistence for mileage_selected
+
+#### 6. Testing
+- **File**: `src/components/filters/__tests__/MileageFilter.test.tsx` (NEW)
+- **Status**: 10/10 tests passing
+- **Coverage**: Component rendering, interaction, offer selection logic
+
+### TypeScript Fixes Applied
+1. DEFAULT_MILEAGE import separation (type + value)
+2. MileageOption type assertions in Listings.tsx
+3. getListingCount function signature cleanup (removed unused sortOrder)
+4. Query key naming consistency (listingsCount vs listingCount)
+
+### Critical Bug Fixes (from Implementation Plan)
+✅ **Bug 1**: Removed "fra" pricing prefix
+✅ **Bug 2**: Fixed lease score parameter order  
+✅ **Bug 3**: Implemented exact mileage matching
+✅ **Bug 4**: Map-based deduplication by listing_id
+✅ **Bug 5**: Enhanced selectBestOffer with term fallback
+✅ **Bug 6**: Aligned count query with listing logic
+
+### Development Status
+- **Build**: ✅ TypeScript compilation successful
+- **Tests**: ✅ All mileage filter tests pass (10/10)
+- **Lint**: ❓ Not run this session
+- **Dev Server**: ✅ Running on http://localhost:5173/
+
+### Ready for Next Session
+#### Priority Testing Tasks
+1. **Manual Testing**:
+   - Verify mileage filter behavior on /listings page
+   - Test URL persistence (km parameter)
+   - Confirm pricing display without "fra" prefix
+   - Validate meta line information accuracy
+
+2. **Edge Case Testing**:
+   - Listings without 15k mileage options
+   - Term fallback chain behavior
+   - Deduplication correctness
+   - Mobile/desktop responsive behavior
+
+3. **Performance Testing**:
+   - Query performance with new filtering logic
+   - Cache behavior with mileage changes
+   - Large dataset handling
+
+#### Potential Issues to Watch
+- Query performance impact from exact-match filtering
+- Cache invalidation patterns with new mileage state
+- Mobile UX on smaller screens with MileageChips
+
+### Files Modified
+```
+src/types/index.ts
+src/stores/consolidatedFilterStore.ts  
+src/lib/supabase.ts
+src/components/filters/MileageChips.tsx (NEW)
+src/pages/Listings.tsx
+src/components/ListingCard.tsx
+src/hooks/useUrlSync.ts
+src/components/filters/__tests__/MileageFilter.test.tsx (NEW)
+```
+
+### Next Session Continuation
+1. Complete manual testing of mileage filter feature
+2. Run full lint and build checks
+3. Performance validation with production data
+4. User acceptance testing prep
+5. Consider deployment to staging environment
+
+---
+*Generated: 2025-08-28*
+
+---
+
 ## Session: January 28, 2025 - AI Extraction Model Reference Issue Investigation
 
 ### Session Summary
