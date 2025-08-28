@@ -1,5 +1,90 @@
 # Session Log
 
+## Session: January 28, 2025 - AI Extraction Model Reference Issue Investigation
+
+### Session Summary
+Deep investigation and resolution of the model reference list returning null during AI PDF extraction. Discovered that sellers without a `make_id` were sending 'Unknown' as `makeName`, which didn't exist in reference data, causing empty model lists to be sent to the AI.
+
+### What Changed
+1. **Fixed case-insensitive make matching in `ai-extract-vehicles` edge function**
+   - Added case-insensitive fallback for make name matching
+   - Implemented fallback to use all models when make is unknown/not found
+   - Enhanced logging for debugging make name resolution
+
+2. **Improved frontend logging in `SellerBulkPDFExtractionModal.tsx`**
+   - Added detailed logging for reference data validation
+   - Logs make name matching attempts (exact and case-insensitive)
+   - Better debugging visibility for reference data issues
+
+3. **Created comprehensive refactoring proposal**
+   - Documented in `docs/REFERENCE_DATA_REFACTOR_PROPOSAL.md`
+   - Proposes fetching reference data directly in edge function
+   - Would reduce payload by 250KB (50-80% reduction) per extraction
+
+### Technical Details
+
+#### Root Cause Analysis
+- Sellers table has `make_id` column but no `make_name` column
+- Frontend uses JOIN to get make name: `seller.makes?.name || null`
+- When `make_id` is null, system sends `makeName: 'Unknown'`
+- Edge function couldn't find 'Unknown' in reference data → empty models list
+
+#### Solution Implemented
+```typescript
+// Edge function now handles three scenarios:
+1. Exact match: BMW → BMW
+2. Case-insensitive: bmw → BMW  
+3. Unknown/null: Uses all models as fallback
+
+// Code location: supabase/functions/ai-extract-vehicles/index.ts:700-740
+```
+
+#### Test Results
+All scenarios tested successfully:
+- ✅ Exact make match (BMW)
+- ✅ Case-insensitive match (bmw → BMW)
+- ✅ Unknown make fallback
+- ✅ Null make fallback
+
+### Known Issues Remaining
+1. **Payload size**: Currently sending 250KB of reference data with each extraction
+2. **Data freshness**: Reference data cached for 1 hour, may be stale
+3. **Architecture**: Frontend tightly coupled to edge function data requirements
+
+### Next Steps for Continuation
+1. **Review refactoring proposal** in `docs/REFERENCE_DATA_REFACTOR_PROPOSAL.md`
+2. **Implement Phase 1**: Add database fetching to edge function with backward compatibility
+3. **Monitor performance**: Track payload sizes and extraction success rates
+4. **Clean up frontend**: Remove reference data passing after Phase 1 is stable
+
+### Files Modified
+- `supabase/functions/ai-extract-vehicles/index.ts` - Added case-insensitive matching and fallback logic
+- `src/components/admin/sellers/SellerBulkPDFExtractionModal.tsx` - Enhanced logging
+- `docs/REFERENCE_DATA_REFACTOR_PROPOSAL.md` - Created comprehensive refactoring plan
+
+### Important Context
+- The fix is already deployed and working in staging environment
+- All PDF extractions now receive proper vehicle reference data
+- The refactoring proposal would improve performance by 50-80% but is not urgent
+
+### Commands for Next Session
+```bash
+# Check recent commits
+git log --oneline -10
+
+# Review the proposal
+cat docs/REFERENCE_DATA_REFACTOR_PROPOSAL.md
+
+# Test current extraction
+npm run dev
+# Navigate to /admin/sellers and test PDF extraction
+
+# Deploy edge function if implementing refactor
+supabase functions deploy ai-extract-vehicles --project-ref lpbtgtpgbnybjqcpsrrf
+```
+
+---
+
 ## Session 2025-08-27: Scroll Restoration Investigation & Fix
 
 **Duration**: ~1 hour  

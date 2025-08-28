@@ -699,13 +699,28 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
 
     // Prepare allowed models context (dealer's make only, simplified format)
     let allowedModelsContext = '{}'
-    if (safeReferenceData && makeName) {
+    if (safeReferenceData && makeName && makeName !== 'Unknown') {
       // Filter makes_models to only include the dealer's specific make
       let filteredMakes = {}
+      
+      // Try exact match first
       if (safeReferenceData.makes_models && safeReferenceData.makes_models[makeName]) {
         filteredMakes[makeName] = safeReferenceData.makes_models[makeName]
       } else {
-        console.warn(`[ai-extract-vehicles] Make '${makeName}' not found in reference data`)
+        // Try case-insensitive match
+        const makeNameLower = makeName.toLowerCase()
+        const foundMake = Object.keys(safeReferenceData.makes_models || {}).find(
+          make => make.toLowerCase() === makeNameLower
+        )
+        
+        if (foundMake && safeReferenceData.makes_models) {
+          filteredMakes[foundMake] = safeReferenceData.makes_models[foundMake]
+          console.log(`[ai-extract-vehicles] Found case-insensitive match: '${makeName}' → '${foundMake}'`)
+        } else {
+          console.warn(`[ai-extract-vehicles] Make '${makeName}' not found in reference data - using all models as fallback`)
+          // Use all models as fallback when dealer's make is unknown
+          filteredMakes = safeReferenceData.makes_models || {}
+        }
       }
       
       allowedModelsContext = JSON.stringify(filteredMakes)
@@ -714,11 +729,14 @@ async function handleRegularRequest(requestBody: any): Promise<Response> {
         dealerMake: makeName || 'Not provided',
         originalMakesCount: Object.keys(safeReferenceData.makes_models || {}).length,
         filteredMakesCount: Object.keys(filteredMakes).length,
-        filteredModelsCount: filteredMakes[makeName] ? filteredMakes[makeName].length : 0,
-        hasValidMake: !!filteredMakes[makeName]
+        filteredModelsCount: Object.values(filteredMakes).reduce((total, models) => total + (Array.isArray(models) ? models.length : 0), 0),
+        hasValidMake: Object.keys(filteredMakes).length > 0,
+        usedFallback: Object.keys(filteredMakes).length === Object.keys(safeReferenceData.makes_models || {}).length
       })
-    } else if (!makeName) {
-      console.warn('[ai-extract-vehicles] No makeName provided - using empty models list')
+    } else if (!makeName || makeName === 'Unknown') {
+      console.warn('[ai-extract-vehicles] No makeName provided or makeName is Unknown - using all models as fallback')
+      // Use all available models when make is unknown
+      allowedModelsContext = JSON.stringify(safeReferenceData.makes_models || {})
     }
 
     // Prepare existing listings context with optimization for large inventories

@@ -262,6 +262,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         hasReferenceData: !!referenceData,
         referenceDataKeys: referenceData ? Object.keys(referenceData) : [],
         sellerMakeId: seller.make_id,
+        sellerMakeName: config.makeName, // Log the make name being sent
         transformedReferenceData,
         originalReferenceData: {
           makesCount: referenceData?.makes?.length || 0,
@@ -269,7 +270,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
           fuelTypesCount: referenceData?.fuelTypes?.length || 0,
           transmissionsCount: referenceData?.transmissions?.length || 0,
           bodyTypesCount: referenceData?.bodyTypes?.length || 0
-        }
+        },
+        availableMakeNames: referenceData?.makes?.map(m => m.name) || [], // Log available make names
+        makeNameMatch: referenceData?.makes?.some(m => m.name === config.makeName) || false,
+        caseInsensitiveMatch: referenceData?.makes?.some(m => m.name.toLowerCase() === config.makeName?.toLowerCase()) || false
       });
 
       // Step 2.5: Validate existing listings are loaded before AI processing
@@ -705,6 +709,7 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
         hasReferenceData: !!referenceData,
         referenceDataKeys: referenceData ? Object.keys(referenceData) : [],
         sellerMakeId: seller.make_id,
+        sellerMakeName: config.makeName, // Log the make name being sent
         transformedReferenceData,
         originalReferenceData: {
           makesCount: referenceData?.makes?.length || 0,
@@ -712,7 +717,10 @@ export const SellerBulkPDFExtractionModal: React.FC<SellerBulkPDFExtractionModal
           fuelTypesCount: referenceData?.fuelTypes?.length || 0,
           transmissionsCount: referenceData?.transmissions?.length || 0,
           bodyTypesCount: referenceData?.bodyTypes?.length || 0
-        }
+        },
+        availableMakeNames: referenceData?.makes?.map(m => m.name) || [], // Log available make names
+        makeNameMatch: referenceData?.makes?.some(m => m.name === config.makeName) || false,
+        caseInsensitiveMatch: referenceData?.makes?.some(m => m.name.toLowerCase() === config.makeName?.toLowerCase()) || false
       });
 
       // Validate existing listings are loaded before AI processing
