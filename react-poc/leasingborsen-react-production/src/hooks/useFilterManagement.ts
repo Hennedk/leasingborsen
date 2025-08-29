@@ -22,6 +22,7 @@ export const useFilterManagement = () => {
         setFilter('price_min', null)
         setFilter('price_max', null)
       },
+      mileage: () => setFilter('mileage_selected', null),
       makes: () => setFilter('makes', []),
       models: () => setFilter('models', []),
       body_type: () => setFilter('body_type', []),
