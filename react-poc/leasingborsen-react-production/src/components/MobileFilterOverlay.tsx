@@ -366,6 +366,25 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           </Select>
         </div>
 
+        {/* Price Range - MOVED TO TOP */}
+        <PriceRangeFilter
+          label="Ydelse pr. måned"
+          minValue={price_min}
+          maxValue={price_max}
+          onMinChange={(value) => setFilter('price_min', value === 'all' ? null : parseInt(value.toString()))}
+          onMaxChange={(value) => setFilter('price_max', value === 'all' ? null : parseInt(value.toString()))}
+          schemaKey="price"
+          variant="mobile"
+        />
+
+        {/* Mileage - MOVED TO SECOND */}
+        <MileageChips
+          label="Km pr. år"
+          selectedMileage={mileage_selected as MileageOption | null}
+          onMileageChange={(mileage) => setFilter('mileage_selected', mileage)}
+          variant="mobile"
+        />
+
         {/* Make Selection */}
         <div className="space-y-3">
           <Label className="text-base font-medium text-foreground">Mærke</Label>
@@ -439,14 +458,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           />
         </div>
 
-        {/* Mileage */}
-        <MileageChips
-          label="Km pr. år"
-          selectedMileage={mileage_selected as MileageOption | null}
-          onMileageChange={(mileage) => setFilter('mileage_selected', mileage)}
-          variant="mobile"
-        />
-
         {/* Body Type */}
         <ExpandableFilterChips
           label="Biltype"
@@ -454,17 +465,6 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
           remainingOptions={filterHelpers.getBodyTypesByPopularity().remaining}
           selectedValues={body_type || []}
           onToggle={handleBodyTypeToggle}
-          variant="mobile"
-        />
-
-        {/* Price Range */}
-        <PriceRangeFilter
-          label="Ydelse pr. måned"
-          minValue={price_min}
-          maxValue={price_max}
-          onMinChange={(value) => setFilter('price_min', value === 'all' ? null : parseInt(value.toString()))}
-          onMaxChange={(value) => setFilter('price_max', value === 'all' ? null : parseInt(value.toString()))}
-          schemaKey="price"
           variant="mobile"
         />
 

@@ -128,6 +128,25 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
           {/* Vehicle Selection Section */}
           <div className="space-y-4">
             
+            {/* Price Range Filter - MOVED TO TOP */}
+            <PriceRangeFilter
+              label="Ydelse pr. måned"
+              minValue={priceMin}
+              maxValue={priceMax}
+              onMinChange={(value) => handleFilterChange('price_min', value)}
+              onMaxChange={(value) => handleFilterChange('price_max', value)}
+              schemaKey="price"
+              variant="desktop"
+            />
+
+            {/* Mileage Filter - MOVED TO SECOND */}
+            <MileageChips
+              label="Km pr. år"
+              selectedMileage={mileageSelected as any}
+              onMileageChange={(mileage) => handleFilterChange('mileage_selected', mileage)}
+              variant="desktop"
+            />
+
             {/* Make and Model Selector */}
             <MakeModelSelector
               makes={referenceData.makes || []}
@@ -155,14 +174,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               onToggle={(value) => handleArrayFilterToggle('transmission', value)}
             />
 
-            {/* Mileage Filter */}
-            <MileageChips
-              label="Km pr. år"
-              selectedMileage={mileageSelected as any}
-              onMileageChange={(mileage) => handleFilterChange('mileage_selected', mileage)}
-              variant="desktop"
-            />
-
             {/* Body Type Filter */}
             <ExpandableFilterChips
               label="Biltype"
@@ -170,17 +181,6 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
               remainingOptions={remainingBodyTypeOptions}
               selectedValues={bodyTypes}
               onToggle={(value) => handleArrayFilterToggle('body_type', value)}
-            />
-
-            {/* Price Range Filter */}
-            <PriceRangeFilter
-              label="Ydelse pr. måned"
-              minValue={priceMin}
-              maxValue={priceMax}
-              onMinChange={(value) => handleFilterChange('price_min', value)}
-              onMaxChange={(value) => handleFilterChange('price_max', value)}
-              schemaKey="price"
-              variant="desktop"
             />
 
             {/* Seat Count Filter */}
