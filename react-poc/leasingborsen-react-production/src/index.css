@@ -27,6 +27,8 @@
   /* Surface colors (Cazoo-like celadon) */
   --surface-brand: oklch(0.9594 0.0492 154.3);
   --surface-brand-foreground: 0.145 0.041 157;
+  --surface-brand-hover: oklch(0.92 0.045 154.3);
+  --surface-brand-subtle: oklch(0.98 0.02 154.3);
   
   /* Alt surface (very soft tint for cards/stripes) */
   --surface-alt: oklch(0.9842 0.0058 153.78);
@@ -123,6 +125,8 @@
   /* Surface colors - adjusted for dark mode */
   --surface-brand: oklch(0.2800 0.0206 156.82);
   --surface-brand-foreground: oklch(0.9851 0 0);
+  --surface-brand-hover: oklch(0.35 0.025 156.82);
+  --surface-brand-subtle: oklch(0.22 0.015 156.82);
   
   /* Alt surface - subtle in dark mode */
   --surface-alt: oklch(0.2000 0.0058 153.78);

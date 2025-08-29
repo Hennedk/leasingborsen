@@ -19,15 +19,15 @@ const badgeVariants = cva(
           "text-foreground border-border [a&]:hover:bg-surface-alt [a&]:hover:text-foreground",
         // New variants for filter chips
         "filter-selected":
-          "bg-surface-brand text-foreground !border-border hover:bg-surface-brand/80 cursor-pointer font-normal",
+          "[background-color:var(--surface-brand)] text-foreground !border-border hover:[background-color:var(--surface-brand-hover)] cursor-pointer font-normal",
         "filter-unselected":
-          "hover:bg-muted/50 !border-border hover:!border-border cursor-pointer font-normal",
+          "hover:[background-color:var(--surface-brand-subtle)] !border-border hover:!border-border cursor-pointer font-normal",
         // Result context badges (subtle, non-intrusive)
         "result-count":
           "px-2.5 py-1 text-xs bg-secondary text-secondary-foreground border-border",
         // For active filter chips in results context  
         "result-filter":
-          "px-2.5 py-1.5 text-xs bg-background text-foreground !border-border hover:bg-muted/50 font-normal",
+          "px-2.5 py-1.5 text-xs bg-background text-foreground !border-border hover:[background-color:var(--surface-brand-subtle)] font-normal",
       },
       size: {
         sm: "h-8 px-3 text-xs",
