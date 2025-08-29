@@ -156,14 +156,12 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             />
 
             {/* Mileage Filter */}
-            <div className="space-y-3">
-              <span className="text-sm font-medium text-foreground">Km pr. år</span>
-              <MileageChips
-                selectedMileage={mileageSelected as any}
-                onMileageChange={(mileage) => handleFilterChange('mileage_selected', mileage)}
-                variant="desktop"
-              />
-            </div>
+            <MileageChips
+              label="Km pr. år"
+              selectedMileage={mileageSelected as any}
+              onMileageChange={(mileage) => handleFilterChange('mileage_selected', mileage)}
+              variant="desktop"
+            />
 
             {/* Body Type Filter */}
             <ExpandableFilterChips

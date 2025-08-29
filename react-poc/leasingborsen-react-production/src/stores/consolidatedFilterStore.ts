@@ -336,8 +336,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           activeFilters.push({
             key: 'mileage',
             label: state.mileage_selected === 35000 
-              ? '35k+ km/år'  // Special label for 35k+
-              : `${(state.mileage_selected / 1000).toFixed(0)}k km/år`,
+              ? '35.000+ km/år'  // Special label for 35k+
+              : `${state.mileage_selected.toLocaleString('da-DK')} km/år`,
             value: state.mileage_selected.toString()
           })
         }
