@@ -1,5 +1,56 @@
 # Session Log
 
+## 2025-08-29: Mileage Filter UI/UX Improvements
+
+### Summary
+Refined mileage filter implementation with improved visual consistency, display formatting, and better context clarity for active filter chips.
+
+### Changes Made
+
+#### 1. Filter Integration & Visual Consistency
+- **Files**: `src/components/FilterSidebar.tsx`, `src/components/MobileFilterOverlay.tsx`
+- **Changes**: 
+  - Integrated MileageChips into FilterSidebar alongside other filter types
+  - Added MileageChips to MobileFilterOverlay with consistent mobile styling
+  - Removed standalone mileage filter sections from Listings.tsx
+  - Updated useFilterOperations hook to include mileage state management
+
+#### 2. Component Styling Alignment
+- **File**: `src/components/filters/MileageChips.tsx`
+- **Changes**:
+  - Converted from custom buttons to Badge components for visual consistency
+  - Added label prop support following FilterChips pattern
+  - Removed "Årlig kørselsgrænse" subheader for cleaner interface
+  - Updated display format from "10k km/år" to "10.000" (Danish number formatting)
+  - Uses same filter-selected/filter-unselected Badge variants as other filters
+
+#### 3. Active Filter Context Improvement
+- **File**: `src/stores/consolidatedFilterStore.ts`
+- **Changes**:
+  - Updated active filter labels to include "km/år" context (e.g., "15.000 km/år")
+  - Provides clear meaning when mileage filters appear above search results
+  - Uses Danish locale formatting with thousand separators
+
+#### 4. Test Updates
+- **File**: `src/components/filters/__tests__/MileageFilter.test.tsx`
+- **Changes**:
+  - Updated test expectations for new display format ("10.000" vs "10k km/år")
+  - Modified tests to work with Badge components instead of buttons
+  - Updated accessibility tests for new component structure
+  - All 10 tests passing
+
+### Technical Notes
+- **Build Status**: ✅ Passing (449KB JS, 138KB CSS)
+- **Test Status**: ✅ All tests passing 
+- **Visual Consistency**: Mileage filter now matches fuel type and transmission filter styling
+- **Context Clarity**: Active filter chips show proper unit context while selection chips remain clean
+
+### Next Steps
+- Manual browser testing across devices recommended
+- Consider user feedback on new display format
+
+---
+
 ## 2025-08-28: Mileage Filter Implementation
 
 ### Summary
