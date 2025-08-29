@@ -70,7 +70,8 @@
       "Bash(npm run:*)",
       "mcp__serena__replace_symbol_body",
       "Bash(npm uninstall:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "mcp__supabase__search_docs"
     ]
   },
   "enableAllProjectMcpServers": true,
