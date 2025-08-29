@@ -79,7 +79,7 @@ describe('MileageChips', () => {
 
 describe('selectBestOffer', () => {
   // Mock the selectBestOffer function for testing
-  const selectBestOffer = (leasePricing: any[], targetMileage: number, standardDeposit: number = 0) => {
+  const selectBestOffer = (leasePricing: any[], targetMileage: number, targetDeposit: number = 35000) => {
     if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
       return null
     }
@@ -104,17 +104,27 @@ describe('selectBestOffer', () => {
       )
       
       if (termOffers.length > 0) {
+        // NEW LOGIC: Find offer closest to target deposit (35k kr)
         let selectedOffer = termOffers.find(offer => 
-          offer.first_payment === standardDeposit
+          offer.first_payment === targetDeposit
         )
         
         if (!selectedOffer) {
-          const validOffers = termOffers
-            .filter(offer => offer.first_payment >= standardDeposit)
-            .sort((a, b) => a.first_payment - b.first_payment)
+          // Find deposit closest to target (35k kr)
+          const depositDistances = termOffers.map(offer => ({
+            offer,
+            distance: Math.abs(offer.first_payment - targetDeposit)
+          }))
           
-          selectedOffer = validOffers[0] || termOffers
-            .sort((a, b) => a.first_payment - b.first_payment)[0]
+          // Sort by distance to target deposit, then by monthly price if tied
+          depositDistances.sort((a, b) => {
+            if (a.distance !== b.distance) {
+              return a.distance - b.distance // Closest to target first
+            }
+            return a.offer.monthly_price - b.offer.monthly_price // Lower monthly if tied
+          })
+          
+          selectedOffer = depositDistances[0].offer
         }
         
         return {

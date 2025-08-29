@@ -131,7 +131,7 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
 function selectBestOffer(
   leasePricing: any,
   targetMileage: number,
-  standardDeposit: number = 0,
+  targetDeposit: number = 35000, // Changed from 0 to 35000 kr as balanced middle-ground
   strictMode: boolean = true
 ): any {
   if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
@@ -195,20 +195,27 @@ function selectBestOffer(
     )
     
     if (termOffers.length > 0) {
-      // Find offer with standard deposit (0 kr) or closest higher
+      // NEW LOGIC: Find offer closest to target deposit (35k kr)
       let selectedOffer = termOffers.find(offer => 
-        offer.first_payment === standardDeposit
+        offer.first_payment === targetDeposit
       )
       
       if (!selectedOffer) {
-        // Get offer with lowest deposit that's >= standard
-        const validOffers = termOffers
-          .filter(offer => offer.first_payment >= standardDeposit)
-          .sort((a, b) => a.first_payment - b.first_payment)
+        // Find deposit closest to target (35k kr)
+        const depositDistances = termOffers.map(offer => ({
+          offer,
+          distance: Math.abs(offer.first_payment - targetDeposit)
+        }))
         
-        // If no deposit >= standard, take the lowest available
-        selectedOffer = validOffers[0] || termOffers
-          .sort((a, b) => a.first_payment - b.first_payment)[0]
+        // Sort by distance to target deposit, then by monthly price if tied
+        depositDistances.sort((a, b) => {
+          if (a.distance !== b.distance) {
+            return a.distance - b.distance // Closest to target first
+          }
+          return a.offer.monthly_price - b.offer.monthly_price // Lower monthly if tied
+        })
+        
+        selectedOffer = depositDistances[0].offer
       }
       
       if (strictMode) {
@@ -230,16 +237,25 @@ function selectBestOffer(
     return null // Exclude listing in strict mode
   } else {
     // In flexible mode, find any offer with the closest mileage
-    // Sort by first payment (ascending) and take the best one
+    // Sort by deposit distance to target, then by monthly price
     const bestOffer = matchingOffers
+      .map(offer => ({
+        offer,
+        depositDistance: Math.abs(offer.first_payment - targetDeposit)
+      }))
       .sort((a, b) => {
         // First, prefer 36 months if available
-        if (a.period_months === 36 && b.period_months !== 36) return -1
-        if (b.period_months === 36 && a.period_months !== 36) return 1
+        if (a.offer.period_months === 36 && b.offer.period_months !== 36) return -1
+        if (b.offer.period_months === 36 && a.offer.period_months !== 36) return 1
         
-        // Then sort by first payment
-        return a.first_payment - b.first_payment
-      })[0]
+        // Then sort by deposit distance to target
+        if (a.depositDistance !== b.depositDistance) {
+          return a.depositDistance - b.depositDistance
+        }
+        
+        // Finally by monthly price
+        return a.offer.monthly_price - b.offer.monthly_price
+      })[0]?.offer
     
     return {
       ...bestOffer,
