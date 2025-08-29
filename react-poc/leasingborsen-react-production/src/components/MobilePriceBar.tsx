@@ -59,7 +59,7 @@ const MobilePriceBarComponent: React.FC<MobilePriceBarProps> = ({
                   {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
                 </p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground leading-relaxed mb-4">
-                  <span className="font-medium">{config.km.toLocaleString('da-DK')} km/år</span>
+                  <span className="font-medium">{config.km?.toLocaleString('da-DK')} km/år</span>
                   <span className="text-muted-foreground/50">•</span>
                   <span className="font-medium">{config.mdr} mdr</span>
                   {selectedLease?.first_payment && (

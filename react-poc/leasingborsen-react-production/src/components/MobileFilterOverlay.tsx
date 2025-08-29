@@ -13,6 +13,7 @@ import { useReferenceData } from '@/hooks/useReferenceData'
 import { useFilterOptions } from '@/hooks/useFilterTranslations'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
+import type { MileageOption } from '@/types'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
 import { cn } from '@/lib/utils'
 import { borderVariants } from '@/lib/borderStyles'
@@ -441,7 +442,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         {/* Mileage */}
         <MileageChips
           label="Km pr. år"
-          selectedMileage={mileage_selected}
+          selectedMileage={mileage_selected as MileageOption | null}
           onMileageChange={(mileage) => setFilter('mileage_selected', mileage)}
           variant="mobile"
         />
