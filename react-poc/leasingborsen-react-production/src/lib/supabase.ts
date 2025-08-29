@@ -309,7 +309,7 @@ export class CarListingQueries {
       const selectedOffer = selectBestOffer(
         listing.lease_pricing,
         selectedMileage,
-        0, // Standard deposit (0 kr default)
+        35000, // Target 35k kr deposit for balanced rates
         strictMode
       )
       
@@ -486,7 +486,7 @@ export class CarListingQueries {
       const selectedOffer = selectBestOffer(
         listing.lease_pricing,
         selectedMileage,
-        0,
+        35000, // Target 35k kr deposit for balanced rates
         strictMode
       )
       return selectedOffer !== null
