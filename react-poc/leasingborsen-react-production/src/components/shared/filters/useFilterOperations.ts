@@ -64,7 +64,7 @@ export const useFilterOperations = () => {
       price_max, 
       seats_min, 
       seats_max,
-      mileage_selected && mileage_selected !== 15000 ? mileage_selected : null
+      mileage_selected !== null && mileage_selected !== undefined ? mileage_selected : null
     ].filter(value => value !== null && value !== undefined).length
   }, [makes.length, models.length, body_type.length, fuel_type.length, transmission.length, price_min, price_max, seats_min, seats_max, mileage_selected])
 
@@ -106,7 +106,7 @@ export const useFilterOperations = () => {
     priceMax: price_max,
     seatsMin: seats_min,
     seatsMax: seats_max,
-    mileageSelected: mileage_selected || 15000,
+    mileageSelected: mileage_selected,
     
     // Calculated values
     activeFiltersCount,

@@ -200,9 +200,6 @@ export const useUrlSync = () => {
         if (validMileages.includes(parsedKm)) {
           setFilter('mileage_selected', parsedKm as any)
         }
-      } else if (!urlSnapshot.current) {
-        // Default to 15k if no URL param
-        setFilter('mileage_selected', 15000)
       }
 
       // Handle sort order
@@ -212,9 +209,6 @@ export const useUrlSync = () => {
       
       // Mark as applied to prevent re-run
       hasAppliedUrlFilters.current = true
-    } else {
-      // No URL filters, set default mileage
-      setFilter('mileage_selected', 15000)
     }
     
     // Mark hydration complete
@@ -305,11 +299,11 @@ export const useUrlSync = () => {
       delete newSearch.seats_max
     }
     
-    // Handle mileage parameter (only include if not default)
-    if (mileage_selected && mileage_selected !== 15000) {
+    // Handle mileage parameter (only include if explicitly selected)
+    if (mileage_selected !== null && mileage_selected !== undefined) {
       newSearch.km = mileage_selected  // Always numeric (35000 for 35k+)
     } else {
-      delete newSearch.km  // Remove parameter when default
+      delete newSearch.km  // Remove parameter when no filter selected
     }
     
     // Handle sort order

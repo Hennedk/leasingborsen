@@ -138,24 +138,57 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
 function selectBestOffer(
   leasePricing: any,
   targetMileage: number,
-  standardDeposit: number = 0
+  standardDeposit: number = 0,
+  strictMode: boolean = true
 ): any {
   if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
     return null
   }
   
-  // Handle 35k+ group - accept any of these mileages
-  const acceptableMileages = targetMileage === 35000 
-    ? [35000, 40000, 45000, 50000]
-    : [targetMileage]
+  let matchingOffers: any[]
   
-  // Filter to matching mileage options
-  const matchingOffers = leasePricing.filter(offer => 
-    acceptableMileages.includes(offer.mileage_per_year)
-  )
-  
-  if (matchingOffers.length === 0) {
-    return null // No offers at target mileage - exclude listing
+  if (strictMode) {
+    // Original strict behavior - only exact matches
+    if (targetMileage === 35000) {
+      // 35k+ group - accept any of these mileages
+      const acceptableMileages = [35000, 40000, 45000, 50000]
+      matchingOffers = leasePricing.filter(offer => 
+        acceptableMileages.includes(offer.mileage_per_year)
+      )
+    } else {
+      // Exact match for other mileage options
+      matchingOffers = leasePricing.filter(offer => 
+        offer.mileage_per_year === targetMileage
+      )
+    }
+    
+    if (matchingOffers.length === 0) {
+      return null // No offers at target mileage - exclude listing in strict mode
+    }
+  } else {
+    // Flexible mode - find closest mileage to target
+    const availableMileages = [...new Set(leasePricing.map(offer => offer.mileage_per_year))]
+    
+    if (availableMileages.length === 0) {
+      return null
+    }
+    
+    // Find the closest mileage(s) to target
+    let closestDistance = Math.min(...availableMileages.map(mileage => 
+      Math.abs(mileage - targetMileage)
+    ))
+    
+    const closestMileages = availableMileages.filter(mileage => 
+      Math.abs(mileage - targetMileage) === closestDistance
+    )
+    
+    // If multiple equally close, prefer the lower one
+    const selectedMileage = Math.min(...closestMileages)
+    
+    // Filter to offers with the selected mileage
+    matchingOffers = leasePricing.filter(offer => 
+      offer.mileage_per_year === selectedMileage
+    )
   }
   
   // Term preference order: 36 → 24 → 48
@@ -185,13 +218,32 @@ function selectBestOffer(
       
       return {
         ...selectedOffer,
-        selection_method: preferredTerm === 36 ? 'exact' : 'fallback'
+        selection_method: strictMode && preferredTerm === 36 ? 'exact' : 'fallback'
       }
     }
   }
   
-  // No offers with preferred terms - exclude listing
-  return null
+  // Fallback: no offers with preferred terms
+  if (strictMode) {
+    return null // Exclude listing in strict mode
+  } else {
+    // In flexible mode, find any offer with the closest mileage
+    // Sort by first payment (ascending) and take the best one
+    const bestOffer = matchingOffers
+      .sort((a, b) => {
+        // First, prefer 36 months if available
+        if (a.period_months === 36 && b.period_months !== 36) return -1
+        if (b.period_months === 36 && a.period_months !== 36) return 1
+        
+        // Then sort by first payment
+        return a.first_payment - b.first_payment
+      })[0]
+    
+    return {
+      ...bestOffer,
+      selection_method: 'fallback'
+    }
+  }
 }
 
 // Export types for external use
@@ -200,8 +252,9 @@ export type { CarListing, FilterOptions, Make, Model, BodyType, FuelType, Transm
 // Query Builders with Types
 export class CarListingQueries {
   static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0): Promise<SupabaseResponse<CarListing>> {
-    // Set default mileage if not provided
-    const selectedMileage = filters.mileage_selected || 15000
+    // Determine target mileage and mode
+    const selectedMileage = filters.mileage_selected ?? 15000 // Use 15k as target for closest match
+    const strictMode = filters.mileage_selected !== null && filters.mileage_selected !== undefined
     
     let query = supabase
       .from('full_listing_view')
@@ -238,7 +291,8 @@ export class CarListingQueries {
       const selectedOffer = selectBestOffer(
         listing.lease_pricing,
         selectedMileage,
-        0 // Standard deposit (0 kr default)
+        0, // Standard deposit (0 kr default)
+        strictMode
       )
       
       if (!selectedOffer) {
@@ -378,7 +432,8 @@ export class CarListingQueries {
   }
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
-    const selectedMileage = filters.mileage_selected || 15000
+    const selectedMileage = filters.mileage_selected ?? 15000
+    const strictMode = filters.mileage_selected !== null && filters.mileage_selected !== undefined
     
     let query = supabase
       .from('full_listing_view')
@@ -394,9 +449,9 @@ export class CarListingQueries {
       return { data: 0, error }
     }
 
-    // For mileage filtering with offer selection, we need to count client-side
-    // since we exclude listings without matching offers
-    if (filters.mileage_selected) {
+    // For mileage offer selection, we need to count client-side
+    // since we exclude listings without matching offers (in strict mode) or select closest match (flexible mode)
+    if (strictMode || !strictMode) { // Always do client-side counting for mileage logic
       if (!data) return { data: 0, error: null }
       
       // Deduplicate by listing ID
@@ -415,7 +470,8 @@ export class CarListingQueries {
         const selectedOffer = selectBestOffer(
           listing.lease_pricing,
           selectedMileage,
-          0
+          0,
+          strictMode
         )
         return selectedOffer !== null
       })

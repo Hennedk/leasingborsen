@@ -3,7 +3,6 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { filterTranslations } from '@/lib/translations/filterTranslations'
 import type { Filters, FilterChip, SortOrder, CarSelection } from '@/types'
-import { DEFAULT_MILEAGE } from '@/types'
 
 /* Claude Change Summary:
  * Consolidated filterStore.ts (274 lines) + persistentFilterStore.ts (143 lines) 
@@ -45,7 +44,7 @@ const defaultFilters: Filters = {
   seats_max: null,
   horsepower_min: null,
   horsepower_max: null,
-  mileage_selected: DEFAULT_MILEAGE
+  mileage_selected: null
 }
 
 const persistenceConfig = {
@@ -331,8 +330,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           })
         }
         
-        // Mileage filter (only show if not default)
-        if (state.mileage_selected && state.mileage_selected !== DEFAULT_MILEAGE) {
+        // Mileage filter (only show if explicitly selected)
+        if (state.mileage_selected !== null && state.mileage_selected !== undefined) {
           activeFilters.push({
             key: 'mileage',
             label: state.mileage_selected === 35000 
@@ -357,7 +356,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           // Check if there are any active filters (excluding default values)
           const hasActiveFilters = Object.entries(state).some(([key, value]) => {
             if (key === 'sortOrder') return value !== ''
-            if (key === 'mileage_selected') return value !== null && value !== DEFAULT_MILEAGE
+            if (key === 'mileage_selected') return value !== null && value !== undefined
             if (Array.isArray(value)) return value.length > 0
             if (typeof value === 'string') return value !== ''
             return value !== null && value !== undefined

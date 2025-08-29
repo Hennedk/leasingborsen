@@ -6,8 +6,8 @@ import { MILEAGE_OPTIONS, type MileageOption } from '@/types'
 
 interface MileageChipsProps {
   label?: string
-  selectedMileage: MileageOption
-  onMileageChange: (mileage: MileageOption) => void
+  selectedMileage: MileageOption | null
+  onMileageChange: (mileage: MileageOption | null) => void
   className?: string
   variant?: 'desktop' | 'mobile'
 }
@@ -43,7 +43,7 @@ export const MileageChips: React.FC<MileageChipsProps> = ({
               variant={isSelected ? "filter-selected" : "filter-unselected"}
               size="default"
               className="cursor-pointer transition-colors"
-              onClick={() => onMileageChange(mileage)}
+              onClick={() => onMileageChange(isSelected ? null : mileage)}
             >
               {formatLabel(mileage)}
             </Badge>

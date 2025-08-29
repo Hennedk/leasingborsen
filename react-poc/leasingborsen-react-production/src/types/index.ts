@@ -70,7 +70,6 @@ export interface FilterOptions {
 // Mileage filter types
 export type MileageOption = 10000 | 15000 | 20000 | 25000 | 30000 | 35000 // 35000 represents 35k+
 export const MILEAGE_OPTIONS: MileageOption[] = [10000, 15000, 20000, 25000, 30000, 35000]
-export const DEFAULT_MILEAGE: MileageOption = 15000
 
 // Legacy alias for backward compatibility
 export type Filters = FilterOptions

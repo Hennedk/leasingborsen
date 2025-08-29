@@ -441,7 +441,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         {/* Mileage */}
         <MileageChips
           label="Km pr. år"
-          selectedMileage={(mileage_selected || 15000) as any}
+          selectedMileage={mileage_selected}
           onMileageChange={(mileage) => setFilter('mileage_selected', mileage)}
           variant="mobile"
         />

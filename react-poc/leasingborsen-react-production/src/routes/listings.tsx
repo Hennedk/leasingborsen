@@ -32,7 +32,7 @@ const listingsSearchSchema = z.object({
   horsepower_max: z.number().optional(),
   
   // Lease configuration parameters
-  km: z.number().int().catch(15000), // km per year
+  km: z.number().int().optional(), // km per year
   mdr: z.number().int().catch(36), // lease months
   udb: z.number().catch(0), // down payment
   
@@ -52,7 +52,6 @@ const listingsSearchSchema = z.object({
   limit: 20,
   sort: 'lease_score_desc' as const,
   view: 'grid' as const,
-  km: 15000,
   mdr: 36,
   udb: 0,
 })) // Fallback with defaults for invalid searches // Fallback with defaults for invalid searches
