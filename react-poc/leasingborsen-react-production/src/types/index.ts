@@ -190,7 +190,7 @@ export interface CarListing extends
   selected_deposit?: number
   selected_monthly_price?: number
   selected_lease_score?: number | null
-  offer_selection_method?: 'exact' | 'fallback' | 'none'
+  offer_selection_method?: 'exact' | 'fallback' | 'closest' | 'none'
   
   // Preserve original pricing for reference
   all_lease_pricing?: any[]

@@ -300,7 +300,7 @@ export const useUrlSync = () => {
     }
     
     // Handle mileage parameter (only include if explicitly selected)
-    if (mileage_selected !== null && mileage_selected !== undefined) {
+    if (mileage_selected != null) {
       newSearch.km = mileage_selected  // Always numeric (35000 for 35k+)
     } else {
       delete newSearch.km  // Remove parameter when no filter selected

@@ -120,16 +120,9 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
     query = query.lte('horsepower', filters.horsepower_max)
   }
   
-  // Mileage filtering - prefer scalar column for performance
-  if (filters.mileage_selected) {
-    if (filters.mileage_selected === 35000) {
-      // 35k+ includes 35k, 40k, 45k, 50k - use IN clause
-      query = query.in('mileage_per_year', [35000, 40000, 45000, 50000])
-    } else {
-      // Exact match for other mileage options
-      query = query.eq('mileage_per_year', filters.mileage_selected)
-    }
-  }
+  // Mileage filtering removed - handled client-side via selectBestOffer
+  // The lease_pricing column is type 'json' not 'jsonb', so PostgREST containment operators don't work
+  // Client-side filtering in selectBestOffer with strictMode handles this correctly
 
   return query
 }
@@ -146,6 +139,7 @@ function selectBestOffer(
   }
   
   let matchingOffers: any[]
+  let isExactMileageFlexible = false
   
   if (strictMode) {
     // Original strict behavior - only exact matches
@@ -174,7 +168,7 @@ function selectBestOffer(
     }
     
     // Find the closest mileage(s) to target
-    let closestDistance = Math.min(...availableMileages.map(mileage => 
+    const closestDistance = Math.min(...availableMileages.map(mileage => 
       Math.abs(mileage - targetMileage)
     ))
     
@@ -184,6 +178,7 @@ function selectBestOffer(
     
     // If multiple equally close, prefer the lower one
     const selectedMileage = Math.min(...closestMileages)
+    isExactMileageFlexible = selectedMileage === targetMileage
     
     // Filter to offers with the selected mileage
     matchingOffers = leasePricing.filter(offer => 
@@ -216,9 +211,16 @@ function selectBestOffer(
           .sort((a, b) => a.first_payment - b.first_payment)[0]
       }
       
-      return {
-        ...selectedOffer,
-        selection_method: strictMode && preferredTerm === 36 ? 'exact' : 'fallback'
+      if (strictMode) {
+        return {
+          ...selectedOffer,
+          selection_method: preferredTerm === 36 ? 'exact' : 'fallback'
+        }
+      } else {
+        return {
+          ...selectedOffer,
+          selection_method: isExactMileageFlexible ? (preferredTerm === 36 ? 'exact' : 'fallback') : 'closest'
+        }
       }
     }
   }
@@ -241,7 +243,7 @@ function selectBestOffer(
     
     return {
       ...bestOffer,
-      selection_method: 'fallback'
+      selection_method: isExactMileageFlexible ? 'exact' : 'closest'
     }
   }
 }
@@ -254,7 +256,7 @@ export class CarListingQueries {
   static async getListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder = '', offset = 0): Promise<SupabaseResponse<CarListing>> {
     // Determine target mileage and mode
     const selectedMileage = filters.mileage_selected ?? 15000 // Use 15k as target for closest match
-    const strictMode = filters.mileage_selected !== null && filters.mileage_selected !== undefined
+    const strictMode = filters.mileage_selected != null
     
     let query = supabase
       .from('full_listing_view')
@@ -339,11 +341,11 @@ export class CarListingQueries {
     if (sortOrder === 'lease_score_desc') {
       sortedData = sortedData.sort((a, b) => {
         // Listings with scores come first
-        if (a.selected_lease_score !== null && b.selected_lease_score === null) return -1
-        if (a.selected_lease_score === null && b.selected_lease_score !== null) return 1
+        if (a.selected_lease_score != null && b.selected_lease_score == null) return -1
+        if (a.selected_lease_score == null && b.selected_lease_score != null) return 1
         
         // Both have scores: sort by score descending
-        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+        if (a.selected_lease_score != null && b.selected_lease_score != null) {
           const scoreDiff = b.selected_lease_score - a.selected_lease_score
           if (scoreDiff !== 0) return scoreDiff
         }
@@ -364,7 +366,7 @@ export class CarListingQueries {
         if (priceDiff !== 0) return priceDiff
         
         // Tie-breaker: higher lease score
-        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+        if (a.selected_lease_score != null && b.selected_lease_score != null) {
           const scoreDiff = b.selected_lease_score - a.selected_lease_score
           if (scoreDiff !== 0) return scoreDiff
         }
@@ -381,7 +383,7 @@ export class CarListingQueries {
         if (priceDiff !== 0) return priceDiff
         
         // Tie-breaker: higher lease score
-        if (a.selected_lease_score !== null && b.selected_lease_score !== null) {
+        if (a.selected_lease_score != null && b.selected_lease_score != null) {
           const scoreDiff = b.selected_lease_score - a.selected_lease_score
           if (scoreDiff !== 0) return scoreDiff
         }
@@ -433,54 +435,48 @@ export class CarListingQueries {
 
   static async getListingCount(filters: Partial<FilterOptions> = {}): Promise<{ data: number; error: any }> {
     const selectedMileage = filters.mileage_selected ?? 15000
-    const strictMode = filters.mileage_selected !== null && filters.mileage_selected !== undefined
+    const strictMode = filters.mileage_selected != null
     
     let query = supabase
       .from('full_listing_view')
-      .select('id, lease_pricing', { count: 'exact' })
+      .select('id, lease_pricing')
       .not('monthly_price', 'is', null)
 
     // Apply same filters as getListings
     query = applyFilters(query, filters)
 
-    const { data, count, error } = await query
+    const { data, error } = await query
 
     if (error) {
       return { data: 0, error }
     }
 
-    // For mileage offer selection, we need to count client-side
-    // since we exclude listings without matching offers (in strict mode) or select closest match (flexible mode)
-    if (strictMode || !strictMode) { // Always do client-side counting for mileage logic
-      if (!data) return { data: 0, error: null }
-      
-      // Deduplicate by listing ID
-      const deduplicatedMap = new Map<string, any>()
-      data.forEach((listing: any) => {
-        const listingId = listing.id
-        if (!deduplicatedMap.has(listingId)) {
-          deduplicatedMap.set(listingId, listing)
-        }
-      })
-      
-      const uniqueListings = Array.from(deduplicatedMap.values())
-      
-      // Count listings that have matching offers
-      const validListings = uniqueListings.filter((listing: any) => {
-        const selectedOffer = selectBestOffer(
-          listing.lease_pricing,
-          selectedMileage,
-          0,
-          strictMode
-        )
-        return selectedOffer !== null
-      })
-      
-      return { data: validListings.length, error: null }
-    }
-
-    // For other filtering, use the database count
-    return { data: count || 0, error: null }
+    // Always do client-side counting to align with selection logic
+    if (!data) return { data: 0, error: null }
+    
+    // Deduplicate by listing ID
+    const deduplicatedMap = new Map<string, any>()
+    data.forEach((listing: any) => {
+      const listingId = listing.id
+      if (!deduplicatedMap.has(listingId)) {
+        deduplicatedMap.set(listingId, listing)
+      }
+    })
+    
+    const uniqueListings = Array.from(deduplicatedMap.values())
+    
+    // Count listings that have matching offers
+    const validListings = uniqueListings.filter((listing: any) => {
+      const selectedOffer = selectBestOffer(
+        listing.lease_pricing,
+        selectedMileage,
+        0,
+        strictMode
+      )
+      return selectedOffer !== null
+    })
+    
+    return { data: validListings.length, error: null }
   }
 }
 

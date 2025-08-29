@@ -64,20 +64,20 @@ export const useFilterOperations = () => {
       price_max, 
       seats_min, 
       seats_max,
-      mileage_selected !== null && mileage_selected !== undefined ? mileage_selected : null
+      mileage_selected != null ? mileage_selected : null
     ].filter(value => value !== null && value !== undefined).length
   }, [makes.length, models.length, body_type.length, fuel_type.length, transmission.length, price_min, price_max, seats_min, seats_max, mileage_selected])
 
   // Handle filter changes for numeric fields
-  const handleFilterChange = useCallback((key: string, value: string | number) => {
+  const handleFilterChange = useCallback((key: string, value: string | number | null) => {
     const isNumericField = ['price_min', 'price_max', 'seats_min', 'seats_max'].includes(key)
     const isMileageField = key === 'mileage_selected'
     
     if (isMileageField) {
-      setFilter(key as any, value)
+      setFilter(key as any, value as any)
     } else if (isNumericField && value !== 'all' && value !== '') {
-      const numericValue = parseInt(value as string)
-      setFilter(key as any, numericValue)
+      const numericValue = typeof value === 'number' ? value : parseInt(value as string)
+      setFilter(key as any, numericValue as any)
     } else {
       if (isNumericField) {
         setFilter(key as any, null)

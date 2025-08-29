@@ -331,7 +331,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         }
         
         // Mileage filter (only show if explicitly selected)
-        if (state.mileage_selected !== null && state.mileage_selected !== undefined) {
+        if (state.mileage_selected != null) {
           activeFilters.push({
             key: 'mileage',
             label: state.mileage_selected === 35000 
@@ -356,7 +356,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           // Check if there are any active filters (excluding default values)
           const hasActiveFilters = Object.entries(state).some(([key, value]) => {
             if (key === 'sortOrder') return value !== ''
-            if (key === 'mileage_selected') return value !== null && value !== undefined
+            if (key === 'mileage_selected') return value != null
             if (Array.isArray(value)) return value.length > 0
             if (typeof value === 'string') return value !== ''
             return value !== null && value !== undefined
