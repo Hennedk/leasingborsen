@@ -25,6 +25,19 @@ export interface Transmission {
   name: string
 }
 
+// Lease configuration types for URL sync
+export interface LeaseConfigState {
+  km: number | null    // Mileage per year
+  mdr: number         // Term in months  
+  udb: number         // Upfront deposit/payment
+}
+
+export interface LeaseConfigSearchParams {
+  selectedDeposit?: number
+  selectedMileage?: number
+  selectedTerm?: number
+}
+
 export interface Colour {
   id: string
   name: string

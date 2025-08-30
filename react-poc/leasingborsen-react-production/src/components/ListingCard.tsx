@@ -21,6 +21,9 @@ import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { calculateLeaseScore } from '@/hooks/useLeaseCalculator'
 import type { CarListing } from '@/types'
 
+import { mapUrlParamsToLeaseConfig } from '@/lib/utils'
+import type { LeaseConfigSearchParams } from '@/types'
+
 interface ListingCardProps {
   car?: CarListing | null
   loading?: boolean
@@ -30,14 +33,33 @@ interface ListingCardProps {
 const listingsRoute = getRouteApi('/listings')
 
 const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1 }) => {
-  // Try to get search params, fallback to empty object if not on listings route
-  let searchParams = {}
+  /**
+   * LEASE CONFIGURATION URL SYNC STRATEGY
+   * 
+   * Problem: MobilePriceBar updates URL params (km/mdr/udb) but ListingCard
+   * was using stale car.selected_* values, causing navigation to lose current config.
+   * 
+   * Solution: Read URL params at navigation time to ensure current values are carried over.
+   * 
+   * Flow:
+   * 1. User changes config in MobilePriceBar → URL updates (km/mdr/udb)
+   * 2. ListingCard reads current URL state at click time
+   * 3. Navigation passes URL config to detail page
+   * 4. Detail page receives proper selectedMileage/selectedTerm/selectedDeposit
+   */
+  let searchParams: Record<string, any> = { km: null, mdr: 36, udb: 0 }
   try {
     searchParams = listingsRoute.useSearch()
   } catch {
-    // Not on listings route, use empty search params
-    searchParams = {}
+    // Not on listings route, use default config
+    searchParams = { km: null, mdr: 36, udb: 0 }
   }
+
+  // Convert URL params (km/mdr/udb) to internal format (selectedMileage/selectedTerm/selectedDeposit)
+  const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => 
+    mapUrlParamsToLeaseConfig(searchParams), 
+    [searchParams]
+  )
   const { prepareListingNavigation } = useNavigationContext()
   const navigate = useNavigate()
   
@@ -122,10 +144,19 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         to: '/listing/$id', 
         params: { id: car.id || car.listing_id || '' },
         search: {
-          // Carry over selected offer settings from the listings page
-          selectedDeposit: car.selected_deposit || car.first_payment,
-          selectedMileage: car.selected_mileage || car.mileage_per_year,
-          selectedTerm: car.selected_term || car.period_months
+          /**
+           * FALLBACK CHAIN STRATEGY
+           * Priority: URL config → car selection → car defaults
+           * 
+           * 1. currentLeaseConfig: Real-time URL params from MobilePriceBar
+           * 2. car.selected_*: Pre-calculated values from server (may be stale)
+           * 3. car defaults: Original listing values (mileage_per_year, etc.)
+           * 
+           * This ensures users always see the config they selected, not stale data.
+           */
+          selectedDeposit: currentLeaseConfig.selectedDeposit ?? car.selected_deposit ?? car.first_payment,
+          selectedMileage: currentLeaseConfig.selectedMileage ?? car.selected_mileage ?? car.mileage_per_year,
+          selectedTerm: currentLeaseConfig.selectedTerm ?? car.selected_term ?? car.period_months
         }
       })
     }, 0)
@@ -147,7 +178,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       clearTimeout(navigationTimer)
       setNavigating(false)
     }
-  }, [car, navigate, prepareListingNavigation, currentPage, searchParams])
+  }, [car, navigate, prepareListingNavigation, currentPage, currentLeaseConfig])
   
   // Keyboard navigation handler for accessibility
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
