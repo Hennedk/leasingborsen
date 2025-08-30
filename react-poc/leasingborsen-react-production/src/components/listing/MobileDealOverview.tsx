@@ -86,7 +86,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
       
       {/* CTA button - only show if options exist */}
       {(availableMileages.length > 1 || availablePeriods.length > 1 || availableUpfronts.length > 1) && (
-        <div className="pb-2">
+        <div>
           <Button 
             variant="outline" 
             className="w-full bg-surface-brand hover:bg-surface-brand-hover border-surface-brand/50 text-foreground font-medium"

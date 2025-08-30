@@ -257,7 +257,7 @@ const Listing: React.FC = () => {
 
         {/* Similar Cars Section */}
         {car && (
-          <div className="mt-4 lg:mt-16">
+          <div className="lg:mt-16">
             <ErrorBoundary fallback={CompactErrorFallback}>
               <CarListingGrid
                 title="Lignende annoncer"
