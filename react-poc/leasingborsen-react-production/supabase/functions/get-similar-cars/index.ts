@@ -28,6 +28,14 @@ interface ScoredListing {
   tier: string
   match_reasons: string[]
   image_url?: string
+  horsepower?: number
+  first_payment?: number
+  period_months?: number
+  mileage_per_year?: number
+  selected_mileage?: number
+  selected_term?: number
+  selected_deposit?: number
+  selected_lease_score?: number
 }
 
 interface DebugInfo {
@@ -152,7 +160,15 @@ serve(async (req) => {
           body_type,
           fuel_type,
           transmission,
-          image
+          image,
+          horsepower,
+          first_payment,
+          period_months,
+          mileage_per_year,
+          selected_mileage,
+          selected_term,
+          selected_deposit,
+          selected_lease_score
         `)
         .neq('id', listing_id)
 
@@ -421,6 +437,14 @@ function scoreCar(
     score: Math.round(score * 1000) / 1000,
     tier,
     match_reasons: matchReasons,
-    image_url: car.image
+    image_url: car.image,
+    horsepower: car.horsepower,
+    first_payment: car.first_payment,
+    period_months: car.period_months,
+    mileage_per_year: car.mileage_per_year,
+    selected_mileage: car.selected_mileage,
+    selected_term: car.selected_term,
+    selected_deposit: car.selected_deposit,
+    selected_lease_score: car.selected_lease_score
   }
 }

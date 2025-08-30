@@ -58,16 +58,23 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     fuel_type: scoredCar.fuel_type,
     transmission: scoredCar.transmission,
     
-    // Pricing fields
+    // Pricing fields - use actual data from API
     monthly_price: scoredCar.monthly_price,
-    mileage_per_year: 15000, // Default value for display
-    first_payment: undefined, // Optional field
+    mileage_per_year: scoredCar.mileage_per_year || 15000,
+    first_payment: scoredCar.first_payment,
+    period_months: scoredCar.period_months,
+    
+    // Selected offer fields - use actual data from API
+    selected_mileage: scoredCar.selected_mileage,
+    selected_term: scoredCar.selected_term,
+    selected_deposit: scoredCar.selected_deposit,
+    selected_lease_score: scoredCar.selected_lease_score,
     
     // Image - map to expected field name for ListingCard compatibility
     image: scoredCar.image_url,
     
-    // Optional spec fields with sensible defaults to prevent display issues
-    horsepower: undefined,
+    // Spec fields - use actual data from API
+    horsepower: scoredCar.horsepower,
     seats: undefined,
     doors: undefined,
     year: undefined,

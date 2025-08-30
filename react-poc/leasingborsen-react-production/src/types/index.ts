@@ -283,6 +283,14 @@ export interface ScoredListing {
   tier: string
   match_reasons: string[]
   image_url?: string
+  horsepower?: number
+  first_payment?: number
+  period_months?: number
+  mileage_per_year?: number
+  selected_mileage?: number
+  selected_term?: number
+  selected_deposit?: number
+  selected_lease_score?: number
 }
 
 export interface SimilarCarsDebugInfo {
