@@ -24,14 +24,15 @@ export function useLeaseConfigUrlSync(): [LeaseConfigState, (key: keyof LeaseCon
   const search = useSearch({ from: '/listings' })
   
   const config = useMemo(() => ({
-    km: search.km ? Number(search.km) : null,
+    km: Number(search.km) || 15000, // Default to 15000km when not specified
     mdr: Number(search.mdr) || 36,
     udb: Number(search.udb) || 0
   }), [search])
   
   const updateConfig = useCallback((key: keyof LeaseConfigState, value: number | null) => {
     if (value === null) {
-      const { [key]: _, ...cleanSearch } = search
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { [key]: removedKey, ...cleanSearch } = search
       navigate({ 
         search: cleanSearch,
         replace: true 

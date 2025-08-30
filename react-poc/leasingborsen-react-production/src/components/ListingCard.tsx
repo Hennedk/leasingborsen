@@ -47,12 +47,16 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
    * 3. Navigation passes URL config to detail page
    * 4. Detail page receives proper selectedMileage/selectedTerm/selectedDeposit
    */
-  let searchParams: Record<string, any> = { km: null, mdr: 36, udb: 0 }
+  let searchParams: Record<string, unknown> = { km: 15000, mdr: 36, udb: 0 }
   try {
     searchParams = listingsRoute.useSearch()
+    // If km is null in URL, default to 15000 to ensure consistency
+    if (searchParams.km === null || searchParams.km === undefined) {
+      searchParams = { ...searchParams, km: 15000 }
+    }
   } catch {
-    // Not on listings route, use default config
-    searchParams = { km: null, mdr: 36, udb: 0 }
+    // Not on listings route, use standard defaults with 15000km
+    searchParams = { km: 15000, mdr: 36, udb: 0 }
   }
 
   // Convert URL params (km/mdr/udb) to internal format (selectedMileage/selectedTerm/selectedDeposit)

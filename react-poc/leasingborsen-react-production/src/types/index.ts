@@ -27,7 +27,7 @@ export interface Transmission {
 
 // Lease configuration types for URL sync
 export interface LeaseConfigState {
-  km: number | null    // Mileage per year
+  km: number          // Mileage per year (always defaults to 15000)
   mdr: number         // Term in months  
   udb: number         // Upfront deposit/payment
 }
@@ -206,7 +206,7 @@ export interface CarListing extends
   offer_selection_method?: 'exact' | 'fallback' | 'closest' | 'none'
   
   // Preserve original pricing for reference
-  all_lease_pricing?: any[]
+  all_lease_pricing?: unknown[]
 }
 
 // API Response Types
@@ -286,13 +286,13 @@ export interface ScoredListing {
 }
 
 export interface SimilarCarsDebugInfo {
-  source_car: any
+  source_car: unknown
   tier_results: {
     tier1: { candidates: number; selected: number; results: ScoredListing[] }
     tier2: { candidates: number; selected: number; results: ScoredListing[] }
     tier3: { candidates: number; selected: number; results: ScoredListing[] }
   }
-  config_used: any
+  config_used: unknown
   performance: {
     query_time_ms: number
     processing_time_ms: number

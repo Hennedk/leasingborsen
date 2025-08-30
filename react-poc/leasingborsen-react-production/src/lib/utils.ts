@@ -34,10 +34,13 @@ export const leaseConfigMapping = {
 /**
  * Converts URL search params to internal lease config format
  * Handles the km/mdr/udb -> selectedMileage/selectedTerm/selectedDeposit mapping
+ * Defaults to 15000km when no mileage is specified (standard default)
  */
-export function mapUrlParamsToLeaseConfig(searchParams: Record<string, any>) {
+export function mapUrlParamsToLeaseConfig(searchParams: Record<string, unknown>) {
   return {
-    selectedMileage: searchParams.km as number | undefined,
+    selectedMileage: searchParams.km !== null && searchParams.km !== undefined 
+      ? searchParams.km as number 
+      : 15000, // Default to 15000km when not specified
     selectedTerm: searchParams.mdr as number | undefined,
     selectedDeposit: searchParams.udb as number | undefined
   }
