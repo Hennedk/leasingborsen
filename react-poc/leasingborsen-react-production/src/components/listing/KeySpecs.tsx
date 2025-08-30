@@ -99,10 +99,10 @@ const KeySpecs: React.FC<KeySpecsProps> = ({ car, className = "" }) => {
                   {spec.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-muted-foreground font-medium leading-tight">
+                  <div className="text-sm text-muted-foreground font-medium leading-tight">
                     {spec.label}
                   </div>
-                  <div className="text-sm font-medium text-foreground truncate">
+                  <div className="text-base font-normal text-foreground truncate">
                     {spec.value}
                   </div>
                 </div>

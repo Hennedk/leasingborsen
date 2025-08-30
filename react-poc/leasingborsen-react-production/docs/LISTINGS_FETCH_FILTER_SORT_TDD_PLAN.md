@@ -46,6 +46,22 @@ Write tests (should fail only if behavior changes):
 - File: `src/routes/__tests__/listingsSearchSchema.characterization.test.ts`
 - Capture current zod schema behavior, including where multi-select values are silently dropped (fuel/transmission). These tests inform later schema fixes.
 
+5) getListingById with offerSettings (Vitest) - NEW FEATURE
+- File: `src/lib/__tests__/getListingById.characterization.test.ts`
+- Test new offerSettings parameter functionality added in commit 15cd8e1:
+  - Providing targetMileage/targetDeposit/targetTerm selects appropriate offer
+  - Defaults to 15000/35000/null when not provided
+  - Returns selected_* metadata fields for chosen offer
+  - Falls back gracefully when exact match not found
+
+6) useLeaseCalculator Initialization (Vitest) - NEW FEATURE
+- File: `src/hooks/__tests__/useLeaseCalculator.initialization.test.ts`
+- Test complex initialization logic added in commit 15cd8e1:
+  - Priority 1: Uses car.selected_mileage/selected_term/selected_deposit when available
+  - Priority 2: Finds best match with same mileage (36→24→48 term preference)
+  - Priority 3: Falls back to cheapest overall option
+  - Handles navigation from /listings preserving offer selection
+
 Leverage existing tests where available:
 - If prior suites exist (e.g., `lease-score-sorting.test.ts`, `filter-mappings.test.ts`), import and extend them rather than duplicating.
 - Add fixtures and assertions to cover any uncovered edge cases.
@@ -56,33 +72,37 @@ Leverage existing tests where available:
 
 Purpose: Resolve deposit target inconsistency found in commit e061aa2.
 
-Problem:
-- Function signature defaults to `targetDeposit: number = 35000`
-- Call sites explicitly pass `0`: `selectBestOffer(..., targetMileage, 0, ...)`
-- This creates conflicting behavior expectations
+Problem (PARTIALLY RESOLVED):
+- ✅ All call sites now consistently use 35000 (getListings, getListingById, getListingCount)
+- ❌ Value is hardcoded in multiple places instead of centralized configuration
+- Risk: Future changes could re-introduce inconsistencies without central config
 
 Tests first:
 - `src/lib/__tests__/leaseDefaults.consistency.test.ts`:
-  - Assert all call sites use centralized configuration
-  - Fail if hardcoded deposit targets are found
-  - Test both 0 and 35000 targets show different selection results
+  - Assert all call sites use centralized configuration (not hardcoded 35000)
+  - Add lint rule to fail CI if hardcoded deposit targets found
+  - Verify deposit changes affect all functions consistently
+  - Test both 0 and 35000 targets show different selection results (regression prevention)
 
 Implementation:
 - Create `src/config/leaseDefaults.ts` with centralized constants:
   ```typescript
   export const LEASE_DEFAULTS = {
-    targetDeposit: 35000, // Business confirmed default
+    targetDeposit: 35000, // Business confirmed default (currently hardcoded)
     defaultTerm: 36,
     defaultMileage: 15000
   } as const
   ```
-- Update all call sites to use `LEASE_DEFAULTS.targetDeposit`
-- Remove hardcoded `0` from `getListings`/`getListingCount` calls
-- Add lint rule to prevent future hardcoded deposit values
+- Update all call sites to use `LEASE_DEFAULTS.targetDeposit`:
+  - `getListings`: Replace hardcoded `35000` with config
+  - `getListingById`: Replace hardcoded `35000` with config  
+  - `getListingCount`: Replace hardcoded `35000` with config
+- Add ESLint rule to prevent future hardcoded deposit values
 
 Validation:
-- Characterization tests must pass after configuration change
-- Document behavior change: listings will be ordered by 35k deposit preference instead of 0
+- Characterization tests must pass after centralization (no behavior change expected)
+- Configuration centralization should be purely refactoring with identical results
+- Note: The behavior change from 0 to 35k preference has already been implemented
 
 ---
 
@@ -385,6 +405,104 @@ it('requests server with filters and paginates via has_more', async () => {
 })
 ```
 
+5) getListingById with offerSettings (Vitest)
+```ts
+import { describe, it, expect } from 'vitest'
+import { CarListingQueries } from '@/lib/supabase'
+
+describe('getListingById with offerSettings', () => {
+  it('uses provided offerSettings to select specific offer', async () => {
+    const result = await CarListingQueries.getListingById('test-id', {
+      targetMileage: 25000,
+      targetDeposit: 35000,
+      targetTerm: 36
+    })
+    
+    expect(result.data?.selected_mileage).toBe(25000)
+    expect(result.data?.selected_deposit).toBe(35000)
+    expect(result.data?.selected_term).toBe(36)
+  })
+  
+  it('defaults to 15000/35000 when offerSettings not provided', async () => {
+    const result = await CarListingQueries.getListingById('test-id')
+    // Should use selectBestOffer with defaults
+    expect(result.data?.offer_selection_method).toBeDefined()
+  })
+  
+  it('falls back gracefully when exact match not found', async () => {
+    const result = await CarListingQueries.getListingById('test-id', {
+      targetMileage: 99000, // Non-existent mileage
+      targetDeposit: 35000
+    })
+    
+    // Should still return a result with best available offer
+    expect(result.data).toBeTruthy()
+    expect(result.data?.offer_selection_method).toBe('closest')
+  })
+})
+```
+
+6) useLeaseCalculator Initialization (Vitest)
+```ts
+import { renderHook } from '@testing-library/react'
+import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
+import { CarListing } from '@/types'
+
+describe('useLeaseCalculator initialization priorities', () => {
+  it('priority 1: initializes from car selected_* values', () => {
+    const carWithSelected: CarListing = {
+      id: 'test',
+      selected_mileage: 25000,
+      selected_term: 24,
+      selected_deposit: 50000,
+      all_lease_pricing: [
+        { mileage_per_year: 25000, period_months: 24, first_payment: 50000, monthly_price: 3000 },
+        { mileage_per_year: 15000, period_months: 36, first_payment: 0, monthly_price: 2500 }
+      ]
+    } as CarListing
+    
+    const { result } = renderHook(() => useLeaseCalculator(carWithSelected))
+    
+    expect(result.current.selectedMileage).toBe(25000)
+    expect(result.current.selectedPeriod).toBe(24)
+    expect(result.current.selectedUpfront).toBe(50000)
+  })
+  
+  it('priority 2: finds best match with same mileage', () => {
+    const carWithoutSelected: CarListing = {
+      id: 'test',
+      mileage_per_year: 20000, // No selected_* values, use this as target
+      all_lease_pricing: [
+        { mileage_per_year: 20000, period_months: 48, first_payment: 0, monthly_price: 3000 },
+        { mileage_per_year: 20000, period_months: 36, first_payment: 0, monthly_price: 2800 }, // Should prefer 36
+        { mileage_per_year: 15000, period_months: 36, first_payment: 0, monthly_price: 2500 }
+      ]
+    } as CarListing
+    
+    const { result } = renderHook(() => useLeaseCalculator(carWithoutSelected))
+    
+    expect(result.current.selectedMileage).toBe(20000)
+    expect(result.current.selectedPeriod).toBe(36) // Prefers 36 over 48
+  })
+  
+  it('priority 3: falls back to cheapest overall', () => {
+    const carNoMatches: CarListing = {
+      id: 'test',
+      // No matching mileage available
+      all_lease_pricing: [
+        { mileage_per_year: 10000, period_months: 36, first_payment: 0, monthly_price: 3000 },
+        { mileage_per_year: 15000, period_months: 36, first_payment: 0, monthly_price: 2000 }, // Cheapest
+      ]
+    } as CarListing
+    
+    const { result } = renderHook(() => useLeaseCalculator(carNoMatches))
+    
+    expect(result.current.selectedMileage).toBe(15000)
+    expect(result.current.selectedLease?.monthly_price).toBe(2000)
+  })
+})
+```
+
 ---
 
 ## Tooling & CI
@@ -438,7 +556,8 @@ it('requests server with filters and paginates via has_more', async () => {
 
 ## Checklist (TDD-driven)
 
-- [ ] Milestone 0: Characterization tests green.
+- [ ] Milestone 0: Characterization tests green (including NEW: getListingById offerSettings, useLeaseCalculator initialization).
+- [ ] Milestone 0.25: Configuration unification, centralize hardcoded deposit targets.
 - [ ] Milestone 1: Pure selection module, tests green.
 - [ ] Milestone 2: Sort adapter, tests green.
 - [ ] Milestone 3: Route schema updated, tests green.
@@ -456,13 +575,19 @@ Migration Strategy:
 - Phase 5: Deprecate old code path post 2 release cycles.
 
 Deposit Target Migration:
-- Current: Call sites pass 0, but default is 35000 (inconsistent)
-- Target: All systems use 35000 as confirmed business default
-- Impact: Listing order will change when deposit preference switches from 0 to 35000
-- Rollout: Consider feature flag for deposit target change if ordering impacts UX
+- ✅ COMPLETED: All systems now consistently use 35000 (getListings, getListingById, getListingCount)
+- ❌ REMAINING: Extract hardcoded 35000 to centralized configuration (Milestone 0.25)
+- Impact: Listing order has already changed from 0 to 35000 preference (behavior change complete)
+- Next: Configuration centralization is pure refactoring (no further UX impact)
 
 Quick Wins (non-blocking):
 - Extract `selectBestOffer` to its own module with an adapter shim (keep characterization tests as guardrails).
 - Add monitoring to current implementation to baseline performance.
 - Implement request deduplication in client hooks.
 - Add Danish error messages to existing error paths.
+
+Navigation Preservation Testing (integration):
+- Test that URL params (km/mdr/udb) from /listings carry over to /listing detail page
+- Verify getListingById receives correct offerSettings from URL state
+- Ensure useLeaseCalculator initializes with preserved offer selection
+- Validate that back navigation maintains filter state

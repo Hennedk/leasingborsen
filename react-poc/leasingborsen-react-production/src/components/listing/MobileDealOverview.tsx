@@ -33,7 +33,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
       <div className="divide-y divide-border">
         {/* Yearly mileage */}
         <div className="flex justify-between py-3">
-          <span className="font-normal text-muted-foreground">
+          <span className="text-sm sm:text-base font-normal text-muted-foreground">
             Inkl. km/år
 <span className="ml-2 text-xs text-muted-foreground">
               · {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}
@@ -46,7 +46,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
 
         {/* Lease period */}
         <div className="flex justify-between py-3">
-          <span className="font-normal text-muted-foreground">
+          <span className="text-sm sm:text-base font-normal text-muted-foreground">
             Leasingperiode
 <span className="ml-2 text-xs text-muted-foreground">
               · {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}
@@ -59,7 +59,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
 
         {/* First payment */}
         <div className="flex justify-between py-3">
-          <span className="font-normal text-muted-foreground">
+          <span className="text-sm sm:text-base font-normal text-muted-foreground">
             Udbetaling
 <span className="ml-2 text-xs text-muted-foreground">
               · {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}
@@ -73,7 +73,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         {/* Total cost */}
         {selectedLease && selectedPeriod && (
           <div className="flex justify-between py-3">
-            <span className="font-normal text-muted-foreground">Samlet pris i perioden</span>
+            <span className="text-sm sm:text-base font-normal text-muted-foreground">Samlet pris i perioden</span>
             <span className="font-semibold text-foreground">
               {(() => {
                 const totalCost = (selectedLease.monthly_price * selectedPeriod) + (selectedLease.first_payment || 0)

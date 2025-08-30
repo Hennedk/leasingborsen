@@ -22,73 +22,73 @@ const ListingSpecifications = React.memo<ListingSpecificationsProps>(({ car }) =
         <div className="divide-y divide-border">
           {car.make && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Mærke</span>
+              <span className="text-sm font-normal text-muted-foreground">Mærke</span>
               <span className="font-semibold text-foreground">{car.make}</span>
             </div>
           )}
           {car.model && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Model</span>
+              <span className="text-sm font-normal text-muted-foreground">Model</span>
               <span className="font-semibold text-foreground">{car.model}</span>
             </div>
           )}
           {car.variant && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Variant</span>
+              <span className="text-sm font-normal text-muted-foreground">Variant</span>
               <span className="font-semibold text-foreground">{car.variant}</span>
             </div>
           )}
           {car.body_type && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Karrosseri</span>
+              <span className="text-sm font-normal text-muted-foreground">Karrosseri</span>
               <span className="font-semibold text-foreground">{translateBodyType(car.body_type) || car.body_type}</span>
             </div>
           )}
           {car.fuel_type && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Drivmiddel</span>
+              <span className="text-sm font-normal text-muted-foreground">Drivmiddel</span>
               <span className="font-semibold text-foreground">{translateFuelType(car.fuel_type) || car.fuel_type}</span>
             </div>
           )}
           {car.transmission && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Gearkasse</span>
+              <span className="text-sm font-normal text-muted-foreground">Gearkasse</span>
               <span className="font-semibold text-foreground">{translateTransmission(car.transmission) || car.transmission}</span>
             </div>
           )}
           {car.horsepower && car.horsepower > 0 && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Hestekræfter</span>
+              <span className="text-sm font-normal text-muted-foreground">Hestekræfter</span>
               <span className="font-semibold text-foreground">{car.horsepower} hk</span>
             </div>
           )}
           {car.drive_type && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Drivtype</span>
+              <span className="text-sm font-normal text-muted-foreground">Drivtype</span>
               <span className="font-semibold text-foreground">{car.drive_type}</span>
             </div>
           )}
           {car.seats && car.seats > 0 && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">Sæder</span>
+              <span className="text-sm font-normal text-muted-foreground">Sæder</span>
               <span className="font-semibold text-foreground">{car.seats}</span>
             </div>
           )}
           {car.co2_emission && car.co2_emission > 0 && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">CO₂ udslip</span>
+              <span className="text-sm font-normal text-muted-foreground">CO₂ udslip</span>
               <span className="font-semibold text-foreground">{car.co2_emission} g/km</span>
             </div>
           )}
           {car.co2_tax_half_year && car.co2_tax_half_year > 0 && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">CO₂-afgift (halvår)</span>
+              <span className="text-sm font-normal text-muted-foreground">CO₂-afgift (halvår)</span>
               <span className="font-semibold text-foreground">{car.co2_tax_half_year.toLocaleString('da-DK')} kr</span>
             </div>
           )}
           {car.wltp && car.wltp > 0 && (
             <div className="flex justify-between py-3">
-              <span className="font-normal text-muted-foreground">WLTP</span>
+              <span className="text-sm font-normal text-muted-foreground">WLTP</span>
               <span className="font-semibold text-foreground">{car.wltp} km</span>
             </div>
           )}
