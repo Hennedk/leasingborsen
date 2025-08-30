@@ -319,10 +319,63 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
 
   // Initialize with cheapest option
   useEffect(() => {
-    if (leaseOptions.length && !selectedLease) {
+    if (!leaseOptions.length) return
+
+    // If no selection yet, try initializing from car's selected values first
+    if (selectedMileage === null && selectedPeriod === null && selectedUpfront === null) {
+      const targetMileage = car?.selected_mileage ?? car?.mileage_per_year ?? null
+      const targetPeriod = car?.selected_term ?? car?.period_months ?? null
+      const targetUpfront = car?.selected_deposit ?? car?.first_payment ?? null
+
+      if (targetMileage != null) {
+        // 1) Try exact match of mileage+period+upfront
+        const exact = leaseOptions.find(o =>
+          o.mileage_per_year === targetMileage &&
+          (targetPeriod == null || o.period_months === targetPeriod) &&
+          (targetUpfront == null || o.first_payment === targetUpfront)
+        )
+        if (exact) {
+          setSelectedMileage(exact.mileage_per_year)
+          setSelectedPeriod(exact.period_months)
+          setSelectedUpfront(exact.first_payment)
+          return
+        }
+
+        // 2) Try best option with same mileage
+        const sameMileage = leaseOptions.filter(o => o.mileage_per_year === targetMileage)
+        if (sameMileage.length) {
+          // Prefer common periods 36 -> 24 -> 48, then lowest monthly price
+          const periodPref = [36, 24, 48]
+          let best = sameMileage
+            .filter(o => periodPref.includes(o.period_months))
+            .sort((a, b) => {
+              const ai = periodPref.indexOf(a.period_months)
+              const bi = periodPref.indexOf(b.period_months)
+              if (ai !== bi) return ai - bi
+              return a.monthly_price - b.monthly_price
+            })[0]
+
+          if (!best) {
+            // Fallback: lowest monthly among same mileage
+            best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
+          }
+
+          setSelectedMileage(best.mileage_per_year)
+          setSelectedPeriod(best.period_months)
+          setSelectedUpfront(best.first_payment)
+          return
+        }
+      }
+
+      // 3) Final fallback: cheapest overall
+      if (!selectedLease) {
+        resetToCheapest()
+      }
+    } else if (leaseOptions.length && !selectedLease) {
+      // If we have partial selection but no matching offer yet, fallback to cheapest
       resetToCheapest()
     }
-  }, [leaseOptions, selectedLease, resetToCheapest])
+  }, [leaseOptions, selectedLease, resetToCheapest, car?.selected_mileage, car?.mileage_per_year, car?.selected_term, car?.period_months, car?.selected_deposit, car?.first_payment, selectedMileage, selectedPeriod, selectedUpfront])
 
   return {
     selectedMileage,
