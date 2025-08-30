@@ -257,7 +257,7 @@ const Listing: React.FC = () => {
 
         {/* Similar Cars Section */}
         {car && (
-          <div className="mt-8 lg:mt-16">
+          <div className="mt-4 lg:mt-16">
             <ErrorBoundary fallback={CompactErrorFallback}>
               <CarListingGrid
                 title="Lignende annoncer"
@@ -266,7 +266,7 @@ const Listing: React.FC = () => {
                 error={similarError?.message || null}
                 ctaText="Se alle biler"
                 ctaLink="/listings"
-                showCta={true}
+                showCta={false}
                 maxCards={6}
               />
             </ErrorBoundary>
