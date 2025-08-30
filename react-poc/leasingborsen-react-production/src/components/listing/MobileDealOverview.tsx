@@ -89,7 +89,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         <div className="pb-2">
           <Button 
             variant="outline" 
-            className="w-full bg-white"
+            className="w-full bg-surface-brand hover:bg-surface-brand-hover border-surface-brand/50 text-foreground font-medium"
             onClick={onOpenPriceDrawer}
           >
             <SlidersHorizontal className="h-4 w-4 mr-2" />
