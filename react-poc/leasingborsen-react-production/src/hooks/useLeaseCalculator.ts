@@ -317,6 +317,13 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedUpfront(bestScoreOption.first_payment)
   }, [bestScoreOption])
 
+  // Reset calculator state when navigating to a different car
+  useEffect(() => {
+    setSelectedMileage(null)
+    setSelectedPeriod(null)
+    setSelectedUpfront(null)
+  }, [car?.id])
+
   // Initialize with cheapest option
   useEffect(() => {
     if (!leaseOptions.length) return

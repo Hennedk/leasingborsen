@@ -31,10 +31,11 @@ const Listing: React.FC = () => {
   const navigate = useNavigate()
   
   // Extract offer settings from search params
+  // Support both new (selectedX) and legacy (km/mdr/udb) parameter formats
   const offerSettings = {
-    selectedDeposit: search.selectedDeposit,
-    selectedMileage: search.selectedMileage,
-    selectedTerm: search.selectedTerm
+    selectedDeposit: search.selectedDeposit ?? search.udb,
+    selectedMileage: search.selectedMileage ?? search.km,
+    selectedTerm: search.selectedTerm ?? search.mdr
   }
   
   const { data: listingResponse, isLoading, error } = useListing(id || '', offerSettings)
