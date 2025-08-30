@@ -322,7 +322,7 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedMileage(null)
     setSelectedPeriod(null)
     setSelectedUpfront(null)
-  }, [car?.id])
+  }, [car?.id, car?.listing_id])
 
   // Initialize with cheapest option
   useEffect(() => {
