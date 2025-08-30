@@ -39,7 +39,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
               · {availableMileages.length === 1 ? '1 mulighed' : `${availableMileages.length} muligheder`}
             </span>
           </span>
-          <span className="font-semibold text-foreground">
+          <span className="font-medium text-foreground">
             {selectedMileage ? selectedMileage.toLocaleString('da-DK') : '–'}
           </span>
         </div>
@@ -52,7 +52,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
               · {availablePeriods.length === 1 ? '1 mulighed' : `${availablePeriods.length} muligheder`}
             </span>
           </span>
-          <span className="font-semibold text-foreground">
+          <span className="font-medium text-foreground">
             {selectedPeriod ? `${selectedPeriod} mdr` : '–'}
           </span>
         </div>
@@ -65,7 +65,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
               · {availableUpfronts.length === 1 ? '1 mulighed' : `${availableUpfronts.length} muligheder`}
             </span>
           </span>
-          <span className="font-semibold text-foreground">
+          <span className="font-medium text-foreground">
             {selectedLease?.first_payment ? `${selectedLease.first_payment.toLocaleString('da-DK')} kr` : '0 kr'}
           </span>
         </div>
@@ -74,7 +74,7 @@ const MobileDealOverview: React.FC<MobileDealOverviewProps> = ({
         {selectedLease && selectedPeriod && (
           <div className="flex justify-between py-3">
             <span className="text-sm sm:text-base font-normal text-muted-foreground">Samlet pris i perioden</span>
-            <span className="font-semibold text-foreground">
+            <span className="font-medium text-foreground">
               {(() => {
                 const totalCost = (selectedLease.monthly_price * selectedPeriod) + (selectedLease.first_payment || 0)
                 return `${totalCost.toLocaleString('da-DK')} kr`
