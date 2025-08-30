@@ -116,11 +116,17 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     setShowRipple(true)
     setIsPressed(true)
     
-    // Navigate after ensuring context is prepared
+    // Navigate with selected offer settings to maintain context
     setTimeout(() => {
       navigate({ 
         to: '/listing/$id', 
-        params: { id: car.id || car.listing_id || '' } 
+        params: { id: car.id || car.listing_id || '' },
+        search: {
+          // Carry over selected offer settings from the listings page
+          selectedDeposit: car.selected_deposit || car.first_payment,
+          selectedMileage: car.selected_mileage || car.mileage_per_year,
+          selectedTerm: car.selected_term || car.period_months
+        }
       })
     }, 0)
     

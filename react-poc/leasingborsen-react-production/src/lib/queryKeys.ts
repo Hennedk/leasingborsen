@@ -23,7 +23,7 @@ export const queryKeys = {
     [...queryKeys.listings, 'count', filters, sortOrder] as const,
   
   // Individual listing
-  listingDetail: (id: string) => [...queryKeys.listing, id] as const,
+  listingDetail: (id: string, offerSettings?: any) => [...queryKeys.listing, id, offerSettings] as const,
   
   // Admin listings
   adminListings: (filters: Partial<FilterOptions> = {}) =>

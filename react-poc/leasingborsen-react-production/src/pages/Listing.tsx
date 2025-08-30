@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
@@ -27,8 +27,17 @@ import type { CarListing } from '@/types'
 
 const Listing: React.FC = () => {
   const { id } = useListingParams()
+  const search = useSearch({ from: '/listing/$id' })
   const navigate = useNavigate()
-  const { data: listingResponse, isLoading, error } = useListing(id || '')
+  
+  // Extract offer settings from search params
+  const offerSettings = {
+    selectedDeposit: search.selectedDeposit,
+    selectedMileage: search.selectedMileage,
+    selectedTerm: search.selectedTerm
+  }
+  
+  const { data: listingResponse, isLoading, error } = useListing(id || '', offerSettings)
   const { isPositioned } = useListingPositioning(id)
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 

@@ -37,12 +37,23 @@ export function useInfiniteListings(filters: Partial<FilterOptions> = {}, sortOr
   })
 }
 
-export function useListing(id: string) {
+export function useListing(
+  id: string, 
+  offerSettings?: {
+    selectedDeposit?: number
+    selectedMileage?: number
+    selectedTerm?: number
+  }
+) {
   const queryClient = useQueryClient()
   
   return useQuery({
-    queryKey: queryKeys.listingDetail(id),
-    queryFn: () => CarListingQueries.getListingById(id),
+    queryKey: queryKeys.listingDetail(id, offerSettings),
+    queryFn: () => CarListingQueries.getListingById(id, {
+      targetDeposit: offerSettings?.selectedDeposit,
+      targetMileage: offerSettings?.selectedMileage,
+      targetTerm: offerSettings?.selectedTerm
+    }),
     enabled: !!id,
     staleTime: 15 * 60 * 1000, // 15 minutes - individual listings change less frequently
     gcTime: 30 * 60 * 1000, // 30 minutes

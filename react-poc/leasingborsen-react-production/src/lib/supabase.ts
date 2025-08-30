@@ -417,14 +417,20 @@ export class CarListingQueries {
     return { data: paginatedData as CarListing[], error: null }
   }
 
-  static async getListingById(id: string): Promise<SupabaseSingleResponse<CarListing>> {
+  static async getListingById(
+    id: string, 
+    offerSettings?: {
+      targetMileage?: number
+      targetDeposit?: number
+      targetTerm?: number
+    }
+  ): Promise<SupabaseSingleResponse<CarListing>> {
     // Get all rows for this listing (there may be multiple due to multiple pricing options)
     const { data, error } = await supabase
       .from('full_listing_view')
       .select('*')
       .eq('id', id)
       .not('monthly_price', 'is', null) // Only show listings with offers
-      .order('monthly_price', { ascending: true }) // Get lowest price first
 
     if (error) {
       return { data: null, error }
@@ -434,16 +440,48 @@ export class CarListingQueries {
       return { data: null, error: new Error('Listing not found') }
     }
 
-    // Get the listing (full_listing_view already returns lowest price and aggregated data)
-    const listing = data[0] as any
-    const leasePricingArray = Array.isArray(listing.lease_pricing) ? listing.lease_pricing : []
+    // Get the listing data from the first row
+    const baseListing = data[0] as any
+    const leasePricingArray = Array.isArray(baseListing.lease_pricing) ? baseListing.lease_pricing : []
     const offerCount = leasePricingArray.length
+    
+    let finalListing = baseListing
+
+    // If offer settings are provided, use selectBestOffer to choose the appropriate pricing
+    if (offerSettings && leasePricingArray.length > 0) {
+      const selectedOffer = selectBestOffer(
+        leasePricingArray,
+        offerSettings.targetMileage || 15000, // Default to 15k if not specified
+        offerSettings.targetDeposit || 35000,  // Default to 35k if not specified
+        true // strict mode
+      )
+
+      if (selectedOffer) {
+        // Override the listing data with the selected offer values
+        finalListing = {
+          ...baseListing,
+          monthly_price: selectedOffer.monthly_price,
+          mileage_per_year: selectedOffer.mileage_per_year,
+          period_months: selectedOffer.period_months,
+          first_payment: selectedOffer.first_payment,
+          
+          // Add metadata about selection
+          selected_mileage: selectedOffer.mileage_per_year,
+          selected_term: selectedOffer.period_months,
+          selected_deposit: selectedOffer.first_payment,
+          selected_monthly_price: selectedOffer.monthly_price,
+          offer_selection_method: selectedOffer.selection_method
+        }
+      }
+    }
     
     // Add offer metadata
     const enrichedListing = {
-      ...listing,
+      ...finalListing,
       offer_count: offerCount,
-      has_multiple_offers: offerCount > 1
+      has_multiple_offers: offerCount > 1,
+      // Preserve all available offers for UI selection
+      all_lease_pricing: leasePricingArray
     }
 
     return { data: enrichedListing as CarListing, error: null }
