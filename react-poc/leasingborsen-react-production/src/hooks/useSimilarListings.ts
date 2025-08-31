@@ -3,7 +3,13 @@ import { supabase } from '@/lib/supabase'
 import type { CarListing, SimilarCarsResponse, ScoredListing } from '@/types'
 import { getCarId } from '@/lib/utils'
 
-export function useSimilarListings(currentCar: CarListing | null, targetCount: number = 8) {
+export function useSimilarListings(
+  currentCar: CarListing | null, 
+  targetCount: number = 8,
+  currentMileage?: number,
+  currentTerm?: number,
+  currentDeposit?: number
+) {
   // Danish error messages for similar listings
   const danishMessages = {
     loadingMessage: 'Indlæser lignende biler...',
@@ -13,7 +19,7 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
   }
 
   const query = useQuery({
-    queryKey: ['similar-cars', currentCar ? getCarId(currentCar) : null, targetCount],
+    queryKey: ['similar-cars', currentCar ? getCarId(currentCar) : null, targetCount, currentMileage, currentTerm, currentDeposit],
     queryFn: async () => {
       if (!currentCar) {
         throw new Error('No car provided')
@@ -28,7 +34,10 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
         body: { 
           listing_id: listingId, 
           target_count: targetCount,
-          debug: process.env.NODE_ENV === 'development'
+          debug: process.env.NODE_ENV === 'development',
+          current_mileage: currentMileage,
+          current_term: currentTerm,
+          current_deposit: currentDeposit
         }
       })
 

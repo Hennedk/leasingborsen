@@ -68,13 +68,6 @@ const Listing: React.FC = () => {
 
   // Scroll to top is now handled by useListingPositioning hook
 
-  // Fetch similar listings using enhanced multi-tier matching
-  const { 
-    similarCars,
-    isLoading: similarLoading, 
-    error: similarError
-  } = useSimilarListings(car || null, 6)
-
   // Lease calculator hook
   const {
     selectedMileage,
@@ -99,6 +92,13 @@ const Listing: React.FC = () => {
     upfrontPriceImpacts,
     setHoveredOption
   } = useLeaseCalculator(car)
+  
+  // Fetch similar listings using enhanced multi-tier matching with current configuration
+  const { 
+    similarCars,
+    isLoading: similarLoading, 
+    error: similarError
+  } = useSimilarListings(car || null, 6, selectedMileage, selectedPeriod, selectedUpfront)
   
   // Seller modal state
   const [sellerModalOpen, setSellerModalOpen] = useState(false)

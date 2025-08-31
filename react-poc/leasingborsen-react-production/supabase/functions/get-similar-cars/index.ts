@@ -6,6 +6,9 @@ interface SimilarCarsRequest {
   listing_id: string
   target_count?: number
   debug?: boolean
+  current_mileage?: number
+  current_term?: number  
+  current_deposit?: number
 }
 
 interface SimilarCarsResponse {
@@ -125,7 +128,14 @@ serve(async (req) => {
         )
       }
 
-      const { listing_id, target_count = 8, debug = false } = await req.json() as SimilarCarsRequest
+      const { 
+        listing_id, 
+        target_count = 8, 
+        debug = false,
+        current_mileage,
+        current_term,
+        current_deposit
+      } = await req.json() as SimilarCarsRequest
 
       if (!listing_id) {
         return new Response(
@@ -166,7 +176,8 @@ serve(async (req) => {
           period_months,
           mileage_per_year,
           retail_price,
-          lease_score
+          lease_score,
+          lease_pricing
         `)
         .neq('id', listing_id)
 
@@ -234,7 +245,7 @@ serve(async (req) => {
       )
       
       const tier1Results = tier1Candidates
-        .map(car => scoreCar(car, sourceCar, 'tier1', SIMILAR_CARS_CONFIG))
+        .map(car => scoreCar(car, sourceCar, 'tier1', SIMILAR_CARS_CONFIG, current_mileage, current_term, current_deposit))
         .sort((a, b) => b.score - a.score)
         .slice(0, SIMILAR_CARS_CONFIG.tiers.tier1.maxResults)
 
@@ -263,7 +274,7 @@ serve(async (req) => {
       )
       
       const tier2Results = tier2Candidates
-        .map(car => scoreCar(car, sourceCar, 'tier2', SIMILAR_CARS_CONFIG))
+        .map(car => scoreCar(car, sourceCar, 'tier2', SIMILAR_CARS_CONFIG, current_mileage, current_term, current_deposit))
         .sort((a, b) => b.score - a.score)
         .slice(0, SIMILAR_CARS_CONFIG.tiers.tier2.maxResults)
 
@@ -291,7 +302,7 @@ serve(async (req) => {
         )
         
         const tier3Results = tier3Candidates
-          .map(car => scoreCar(car, sourceCar, 'tier3', SIMILAR_CARS_CONFIG))
+          .map(car => scoreCar(car, sourceCar, 'tier3', SIMILAR_CARS_CONFIG, current_mileage, current_term, current_deposit))
           .sort((a, b) => b.score - a.score)
           .slice(0, SIMILAR_CARS_CONFIG.tiers.tier3.maxResults)
 
@@ -356,6 +367,53 @@ serve(async (req) => {
   })
 })
 
+// Calculate lease score for a given configuration  
+function calculateLeaseScore(
+  monthlyPrice: number,
+  retailPrice: number,
+  mileagePerYear: number,
+  periodMonths: number
+): number {
+  // Same formula as in frontend useLeaseCalculator.ts
+  const totalMonthlyPaid = monthlyPrice * periodMonths
+  const totalMileage = (mileagePerYear * periodMonths) / 12
+  const pricePerKm = totalMonthlyPaid / totalMileage
+  const residualValueRatio = 1 - (totalMonthlyPaid / retailPrice)
+  
+  // Higher score is better (lower cost per km + higher residual value)
+  const score = Math.max(0, 100 - (pricePerKm * 10) + (residualValueRatio * 50))
+  return Math.round(score)
+}
+
+// Find matching lease offer for given configuration
+function findMatchingOffer(leasePricing: any[], mileage?: number, term?: number, deposit?: number) {
+  if (!leasePricing || leasePricing.length === 0) return null
+  
+  // Try exact match first
+  if (mileage && term && deposit !== undefined) {
+    const exactMatch = leasePricing.find(offer => 
+      offer.mileage_per_year === mileage &&
+      offer.period_months === term &&
+      offer.first_payment === deposit
+    )
+    if (exactMatch) return exactMatch
+  }
+  
+  // Try partial matches (prioritize mileage and term)
+  if (mileage && term) {
+    const partialMatch = leasePricing.find(offer => 
+      offer.mileage_per_year === mileage &&
+      offer.period_months === term
+    )
+    if (partialMatch) return partialMatch
+  }
+  
+  // Fall back to cheapest option
+  return leasePricing.reduce((prev, curr) => 
+    prev.monthly_price < curr.monthly_price ? prev : curr
+  )
+}
+
 // Helper function for model matching with variant handling
 function isSameModel(model1: string, model2: string): boolean {
   const normalize = (model: string) => model
@@ -379,7 +437,10 @@ function scoreCar(
   car: any, 
   sourceCar: any, 
   tier: string, 
-  config: SimilarCarsConfig
+  config: SimilarCarsConfig,
+  currentMileage?: number,
+  currentTerm?: number,
+  currentDeposit?: number
 ): ScoredListing {
   let score = 0
   const matchReasons: string[] = []
@@ -423,12 +484,45 @@ function scoreCar(
     matchReasons.push('Same mærke bonus')
   }
 
+  // Calculate dynamic lease score based on current configuration
+  let dynamicLeaseScore: number | undefined = undefined
+  let selectedOffer = null
+  
+  if (car.lease_pricing && car.retail_price && currentMileage && currentTerm) {
+    try {
+      const leasePricing = typeof car.lease_pricing === 'string' 
+        ? JSON.parse(car.lease_pricing) 
+        : car.lease_pricing
+      
+      selectedOffer = findMatchingOffer(leasePricing, currentMileage, currentTerm, currentDeposit)
+      
+      if (selectedOffer && selectedOffer.monthly_price) {
+        dynamicLeaseScore = calculateLeaseScore(
+          selectedOffer.monthly_price,
+          car.retail_price,
+          selectedOffer.mileage_per_year,
+          selectedOffer.period_months
+        )
+      }
+    } catch (error) {
+      console.warn('Error calculating dynamic lease score:', error)
+    }
+  }
+  
+  // Use selected offer data or fall back to car defaults
+  const displayedOffer = selectedOffer || {
+    monthly_price: car.monthly_price,
+    mileage_per_year: car.mileage_per_year,
+    period_months: car.period_months,
+    first_payment: car.first_payment
+  }
+
   return {
     listing_id: car.id,
     make: car.make,
     model: car.model,
     variant: car.variant,
-    monthly_price: car.monthly_price,
+    monthly_price: displayedOffer.monthly_price,
     body_type: car.body_type,
     fuel_type: car.fuel_type,
     transmission: car.transmission,
@@ -437,13 +531,13 @@ function scoreCar(
     match_reasons: matchReasons,
     image_url: car.image,
     horsepower: car.horsepower,
-    first_payment: car.first_payment,
-    period_months: car.period_months,
-    mileage_per_year: car.mileage_per_year,
-    selected_mileage: car.mileage_per_year, // Use mileage_per_year as fallback
-    selected_term: car.period_months, // Use period_months as fallback
-    selected_deposit: car.first_payment, // Use first_payment as fallback
-    selected_lease_score: car.lease_score, // Use database lease_score
-    retail_price: car.retail_price // Add retail_price for LeaseScorePill display
+    first_payment: displayedOffer.first_payment,
+    period_months: displayedOffer.period_months,
+    mileage_per_year: displayedOffer.mileage_per_year,
+    selected_mileage: displayedOffer.mileage_per_year,
+    selected_term: displayedOffer.period_months,
+    selected_deposit: displayedOffer.first_payment,
+    selected_lease_score: dynamicLeaseScore || car.lease_score, // Use dynamic score or fallback
+    retail_price: car.retail_price
   }
 }
