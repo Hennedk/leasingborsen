@@ -291,6 +291,7 @@ export interface ScoredListing {
   selected_term?: number
   selected_deposit?: number
   selected_lease_score?: number
+  retail_price?: number
 }
 
 export interface SimilarCarsDebugInfo {

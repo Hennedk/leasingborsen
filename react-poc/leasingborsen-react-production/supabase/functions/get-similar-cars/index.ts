@@ -165,10 +165,8 @@ serve(async (req) => {
           first_payment,
           period_months,
           mileage_per_year,
-          selected_mileage,
-          selected_term,
-          selected_deposit,
-          selected_lease_score
+          retail_price,
+          lease_score
         `)
         .neq('id', listing_id)
 
@@ -442,9 +440,10 @@ function scoreCar(
     first_payment: car.first_payment,
     period_months: car.period_months,
     mileage_per_year: car.mileage_per_year,
-    selected_mileage: car.selected_mileage,
-    selected_term: car.selected_term,
-    selected_deposit: car.selected_deposit,
-    selected_lease_score: car.selected_lease_score
+    selected_mileage: car.mileage_per_year, // Use mileage_per_year as fallback
+    selected_term: car.period_months, // Use period_months as fallback
+    selected_deposit: car.first_payment, // Use first_payment as fallback
+    selected_lease_score: car.lease_score, // Use database lease_score
+    retail_price: car.retail_price // Add retail_price for LeaseScorePill display
   }
 }

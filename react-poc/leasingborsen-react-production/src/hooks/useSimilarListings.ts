@@ -63,6 +63,7 @@ export function useSimilarListings(currentCar: CarListing | null, targetCount: n
     mileage_per_year: scoredCar.mileage_per_year || 15000,
     first_payment: scoredCar.first_payment,
     period_months: scoredCar.period_months,
+    retail_price: scoredCar.retail_price, // Add retail_price for lease score calculation
     
     // Selected offer fields - use actual data from API
     selected_mileage: scoredCar.selected_mileage,
