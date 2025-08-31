@@ -18,7 +18,7 @@ import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
 import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 import { useNavigationContext } from '@/hooks/useNavigationContext'
 import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
-import { calculateLeaseScore } from '@/hooks/useLeaseCalculator'
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 import type { CarListing } from '@/types'
 
 import { mapUrlParamsToLeaseConfig } from '@/lib/utils'
@@ -220,12 +220,13 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       return undefined
     }
     
-    return calculateLeaseScore(
-      car.monthly_price,
-      car.retail_price,
-      car.mileage_per_year,
-      car.period_months
-    )
+    return calculateLeaseScoreSimple({
+      monthlyPrice: car.monthly_price,
+      retailPrice: car.retail_price,
+      mileagePerYear: car.mileage_per_year,
+      firstPayment: car.first_payment || 0,
+      contractMonths: car.period_months
+    })
   }, [car?.selected_lease_score, car?.retail_price, car?.monthly_price, car?.mileage_per_year, car?.period_months])
   
   const carAltText = useMemo(() => 

@@ -3,6 +3,7 @@ import type { CarListing, LeaseOptionWithScore } from '@/types'
 import type { HoveredOption, PriceImpactData } from '@/types/priceImpact'
 import { useOffers } from './useOffers'
 import { PriceMatrix } from '@/lib/priceMatrix'
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 // import { useLeaseCalculatorDebug } from './useLeaseCalculatorDebug' // Uncomment for debugging
 
 export interface LeaseOption {
@@ -12,47 +13,20 @@ export interface LeaseOption {
   monthly_price: number
 }
 
-// Lease score calculation function (simplified version of Edge Function logic)
+// Legacy function for backwards compatibility - now using shared module
 export const calculateLeaseScore = (
   monthlyPrice: number,
   retailPrice: number,
   mileagePerYear: number,
   periodMonths: number
 ): number => {
-  // Monthly Rate Score (45% weight)
-  const monthlyRatePercent = (monthlyPrice / retailPrice) * 100
-  let monthlyRateScore = 100
-  if (monthlyRatePercent > 0.9) monthlyRateScore = 90
-  if (monthlyRatePercent > 1.1) monthlyRateScore = 80
-  if (monthlyRatePercent > 1.3) monthlyRateScore = 70
-  if (monthlyRatePercent > 1.5) monthlyRateScore = 60
-  if (monthlyRatePercent > 1.7) monthlyRateScore = 50
-  if (monthlyRatePercent > 1.9) monthlyRateScore = 40
-  if (monthlyRatePercent > 2.1) monthlyRateScore = 25
-
-  // Mileage Score (35% weight)
-  let mileageScore = 20
-  if (mileagePerYear >= 25000) mileageScore = 100
-  else if (mileagePerYear >= 20000) mileageScore = 90
-  else if (mileagePerYear >= 15000) mileageScore = 75
-  else if (mileagePerYear >= 12000) mileageScore = 55
-  else if (mileagePerYear >= 10000) mileageScore = 35
-
-  // Flexibility Score (20% weight)
-  let flexibilityScore = 30
-  if (periodMonths <= 12) flexibilityScore = 100
-  else if (periodMonths <= 24) flexibilityScore = 90
-  else if (periodMonths <= 36) flexibilityScore = 75
-  else if (periodMonths <= 48) flexibilityScore = 55
-
-  // Calculate weighted total
-  const totalScore = Math.round(
-    (monthlyRateScore * 0.45) + 
-    (mileageScore * 0.35) + 
-    (flexibilityScore * 0.20)
-  )
-
-  return Math.max(0, Math.min(100, totalScore))
+  return calculateLeaseScoreSimple({
+    monthlyPrice,
+    retailPrice,
+    mileagePerYear,
+    firstPayment: 0, // Legacy calls don't have first payment info
+    contractMonths: periodMonths
+  })
 }
 
 export interface LeaseCalculatorData {
@@ -263,18 +237,19 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     }
   }, [hoveredOption, priceMatrix, selectedLease, selectedMileage, selectedPeriod, selectedUpfront])
 
-  // Calculate lease scores for all options
+  // Calculate lease scores for all options using v2.0 formula
   const leaseOptionsWithScores = useMemo(() => {
     if (!car?.retail_price || leaseOptions.length === 0) return []
     
     return leaseOptions.map(option => ({
       ...option,
-      lease_score: calculateLeaseScore(
-        option.monthly_price,
-        car.retail_price!,
-        option.mileage_per_year,
-        option.period_months
-      )
+      lease_score: calculateLeaseScoreSimple({
+        monthlyPrice: option.monthly_price,
+        retailPrice: car.retail_price!,
+        mileagePerYear: option.mileage_per_year,
+        firstPayment: option.first_payment,
+        contractMonths: option.period_months // Included for compatibility but ignored in v2
+      })
     }))
   }, [leaseOptions, car?.retail_price])
 

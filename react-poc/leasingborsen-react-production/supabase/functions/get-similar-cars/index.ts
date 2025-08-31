@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
+import { 
+  calculateLeaseScoreSimple, 
+  type LeaseScoreInput 
+} from '../_shared/leaseScore.ts'
 
 interface SimilarCarsRequest {
   listing_id: string
@@ -367,66 +371,6 @@ serve(async (req) => {
   })
 })
 
-// Calculate lease score using the official weighted formula
-function calculateLeaseScore(
-  monthlyPrice: number,
-  retailPrice: number,
-  mileagePerYear: number,
-  periodMonths: number
-): number {
-  // Validate inputs
-  if (!retailPrice || retailPrice <= 0) {
-    console.warn('Invalid retail price for lease score calculation')
-    return 0
-  }
-  if (!monthlyPrice || monthlyPrice <= 0) {
-    console.warn('Invalid monthly price for lease score calculation')
-    return 0
-  }
-
-  // 1. Monthly Rate Score (45% weight)
-  const monthlyRatePercent = (monthlyPrice / retailPrice) * 100
-  let monthlyRateScore: number
-  
-  if (monthlyRatePercent < 0.9) monthlyRateScore = 100
-  else if (monthlyRatePercent < 1.1) monthlyRateScore = 90
-  else if (monthlyRatePercent < 1.3) monthlyRateScore = 80
-  else if (monthlyRatePercent < 1.5) monthlyRateScore = 70
-  else if (monthlyRatePercent < 1.7) monthlyRateScore = 60
-  else if (monthlyRatePercent < 1.9) monthlyRateScore = 50
-  else if (monthlyRatePercent < 2.1) monthlyRateScore = 40
-  else monthlyRateScore = 25
-
-  // 2. Mileage Score (35% weight) - Normalized to 15,000 km baseline
-  const mileageNormalized = mileagePerYear / 15000
-  let mileageScore: number
-  
-  if (mileageNormalized >= 1.67) mileageScore = 100      // 25,000+ km
-  else if (mileageNormalized >= 1.33) mileageScore = 90  // 20,000 km
-  else if (mileageNormalized >= 1.0) mileageScore = 75   // 15,000 km
-  else if (mileageNormalized >= 0.8) mileageScore = 55   // 12,000 km
-  else if (mileageNormalized >= 0.67) mileageScore = 35  // 10,000 km
-  else mileageScore = 20
-
-  // 3. Flexibility Score (20% weight)
-  let flexibilityScore: number
-  
-  if (periodMonths <= 12) flexibilityScore = 100
-  else if (periodMonths <= 24) flexibilityScore = 90
-  else if (periodMonths <= 36) flexibilityScore = 75
-  else if (periodMonths <= 48) flexibilityScore = 55
-  else flexibilityScore = 30
-
-  // Calculate weighted total
-  const totalScore = Math.round(
-    (monthlyRateScore * 0.45) +
-    (mileageScore * 0.35) +
-    (flexibilityScore * 0.20)
-  )
-
-  // Ensure score is within valid range (0-100)
-  return Math.max(0, Math.min(100, totalScore))
-}
 
 // Find matching lease offer for given configuration
 function findMatchingOffer(leasePricing: any[], mileage?: number, term?: number, deposit?: number) {
@@ -540,12 +484,13 @@ function scoreCar(
       selectedOffer = findMatchingOffer(leasePricing, currentMileage, currentTerm, currentDeposit)
       
       if (selectedOffer && selectedOffer.monthly_price) {
-        dynamicLeaseScore = calculateLeaseScore(
-          selectedOffer.monthly_price,
-          car.retail_price,
-          selectedOffer.mileage_per_year,
-          selectedOffer.period_months
-        )
+        dynamicLeaseScore = calculateLeaseScoreSimple({
+          monthlyPrice: selectedOffer.monthly_price,
+          retailPrice: car.retail_price,
+          mileagePerYear: selectedOffer.mileage_per_year,
+          firstPayment: selectedOffer.first_payment || 0,
+          contractMonths: selectedOffer.period_months // Included for compatibility but ignored in v2
+        })
       }
     } catch (error) {
       console.warn('Error calculating dynamic lease score:', error)

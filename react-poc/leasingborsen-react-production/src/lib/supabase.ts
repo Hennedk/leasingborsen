@@ -12,7 +12,7 @@ import type {
   SupabaseSingleResponse
 } from '@/types'
 import { getEnvironmentConfig } from '@/config/environments'
-import { calculateLeaseScore } from '@/hooks/useLeaseCalculator'
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 
 const config = getEnvironmentConfig()
 
@@ -317,14 +317,15 @@ export class CarListingQueries {
         return null // Exclude listings without matching offers
       }
       
-      // CRITICAL FIX: Correct lease score parameter order
+      // Calculate lease score using v2.0 formula with deposit-based scoring
       const leaseScore = selectedOffer.monthly_price && listing.retail_price
-        ? calculateLeaseScore(
-            selectedOffer.monthly_price,  // FIXED: monthlyPrice first
-            listing.retail_price,         // FIXED: retailPrice second
-            selectedOffer.mileage_per_year,
-            selectedOffer.period_months
-          )
+        ? calculateLeaseScoreSimple({
+            monthlyPrice: selectedOffer.monthly_price,
+            retailPrice: listing.retail_price,
+            mileagePerYear: selectedOffer.mileage_per_year,
+            firstPayment: selectedOffer.first_payment || 0,
+            contractMonths: selectedOffer.period_months // Included for compatibility but ignored in v2
+          })
         : null
       
       return {

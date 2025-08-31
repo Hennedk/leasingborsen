@@ -1,8 +1,25 @@
-# Lease Score Calculation Centralization Plan
+# Lease Score Calculation Centralization Plan (MVP Edition)
 
 ## Executive Summary
 
-The lease score calculation is currently duplicated across 4 different locations in the codebase with no shared source of truth. This creates maintenance issues, inconsistency risks, and has already caused bugs (scores > 100). This document outlines a TDD-driven approach to centralize the calculation.
+The lease score calculation is currently duplicated across 4 different locations in the codebase with no shared source of truth. This creates maintenance issues, inconsistency risks, and has already caused bugs (scores > 100). This document outlines a **lean 2-3 day MVP approach** to centralize the calculation and updates the business rules to reward lower upfront payment (deposit-based flexibility) rather than shorter contract terms.
+
+### Why This MVP Approach?
+
+**Key Insights from Analysis:**
+- Database already has `first_payment` field - no schema changes needed
+- Only 4 implementations to update - manageable in one session
+- Current formula works in production - low risk to centralize
+- Business wants deposit-based scoring - good time to make the change
+
+**Simplified vs Original Plan:**
+- ~~5 weeks~~ → **2-3 days** implementation
+- ~~Feature flags~~ → **Direct deployment** with validation
+- ~~100+ tests~~ → **15 focused tests** on business logic  
+- ~~Complex overloads~~ → **Single clear API** with simple wrapper
+- ~~Gradual rollout~~ → **Ship it, monitor, iterate**
+
+**MVP Balance:** Maximum value (centralization + deposit scoring) with minimum complexity (shared module + focused tests).
 
 ## Current State Analysis
 
@@ -74,74 +91,21 @@ The lease score calculation is currently duplicated across 4 different locations
    - Edge cases not covered
    - No regression protection
 
-## TDD Implementation Plan
+## Lean MVP Implementation Plan (2-3 Days)
 
-### Phase 1: Write Tests First (RED)
+### Day 1: Core Implementation
 
-#### 1.1 Create Core Test Suite
-**File**: `supabase/functions/_shared/__tests__/leaseScore.test.ts`
-
-```typescript
-describe('Lease Score Calculation', () => {
-  describe('Core Formula Tests', () => {
-    // Test the weighted formula components
-    it('should calculate monthly rate score correctly')
-    it('should calculate mileage score correctly')
-    it('should calculate flexibility score correctly')
-    it('should apply correct weights (45%, 35%, 20%)')
-    it('should round final score to integer')
-  })
-
-  describe('Score Range Tests', () => {
-    it('should never return score below 0')
-    it('should never return score above 100')
-    it('should handle edge case inputs gracefully')
-  })
-
-  describe('Validation Tests', () => {
-    it('should handle zero retail price')
-    it('should handle negative values')
-    it('should handle null/undefined inputs')
-    it('should handle extremely large values')
-  })
-
-  describe('Known Scenarios', () => {
-    // Test with real data to ensure consistency
-    it('should score 87 for specific known configuration')
-    it('should match production scores for sample data')
-  })
-
-  describe('Breakdown Tests', () => {
-    it('should return complete breakdown when requested')
-    it('should match total score to sum of weighted components')
-  })
-})
-```
-
-#### 1.2 Create Integration Tests
-**File**: `supabase/functions/_shared/__tests__/leaseScore.integration.test.ts`
-
-```typescript
-describe('Lease Score Integration', () => {
-  it('should produce identical results across all implementations')
-  it('should handle Edge Function input format')
-  it('should handle frontend parameter format')
-  it('should work with TypeScript and Deno environments')
-})
-```
-
-### Phase 2: Create Shared Module (GREEN)
-
-#### 2.1 Core Module Structure
+#### 1.1 Create Shared Module
 **File**: `supabase/functions/_shared/leaseScore.ts`
 
 ```typescript
-// Type definitions
+// Simple, clear type definitions
 export interface LeaseScoreInput {
   retailPrice: number
   monthlyPrice: number
   mileagePerYear: number
-  contractMonths: number
+  firstPayment: number  // Already exists in DB
+  contractMonths?: number  // Keep for compatibility, ignore in v2
 }
 
 export interface LeaseScoreBreakdown {
@@ -150,191 +114,193 @@ export interface LeaseScoreBreakdown {
   monthlyRatePercent: number
   mileageScore: number
   mileageNormalized: number
-  flexibilityScore: number
+  upfrontScore: number  // Replaces flexibilityScore
+  firstPaymentPercent: number
+  calculation_version: '2.0'  // Version tagging for tracking
+  // Temporary backwards compatibility
+  flexibilityScore?: number  // Map to upfrontScore if needed
 }
 
-// Main calculation function with overloads
-export function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown
-export function calculateLeaseScore(
-  monthlyPrice: number,
-  retailPrice: number,
-  mileagePerYear: number,
-  periodMonths: number
-): number
+// Single clear function - no complex overloads
+export function calculateLeaseScore(input: LeaseScoreInput): LeaseScoreBreakdown {
+  // Implementation with v2 formula
+}
 
-// Implementation that handles both signatures
-export function calculateLeaseScore(
-  inputOrMonthlyPrice: LeaseScoreInput | number,
-  retailPrice?: number,
-  mileagePerYear?: number,
-  periodMonths?: number
-): LeaseScoreBreakdown | number {
-  // Unified implementation here
+// Simple wrapper for backwards compatibility
+export function calculateLeaseScoreSimple(input: LeaseScoreInput): number {
+  return calculateLeaseScore(input).totalScore
 }
 ```
 
-#### 2.2 Algorithm Components
+#### 1.2 Duplicate for Frontend (Simple Solution)
+**File**: `src/lib/leaseScore.ts`
+- Exact copy of the Deno version for Node compatibility
+- Add a simple build script later: `cp supabase/functions/_shared/leaseScore.ts src/lib/`
+
+#### 1.3 Focused Test Suite (10-15 Tests)
+**File**: `src/lib/__tests__/leaseScore.test.ts`
+
 ```typescript
-// Separate functions for testability
-export function calculateMonthlyRateScore(monthlyPrice: number, retailPrice: number): number
-export function calculateMileageScore(mileagePerYear: number): number  
-export function calculateFlexibilityScore(contractMonths: number): number
-export function calculateWeightedTotal(
-  monthlyRateScore: number,
-  mileageScore: number,
-  flexibilityScore: number
-): number
+describe('Lease Score v2', () => {
+  // Core business logic (8 tests)
+  test('0% deposit scores upfrontScore=100')
+  test('3% deposit scores upfrontScore=95')
+  test('5% deposit scores upfrontScore=90')
+  test('10% deposit scores upfrontScore=70')
+  test('15% deposit scores upfrontScore=55')
+  test('20% deposit scores upfrontScore=40')
+  test('25%+ deposit scores upfrontScore=25')
+  test('total score never exceeds 100 or goes below 0')
+  
+  // Edge cases (4 tests)
+  test('handles zero/null retail price gracefully')
+  test('handles negative values by returning 0')
+  test('rounds scores correctly')
+  test('includes calculation_version: 2.0 in breakdown')
+  
+  // Parity test (1 test)
+  test('Edge Function and frontend return identical results')
+})
 ```
 
-### Phase 3: Refactor Existing Code (REFACTOR)
+### Day 2: Integration & Migration
 
-#### 3.1 Update Edge Functions
+#### 2.1 Update All 4 Implementations
 ```typescript
+// Edge Functions (3 files)
 // calculate-lease-score/index.ts
 import { calculateLeaseScore } from '../_shared/leaseScore.ts'
-
-// Simply re-export or wrap the shared function
 export { calculateLeaseScore }
+
+// batch-calculate-lease-scores/index.ts
+import { calculateLeaseScore } from '../_shared/leaseScore.ts'
+// Update to pass pricing.first_payment
+
+// get-similar-cars/index.ts  
+import { calculateLeaseScoreSimple } from '../_shared/leaseScore.ts'
+// Update to pass first_payment || 0
+
+// Frontend (2 files)
+// useLeaseCalculator.ts
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
+// Update calls to pass firstPayment
+
+// lib/supabase.ts
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
+// Update to pass selectedOffer.first_payment || 0
 ```
 
-#### 3.2 Update Frontend
-```typescript
-// src/hooks/useLeaseCalculator.ts
-import { calculateLeaseScore } from '@/lib/leaseScore'
-
-// Use the shared implementation
-export { calculateLeaseScore }
+#### 2.2 Database Migration
+```sql
+-- Update trigger to include first_payment in staleness check
+CREATE OR REPLACE TRIGGER pricing_score_stale
+AFTER INSERT OR UPDATE OF monthly_price, period_months, mileage_per_year, first_payment 
+ON lease_pricing
+FOR EACH ROW EXECUTE FUNCTION mark_score_stale();
 ```
 
-#### 3.3 Create Frontend Copy (for performance)
-```typescript
-// src/lib/leaseScore.ts
-// Exact copy of shared module for frontend use
-// (Edge Functions can't import from src/)
+### Day 3: Deployment
+
+#### 3.1 Staging Validation
+- Deploy to staging environment
+- Test a few listings with various deposit amounts
+- Verify scores are in expected ranges
+
+#### 3.2 Production Deployment
+```bash
+# Deploy Edge Functions
+supabase functions deploy calculate-lease-score
+supabase functions deploy batch-calculate-lease-scores
+supabase functions deploy get-similar-cars
+
+# Deploy frontend
+git push origin main  # Triggers Vercel deployment
+
+# Recalculate all scores
+curl -X POST [supabase-url]/functions/v1/batch-calculate-lease-scores?force=true
 ```
 
-### Phase 4: Migration Strategy
-
-#### 4.1 Gradual Rollout
-1. **Week 1**: Deploy shared module to Edge Functions
-2. **Week 2**: Update frontend to use shared logic
-3. **Week 3**: Monitor for discrepancies
-4. **Week 4**: Remove old implementations
-
-#### 4.2 Feature Flags
-```typescript
-const USE_CENTRALIZED_SCORE = process.env.USE_CENTRALIZED_SCORE === 'true'
-
-const score = USE_CENTRALIZED_SCORE 
-  ? calculateLeaseScoreCentralized(...)
-  : calculateLeaseScoreOld(...)
-```
-
-#### 4.3 Validation Layer
-```typescript
-// Temporary validation during migration
-function validateScoreConsistency(input: LeaseScoreInput) {
-  const oldScore = calculateLeaseScoreOld(input)
-  const newScore = calculateLeaseScoreCentralized(input)
-  
-  if (Math.abs(oldScore - newScore) > 1) {
-    console.error('Score mismatch detected', { oldScore, newScore, input })
-  }
-  
-  return newScore
-}
-```
+#### 3.3 Quick Monitoring
+- Check score distributions per dealer
+- Verify no scores > 100
+- Monitor for any errors in logs
 
 ## Implementation Checklist
 
-### Phase 1: Testing (Week 1)
-- [ ] Create test directory structure
-- [ ] Write comprehensive unit tests
-- [ ] Write integration tests
-- [ ] Ensure all tests fail initially (RED)
-- [ ] Document expected behaviors
+### Day 1: Core Implementation
+- [ ] Create `_shared/leaseScore.ts` with v2 formula
+- [ ] Copy to `src/lib/leaseScore.ts` for frontend
+- [ ] Write 10-15 focused unit tests
+- [ ] Ensure tests pass with new implementation
+- [ ] Add basic JSDoc documentation
 
-### Phase 2: Implementation (Week 2)
-- [ ] Create `_shared/leaseScore.ts` module
-- [ ] Implement core calculation logic
-- [ ] Support both function signatures
-- [ ] Make all tests pass (GREEN)
-- [ ] Add JSDoc documentation
-
-### Phase 3: Integration (Week 3)
+### Day 2: Integration 
 - [ ] Update `calculate-lease-score` Edge Function
-- [ ] Update `batch-calculate-lease-scores` Edge Function
+- [ ] Update `batch-calculate-lease-scores` Edge Function  
 - [ ] Update `get-similar-cars` Edge Function
-- [ ] Create frontend copy in `src/lib/`
 - [ ] Update `useLeaseCalculator` hook
+- [ ] Update `lib/supabase.ts` buildListingWithLeaseOptions
+- [ ] Create database migration for trigger update
+- [ ] Test all flows locally
 
-### Phase 4: Validation (Week 4)
-- [ ] Run integration tests across all implementations
-- [ ] Deploy to staging environment
-- [ ] Compare scores with production data
-- [ ] Monitor for discrepancies
-- [ ] Performance testing
+### Day 3: Deployment
+- [ ] Deploy to staging and validate
+- [ ] Deploy Edge Functions to production
+- [ ] Deploy frontend to production
+- [ ] Run batch recalculation with force=true
+- [ ] Monitor score distributions
 
-### Phase 5: Cleanup (Week 5)
-- [ ] Remove old implementations
-- [ ] Update documentation
-- [ ] Remove feature flags
-- [ ] Final testing
-- [ ] Production deployment
+## Risk Analysis & Mitigation (Simplified)
 
-## Risk Analysis & Mitigation
-
-### Risks
+### Low-Risk MVP Approach
 
 1. **Score Discrepancies**
-   - Risk: New implementation produces different scores
-   - Mitigation: Extensive testing with production data
-   - Validation layer during migration
+   - Risk: New deposit-based scores differ from old contract-based scores
+   - Mitigation: This is intentional - business wants deposit-based scoring
+   - Fallback: Pass firstPayment=0 initially to match old behavior if needed
 
-2. **Performance Impact**
-   - Risk: Shared module slower than optimized versions
-   - Mitigation: Benchmark before/after
-   - Keep frontend copy for performance
+2. **Data Issues**
+   - Risk: Missing retail_price causes division by zero
+   - Mitigation: Input validation, return score=0 for invalid data
+   - Already handled in current implementations
 
-3. **Deployment Issues**
-   - Risk: Edge Functions fail with shared module
-   - Mitigation: Gradual rollout with feature flags
-   - Easy rollback strategy
+3. **Backwards Compatibility**
+   - Risk: UI expects flexibilityScore field
+   - Mitigation: Map flexibilityScore = upfrontScore temporarily
+   - Remove after UI is updated
 
-4. **Type Compatibility**
-   - Risk: TypeScript/Deno type conflicts
-   - Mitigation: Careful type definitions
-   - Separate test suites for each environment
+4. **File Sync**
+   - Risk: Deno and Node versions diverge
+   - Mitigation: Simple copy script in package.json
+   - Consider single source of truth post-MVP
 
-## Success Metrics
+## Success Metrics (MVP)
 
-1. **Consistency**: 100% identical scores across all implementations
-2. **Test Coverage**: >95% code coverage for score calculation
-3. **Performance**: No degradation in calculation speed
-4. **Maintainability**: Single location for algorithm changes
-5. **Bug Reduction**: Zero score-related bugs post-migration
+1. **Consistency**: All 4 implementations use shared module
+2. **Deposit Scoring**: New scores properly reflect deposit flexibility
+3. **No Regression**: Scores stay in [0,100] range, no > 100 bugs
+4. **Single Source**: Algorithm changes require only one file update
+5. **Quick Delivery**: Full implementation in 2-3 days
 
 ## Long-term Benefits
 
-1. **Single Source of Truth**: One canonical implementation
-2. **Easier Maintenance**: Change once, deploy everywhere
-3. **Better Testing**: Comprehensive test suite
+1. **Single Source of Truth**: One canonical implementation in _shared/leaseScore.ts
+2. **Easier Maintenance**: Change deposit bands once, applies everywhere
+3. **Better Business Logic**: Deposit-based flexibility aligns with user value
 4. **Reduced Bugs**: Impossible for implementations to diverge
-5. **Documentation**: Clear, centralized documentation
-6. **Flexibility**: Easy to update scoring algorithm
-7. **Confidence**: Know that all scores are calculated identically
+5. **Version Tracking**: calculation_version field enables rollback/comparison
+6. **Developer Experience**: Clear API, focused tests, simple to understand
 
 ## Next Steps
 
-1. **Review & Approval**: Get team consensus on approach
-2. **Create Test Suite**: Start with TDD tests
-3. **Implement Shared Module**: Build centralized solution
-4. **Gradual Migration**: Roll out with validation
-5. **Monitor & Optimize**: Ensure success metrics are met
+1. **Day 1**: Create shared module + tests
+2. **Day 2**: Update all implementations + migration
+3. **Day 3**: Deploy and validate
+4. **Post-MVP**: Monitor, optimize, consider advanced features
 
-## Appendix: Current Formula
+## Appendix: Formula (v2 - deposit-based)
 
-For reference, the correct lease score formula uses:
+For reference, the v2 lease score formula uses:
 
 ```
 Monthly Rate Score (45% weight):
@@ -355,24 +321,32 @@ Mileage Score (35% weight):
 - >= 10,000 km/year: 35 points
 - < 10,000 km/year: 20 points
 
-Flexibility Score (20% weight):
-- <= 12 months: 100 points
-- <= 24 months: 90 points
-- <= 36 months: 75 points
-- <= 48 months: 55 points
-- > 48 months: 30 points
+Upfront (Deposit) Score (20% weight): based on firstPayment as % of retail price
+- 0%: 100 points
+- ≤ 3%: 95 points
+- ≤ 5%: 90 points
+- ≤ 7%: 80 points
+- ≤ 10%: 70 points
+- ≤ 15%: 55 points
+- ≤ 20%: 40 points
+- > 20%: 25 points
 
 Total Score = Round(
   MonthlyRateScore * 0.45 +
   MileageScore * 0.35 +
-  FlexibilityScore * 0.20
+  UpfrontScore * 0.20
 )
 
 Clamped to range [0, 100]
 ```
 
+Versioning and breakdown:
+- `calculation_version: '2.0'`
+- Breakdown fields include: `monthlyRateScore`, `monthlyRatePercent`, `mileageScore`, `mileageNormalized`, `upfrontScore`, `firstPaymentPercent`.
+
 ---
 
 *Document created: 2025-01-08*  
+*Updated: 2025-01-08 (Simplified to MVP approach)*  
 *Author: System Architecture Team*  
-*Status: DRAFT - Pending Review*
+*Status: READY FOR IMPLEMENTATION*
