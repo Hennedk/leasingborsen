@@ -1,10 +1,14 @@
 /**
- * Lease Score Calculation Module (v2.0) - Frontend Copy
+ * Lease Score Calculation Module (v2.0) - MASTER SOURCE
  * 
  * Centralized lease score calculation with deposit-based flexibility scoring.
  * This replaces the previous contract-term based scoring with upfront payment flexibility.
  * 
- * NOTE: This is a copy of supabase/functions/_shared/leaseScore.ts for Node.js compatibility
+ * SINGLE SOURCE OF TRUTH: This file is the authoritative implementation
+ * - Used directly by Edge Functions (Deno environment)
+ * - Automatically synced to src/lib/leaseScore.ts for frontend (Node.js)
+ * - Changes here propagate to all implementations via sync script
+ * - Run `npm run sync:leaseScore` after making changes
  * 
  * @version 2.0
  * @author System Architecture Team

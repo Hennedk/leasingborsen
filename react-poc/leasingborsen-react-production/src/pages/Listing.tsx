@@ -274,6 +274,11 @@ const Listing: React.FC = () => {
                 ctaLink="/listings"
                 showCta={false}
                 maxCards={6}
+                leaseConfig={{
+                  selectedMileage: selectedMileage ?? null,
+                  selectedTerm: selectedPeriod ?? null,
+                  selectedDeposit: selectedUpfront ?? null
+                }}
               />
             </ErrorBoundary>
           </div>

@@ -14,6 +14,12 @@ interface CarListingGridProps {
   showCta?: boolean
   maxCards?: number
   className?: string
+  // Optional: carry current lease configuration to ListingCard navigation
+  leaseConfig?: {
+    selectedMileage?: number | null
+    selectedTerm?: number | null
+    selectedDeposit?: number | null
+  }
 }
 
 const CarListingGrid: React.FC<CarListingGridProps> = ({
@@ -25,7 +31,8 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
   ctaLink = "/listings",
   showCta = true,
   maxCards = 4,
-  className = ""
+  className = "",
+  leaseConfig
 }) => {
   // Limit the number of displayed cars
   const displayedCars = cars.slice(0, maxCards)
@@ -95,6 +102,11 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
                     ...car,
                     id: car.listing_id || car.id
                   }} 
+                  initialLeaseConfig={{
+                    selectedMileage: leaseConfig?.selectedMileage ?? undefined,
+                    selectedTerm: leaseConfig?.selectedTerm ?? undefined,
+                    selectedDeposit: leaseConfig?.selectedDeposit ?? undefined
+                  }}
                 />
               </div>
             ))

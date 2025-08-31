@@ -1,21 +1,26 @@
-# Lease Score System - Leasingborsen Platform
+# Lease Score System - Leasingborsen Platform (v2.0)
 
-Comprehensive documentation for the intelligent car leasing value scoring system.
+Comprehensive documentation for the intelligent car leasing value scoring system with deposit-based flexibility scoring.
 
 ## Overview
 
 The lease score system provides intelligent scoring of car listings based on value analysis across multiple pricing offers. Each listing can have multiple lease pricing options, and the system calculates the best possible score.
 
-## Scoring Algorithm
+**Version 2.0 Updates**: 
+- **Deposit-based scoring**: Uses upfront payment flexibility instead of contract term-based scoring, better aligning with user value perception
+- **Centralized implementation**: Single source of truth in `supabase/functions/_shared/leaseScore.ts` eliminates duplicate code and prevents inconsistencies
+- **Version tracking**: All scores tagged with `calculation_version: '2.0'` for rollback capability
+
+## Scoring Algorithm (v2.0)
 
 The lease score uses a weighted scoring system (0-100 scale):
 
 ```typescript
-// Scoring weights and calculation
+// v2.0 Scoring weights and calculation
 const totalScore = Math.round(
   (monthlyRateScore * 0.45) +     // 45% - Monthly rate vs retail price
   (mileageScore * 0.35) +         // 35% - Mileage allowance value  
-  (flexibilityScore * 0.20)       // 20% - Contract term flexibility
+  (upfrontScore * 0.20)          // 20% - Upfront payment flexibility (NEW)
 )
 ```
 
@@ -42,23 +47,37 @@ Evaluates the monthly payment as a percentage of retail price.
 Evaluates the included mileage allowance.
 
 **Calculation**: 
-- Normalized to 15,000 km baseline: `mileagePerYear / 15000`
 - Higher mileage allowance = better value = higher score
-- Linear scaling from 50-100 points
+- Based on annual mileage bands
 
-**Examples**:
-- 10,000 km/year = ~67 points
-- 15,000 km/year = 75 points (baseline)
-- 20,000 km/year = ~83 points
-- 25,000 km/year = ~92 points
+**Score Bands**:
+| Annual Mileage | Score | Rating |
+|----------------|-------|--------|
+| ≥ 25,000 km | 100 points | Excellent |
+| ≥ 20,000 km | 90 points | Very Good |
+| ≥ 15,000 km | 75 points | Good (baseline) |
+| ≥ 12,000 km | 55 points | Fair |
+| ≥ 10,000 km | 35 points | Below Average |
+| < 10,000 km | 20 points | Poor |
 
-### 3. Flexibility Score (20% weight)
-Evaluates contract term flexibility.
+### 3. Upfront Score (20% weight) - NEW in v2.0
+Evaluates upfront payment flexibility based on deposit as percentage of retail price.
 
-**Score Mapping**:
-- 24 months: 50 points (less flexible)
-- 36 months: 75 points (standard)
-- 48+ months: 100 points (most flexible)
+**Business Logic**: Lower deposits provide better payment flexibility and higher scores.
+
+**Calculation**: `(firstPayment / retailPrice) * 100`
+
+**Score Bands**:
+| Deposit % | Score | Rating |
+|-----------|-------|--------|
+| 0% | 100 points | Maximum Flexibility |
+| ≤ 3% | 95 points | Excellent |
+| ≤ 5% | 90 points | Very Good |
+| ≤ 7% | 80 points | Good |
+| ≤ 10% | 70 points | Fair |
+| ≤ 15% | 55 points | Below Average |
+| ≤ 20% | 40 points | Poor |
+| > 20% | 25 points | Very Poor |
 
 ## Multi-Offer Processing
 
@@ -68,16 +87,17 @@ When a listing has multiple lease offers, the system:
 2. **Selects Best Score**: The highest total score becomes the listing's official score
 3. **Stores Winner Details**: The winning offer's pricing_id and breakdown are stored
 
-### Implementation Example
+### Implementation Example (v2.0)
 ```typescript
-// Multiple offers processing
+// Multiple offers processing with v2.0 formula
 const scores = listing.lease_pricing.map(pricing => ({
   pricingId: pricing.id,
   score: calculateLeaseScore({
     retailPrice: listing.retail_price,
     monthlyPrice: pricing.monthly_price,
-    contractMonths: pricing.period_months,
-    mileagePerYear: pricing.mileage_per_year
+    mileagePerYear: pricing.mileage_per_year,
+    firstPayment: pricing.first_payment || 0,  // NEW: Deposit-based scoring
+    contractMonths: pricing.period_months        // Kept for compatibility but ignored
   })
 }))
 
@@ -86,10 +106,13 @@ const bestScore = scores.reduce((best, current) =>
   current.score.totalScore > best.score.totalScore ? current : best
 )
 
-// Store result
+// Store result with v2.0 breakdown
 await updateListing({
   lease_score: bestScore.score.totalScore,
-  lease_score_breakdown: bestScore.score,
+  lease_score_breakdown: {
+    ...bestScore.score,                        // Includes calculation_version: '2.0'
+    pricing_id: bestScore.pricingId
+  },
   lease_score_calculated_at: new Date()
 })
 ```
@@ -103,14 +126,19 @@ ALTER TABLE listings ADD COLUMN lease_score INTEGER;
 ALTER TABLE listings ADD COLUMN lease_score_calculated_at TIMESTAMPTZ;
 ALTER TABLE listings ADD COLUMN lease_score_breakdown JSONB;
 
--- Example breakdown JSON structure
+-- Example v2.0 breakdown JSON structure
 {
   "totalScore": 85,
   "monthlyRateScore": 90,
-  "mileageScore": 83,
-  "flexibilityScore": 75,
-  "monthlyRate": 1.05,
-  "pricingId": "uuid-of-winning-offer"
+  "monthlyRatePercent": 1.05,
+  "mileageScore": 75,
+  "mileageNormalized": 15000,
+  "upfrontScore": 90,                    // NEW: Deposit-based scoring
+  "firstPaymentPercent": 5.0,            // NEW: Deposit as % of retail
+  "calculation_version": "2.0",          // NEW: Version tracking
+  "pricing_id": "uuid-of-winning-offer",
+  // Backwards compatibility
+  "flexibilityScore": 90                 // Maps to upfrontScore temporarily
 }
 ```
 
@@ -122,24 +150,28 @@ The `full_listing_view` has been updated to include all lease score fields for e
 ### Individual Calculation
 **Endpoint**: `calculate-lease-score`
 
-**Request**:
+**Request (v2.0)**:
 ```json
 {
   "retailPrice": 350000,
   "monthlyPrice": 3675,
-  "contractMonths": 36,
-  "mileagePerYear": 15000
+  "mileagePerYear": 15000,
+  "firstPayment": 17500,        // NEW: 5% deposit
+  "contractMonths": 36          // Kept for compatibility but ignored
 }
 ```
 
-**Response**:
+**Response (v2.0)**:
 ```json
 {
   "totalScore": 85,
   "monthlyRateScore": 90,
+  "monthlyRatePercent": 1.05,
   "mileageScore": 75,
-  "flexibilityScore": 75,
-  "monthlyRate": 1.05
+  "mileageNormalized": 15000,
+  "upfrontScore": 90,           // NEW: 5% deposit scores 90 points
+  "firstPaymentPercent": 5.0,   // NEW: Deposit percentage
+  "calculation_version": "2.0"  // NEW: Version tracking
 }
 ```
 
@@ -281,12 +313,14 @@ WHERE listing_id = 'uuid';
 - **40-59**: Fair value - consider improvements
 - **0-39**: Poor value - review pricing strategy
 
-### Update Triggers
+### Update Triggers (v2.0)
 Scores are automatically marked stale when:
 - Retail price changes
-- Lease pricing updated
+- Lease pricing updated (monthly_price, period_months, mileage_per_year, **first_payment**)
 - New pricing option added
 - Pricing option deleted
+
+**New in v2.0**: The trigger now monitors `first_payment` changes since deposit amounts directly affect upfront scores.
 
 ### Reporting
 - Monthly score distribution analysis

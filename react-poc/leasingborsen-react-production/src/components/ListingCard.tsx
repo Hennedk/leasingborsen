@@ -28,11 +28,14 @@ interface ListingCardProps {
   car?: CarListing | null
   loading?: boolean
   currentPage?: number
+  // Optional: if provided (e.g., from similar-cars on Listing page), use this
+  // lease configuration instead of reading from /listings route params.
+  initialLeaseConfig?: Partial<LeaseConfigSearchParams>
 }
 
 const listingsRoute = getRouteApi('/listings')
 
-const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1 }) => {
+const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig }) => {
   /**
    * LEASE CONFIGURATION URL SYNC STRATEGY
    * 
@@ -47,23 +50,28 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
    * 3. Navigation passes URL config to detail page
    * 4. Detail page receives proper selectedMileage/selectedTerm/selectedDeposit
    */
-  let searchParams: Record<string, unknown> = { km: 15000, mdr: 36, udb: 0 }
-  try {
-    searchParams = listingsRoute.useSearch()
-    // If km is null in URL, default to 15000 to ensure consistency
-    if (searchParams.km === null || searchParams.km === undefined) {
-      searchParams = { ...searchParams, km: 15000 }
+  // Determine current lease config source:
+  // - If parent passed initialLeaseConfig (e.g., Listing page's similar cars), prefer it.
+  // - Else, read from /listings route search params (km/mdr/udb) and map to internal format.
+  const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => {
+    if (initialLeaseConfig) {
+      return {
+        selectedMileage: initialLeaseConfig.selectedMileage ?? 15000,
+        selectedTerm: initialLeaseConfig.selectedTerm ?? 36,
+        selectedDeposit: initialLeaseConfig.selectedDeposit ?? 0,
+      }
     }
-  } catch {
-    // Not on listings route, use standard defaults with 15000km
-    searchParams = { km: 15000, mdr: 36, udb: 0 }
-  }
-
-  // Convert URL params (km/mdr/udb) to internal format (selectedMileage/selectedTerm/selectedDeposit)
-  const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => 
-    mapUrlParamsToLeaseConfig(searchParams), 
-    [searchParams]
-  )
+    let searchParams: Record<string, unknown> = { km: 15000, mdr: 36, udb: 0 }
+    try {
+      searchParams = listingsRoute.useSearch()
+      if ((searchParams as any).km === null || (searchParams as any).km === undefined) {
+        searchParams = { ...searchParams, km: 15000 }
+      }
+    } catch {
+      searchParams = { km: 15000, mdr: 36, udb: 0 }
+    }
+    return mapUrlParamsToLeaseConfig(searchParams)
+  }, [initialLeaseConfig])
   const { prepareListingNavigation } = useNavigationContext()
   const navigate = useNavigate()
   

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run sync:leaseScore && tsc -b && vite build",
+    "sync:leaseScore": "cp supabase/functions/_shared/leaseScore.ts src/lib/leaseScore.ts",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
