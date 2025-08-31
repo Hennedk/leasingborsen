@@ -98,7 +98,13 @@ const Listing: React.FC = () => {
     similarCars,
     isLoading: similarLoading, 
     error: similarError
-  } = useSimilarListings(car || null, 6, selectedMileage, selectedPeriod, selectedUpfront)
+  } = useSimilarListings(
+    car || null, 
+    6, 
+    selectedMileage ?? undefined, 
+    selectedPeriod ?? undefined, 
+    selectedUpfront ?? undefined
+  )
   
   // Seller modal state
   const [sellerModalOpen, setSellerModalOpen] = useState(false)
