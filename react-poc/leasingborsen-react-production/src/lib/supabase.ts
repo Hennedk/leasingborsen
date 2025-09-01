@@ -132,6 +132,7 @@ function selectBestOffer(
   leasePricing: any,
   targetMileage: number,
   targetDeposit: number = 35000, // Changed from 0 to 35000 kr as balanced middle-ground
+  targetTerm?: number, // NEW: Allow specifying preferred term
   strictMode: boolean = true
 ): any {
   if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
@@ -186,8 +187,12 @@ function selectBestOffer(
     )
   }
   
-  // Term preference order: 36 → 24 → 48
-  const termPreference = [36, 24, 48]
+  // Term preference order: prioritize user's targetTerm, then fallback to [36, 24, 48]
+  const termPreference = Array.from(
+    new Set(
+      targetTerm ? [targetTerm, 36, 24, 48] : [36, 24, 48]
+    )
+  )
   
   for (const preferredTerm of termPreference) {
     const termOffers = matchingOffers.filter(offer => 
@@ -221,12 +226,12 @@ function selectBestOffer(
       if (strictMode) {
         return {
           ...selectedOffer,
-          selection_method: preferredTerm === 36 ? 'exact' : 'fallback'
+          selection_method: preferredTerm === targetTerm ? 'exact' : 'fallback'
         }
       } else {
         return {
           ...selectedOffer,
-          selection_method: isExactMileageFlexible ? (preferredTerm === 36 ? 'exact' : 'fallback') : 'closest'
+          selection_method: isExactMileageFlexible ? (preferredTerm === targetTerm ? 'exact' : 'fallback') : 'closest'
         }
       }
     }
@@ -310,6 +315,7 @@ export class CarListingQueries {
         listing.lease_pricing,
         selectedMileage,
         35000, // Target 35k kr deposit for balanced rates
+        undefined, // No specific term preference in listings view
         strictMode
       )
       
@@ -454,6 +460,7 @@ export class CarListingQueries {
         leasePricingArray,
         offerSettings.targetMileage || 15000, // Default to 15k if not specified
         offerSettings.targetDeposit || 35000,  // Default to 35k if not specified
+        offerSettings.targetTerm,              // Pass through user's target term
         true // strict mode
       )
 
@@ -526,6 +533,7 @@ export class CarListingQueries {
         listing.lease_pricing,
         selectedMileage,
         35000, // Target 35k kr deposit for balanced rates
+        undefined, // No specific term preference in listings view
         strictMode
       )
       return selectedOffer !== null

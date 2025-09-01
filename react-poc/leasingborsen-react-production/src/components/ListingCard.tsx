@@ -21,7 +21,6 @@ import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 import type { CarListing } from '@/types'
 
-import { mapUrlParamsToLeaseConfig } from '@/lib/utils'
 import type { LeaseConfigSearchParams } from '@/types'
 
 interface ListingCardProps {
@@ -69,10 +68,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       const n = Number.parseInt(String(v), 10)
       return Number.isNaN(n) ? undefined : n
     }
+    // Read BOTH legacy and new params, prioritizing new params
     return {
-      selectedMileage: parseNum((searchParams as any).km),
-      selectedTerm: parseNum((searchParams as any).mdr),
-      selectedDeposit: parseNum((searchParams as any).udb),
+      selectedMileage: parseNum((searchParams as any).selectedMileage) ?? parseNum((searchParams as any).km),
+      selectedTerm: parseNum((searchParams as any).selectedTerm) ?? parseNum((searchParams as any).mdr),
+      selectedDeposit: parseNum((searchParams as any).selectedDeposit) ?? parseNum((searchParams as any).udb),
     }
   }, [initialLeaseConfig, searchParams])
   const { prepareListingNavigation } = useNavigationContext()
