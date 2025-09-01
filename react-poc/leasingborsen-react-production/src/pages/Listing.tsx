@@ -42,7 +42,27 @@ const Listing: React.FC = () => {
   // Run detail scroll restoration pre-paint and coordinate with positioning
   const isBackLike = useDetailBackLike()
   useListingDetailScrollRestoration(id, true)
-  const { isPositioned } = useListingPositioning(id, { skipScrollToTop: isBackLike })
+  // Skip scroll-to-top if we detect a saved detail scroll position for this id (mirrors listings behavior)
+  const hasSavedDetailPosition = (() => {
+    try {
+      if (!id) return false
+      const raw = sessionStorage.getItem(`detail-scroll:${id}`)
+      if (!raw) return false
+      try {
+        const parsed = JSON.parse(raw)
+        if (typeof parsed === 'object' && parsed.position != null) {
+          const ts = Number(parsed.timestamp) || 0
+          if (ts > 0 && (Date.now() - ts) <= 30 * 60 * 1000) return true
+        }
+      } catch {
+        // legacy numeric value – treat as present
+        return true
+      }
+    } catch {}
+    return false
+  })()
+  const skipScrollToTop = isBackLike || hasSavedDetailPosition
+  const { isPositioned } = useListingPositioning(id, { skipScrollToTop })
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined
