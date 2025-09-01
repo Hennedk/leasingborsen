@@ -1,5 +1,68 @@
 # Session Log
 
+## 2025-09-01: Lease Config Flow Simplification, Persistence & UX Polishing
+
+### Summary
+Delivered end-to-end improvements to lease configuration behavior across listings and detail pages. Honored user-selected term in detail fetch, simplified URL sync with clamp-before-write, persisted detail selections in URL to survive similar-car navigation + back, and removed the “full page refresh” feel by keeping content visible during refetch with a subtle inline spinner. Added a concise implementation plan documenting phases and next steps.
+
+### Key Changes
+
+1) Honor user term in detail fetch (Critical)
+- Added `targetTerm` to `selectBestOffer` and prioritized `[targetTerm, 36, 24, 48]`.
+- `getListingById` now passes user’s selected term; listings list/count leave term undefined.
+- Exposes `offer_selection_method: 'exact'|'fallback'|'closest'` for UI feedback.
+
+2) Dual parameter support + central mapping (Phase 2 foundation)
+- Introduced `src/lib/leaseConfigMapping.ts` with `LEASE_PARAM_MAP`, `LEASE_DEFAULTS`, normalize/validate/clamp helpers.
+- `ListingCard` and `Listing.tsx` use normalization to support both `selectedX` and `km/mdr/udb` consistently.
+
+3) Simplified URL sync: clamp-before-write with optional feedback (Refactor)
+- `useLeaseConfigUrlSync` now validates/clamps only the changed key and writes directly to legacy `km|mdr|udb`.
+- Optional `debounceMs`, `onClamp`, `onError` options; default debounce is 0.
+- Removed round-tripping normalize→mutate→validate→map complexity.
+
+4) Persist detail selections in URL (selectedX) (Critical UX)
+- When changing mileage/term/deposit on `/listing`, we update the route search (`selectedMileage|selectedTerm|selectedDeposit`).
+- Ensures detail → similar → back restores the latest edited values (e.g., 25k remains 25k).
+
+5) Avoid full-page refresh feel on detail (UX)
+- `useListing` keeps previous data via `placeholderData` and avoids mount refetch loading.
+- `Listing.tsx` shows a small inline spinner during `isFetching`; full skeleton only on first load.
+
+6) Subtle feedback for clamping/fallback (UX)
+- `Listing.tsx` renders a small notice when values were clamped or when term fallback is in effect.
+
+7) Navigation context hygiene
+- `ListingCard` only calls `prepareListingNavigation` on `/listings` and saves full filter query.
+
+### Files Modified
+```
+src/lib/supabase.ts
+src/lib/leaseConfigMapping.ts
+src/hooks/useLeaseConfigUrlSync.ts
+src/hooks/useListings.ts
+src/components/ListingCard.tsx
+src/pages/Listing.tsx
+docs/LEASE_CONFIG_FLOW_PLAN.md (new)
+LEASE_CONFIG_FLOW_ANALYSIS.md (updated earlier)
+```
+
+### Known Issues / Follow-ups
+- Mixed param formats remain by design (legacy on `/listings`, `selectedX` on `/listing`); acceptable short term.
+- User feedback on clamping is subtle (inline notice); consider toasts via `onClamp` for stronger affordance.
+- Detail scroll restoration between detail pages is planned but not implemented yet.
+- Potential coordination needed between `useLeaseConfigUrlSync` and `useUrlSync` if sliders are introduced on `/listings`.
+- Tests pending for clamp-before-write behavior and term fallback notice.
+
+### Next Steps
+- Implement detail scroll restoration per `SCROLL_RESTORATION_ANALYSIS_AND_PLAN.md` (new `useDetailScrollRestoration`, `prepareDetailNavigation`).
+- Add `onClamp` toast integration in places where user input can exceed allowed ranges.
+- Optional: Route-level param shim to standardize `selectedX` across new code paths while accepting legacy input.
+- Add unit/integration tests:
+  - Detail: URL updates on selection change, back restores latest.
+  - API: `selectBestOffer` respects `targetTerm`.
+  - UI: Fallback/clamp notice appears appropriately.
+
 ## 2025-08-30: Deposit Optimization & Offer Settings Navigation
 
 ### Summary
