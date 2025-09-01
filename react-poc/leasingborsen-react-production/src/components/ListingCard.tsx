@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react'
-import { getRouteApi, useNavigate } from '@tanstack/react-router'
+import { useSearch, useNavigate } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -33,8 +33,6 @@ interface ListingCardProps {
   initialLeaseConfig?: Partial<LeaseConfigSearchParams>
 }
 
-const listingsRoute = getRouteApi('/listings')
-
 const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig }) => {
   /**
    * LEASE CONFIGURATION URL SYNC STRATEGY
@@ -52,7 +50,8 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
    */
   // Determine current lease config source:
   // - If parent passed initialLeaseConfig (e.g., Listing page's similar cars), prefer it.
-  // - Else, read from /listings route search params (km/mdr/udb) and map to internal format.
+  // - Else, read from URL search params (km/mdr/udb) with strict:false so it's safe off-route.
+  const searchParams = useSearch({ strict: false }) as Record<string, unknown>
   const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => {
     if (initialLeaseConfig) {
       return {
@@ -61,17 +60,13 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         selectedDeposit: initialLeaseConfig.selectedDeposit ?? 0,
       }
     }
-    let searchParams: Record<string, unknown> = { km: 15000, mdr: 36, udb: 0 }
-    try {
-      searchParams = listingsRoute.useSearch()
-      if ((searchParams as any).km === null || (searchParams as any).km === undefined) {
-        searchParams = { ...searchParams, km: 15000 }
-      }
-    } catch {
-      searchParams = { km: 15000, mdr: 36, udb: 0 }
+    const fallback = { km: 15000, mdr: 36, udb: 0 }
+    const merged = {
+      ...fallback,
+      ...(searchParams || {}),
     }
-    return mapUrlParamsToLeaseConfig(searchParams)
-  }, [initialLeaseConfig])
+    return mapUrlParamsToLeaseConfig(merged)
+  }, [initialLeaseConfig, searchParams])
   const { prepareListingNavigation } = useNavigationContext()
   const navigate = useNavigate()
   
