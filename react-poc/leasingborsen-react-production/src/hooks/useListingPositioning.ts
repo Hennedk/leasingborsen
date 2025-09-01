@@ -4,11 +4,16 @@ import { useState, useLayoutEffect } from 'react'
  * Hook for managing positioning during forward navigation to listing detail pages
  * Ensures scroll to top happens before content is visible
  */
-export function useListingPositioning(id: string | undefined) {
+export function useListingPositioning(id: string | undefined, options?: { skipScrollToTop?: boolean }) {
   // Start hidden by default to prevent flash of incorrectly positioned content
   const [isPositioned, setIsPositioned] = useState(false)
 
   useLayoutEffect(() => {
+    // On forward nav (not back-like), hide content until repositioned to prevent flash
+    if (!options?.skipScrollToTop) {
+      setIsPositioned(false)
+    }
+
     if (!id) {
       setIsPositioned(true)
       return
@@ -40,13 +45,15 @@ export function useListingPositioning(id: string | undefined) {
       }
     }
 
-    // Execute scroll immediately
-    scrollToTop()
+    // Execute scroll or skip based on option
+    if (!options?.skipScrollToTop) {
+      scrollToTop()
+    }
 
     // Wait for next frame to show content, with additional scroll verification
     requestAnimationFrame(() => {
       // Verify scroll position one more time before showing content
-      if (window.scrollY !== 0) {
+      if (!options?.skipScrollToTop && window.scrollY !== 0) {
         scrollToTop()
       }
       

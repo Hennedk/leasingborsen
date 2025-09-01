@@ -67,7 +67,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     // This preserves the original logic of not defaulting values here
     return normalizeLeaseParams(searchParams as Record<string, unknown>, false)
   }, [initialLeaseConfig, searchParams])
-  const { prepareListingNavigation } = useNavigationContext()
+  const { prepareListingNavigation, prepareDetailNavigation } = useNavigationContext()
   const navigate = useNavigate()
   
   // Optimized image loading with shared intersection observer
@@ -128,7 +128,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     
     // Only save navigation context when navigating FROM listings page
     // This prevents pollution of scroll position when navigating between detail pages
-    const isFromListings = window.location.pathname === '/listings'
+    const pathname = window.location.pathname
+    const isFromListings = pathname === '/listings'
+    const isFromDetail = pathname.startsWith('/listing/')
     
     if (isFromListings) {
       // Capture ALL current filters from the URL, not just lease config
@@ -140,6 +142,10 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         currentPage,
         fullSearch
       )
+    } else if (isFromDetail) {
+      // Save current detail scroll position for this id before navigating
+      const currentId = pathname.split('/listing/')[1] || undefined
+      prepareDetailNavigation(currentId, window.scrollY)
     }
     
     // Immediate visual feedback

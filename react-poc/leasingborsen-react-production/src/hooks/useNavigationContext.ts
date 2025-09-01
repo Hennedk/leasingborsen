@@ -111,6 +111,35 @@ export function useNavigationContext() {
     
     console.log('[NavigationContext] Prepared navigation - position:', scrollPosition, 'key:', scrollKey);
   }, [saveNavigationState])
+
+  // Prepare navigation when leaving a detail page (detail -> detail or detail -> listings)
+  const prepareDetailNavigation = useCallback((currentId: string | undefined, scrollPosition: number) => {
+    try {
+      const timestamp = Date.now()
+      const detailKey = `detail-scroll:${currentId || ''}`
+      const scrollData = {
+        position: scrollPosition | 0,
+        timestamp,
+        version: 1,
+        navigationType: 'prepare'
+      }
+      sessionStorage.setItem(detailKey, JSON.stringify(scrollData))
+
+      // Mark navigating away from detail to suppress saves during transitions
+      const st = {
+        from: 'detail' as const,
+        currentId: currentId,
+        scrollPosition,
+        isNavigatingAway: true,
+        timestamp,
+        version: 1
+      }
+      sessionStorage.setItem('leasingborsen-detail-navigation', JSON.stringify(st))
+      console.log('[NavigationContext] Prepared detail navigation', { detailKey, scrollPosition })
+    } catch (e) {
+      console.error('Failed to prepare detail navigation:', e)
+    }
+  }, [])
   
   // Get navigation info for current page
   const getNavigationInfo = useCallback(() => {
@@ -183,6 +212,7 @@ export function useNavigationContext() {
   
   return {
     prepareListingNavigation,
+    prepareDetailNavigation,
     getNavigationInfo,
     smartBack,
     getCurrentState

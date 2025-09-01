@@ -7,6 +7,7 @@ import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
 import { useListingPositioning } from '@/hooks/useListingPositioning'
+import { useListingDetailScrollRestoration, useDetailBackLike } from '@/hooks/useListingDetailScrollRestoration'
 import BaseLayout from '@/components/BaseLayout'
 import Container from '@/components/Container'
 import CarListingGrid from '@/components/CarListingGrid'
@@ -38,7 +39,10 @@ const Listing: React.FC = () => {
   const offerSettings = validateLeaseConfig(rawOfferParams, false)
   
   const { data: listingResponse, isLoading, isFetching, error } = useListing(id || '', offerSettings)
-  const { isPositioned } = useListingPositioning(id)
+  // Run detail scroll restoration pre-paint and coordinate with positioning
+  const isBackLike = useDetailBackLike()
+  useListingDetailScrollRestoration(id, true)
+  const { isPositioned } = useListingPositioning(id, { skipScrollToTop: isBackLike })
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined

@@ -1,9 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
-import ListingCard from '../ListingCard'
 import type { CarListing } from '@/types'
 
-// Mock image lazy loading to avoid side effects
+// Mock image lazy loading to avoid side effects (declare before importing component)
 vi.mock('@/hooks/useImageLazyLoading', () => ({
   useImageLazyLoading: () => ({
     imageRef: { current: null },
@@ -29,7 +28,10 @@ const navigateFn = vi.fn()
 vi.mock('@tanstack/react-router', () => ({
   useSearch: vi.fn(() => ({})), // No URL km/mdr/udb present
   useNavigate: vi.fn(() => navigateFn),
+  useLocation: vi.fn(() => ({ pathname: '/listings' })),
 }))
+
+import ListingCard from '../ListingCard'
 
 const baseCar: CarListing = {
   id: 'car-1',
@@ -82,4 +84,3 @@ describe('ListingCard navigation carries selected offer', () => {
     })
   })
 })
-
