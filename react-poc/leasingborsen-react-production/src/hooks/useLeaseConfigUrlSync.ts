@@ -4,6 +4,7 @@ import { useMemo, useCallback } from 'react'
 // Moved to src/types/index.ts for shared usage
 
 import type { LeaseConfigState } from '@/types'
+import { LEASE_DEFAULTS } from '@/lib/leaseConfigMapping'
 
 /**
  * Synchronizes lease configuration with URL search parameters
@@ -24,9 +25,9 @@ export function useLeaseConfigUrlSync(): [LeaseConfigState, (key: keyof LeaseCon
   const search = useSearch({ from: '/listings' })
   
   const config = useMemo(() => ({
-    km: Number(search.km) || 15000, // Default to 15000km when not specified
-    mdr: Number(search.mdr) || 36,
-    udb: Number(search.udb) || 0
+    km: Number(search.km) || LEASE_DEFAULTS.mileage, // Use centralized default
+    mdr: Number(search.mdr) || LEASE_DEFAULTS.term,
+    udb: Number(search.udb) || LEASE_DEFAULTS.deposit
   }), [search])
   
   const updateConfig = useCallback((key: keyof LeaseConfigState, value: number | null) => {

@@ -22,6 +22,7 @@ import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
+import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
 
 interface ListingCardProps {
   car?: CarListing | null
@@ -61,19 +62,10 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         selectedDeposit: initialLeaseConfig.selectedDeposit ?? undefined,
       }
     }
-    // Only use URL params if explicitly present; do NOT default here.
-    const parseNum = (v: unknown): number | undefined => {
-      if (v === null || v === undefined) return undefined
-      if (typeof v === 'number') return v
-      const n = Number.parseInt(String(v), 10)
-      return Number.isNaN(n) ? undefined : n
-    }
-    // Read BOTH legacy and new params, prioritizing new params
-    return {
-      selectedMileage: parseNum((searchParams as any).selectedMileage) ?? parseNum((searchParams as any).km),
-      selectedTerm: parseNum((searchParams as any).selectedTerm) ?? parseNum((searchParams as any).mdr),
-      selectedDeposit: parseNum((searchParams as any).selectedDeposit) ?? parseNum((searchParams as any).udb),
-    }
+    
+    // Use centralized parameter normalization without defaults
+    // This preserves the original logic of not defaulting values here
+    return normalizeLeaseParams(searchParams as Record<string, unknown>, false)
   }, [initialLeaseConfig, searchParams])
   const { prepareListingNavigation } = useNavigationContext()
   const navigate = useNavigate()
@@ -134,23 +126,21 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     
     if (!car?.id && !car?.listing_id) return
     
-    // Build URLSearchParams reflecting current lease config (for navigation context)
-    let urlSearchParams: URLSearchParams | null = null
-    try {
-      urlSearchParams = new URLSearchParams()
-      if (currentLeaseConfig.selectedMileage != null) urlSearchParams.set('km', String(currentLeaseConfig.selectedMileage))
-      if (currentLeaseConfig.selectedTerm != null) urlSearchParams.set('mdr', String(currentLeaseConfig.selectedTerm))
-      if (currentLeaseConfig.selectedDeposit != null) urlSearchParams.set('udb', String(currentLeaseConfig.selectedDeposit))
-    } catch (error) {
-      console.error('Error creating URLSearchParams:', error)
-    }
+    // Only save navigation context when navigating FROM listings page
+    // This prevents pollution of scroll position when navigating between detail pages
+    const isFromListings = window.location.pathname === '/listings'
     
-    // Prepare navigation context before navigation
-    prepareListingNavigation(
-      window.scrollY,
-      currentPage,
-      urlSearchParams
-    )
+    if (isFromListings) {
+      // Capture ALL current filters from the URL, not just lease config
+      // This ensures complete filter state is preserved for scroll restoration
+      const fullSearch = new URLSearchParams(window.location.search)
+      
+      prepareListingNavigation(
+        window.scrollY,
+        currentPage,
+        fullSearch
+      )
+    }
     
     // Immediate visual feedback
     setShowRipple(true)

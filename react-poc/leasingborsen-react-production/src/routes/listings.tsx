@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { lazy } from 'react'
 import { z } from 'zod'
 import { RouteErrorBoundary } from '@/components/ErrorBoundaries'
+import { LEASE_DEFAULTS } from '@/lib/leaseConfigMapping'
 
 const Listings = lazy(() => import('@/pages/Listings'))
 
@@ -31,10 +32,10 @@ const listingsSearchSchema = z.object({
   horsepower_min: z.number().optional(),
   horsepower_max: z.number().optional(),
   
-  // Lease configuration parameters
+  // Lease configuration parameters - use centralized defaults
   km: z.number().int().optional(), // km per year
-  mdr: z.number().int().catch(36), // lease months
-  udb: z.number().catch(0), // down payment
+  mdr: z.number().int().catch(LEASE_DEFAULTS.term), // lease months
+  udb: z.number().catch(LEASE_DEFAULTS.deposit), // down payment
   
   // Sorting
   sort: z.enum(['lease_score_desc','asc','desc']).catch('lease_score_desc'),
@@ -52,9 +53,9 @@ const listingsSearchSchema = z.object({
   limit: 20,
   sort: 'lease_score_desc' as const,
   view: 'grid' as const,
-  mdr: 36,
-  udb: 0,
-})) // Fallback with defaults for invalid searches // Fallback with defaults for invalid searches
+  mdr: LEASE_DEFAULTS.term,
+  udb: LEASE_DEFAULTS.deposit,
+})) // Fallback with defaults for invalid searches
 
 export const Route = createFileRoute('/listings')({
   validateSearch: listingsSearchSchema,
