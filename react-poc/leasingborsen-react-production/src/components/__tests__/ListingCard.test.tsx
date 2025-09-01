@@ -3,6 +3,12 @@ import { BrowserRouter } from 'react-router-dom'
 import ListingCard from '../ListingCard'
 import type { CarListing } from '@/types'
 
+// Mock TanStack Router hooks used inside ListingCard to avoid invalid hook context in tests
+vi.mock('@tanstack/react-router', () => ({
+  useSearch: vi.fn(() => ({})),
+  useNavigate: vi.fn(() => vi.fn()),
+}))
+
 // Mock the lazy loading hook
 vi.mock('@/hooks/useImageLazyLoading', () => ({
   useImageLazyLoading: () => ({
