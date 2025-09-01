@@ -62,12 +62,18 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         selectedDeposit: initialLeaseConfig.selectedDeposit ?? undefined,
       }
     }
-    const fallback = { km: 15000, mdr: 36, udb: 0 }
-    const merged = {
-      ...fallback,
-      ...(searchParams || {}),
+    // Only use URL params if explicitly present; do NOT default here.
+    const parseNum = (v: unknown): number | undefined => {
+      if (v === null || v === undefined) return undefined
+      if (typeof v === 'number') return v
+      const n = Number.parseInt(String(v), 10)
+      return Number.isNaN(n) ? undefined : n
     }
-    return mapUrlParamsToLeaseConfig(merged)
+    return {
+      selectedMileage: parseNum((searchParams as any).km),
+      selectedTerm: parseNum((searchParams as any).mdr),
+      selectedDeposit: parseNum((searchParams as any).udb),
+    }
   }, [initialLeaseConfig, searchParams])
   const { prepareListingNavigation } = useNavigationContext()
   const navigate = useNavigate()
