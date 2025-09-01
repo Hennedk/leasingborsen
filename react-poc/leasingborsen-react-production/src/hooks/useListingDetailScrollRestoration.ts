@@ -35,7 +35,6 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
 
     const key = getKey(id)
     let savedPos: number | null = null
-    let savedTs: number | null = null
     const raw = sessionStorage.getItem(key)
     if (raw) {
       try {
@@ -45,7 +44,6 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
           const ts = Number(parsed.timestamp) || 0
           if (!Number.isNaN(pos) && !Number.isNaN(ts) && ts > 0 && (Date.now() - ts) <= MAX_AGE) {
             savedPos = pos
-            savedTs = ts
           }
         } else {
           // Legacy numeric value without timestamp – treat as valid but clear after use
