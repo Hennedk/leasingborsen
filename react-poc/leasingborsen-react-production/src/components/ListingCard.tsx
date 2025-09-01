@@ -131,13 +131,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     
     if (!car?.id && !car?.listing_id) return
     
-    // Convert search object to URLSearchParams for compatibility
+    // Build URLSearchParams reflecting current lease config (for navigation context)
     const urlSearchParams = new URLSearchParams()
-    Object.entries(searchParams).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        urlSearchParams.set(key, String(value))
-      }
-    })
+    if (currentLeaseConfig.selectedMileage != null) urlSearchParams.set('km', String(currentLeaseConfig.selectedMileage))
+    if (currentLeaseConfig.selectedTerm != null) urlSearchParams.set('mdr', String(currentLeaseConfig.selectedTerm))
+    if (currentLeaseConfig.selectedDeposit != null) urlSearchParams.set('udb', String(currentLeaseConfig.selectedDeposit))
     
     // Prepare navigation context before navigation
     prepareListingNavigation(
