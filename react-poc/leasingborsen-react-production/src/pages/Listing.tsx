@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, SlidersHorizontal, Info } from 'lucide-react'
+import { ArrowLeft, SlidersHorizontal, Info, Loader2 } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
@@ -37,7 +37,7 @@ const Listing: React.FC = () => {
   const rawOfferParams = normalizeLeaseParams(search, false)
   const offerSettings = validateLeaseConfig(rawOfferParams, false)
   
-  const { data: listingResponse, isLoading, error } = useListing(id || '', offerSettings)
+  const { data: listingResponse, isLoading, isFetching, error } = useListing(id || '', offerSettings)
   const { isPositioned } = useListingPositioning(id)
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
@@ -206,6 +206,16 @@ const Listing: React.FC = () => {
         <div className="hidden lg:block">
           <ListingHeader car={car} />
         </div>
+
+        {/* Subtle updating indicator during refetch (keep content visible) */}
+        {isFetching && !isLoading && (
+          <div className="mt-2 mb-2">
+            <div className="inline-flex items-center gap-2 rounded-md bg-muted/30 px-3 py-1 text-xs text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Opdaterer pris og vilkår...
+            </div>
+          </div>
+        )}
 
         {/* Subtle notice if adjustments/fallback applied */}
         {(hasMileageAdjustment || hasDepositAdjustment || hasTermFallback) && (

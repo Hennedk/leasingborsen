@@ -57,6 +57,8 @@ export function useListing(
     enabled: !!id,
     staleTime: 15 * 60 * 1000, // 15 minutes - individual listings change less frequently
     gcTime: 30 * 60 * 1000, // 30 minutes
+    placeholderData: (previous) => previous, // Reuse previous result to avoid full skeleton
+    refetchOnMount: false, // Avoid forcing loading state when remounting with cached data
     // Try to initialize from listings cache if available
     initialData: () => {
       // Try to find this listing in any cached listings
