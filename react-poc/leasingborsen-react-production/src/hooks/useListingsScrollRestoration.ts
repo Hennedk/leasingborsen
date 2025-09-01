@@ -4,10 +4,16 @@ import { useLocation } from "@tanstack/react-router";
 const KEY_PREFIX = "listings-scroll:";
 const MAX_AGE = 30 * 60 * 1000; // 30 minutes
 
-const normalizeSearch = (search: string) => {
-  const p = new URLSearchParams(search);
-  const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
-  return new URLSearchParams(entries).toString();
+const normalizeSearch = (search: string | undefined) => {
+  if (!search) return '';
+  try {
+    const p = new URLSearchParams(search);
+    const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
+    return new URLSearchParams(entries).toString();
+  } catch (error) {
+    console.error('Error normalizing search params:', error);
+    return '';
+  }
 };
 
 export function useListingsScrollRestoration(ready = true) {

@@ -71,9 +71,14 @@ export function useNavigationContext() {
     
     // Normalize search params for consistent storage key
     const normalizeSearch = (search: string) => {
-      const p = new URLSearchParams(search);
-      const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
-      return new URLSearchParams(entries).toString();
+      try {
+        const p = new URLSearchParams(search);
+        const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
+        return new URLSearchParams(entries).toString();
+      } catch (error) {
+        console.error('Error normalizing search params:', error);
+        return '';
+      }
     };
     
     const searchString = filters?.toString() || '';
