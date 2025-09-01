@@ -24,7 +24,7 @@ import { MobileListingDetailSkeleton } from '@/components/ListingsSkeleton'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import { cn } from '@/lib/utils'
 import type { CarListing } from '@/types'
-import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
+import { normalizeLeaseParams, validateLeaseConfig } from '@/lib/leaseConfigMapping'
 
 const Listing: React.FC = () => {
   const { id } = useListingParams()
@@ -33,7 +33,11 @@ const Listing: React.FC = () => {
   
   // Extract offer settings from search params using centralized normalization
   // Support both new (selectedX) and legacy (km/mdr/udb) parameter formats
-  const offerSettings = normalizeLeaseParams(search, false)
+  // Normalize and clamp offer settings (no defaults to preserve unset semantics)
+  const offerSettings = validateLeaseConfig(
+    normalizeLeaseParams(search, false),
+    false
+  )
   
   const { data: listingResponse, isLoading, error } = useListing(id || '', offerSettings)
   const { isPositioned } = useListingPositioning(id)

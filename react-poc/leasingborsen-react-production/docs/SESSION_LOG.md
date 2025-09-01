@@ -2174,3 +2174,42 @@ This session was heavily guided by direct user feedback:
 
 **Session Status**: ✅ **COMPLETE**  
 **Next Session**: Ready for new feature development or additional UX improvements
+## Session: 2025-09-01 – Listings crash + offer carry-over
+
+Changes
+- Fix production crash on `/listings` introduced in a6a1e0d:
+  - Root cause: invalid hook call in `ListingCard` by invoking `getRouteApi('/listings').useSearch()` inside a `useMemo`.
+  - Fix: move to top-level `useSearch({ strict: false })` and derive lease config safely (no hooks inside `useMemo`).
+  - Files: `src/components/ListingCard.tsx`.
+- Preserve offer config when navigating between listing details via cards:
+  - Stop coercing `initialLeaseConfig` to 15k/36/0 defaults in `ListingCard`.
+  - When reading from URL, do not inject defaults if `km/mdr/udb` are absent; leave undefined to fall back to `car.selected_*`.
+  - Files: `src/components/ListingCard.tsx`.
+- Minor hardening:
+  - Use `infiniteData?.pages?.length` for `currentPage` in `src/pages/Listings.tsx`.
+- Tests:
+  - Added `src/components/__tests__/ListingCardNavigation.test.tsx` to assert selected offer is forwarded in navigation.
+  - Updated `src/components/__tests__/ListingCard.test.tsx` to mock TanStack Router hooks due to `useSearch` at top level.
+
+Commits
+- fix(listings): avoid invalid hook call in ListingCard by moving useSearch out of useMemo
+- chore(listings): guard currentPage calc with optional chaining
+- fix(navigation): preserve selected offer when jumping between listing details via cards
+- fix(listings): do not default URL-derived lease config in ListingCard
+- test(listings): add navigation carry-over test for ListingCard and mock TanStack router in existing card tests
+
+Known Issues
+- Full `npm test` shows unrelated failures (AI extractor auth, sellers hook, admin form/router context). These predate this session and require proper mocks/providers per suite.
+- We mocked TanStack Router locally in ListingCard tests; other suites might need similar isolation.
+
+Next Steps
+- Verify `/listings` on staging/production, confirm listings render and infinite scroll works.
+- Manually test: Listings → Listing and Listing → Listing via “Lignende annoncer” to confirm offer config carries over.
+- Consider a shared test util to mock TanStack Router hooks across component tests.
+- Run lint and typecheck; address any warnings in separate PR.
+
+Files Modified
+- src/components/ListingCard.tsx
+- src/pages/Listings.tsx
+- src/components/__tests__/ListingCardNavigation.test.tsx (new)
+- src/components/__tests__/ListingCard.test.tsx
