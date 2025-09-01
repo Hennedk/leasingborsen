@@ -54,10 +54,12 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>
   const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => {
     if (initialLeaseConfig) {
+      // When parent provides a config (e.g., from Listing page), do not coerce to defaults here.
+      // Allow undefined/null so the fallback chain can use car.selected_* if present.
       return {
-        selectedMileage: initialLeaseConfig.selectedMileage ?? 15000,
-        selectedTerm: initialLeaseConfig.selectedTerm ?? 36,
-        selectedDeposit: initialLeaseConfig.selectedDeposit ?? 0,
+        selectedMileage: initialLeaseConfig.selectedMileage ?? undefined,
+        selectedTerm: initialLeaseConfig.selectedTerm ?? undefined,
+        selectedDeposit: initialLeaseConfig.selectedDeposit ?? undefined,
       }
     }
     const fallback = { km: 15000, mdr: 36, udb: 0 }
