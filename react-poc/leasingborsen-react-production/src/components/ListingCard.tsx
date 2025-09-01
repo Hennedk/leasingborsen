@@ -132,10 +132,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     if (!car?.id && !car?.listing_id) return
     
     // Build URLSearchParams reflecting current lease config (for navigation context)
-    const urlSearchParams = new URLSearchParams()
-    if (currentLeaseConfig.selectedMileage != null) urlSearchParams.set('km', String(currentLeaseConfig.selectedMileage))
-    if (currentLeaseConfig.selectedTerm != null) urlSearchParams.set('mdr', String(currentLeaseConfig.selectedTerm))
-    if (currentLeaseConfig.selectedDeposit != null) urlSearchParams.set('udb', String(currentLeaseConfig.selectedDeposit))
+    let urlSearchParams: URLSearchParams | null = null
+    try {
+      urlSearchParams = new URLSearchParams()
+      if (currentLeaseConfig.selectedMileage != null) urlSearchParams.set('km', String(currentLeaseConfig.selectedMileage))
+      if (currentLeaseConfig.selectedTerm != null) urlSearchParams.set('mdr', String(currentLeaseConfig.selectedTerm))
+      if (currentLeaseConfig.selectedDeposit != null) urlSearchParams.set('udb', String(currentLeaseConfig.selectedDeposit))
+    } catch (error) {
+      console.error('Error creating URLSearchParams:', error)
+    }
     
     // Prepare navigation context before navigation
     prepareListingNavigation(

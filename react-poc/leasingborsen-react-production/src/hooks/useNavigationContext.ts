@@ -66,7 +66,7 @@ export function useNavigationContext() {
   }, [getCurrentState])
   
   // Set navigation source before navigating to listing detail
-  const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams) => {
+  const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams | null) => {
     const timestamp = Date.now();
     
     // Normalize search params for consistent storage key
@@ -76,7 +76,7 @@ export function useNavigationContext() {
       return new URLSearchParams(entries).toString();
     };
     
-    const searchString = filters.toString();
+    const searchString = filters?.toString() || '';
     const normalizedSearch = normalizeSearch(searchString);
     
     // Consolidated storage format with metadata
