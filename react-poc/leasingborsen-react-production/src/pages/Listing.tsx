@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ import { normalizeLeaseParams, validateLeaseConfig } from '@/lib/leaseConfigMapp
 const Listing: React.FC = () => {
   const { id } = useListingParams()
   const search = useSearch({ from: '/listing/$id' })
-  const navigate = useNavigate()
+  const navigate = useNavigate({ from: '/listing/$id' })
   
   // Extract offer settings from search params using centralized normalization
   // Support both new (selectedX) and legacy (km/mdr/udb) parameter formats
@@ -100,6 +100,22 @@ const Listing: React.FC = () => {
     upfrontPriceImpacts,
     setHoveredOption
   } = useLeaseCalculator(car)
+
+  // Sync detail selection to URL so back navigation restores latest values
+  const handleMileageChange = useCallback((value: number) => {
+    setSelectedMileage(value)
+    navigate({ search: { ...search, selectedMileage: value }, replace: true })
+  }, [navigate, search, setSelectedMileage])
+
+  const handlePeriodChange = useCallback((value: number) => {
+    setSelectedPeriod(value)
+    navigate({ search: { ...search, selectedTerm: value }, replace: true })
+  }, [navigate, search, setSelectedPeriod])
+
+  const handleUpfrontChange = useCallback((value: number) => {
+    setSelectedUpfront(value)
+    navigate({ search: { ...search, selectedDeposit: value }, replace: true })
+  }, [navigate, search, setSelectedUpfront])
   
   // Fetch similar listings using enhanced multi-tier matching with current configuration
   const { 
@@ -270,9 +286,9 @@ const Listing: React.FC = () => {
                 availableMileages={availableMileages}
                 availablePeriods={availablePeriods}
                 availableUpfronts={availableUpfronts}
-                onMileageChange={setSelectedMileage}
-                onPeriodChange={setSelectedPeriod}
-                onUpfrontChange={setSelectedUpfront}
+                onMileageChange={handleMileageChange}
+                onPeriodChange={handlePeriodChange}
+                onUpfrontChange={handleUpfrontChange}
                 onShowSeller={() => setSellerModalOpen(true)}
                 isLoading={leaseLoading}
                 error={leaseError}
@@ -374,9 +390,9 @@ const Listing: React.FC = () => {
           availableMileages={availableMileages}
           availablePeriods={availablePeriods}
           availableUpfronts={availableUpfronts}
-          onMileageChange={setSelectedMileage}
-          onPeriodChange={setSelectedPeriod}
-          onUpfrontChange={setSelectedUpfront}
+          onMileageChange={handleMileageChange}
+          onPeriodChange={handlePeriodChange}
+          onUpfrontChange={handleUpfrontChange}
           onResetToCheapest={resetToCheapest}
           onSelectBestScore={_selectBestScore}
           onShowSeller={() => setSellerModalOpen(true)}
