@@ -4,7 +4,7 @@ import { useMemo, useCallback, useRef, useEffect } from 'react'
 // Moved to src/types/index.ts for shared usage
 
 import type { LeaseConfigState } from '@/types'
-import { LEASE_DEFAULTS, normalizeLeaseParams, validateLeaseConfig, mapToLegacyParams } from '@/lib/leaseConfigMapping'
+import { LEASE_DEFAULTS, clampLeaseValue } from '@/lib/leaseConfigMapping'
 
 /**
  * Synchronizes lease configuration with URL search parameters
@@ -20,10 +20,17 @@ import { LEASE_DEFAULTS, normalizeLeaseParams, validateLeaseConfig, mapToLegacyP
  * @returns [config, updateConfig] - Current config and setter function
  */
 
-export function useLeaseConfigUrlSync(): [LeaseConfigState, (key: keyof LeaseConfigState, value: number | null) => void] {
+type UseLeaseConfigUrlSyncOptions = {
+  debounceMs?: number
+  onClamp?: (key: keyof LeaseConfigState, from: number, to: number) => void
+  onError?: (err: unknown) => void
+}
+
+export function useLeaseConfigUrlSync(options: UseLeaseConfigUrlSyncOptions = {}): [LeaseConfigState, (key: keyof LeaseConfigState, value: number | null) => void] {
   const navigate = useNavigate({ from: '/listings' })
   const search = useSearch({ from: '/listings' })
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { debounceMs = 0, onClamp, onError } = options
 
   const config = useMemo(() => ({
     km: Number(search.km) || LEASE_DEFAULTS.mileage, // Use centralized default
@@ -33,13 +40,7 @@ export function useLeaseConfigUrlSync(): [LeaseConfigState, (key: keyof LeaseCon
   
   // Debounced, validated update of km/mdr/udb in the URL
   const updateConfig = useCallback((key: keyof LeaseConfigState, value: number | null) => {
-    // Clear pending update
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-      timerRef.current = null
-    }
-
-    timerRef.current = setTimeout(() => {
+    const perform = () => {
       try {
         if (value === null) {
           // Remove key from URL
@@ -49,34 +50,38 @@ export function useLeaseConfigUrlSync(): [LeaseConfigState, (key: keyof LeaseCon
           return
         }
 
-        // Build internal config from current URL + requested change
-        const internal = normalizeLeaseParams(search as unknown as Record<string, unknown>, true)
-
-        if (key === 'km') internal.selectedMileage = value
-        if (key === 'mdr') internal.selectedTerm = value
-        if (key === 'udb') internal.selectedDeposit = value
-
-        // Clamp values to valid ranges
-        const validated = validateLeaseConfig(internal, false)
-
-        // Map back to legacy params for listings route
-        const legacy = mapToLegacyParams(validated)
+        // Map legacy key to clamp domain
+        const mapKey = (k: keyof LeaseConfigState) => (k === 'km' ? 'mileage' : k === 'mdr' ? 'term' : 'deposit') as 'mileage' | 'term' | 'deposit'
+        const clamped = clampLeaseValue(mapKey(key), value)
+        if (clamped !== value) {
+          onClamp?.(key, value, clamped)
+        }
 
         navigate({ 
           search: { 
             ...search, 
-            km: legacy.km, 
-            mdr: legacy.mdr, 
-            udb: legacy.udb 
+            [key]: clamped 
           },
           replace: true 
         })
       } catch (err) {
-        // Fallback: do nothing on validation error in non-strict mode
-        console.error('Lease config URL update failed:', err)
+        onError?.(err)
+        if (!onError) {
+          console.error('Lease config URL update failed:', err)
+        }
       }
-    }, 200)
-  }, [navigate, search])
+    }
+
+    if (debounceMs > 0) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current)
+        timerRef.current = null
+      }
+      timerRef.current = setTimeout(perform, debounceMs)
+    } else {
+      perform()
+    }
+  }, [debounceMs, navigate, onClamp, onError, search])
 
   // Cleanup timer on unmount
   useEffect(() => {

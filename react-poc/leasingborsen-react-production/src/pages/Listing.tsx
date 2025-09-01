@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, SlidersHorizontal } from 'lucide-react'
+import { ArrowLeft, SlidersHorizontal, Info } from 'lucide-react'
 import { useListing } from '@/hooks/useListings'
 import { useSimilarListings } from '@/hooks/useSimilarListings'
 import { useLeaseCalculator } from '@/hooks/useLeaseCalculator'
@@ -34,16 +34,23 @@ const Listing: React.FC = () => {
   // Extract offer settings from search params using centralized normalization
   // Support both new (selectedX) and legacy (km/mdr/udb) parameter formats
   // Normalize and clamp offer settings (no defaults to preserve unset semantics)
-  const offerSettings = validateLeaseConfig(
-    normalizeLeaseParams(search, false),
-    false
-  )
+  const rawOfferParams = normalizeLeaseParams(search, false)
+  const offerSettings = validateLeaseConfig(rawOfferParams, false)
   
   const { data: listingResponse, isLoading, error } = useListing(id || '', offerSettings)
   const { isPositioned } = useListingPositioning(id)
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined
+
+  // Detect adjustments: mileage/deposit clamped or term fallback
+  const hasMileageAdjustment = rawOfferParams.selectedMileage != null &&
+    offerSettings.selectedMileage != null &&
+    rawOfferParams.selectedMileage !== offerSettings.selectedMileage
+  const hasDepositAdjustment = rawOfferParams.selectedDeposit != null &&
+    offerSettings.selectedDeposit != null &&
+    rawOfferParams.selectedDeposit !== offerSettings.selectedDeposit
+  const hasTermFallback = !!(car?.offer_selection_method === 'fallback' && offerSettings.selectedTerm != null)
 
   // Track when mobile title is about to hit sticky header
   useEffect(() => {
@@ -183,6 +190,22 @@ const Listing: React.FC = () => {
         <div className="hidden lg:block">
           <ListingHeader car={car} />
         </div>
+
+        {/* Subtle notice if adjustments/fallback applied */}
+        {(hasMileageAdjustment || hasDepositAdjustment || hasTermFallback) && (
+          <div className="mt-3 mb-2">
+            <div className="flex items-start gap-2 p-3 rounded-md bg-muted/40 text-sm text-muted-foreground">
+              <Info className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>
+                {[
+                  hasMileageAdjustment ? `Kilometer justeret til ${offerSettings.selectedMileage?.toLocaleString('da-DK')} km/år` : null,
+                  hasDepositAdjustment ? `Udbetaling justeret til ${offerSettings.selectedDeposit?.toLocaleString('da-DK')} kr` : null,
+                  hasTermFallback ? `Valgt periode ikke tilgængelig – vist nærmeste` : null,
+                ].filter(Boolean).join(' • ')}
+              </span>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-10 mt-4 lg:mt-8">
           {/* Main Content */}
