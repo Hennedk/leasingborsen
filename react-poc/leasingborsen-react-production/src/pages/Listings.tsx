@@ -102,8 +102,8 @@ const Listings: React.FC = () => {
   
   // Calculate current page for navigation context
   const currentPage = useMemo(() => {
-    return infiniteData?.pages.length || 1
-  }, [infiniteData?.pages.length])
+    return infiniteData?.pages?.length || 1
+  }, [infiniteData?.pages?.length])
   
   // Infinite scroll setup
   const { loadMoreRef } = useInfiniteScroll({
