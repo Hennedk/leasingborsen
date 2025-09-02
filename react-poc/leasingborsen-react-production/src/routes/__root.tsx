@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React, { Suspense, useEffect } from 'react'
 import { createRootRoute, Outlet } from '@tanstack/react-router'
 import SafeContentFade from '@/components/SafeContentFade'
 import { QueryClientProvider } from '@tanstack/react-query'
@@ -50,6 +50,19 @@ const PageLoader: React.FC = () => (
 )
 
 function RootComponent() {
+  // Mark recent browser history POPs to help hooks detect real Back navigation in SPA
+  useEffect(() => {
+    const onPop = () => {
+      try {
+        sessionStorage.setItem('leasingborsen-history-pop-ts', String(Date.now()))
+      } catch {
+        // ignore sessionStorage errors
+      }
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>

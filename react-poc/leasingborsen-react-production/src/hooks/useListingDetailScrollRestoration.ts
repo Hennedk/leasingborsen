@@ -3,7 +3,9 @@ import { useLocation } from '@tanstack/react-router'
 
 const KEY_PREFIX = 'detail-scroll:'
 const NAV_KEY = 'leasingborsen-detail-navigation'
+const POP_TS_KEY = 'leasingborsen-history-pop-ts'
 const MAX_AGE = 30 * 60 * 1000 // 30 minutes
+const BACK_LIKE_TTL_MS = 5 * 60 * 1000 // 5 minutes – tolerate longer time between clicks
 
 type DetailNavState = {
   from?: 'detail' | 'listings' | 'direct'
@@ -23,7 +25,33 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
 
   const getKey = useCallback((listingId?: string) => `${KEY_PREFIX}${listingId || ''}` , [])
 
-  // Detect back-like navigation using session marker from prepareDetailNavigation
+  // Detect browser back navigation using popstate marker and Performance API fallbacks
+  const isBrowserBack = useCallback((): boolean => {
+    // 0) Check recent global popstate marker (set in routes/__root)
+    try {
+      const tsRaw = sessionStorage.getItem(POP_TS_KEY)
+      if (tsRaw) {
+        const ts = Number(tsRaw)
+        if (!Number.isNaN(ts) && (Date.now() - ts) <= 1200) return true
+      }
+    } catch {
+      // sessionStorage not available or parse error
+    }
+    // 1) Check NavigationTiming API for back_forward
+    try {
+      const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+      if (entry?.type === 'back_forward') return true
+    } catch {
+      // NavigationTiming API not available
+    }
+    
+    // 2) Legacy performance.navigation fallback
+    if ((performance as { navigation?: { type: number } })?.navigation?.type === 2) return true
+    
+    return false
+  }, [])
+
+  // Detect back-like navigation using session marker from prepareDetailNavigation (fallback)
   const isBackLikeForId = useCallback((targetId: string): boolean => {
     try {
       const raw = sessionStorage.getItem(NAV_KEY)
@@ -31,9 +59,10 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       const st = JSON.parse(raw) as DetailNavState & { navigationType?: string; currentId?: string; timestamp?: number }
       // Consider it back-like if we previously prepared navigation away from this id
       // and we returned within a short window (prevents stale restores on fresh visits)
-      const recent = !!st.timestamp && (Date.now() - st.timestamp) < 10000
+      const recent = !!st.timestamp && (Date.now() - st.timestamp) < BACK_LIKE_TTL_MS
       return st.currentId === targetId && recent
     } catch {
+      // Session storage parsing failed
       return false
     }
   }, [])
@@ -41,6 +70,13 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
   useLayoutEffect(() => {
     if (!id || !ready) return
     if (!location.pathname.startsWith('/listing/')) return
+
+    // Guard: ensure the hook's id matches the id in the current path to avoid
+    // restoring a previous listing's scroll on the new listing route.
+    const pathId = location.pathname.split('/listing/')[1]
+    if (pathId && id !== pathId) {
+      return
+    }
 
     const effectMountTime = Date.now()
     isRestoringRef.current = true
@@ -72,14 +108,13 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       const current = sessionStorage.getItem(NAV_KEY)
       if (current) {
         const st: DetailNavState = JSON.parse(current)
-        delete (st as any).isNavigatingAway
-        delete (st as any).isNavigatingBack
+        delete (st as { [key: string]: unknown }).isNavigatingAway
+        delete (st as { [key: string]: unknown }).isNavigatingBack
         sessionStorage.setItem(NAV_KEY, JSON.stringify({ ...st }))
       }
     } catch {}
 
     const restoreInstant = (y: number) => {
-      console.log('[DetailScroll] Restoring to', y)
       isRestoringRef.current = true
       hasRestoredRef.current = true
       const html = document.documentElement
@@ -104,7 +139,7 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
             html.classList.remove('instant-nav')
             setTimeout(() => {
               isRestoringRef.current = false
-              console.log('[DetailScroll] Restoration complete')
+              
             }, 800)
           })
         }
@@ -113,40 +148,55 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
     }
 
     const doForwardTop = () => {
-      // Clear stale value if any and ensure we start at top for fresh entries
+      // Clear stale value if any - useListingPositioning handles scroll-to-top
       sessionStorage.removeItem(key)
-      restoreInstant(0)
+      // Don't scroll here - useListingPositioning already handles scroll-to-top
+      // for forward navigation without visible animation
     }
 
-    // Detect explicit forward target set by ListingCard click (detail → detail)
-    const isForwardTarget = (() => {
-      try {
-        const rawF = sessionStorage.getItem('leasingborsen-detail-forward')
-        if (!rawF) return false
-        const marker = JSON.parse(rawF) as { id?: string; timestamp?: number }
-        const recent = !!marker?.timestamp && (Date.now() - (marker.timestamp || 0)) < 8000
-        return marker?.id === id && recent
-      } catch {
-        return false
-      }
-    })()
+  // Detect explicit forward target set by ListingCard click (detail → detail)
+  const forwardMarker = (() => {
+    try {
+      const rawF = sessionStorage.getItem('leasingborsen-detail-forward')
+      if (!rawF) return null
+      const marker = JSON.parse(rawF) as { fromId?: string; toId?: string; t?: number }
+      return marker || null
+    } catch {
+      return null
+    }
+  })()
+  const isForwardTarget = !!(forwardMarker && forwardMarker.toId === id)
 
     if (isForwardTarget) {
       // Clear marker and treat as forward; never restore on explicit forward
-      try { sessionStorage.removeItem('leasingborsen-detail-forward') } catch {}
+      try {
+        sessionStorage.removeItem('leasingborsen-detail-forward')
+      } catch {
+        // Session storage removal failed
+      }
       doForwardTop()
       // proceed to attach save listeners below
     } else {
+      const browserBack = isBrowserBack()
       const isBackLike = isBackLikeForId(id)
 
-      // Only restore when navigating back-like to this id
-      if (savedPos != null && isBackLike) {
+      // Priority 1: Browser back navigation - restore if we have saved position
+      if (browserBack && savedPos != null) {
         if (lastRestoredRef.current === `${key}-${savedPos}`) {
           setTimeout(() => { isRestoringRef.current = false }, 800)
         } else {
           lastRestoredRef.current = `${key}-${savedPos}`
           restoreInstant(savedPos)
         }
+      // Priority 2: Fallback back-like detection - restore if we have saved position
+      } else if (savedPos != null && isBackLike) {
+        if (lastRestoredRef.current === `${key}-${savedPos}`) {
+          setTimeout(() => { isRestoringRef.current = false }, 800)
+        } else {
+          lastRestoredRef.current = `${key}-${savedPos}`
+          restoreInstant(savedPos)
+        }
+      // Priority 3: Default - scroll to top
       } else {
         doForwardTop()
       }
@@ -166,7 +216,9 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
           const st = JSON.parse(rawState) as DetailNavState
           if (st.isNavigatingAway && st.timestamp && (Date.now() - st.timestamp) < 2000) return
         }
-      } catch {}
+      } catch {
+        // Session storage parsing failed
+      }
 
       const y = window.scrollY || 0
       const payload = {
@@ -177,7 +229,7 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       sessionStorage.setItem(key, JSON.stringify(payload))
     }
 
-    let t: any
+    let t: NodeJS.Timeout | undefined
     const debouncedSave = () => { clearTimeout(t); t = setTimeout(saveNow, 200) }
     window.addEventListener('scroll', debouncedSave, { passive: true })
     window.addEventListener('pagehide', saveNow)
@@ -191,7 +243,9 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
           sessionStorage.removeItem(key)
         }
       }
-    } catch {}
+    } catch {
+      // Session storage operations failed
+    }
 
     return () => {
       clearTimeout(t)
@@ -199,32 +253,74 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       window.removeEventListener('pagehide', saveNow)
       saveNow()
     }
-  }, [id, ready, location.pathname, location.state, getKey, isBackLikeForId])
+  }, [id, ready, location.pathname, location.state, getKey, isBrowserBack, isBackLikeForId])
 }
 
 // Lightweight detector for back-like navigation usable by components to coordinate behavior
-export function useDetailBackLike(id?: string): boolean {
+export function useDetailBackLike(): boolean {
   const location = useLocation()
   // 1) Router explicit state
   const explicitBackLike = (location.state as { backLike?: boolean })?.backLike === true
   if (explicitBackLike) return true
-  // 2) NavigationTiming API
+
+  const isDetailRoute = location.pathname.includes('/listing/')
+  if (isDetailRoute) {
+    // Guard against forward: if a forward marker exists for this path id, do NOT treat as back-like
+    try {
+      const rawF = sessionStorage.getItem('leasingborsen-detail-forward')
+      if (rawF) {
+        const marker = JSON.parse(rawF) as { toId?: string }
+        const pathId = location.pathname.split('/listing/')[1]
+        if (marker?.toId && pathId && marker.toId === pathId) return false
+      }
+    } catch {}
+
+    // Prefer explicit in-app back flag for details
+    try {
+      const raw = sessionStorage.getItem('leasingborsen-detail-navigation')
+      if (raw) {
+        const st = JSON.parse(raw)
+        if (st?.isNavigatingBack && st?.timestamp && (Date.now() - st.timestamp) < 5000) return true
+      }
+    } catch {}
+
+    // Check recent popstate marker
+    try {
+      const tsRaw = sessionStorage.getItem(POP_TS_KEY)
+      if (tsRaw) {
+        const ts = Number(tsRaw)
+        if (!Number.isNaN(ts) && (Date.now() - ts) <= 1200) return true
+      }
+    } catch {}
+
+    // Fall back to Performance Navigation only if no forward marker matched
+    try {
+      const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+      if (entry?.type === 'back_forward') return true
+    } catch {}
+    if ((performance as { navigation?: { type: number } })?.navigation?.type === 2) return true
+
+    return false
+  }
+
+  // Non-detail routes: keep normal fallbacks (check popstate first)
+  try {
+    const tsRaw = sessionStorage.getItem(POP_TS_KEY)
+    if (tsRaw) {
+      const ts = Number(tsRaw)
+      if (!Number.isNaN(ts) && (Date.now() - ts) <= 1200) return true
+    }
+  } catch {}
   try {
     const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
     if (entry?.type === 'back_forward') return true
   } catch {}
-  // 3) Legacy performance.navigation
-  if ((performance as any)?.navigation?.type === 2) return true
-  // 4) Session flag
+  if ((performance as { navigation?: { type: number } })?.navigation?.type === 2) return true
   try {
     const raw = sessionStorage.getItem('leasingborsen-detail-navigation')
     if (raw) {
       const st = JSON.parse(raw)
       if (st?.isNavigatingBack && st?.timestamp && (Date.now() - st.timestamp) < 5000) return true
-      // Also consider recent prepare for this same id as a back-like signal
-      if (id && st?.currentId && st.currentId === id && st?.timestamp && (Date.now() - st.timestamp) < 10000) {
-        return true
-      }
     }
   } catch {}
   return false
