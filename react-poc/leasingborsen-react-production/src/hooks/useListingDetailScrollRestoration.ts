@@ -23,8 +23,20 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
 
   const getKey = useCallback((listingId?: string) => `${KEY_PREFIX}${listingId || ''}` , [])
 
-  // We no longer try to detect back/forward explicitly for restoration.
-  // Instead, if we have a recent saved position for this id, we restore it.
+  // Detect back-like navigation using session marker from prepareDetailNavigation
+  const isBackLikeForId = useCallback((targetId: string): boolean => {
+    try {
+      const raw = sessionStorage.getItem(NAV_KEY)
+      if (!raw) return false
+      const st = JSON.parse(raw) as DetailNavState & { navigationType?: string; currentId?: string; timestamp?: number }
+      // Consider it back-like if we previously prepared navigation away from this id
+      // and we returned within a short window (prevents stale restores on fresh visits)
+      const recent = !!st.timestamp && (Date.now() - st.timestamp) < 10000
+      return st.currentId === targetId && recent
+    } catch {
+      return false
+    }
+  }, [])
 
   useLayoutEffect(() => {
     if (!id || !ready) return
@@ -55,17 +67,15 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       }
     }
 
-    // If back-like: clear navigating flags to avoid save suppression
+    // Clear navigating flags on arrival but do not overwrite the prepared id
     try {
       const current = sessionStorage.getItem(NAV_KEY)
-      const st: DetailNavState = current ? JSON.parse(current) : {}
-      delete st.isNavigatingAway
-      delete st.isNavigatingBack
-      st.from = 'detail'
-      st.currentId = id
-      st.timestamp = Date.now()
-      st.version = 1
-      sessionStorage.setItem(NAV_KEY, JSON.stringify(st))
+      if (current) {
+        const st: DetailNavState = JSON.parse(current)
+        delete (st as any).isNavigatingAway
+        delete (st as any).isNavigatingBack
+        sessionStorage.setItem(NAV_KEY, JSON.stringify({ ...st }))
+      }
     } catch {}
 
     const restoreInstant = (y: number) => {
@@ -108,10 +118,10 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       restoreInstant(0)
     }
 
-    // Restoration rule: if we have a recent saved position for this id, restore it.
-    // This mirrors the listings approach of restoring based on presence of saved state
-    // rather than brittle back/forward detection in SPA navigation.
-    if (savedPos != null) {
+    const isBackLike = isBackLikeForId(id)
+
+    // Only restore when navigating back-like to this id
+    if (savedPos != null && isBackLike) {
       if (lastRestoredRef.current === `${key}-${savedPos}`) {
         setTimeout(() => { isRestoringRef.current = false }, 800)
       } else {
@@ -169,11 +179,11 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       window.removeEventListener('pagehide', saveNow)
       saveNow()
     }
-  }, [id, ready, location.pathname, location.state, getKey])
+  }, [id, ready, location.pathname, location.state, getKey, isBackLikeForId])
 }
 
 // Lightweight detector for back-like navigation usable by components to coordinate behavior
-export function useDetailBackLike(): boolean {
+export function useDetailBackLike(id?: string): boolean {
   const location = useLocation()
   // 1) Router explicit state
   const explicitBackLike = (location.state as { backLike?: boolean })?.backLike === true
@@ -191,6 +201,10 @@ export function useDetailBackLike(): boolean {
     if (raw) {
       const st = JSON.parse(raw)
       if (st?.isNavigatingBack && st?.timestamp && (Date.now() - st.timestamp) < 5000) return true
+      // Also consider recent prepare for this same id as a back-like signal
+      if (id && st?.currentId && st.currentId === id && st?.timestamp && (Date.now() - st.timestamp) < 10000) {
+        return true
+      }
     }
   } catch {}
   return false
