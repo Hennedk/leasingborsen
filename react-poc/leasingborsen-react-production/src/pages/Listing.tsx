@@ -39,12 +39,25 @@ const Listing: React.FC = () => {
   const offerSettings = validateLeaseConfig(rawOfferParams, false)
   
   const { data: listingResponse, isLoading, isFetching, error } = useListing(id || '', offerSettings)
+  // Forward marker guard: ensure forward detail→detail always scrolls to top
+  // Compute per render (lightweight) to avoid React 19 useMemo deps typing differences
+  const isForwardTarget = (() => {
+    try {
+      const raw = sessionStorage.getItem('leasingborsen-detail-forward')
+      if (!raw) return false
+      const marker = JSON.parse(raw) as { fromId?: string; toId?: string; t?: number }
+      return marker?.toId === id
+    } catch {
+      return false
+    }
+  })()
   // Run detail scroll restoration pre-paint and coordinate with positioning
-  const isBackLike = useDetailBackLike(id)
+  const isBackLike = useDetailBackLike()
   useListingDetailScrollRestoration(id, true)
-  // Only skip scroll-to-top when navigating back-like
-  const skipScrollToTop = isBackLike
+  // Only skip scroll-to-top when truly back-like and not explicit forward target
+  const skipScrollToTop = isBackLike && !isForwardTarget
   const { isPositioned } = useListingPositioning(id, { skipScrollToTop })
+  
   const mobileTitleRef = useRef<HTMLDivElement>(null)
 
   const car = listingResponse?.data as CarListing | undefined
