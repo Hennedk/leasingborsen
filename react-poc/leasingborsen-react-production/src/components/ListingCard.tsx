@@ -152,6 +152,12 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     setShowRipple(true)
     setIsPressed(true)
     
+    // Mark forward target for detail→detail navigation to avoid accidental restore at destination
+    try {
+      const targetId = car.id || car.listing_id || ''
+      sessionStorage.setItem('leasingborsen-detail-forward', JSON.stringify({ id: targetId, timestamp: Date.now() }))
+    } catch {}
+
     // Navigate with selected offer settings to maintain context
     setTimeout(() => {
       navigate({ 

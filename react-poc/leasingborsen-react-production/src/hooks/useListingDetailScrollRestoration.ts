@@ -118,18 +118,38 @@ export function useListingDetailScrollRestoration(id: string | undefined, ready 
       restoreInstant(0)
     }
 
-    const isBackLike = isBackLikeForId(id)
-
-    // Only restore when navigating back-like to this id
-    if (savedPos != null && isBackLike) {
-      if (lastRestoredRef.current === `${key}-${savedPos}`) {
-        setTimeout(() => { isRestoringRef.current = false }, 800)
-      } else {
-        lastRestoredRef.current = `${key}-${savedPos}`
-        restoreInstant(savedPos)
+    // Detect explicit forward target set by ListingCard click (detail → detail)
+    const isForwardTarget = (() => {
+      try {
+        const rawF = sessionStorage.getItem('leasingborsen-detail-forward')
+        if (!rawF) return false
+        const marker = JSON.parse(rawF) as { id?: string; timestamp?: number }
+        const recent = !!marker?.timestamp && (Date.now() - (marker.timestamp || 0)) < 8000
+        return marker?.id === id && recent
+      } catch {
+        return false
       }
-    } else {
+    })()
+
+    if (isForwardTarget) {
+      // Clear marker and treat as forward; never restore on explicit forward
+      try { sessionStorage.removeItem('leasingborsen-detail-forward') } catch {}
       doForwardTop()
+      // proceed to attach save listeners below
+    } else {
+      const isBackLike = isBackLikeForId(id)
+
+      // Only restore when navigating back-like to this id
+      if (savedPos != null && isBackLike) {
+        if (lastRestoredRef.current === `${key}-${savedPos}`) {
+          setTimeout(() => { isRestoringRef.current = false }, 800)
+        } else {
+          lastRestoredRef.current = `${key}-${savedPos}`
+          restoreInstant(savedPos)
+        }
+      } else {
+        doForwardTop()
+      }
     }
 
     // Save logic
