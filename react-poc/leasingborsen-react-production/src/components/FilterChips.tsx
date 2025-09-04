@@ -70,7 +70,7 @@ const FilterChipsComponent: React.FC<FilterChipsProps> = ({
         <div className="animate-in fade-in duration-300">
           <Badge 
             variant="secondary" 
-            className="text-sm text-muted-foreground bg-muted/20 border-border/20 px-3 py-1.5 h-8"
+            className="text-sm text-muted-foreground bg-muted/20 border-border/20 px-3.5 py-2 h-10"
           >
             Ingen filtre anvendt
           </Badge>

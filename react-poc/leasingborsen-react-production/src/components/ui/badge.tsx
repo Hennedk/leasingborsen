@@ -27,7 +27,7 @@ const badgeVariants = cva(
           "px-2.5 py-1 text-xs bg-secondary text-secondary-foreground border-border",
         // For active filter chips in results context  
         "result-filter":
-          "px-2.5 py-1.5 text-xs bg-background text-foreground !border-border hover:[background-color:var(--surface-brand-subtle)] font-normal",
+          "h-10 px-3.5 py-2 text-sm bg-background text-foreground !border-border hover:[background-color:var(--surface-brand-subtle)] font-normal",
       },
       size: {
         sm: "h-8 px-3 text-xs",
