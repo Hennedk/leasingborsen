@@ -49,7 +49,7 @@ const ListingsHeader: React.FC<ListingsHeaderProps> = ({
             onValueChange={onSortChange}
           >
             <SelectTrigger
-              size="default"
+              size="md"
               background="primary"
               className="min-w-[180px]"
               aria-label="Sorter efter"

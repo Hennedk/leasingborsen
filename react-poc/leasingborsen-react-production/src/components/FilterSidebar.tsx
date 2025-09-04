@@ -90,7 +90,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
   return (
     <div className={`${className} ${isOpen ? 'block' : 'hidden'}`}>
       <Card className="bg-card/95 backdrop-blur-sm border border-border/40 hover:border-primary/40 transition-all duration-300 rounded-2xl overflow-hidden">
-        <CardHeader className="pb-4 pt-6 bg-gradient-to-b from-background to-background/95">
+        <CardHeader className="pb-3 pt-4 bg-gradient-to-b from-background to-background/95">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <CardTitle className="text-xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
@@ -128,7 +128,7 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-6 pt-2 pb-8">
+        <CardContent className="space-y-4 pt-1 pb-4">
           {/* Vehicle Selection Section */}
           <div className="space-y-4">
             

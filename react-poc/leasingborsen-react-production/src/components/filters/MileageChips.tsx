@@ -41,7 +41,7 @@ export const MileageChips: React.FC<MileageChipsProps> = ({
             <Badge
               key={mileage}
               variant={isSelected ? "filter-selected" : "filter-unselected"}
-              size="default"
+              size="md"
               className="cursor-pointer transition-colors"
               onClick={() => onMileageChange(isSelected ? null : mileage)}
             >

@@ -78,7 +78,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
             <Button
               variant="outline"
               className="w-full justify-between border text-sm font-normal"
-              size="default"
+              size="md"
             >
               {selectedMakes.length > 0 
                 ? `${selectedMakes.length} ${selectedMakes.length === 1 ? 'mærke' : 'mærker'} valgt`
@@ -100,7 +100,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                 placeholder="Søg mærker..."
                 value={makeSearch}
                 onChange={(e) => setMakeSearch(e.target.value)}
-                size="default"
+                size="md"
                 background="primary"
               />
               
@@ -187,7 +187,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
             <Button
               variant="outline"
               className="w-full justify-between border text-sm font-normal"
-              size="default"
+              size="md"
               disabled={selectedMakes.length === 0}
             >
               {selectedMakes.length === 0 
@@ -222,7 +222,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                         <Button
                           key={makeName}
                           variant="outline"
-                          className="w-full justify-between h-auto p-4"
+                          className="w-full justify-between h-auto p-2"
                           onClick={() => {
                             setSelectedMakeForModels(makeName)
                             setModelSelectionView('models')
@@ -272,7 +272,7 @@ export const MakeModelSelector: React.FC<MakeModelSelectorProps> = ({
                     placeholder="Søg modeller..."
                     value={modelSearch}
                     onChange={(e) => setModelSearch(e.target.value)}
-                    size="default"
+                    size="md"
                     background="primary"
                   />
                   

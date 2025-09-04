@@ -53,7 +53,7 @@ export const ExpandableFilterChips: React.FC<ExpandableFilterChipsProps> = ({
     <Badge
       key={option.name}
       variant={isSelected ? "filter-selected" : "filter-unselected"}
-      size="default"
+      size="md"
       className="cursor-pointer transition-colors"
       onClick={() => onToggle(option.name)}
     >
