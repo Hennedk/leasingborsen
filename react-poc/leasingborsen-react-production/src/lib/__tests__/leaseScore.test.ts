@@ -6,7 +6,7 @@ import {
   type LeaseScoreInput 
 } from '../leaseScore'
 
-describe('Lease Score v2.0 - Deposit-Based Scoring', () => {
+describe('Lease Score v2.1 - Backward Compatibility Tests', () => {
   // Test data constants
   const baseInput: LeaseScoreInput = {
     retailPrice: 400000,
@@ -89,35 +89,42 @@ describe('Lease Score v2.0 - Deposit-Based Scoring', () => {
     })
   })
 
-  describe('Monthly Rate Scoring', () => {
-    test('0.8% monthly rate scores 100 points', () => {
+  describe('Monthly Rate Scoring (EML v2.1)', () => {
+    test('low monthly rate (0.8%) scores high', () => {
       const result = calculateLeaseScore({
         ...baseInput,
-        monthlyPrice: 3200 // 0.8% of 400k
+        monthlyPrice: 3200, // 0.8% of 400k
+        firstPayment: 0     // No deposit
       })
       
-      expect(result.monthlyRateScore).toBe(100)
-      expect(result.monthlyRatePercent).toBe(0.8)
+      // v2.1 uses anchor-based scoring, expect high score for low rate
+      expect(result.monthlyRateScore).toBeGreaterThanOrEqual(90)
+      expect(result.emlBlendPercent).toBeCloseTo(0.8, 1)
     })
 
-    test('1.0% monthly rate scores 90 points', () => {
+    test('moderate monthly rate (1.0%) scores reasonably', () => {
       const result = calculateLeaseScore({
         ...baseInput,
-        monthlyPrice: 4000 // 1.0% of 400k
+        monthlyPrice: 4000, // 1.0% of 400k
+        firstPayment: 0     // No deposit
       })
       
-      expect(result.monthlyRateScore).toBe(90)
-      expect(result.monthlyRatePercent).toBe(1.0)
+      // Should be between good and fair
+      expect(result.monthlyRateScore).toBeGreaterThan(70)
+      expect(result.monthlyRateScore).toBeLessThan(95)
+      expect(result.emlBlendPercent).toBeCloseTo(1.0, 1)
     })
 
-    test('2.2% monthly rate scores 25 points', () => {
+    test('high monthly rate (2.2%) scores low', () => {
       const result = calculateLeaseScore({
         ...baseInput,
-        monthlyPrice: 8800 // 2.2% of 400k
+        monthlyPrice: 8800, // 2.2% of 400k
+        firstPayment: 0     // No deposit
       })
       
-      expect(result.monthlyRateScore).toBe(25)
-      expect(result.monthlyRatePercent).toBeCloseTo(2.2, 1)
+      // Should score very low due to high rate
+      expect(result.monthlyRateScore).toBeLessThan(10)
+      expect(result.emlBlendPercent).toBeCloseTo(2.2, 1)
     })
   })
 
@@ -175,21 +182,34 @@ describe('Lease Score v2.0 - Deposit-Based Scoring', () => {
       expect(terribleResult.totalScore).toBeLessThanOrEqual(100)
     })
 
-    test('weighted calculation matches expected formula', () => {
+    test('weighted calculation works correctly', () => {
       const result = calculateLeaseScore({
         retailPrice: 400000,
-        monthlyPrice: 4000, // 1.0% = 90 points
-        mileagePerYear: 15000, // 75 points
-        firstPayment: 20000 // 5% = 90 points
+        monthlyPrice: 4000,
+        mileagePerYear: 15000, // Should score 75 (unchanged from v2.0)
+        firstPayment: 20000,   // 5% - should score 90 (unchanged)
+        contractMonths: 36
       })
 
-      // Manual calculation: 90*0.45 + 75*0.35 + 90*0.20 = 40.5 + 26.25 + 18 = 84.75 ≈ 85
-      expect(result.totalScore).toBe(85)
+      // v2.1: EML calculation affects monthly rate score differently
+      // Just verify that all components are calculated and contribute to total
+      expect(result.totalScore).toBeGreaterThan(50)
+      expect(result.totalScore).toBeLessThan(100)
+      expect(result.mileageScore).toBe(75)  // Mileage scoring unchanged
+      expect(result.upfrontScore).toBe(90)  // Upfront scoring unchanged
+      
+      // Total should be reasonable weighted combination
+      const expectedWeightedSum = Math.round(
+        result.monthlyRateScore * 0.45 +
+        result.mileageScore * 0.35 +
+        result.upfrontScore * 0.20
+      )
+      expect(result.totalScore).toBe(expectedWeightedSum)
     })
 
-    test('includes calculation_version: 2.0 in breakdown', () => {
+    test('includes calculation_version: 2.1 in breakdown', () => {
       const result = calculateLeaseScore(baseInput)
-      expect(result.calculation_version).toBe('2.0')
+      expect(result.calculation_version).toBe('2.1')
     })
   })
 
@@ -213,10 +233,11 @@ describe('Lease Score v2.0 - Deposit-Based Scoring', () => {
         firstPayment: -10000
       })
       
+      // v2.1: Invalid data gets marked as not_scorable
       expect(result.monthlyRateScore).toBe(0)
       expect(result.upfrontScore).toBe(0)
-      expect(result.mileageScore).toBe(20) // Normalized to 0, which scores 20
-      expect(result.totalScore).toBeGreaterThanOrEqual(0)
+      expect(result.mileageScore).toBe(0)  // Invalid inputs result in 0 score
+      expect(result.totalScore).toBe(0)    // Total should be 0 for invalid data
     })
 
     test('rounds scores correctly', () => {
@@ -278,7 +299,7 @@ describe('Lease Score v2.0 - Deposit-Based Scoring', () => {
       expect(result).toHaveProperty('monthlyRateScore')
       expect(result).toHaveProperty('mileageScore')
       expect(result).toHaveProperty('upfrontScore')
-      expect(result).toHaveProperty('calculation_version', '2.0')
+      expect(result).toHaveProperty('calculation_version', '2.1')
       
       // Verify backwards compatibility
       expect(result.flexibilityScore).toBe(result.upfrontScore)

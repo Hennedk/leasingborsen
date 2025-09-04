@@ -152,10 +152,17 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     setShowRipple(true)
     setIsPressed(true)
     
-    // Mark forward target for detail→detail navigation to avoid accidental restore at destination
+    // Mark forward target for detail→detail navigation (single-use, specific fromId→toId)
     try {
-      const targetId = car.id || car.listing_id || ''
-      sessionStorage.setItem('leasingborsen-detail-forward', JSON.stringify({ id: targetId, timestamp: Date.now() }))
+      const toId = car.id || car.listing_id || ''
+      const fromId = (typeof window !== 'undefined' && window.location?.pathname?.startsWith('/listing/'))
+        ? window.location.pathname.split('/listing/')[1] || undefined
+        : undefined
+      const t = (typeof performance !== 'undefined' && typeof performance.now === 'function')
+        ? performance.now()
+        : Date.now()
+      const marker = { fromId, toId, t }
+      sessionStorage.setItem('leasingborsen-detail-forward', JSON.stringify(marker))
     } catch {}
 
     // Navigate with selected offer settings to maintain context
