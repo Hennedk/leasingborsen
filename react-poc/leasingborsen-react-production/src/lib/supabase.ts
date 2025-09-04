@@ -133,7 +133,8 @@ function selectBestOffer(
   targetMileage: number,
   targetDeposit: number = 35000, // Changed from 0 to 35000 kr as balanced middle-ground
   targetTerm?: number, // NEW: Allow specifying preferred term
-  strictMode: boolean = true
+  strictMode: boolean = true,
+  isUserSpecified: boolean = true // NEW: Whether these are user selections or defaults
 ): any {
   if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
     return null
@@ -226,12 +227,12 @@ function selectBestOffer(
       if (strictMode) {
         return {
           ...selectedOffer,
-          selection_method: preferredTerm === targetTerm ? 'exact' : 'fallback'
+          selection_method: !isUserSpecified ? 'default' : (preferredTerm === targetTerm ? 'exact' : 'fallback')
         }
       } else {
         return {
           ...selectedOffer,
-          selection_method: isExactMileageFlexible ? (preferredTerm === targetTerm ? 'exact' : 'fallback') : 'closest'
+          selection_method: !isUserSpecified ? 'default' : (isExactMileageFlexible ? (preferredTerm === targetTerm ? 'exact' : 'fallback') : 'closest')
         }
       }
     }
@@ -264,7 +265,7 @@ function selectBestOffer(
     
     return {
       ...bestOffer,
-      selection_method: isExactMileageFlexible ? 'exact' : 'closest'
+      selection_method: !isUserSpecified ? 'default' : (isExactMileageFlexible ? 'exact' : 'closest')
     }
   }
 }
@@ -316,7 +317,8 @@ export class CarListingQueries {
         selectedMileage,
         35000, // Target 35k kr deposit for balanced rates
         undefined, // No specific term preference in listings view
-        strictMode
+        strictMode,
+        strictMode // In listings, user-specified = mileage filter was applied
       )
       
       if (!selectedOffer) {
@@ -456,12 +458,21 @@ export class CarListingQueries {
 
     // If offer settings are provided, use selectBestOffer to choose the appropriate pricing
     if (offerSettings && leasePricingArray.length > 0) {
+      // Detect if parameters are user-specified (not null/undefined) or using defaults
+      const isMileageUserSpecified = offerSettings.targetMileage != null
+      const isDepositUserSpecified = offerSettings.targetDeposit != null
+      const isTermUserSpecified = offerSettings.targetTerm != null
+      
+      // Only consider it user-specified if at least one parameter was explicitly set
+      const isUserSpecified = isMileageUserSpecified || isDepositUserSpecified || isTermUserSpecified
+      
       const selectedOffer = selectBestOffer(
         leasePricingArray,
-        offerSettings.targetMileage || 15000, // Default to 15k if not specified
-        offerSettings.targetDeposit || 35000,  // Default to 35k if not specified
+        offerSettings.targetMileage ?? 15000, // Default to 15k if not specified
+        offerSettings.targetDeposit ?? 35000,  // Default to 35k if not specified
         offerSettings.targetTerm,              // Pass through user's target term
-        true // strict mode
+        true, // strict mode
+        isUserSpecified // Whether these are user selections or defaults
       )
 
       if (selectedOffer) {
@@ -534,7 +545,8 @@ export class CarListingQueries {
         selectedMileage,
         35000, // Target 35k kr deposit for balanced rates
         undefined, // No specific term preference in listings view
-        strictMode
+        strictMode,
+        strictMode // In listings count, user-specified = mileage filter was applied
       )
       return selectedOffer !== null
     })

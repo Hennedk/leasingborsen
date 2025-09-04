@@ -2,6 +2,7 @@ import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { useReferenceData } from '@/hooks/useReferenceData'
 import { useFilterOptions } from '@/hooks/useFilterTranslations'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
@@ -98,17 +99,20 @@ const FilterSidebarComponent: React.FC<FilterSidebarProps> = ({
             </div>
             
             <div className="flex items-center gap-2">
-              {activeFiltersCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetAllFilters}
-                  className="h-8 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary transition-colors duration-200"
-                  title="Nulstil alle filtre"
-                >
-                  Nulstil ({activeFiltersCount})
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResetAllFilters}
+                className={cn(
+                  "h-8 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary transition-all duration-200",
+                  activeFiltersCount > 0 
+                    ? "opacity-100" 
+                    : "opacity-0 pointer-events-none"
+                )}
+                title="Nulstil alle filtre"
+              >
+                Nulstil ({activeFiltersCount})
+              </Button>
               
               {onClose && (
                 <Button
