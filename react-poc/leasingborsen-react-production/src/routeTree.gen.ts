@@ -26,6 +26,7 @@ import { Route as AdminListingsRouteImport } from './routes/admin/listings'
 import { Route as AdminExtractionSessionsRouteImport } from './routes/admin/extraction-sessions'
 import { Route as AdminExtractionRouteImport } from './routes/admin/extraction'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminSellersIndexRouteImport } from './routes/admin/sellers.index'
 import { Route as AdminSellersListingsRouteImport } from './routes/admin/sellers.listings'
 import { Route as AdminSellersCreateRouteImport } from './routes/admin/sellers.create'
 import { Route as AdminListingsCreateRouteImport } from './routes/admin/listings.create'
@@ -119,6 +120,11 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSellersIndexRoute = AdminSellersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminSellersRoute,
+} as any)
 const AdminSellersListingsRoute = AdminSellersListingsRouteImport.update({
   id: '/listings',
   path: '/listings',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/admin/listings/create': typeof AdminListingsCreateRoute
   '/admin/sellers/create': typeof AdminSellersCreateRoute
   '/admin/sellers/listings': typeof AdminSellersListingsRoute
+  '/admin/sellers/': typeof AdminSellersIndexRoute
   '/admin/batches/$batchId/review': typeof AdminBatchesBatchIdReviewRoute
   '/admin/listings/edit/$id': typeof AdminListingsEditIdRoute
   '/admin/sellers/edit/$id': typeof AdminSellersEditIdRoute
@@ -195,7 +202,6 @@ export interface FileRoutesByTo {
   '/admin/extraction': typeof AdminExtractionRoute
   '/admin/extraction-sessions': typeof AdminExtractionSessionsRouteWithChildren
   '/admin/listings': typeof AdminListingsRouteWithChildren
-  '/admin/sellers': typeof AdminSellersRouteWithChildren
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/toyota-pdf': typeof AdminToyotaPdfRoute
   '/listing/$id': typeof ListingIdRoute
@@ -204,6 +210,7 @@ export interface FileRoutesByTo {
   '/admin/listings/create': typeof AdminListingsCreateRoute
   '/admin/sellers/create': typeof AdminSellersCreateRoute
   '/admin/sellers/listings': typeof AdminSellersListingsRoute
+  '/admin/sellers': typeof AdminSellersIndexRoute
   '/admin/batches/$batchId/review': typeof AdminBatchesBatchIdReviewRoute
   '/admin/listings/edit/$id': typeof AdminListingsEditIdRoute
   '/admin/sellers/edit/$id': typeof AdminSellersEditIdRoute
@@ -231,6 +238,7 @@ export interface FileRoutesById {
   '/admin/listings/create': typeof AdminListingsCreateRoute
   '/admin/sellers/create': typeof AdminSellersCreateRoute
   '/admin/sellers/listings': typeof AdminSellersListingsRoute
+  '/admin/sellers/': typeof AdminSellersIndexRoute
   '/admin/batches/$batchId/review': typeof AdminBatchesBatchIdReviewRoute
   '/admin/listings/edit/$id': typeof AdminListingsEditIdRoute
   '/admin/sellers/edit/$id': typeof AdminSellersEditIdRoute
@@ -259,6 +267,7 @@ export interface FileRouteTypes {
     | '/admin/listings/create'
     | '/admin/sellers/create'
     | '/admin/sellers/listings'
+    | '/admin/sellers/'
     | '/admin/batches/$batchId/review'
     | '/admin/listings/edit/$id'
     | '/admin/sellers/edit/$id'
@@ -275,7 +284,6 @@ export interface FileRouteTypes {
     | '/admin/extraction'
     | '/admin/extraction-sessions'
     | '/admin/listings'
-    | '/admin/sellers'
     | '/admin/settings'
     | '/admin/toyota-pdf'
     | '/listing/$id'
@@ -284,6 +292,7 @@ export interface FileRouteTypes {
     | '/admin/listings/create'
     | '/admin/sellers/create'
     | '/admin/sellers/listings'
+    | '/admin/sellers'
     | '/admin/batches/$batchId/review'
     | '/admin/listings/edit/$id'
     | '/admin/sellers/edit/$id'
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/listings/create'
     | '/admin/sellers/create'
     | '/admin/sellers/listings'
+    | '/admin/sellers/'
     | '/admin/batches/$batchId/review'
     | '/admin/listings/edit/$id'
     | '/admin/sellers/edit/$id'
@@ -448,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/sellers/': {
+      id: '/admin/sellers/'
+      path: '/'
+      fullPath: '/admin/sellers/'
+      preLoaderRoute: typeof AdminSellersIndexRouteImport
+      parentRoute: typeof AdminSellersRoute
+    }
     '/admin/sellers/listings': {
       id: '/admin/sellers/listings'
       path: '/listings'
@@ -532,12 +549,14 @@ const AdminListingsRouteWithChildren = AdminListingsRoute._addFileChildren(
 interface AdminSellersRouteChildren {
   AdminSellersCreateRoute: typeof AdminSellersCreateRoute
   AdminSellersListingsRoute: typeof AdminSellersListingsRoute
+  AdminSellersIndexRoute: typeof AdminSellersIndexRoute
   AdminSellersEditIdRoute: typeof AdminSellersEditIdRoute
 }
 
 const AdminSellersRouteChildren: AdminSellersRouteChildren = {
   AdminSellersCreateRoute: AdminSellersCreateRoute,
   AdminSellersListingsRoute: AdminSellersListingsRoute,
+  AdminSellersIndexRoute: AdminSellersIndexRoute,
   AdminSellersEditIdRoute: AdminSellersEditIdRoute,
 }
 
