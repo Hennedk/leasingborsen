@@ -1,8 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { lazy } from 'react'
-
-const AdminExtractionSessions = lazy(() => import('@/pages/admin/AdminExtractionSessions'))
+import { createFileRoute, Outlet } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/admin/extraction-sessions')({
-  component: AdminExtractionSessions,
+  component: () => <Outlet />,
 })
