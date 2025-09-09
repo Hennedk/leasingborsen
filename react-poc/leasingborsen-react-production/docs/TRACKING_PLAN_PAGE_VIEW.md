@@ -233,20 +233,44 @@ VITE_MIXPANEL_TOKEN=448751493043ebfbe9074c20efc72f23
 #### Production Deployment (Vercel)
 **Important**: Production token should **never** be committed to the repository.
 
-1. **Set Environment Variable in Vercel Dashboard**:
+**Complete Vercel Environment Configuration:**
+
+1. **Production Environment** (✅ Configured):
    - Go to your Vercel project → Settings → Environment Variables
-   - Add new variable:
+   - Add variable:
      - Name: `VITE_MIXPANEL_TOKEN`
      - Value: `cefe2d6f968f8bb421405ad77daf2c3b` (production token)
-     - Environment: Production only
-   
-2. **Redeploy** the project to apply the new environment variable
+     - Environment: **Production only** ✓
 
-3. **Token Separation**:
-   - **Development/Staging**: `448751493043ebfbe9074c20efc72f23`
-   - **Production**: `cefe2d6f968f8bb421405ad77daf2c3b`
+2. **Preview Environment** (Recommended for PR deployments):
+   - Add another variable with same name:
+     - Name: `VITE_MIXPANEL_TOKEN`
+     - Value: `448751493043ebfbe9074c20efc72f23` (dev/staging token)
+     - Environment: **Preview only** ✓
    
-This ensures proper data separation between environments and follows security best practices.
+   **Why Preview needs separate config:**
+   - Keeps PR deployment analytics separate from production
+   - Prevents test data from polluting production analytics
+   - Maintains consistent development experience
+
+3. **Development Environment** (Optional):
+   - Rarely needed since developers use local `.env` files
+   - If needed, use same dev token as Preview
+
+4. **Environment Matrix**:
+
+| Environment | Token | Analytics Project | Purpose |
+|-------------|--------|------------------|---------|
+| **Production** | `cefe2...c3b` | Production | Live site data |
+| **Preview** | `4487...f23` | Development | PR testing |
+| **Local Dev** | `4487...f23` | Development | Local development |
+
+5. **Redeploy** after configuration to apply environment variables
+
+**Next Steps:**
+- **Recommended**: Configure Preview environment to keep PR deployments separate from production analytics
+- **Optional**: Configure Development environment if using Vercel's development features
+- Verify analytics are working correctly in each environment after deployment
 
 ### Testing Checklist
 - [ ] No events before consent granted
