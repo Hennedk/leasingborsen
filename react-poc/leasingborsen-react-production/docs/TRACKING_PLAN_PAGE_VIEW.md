@@ -220,10 +220,33 @@ useEffect(() => {
 ## Development & Testing
 
 ### Environment Configuration
+
+#### Development & Staging
 ```bash
-# Add to .env files
+# Development (.env)
+VITE_MIXPANEL_TOKEN=448751493043ebfbe9074c20efc72f23
+
+# Staging (.env.staging)
 VITE_MIXPANEL_TOKEN=448751493043ebfbe9074c20efc72f23
 ```
+
+#### Production Deployment (Vercel)
+**Important**: Production token should **never** be committed to the repository.
+
+1. **Set Environment Variable in Vercel Dashboard**:
+   - Go to your Vercel project → Settings → Environment Variables
+   - Add new variable:
+     - Name: `VITE_MIXPANEL_TOKEN`
+     - Value: `cefe2d6f968f8bb421405ad77daf2c3b` (production token)
+     - Environment: Production only
+   
+2. **Redeploy** the project to apply the new environment variable
+
+3. **Token Separation**:
+   - **Development/Staging**: `448751493043ebfbe9074c20efc72f23`
+   - **Production**: `cefe2d6f968f8bb421405ad77daf2c3b`
+   
+This ensures proper data separation between environments and follows security best practices.
 
 ### Testing Checklist
 - [ ] No events before consent granted
