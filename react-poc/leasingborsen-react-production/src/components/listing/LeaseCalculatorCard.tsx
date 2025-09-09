@@ -8,6 +8,7 @@ import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption, CarListing } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
+// lease_terms_apply is emitted by router suppression to avoid duplicates
 
 interface LeaseCalculatorCardProps {
   car: CarListing
@@ -52,6 +53,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   upfrontPriceImpacts,
   onHoverOption
 }) => {
+  // lease_terms_apply is emitted by router suppression when selected* URL changes
   const handleMileageHover = useCallback((mileage: number) => {
     onHoverOption?.({ dimension: 'mileage', value: mileage })
   }, [onHoverOption])
@@ -145,7 +147,10 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Interactive dropdown
               <Select 
                 value={selectedMileage?.toString() || ''} 
-                onValueChange={(value) => onMileageChange(parseInt(value))}
+                onValueChange={(value) => { 
+                  const v = parseInt(value); 
+                  onMileageChange(v)
+                }}
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
@@ -193,7 +198,10 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Interactive dropdown
               <Select 
                 value={selectedPeriod?.toString() || ''} 
-                onValueChange={(value) => onPeriodChange(parseInt(value))}
+                onValueChange={(value) => { 
+                  const v = parseInt(value); 
+                  onPeriodChange(v) 
+                }}
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">
@@ -241,7 +249,10 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
               // Interactive dropdown
               <Select 
                 value={selectedUpfront?.toString() || ''} 
-                onValueChange={(value) => onUpfrontChange(parseInt(value))}
+                onValueChange={(value) => { 
+                  const v = parseInt(value); 
+                  onUpfrontChange(v) 
+                }}
               >
                 <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                   <div className="flex flex-col items-start w-full">

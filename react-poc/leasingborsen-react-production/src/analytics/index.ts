@@ -13,3 +13,12 @@ export type { PageViewEvent, PageViewContext, PageType, PageLoad } from './pagev
 
 // Types from core module
 export type { Device } from './mp'
+
+// Listing events (Phase 2)
+export { 
+  trackListingView, 
+  trackListingClick, 
+  trackLeaseTermsOpen,
+  trackLeaseTermsApply,
+  newConfigSession,
+} from './listing'

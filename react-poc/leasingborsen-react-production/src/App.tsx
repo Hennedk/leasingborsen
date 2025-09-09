@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
@@ -7,62 +7,140 @@ import { routeTree } from './routeTree.gen'
 
 // Import analytics
 import { analytics } from './analytics/mp'
-import { trackPageView, type PageViewContext, type PageType } from './analytics/pageview'
-import { hasSentInitialPV, markInitialPV } from './analytics/session'
+import { type PageViewContext, type PageType } from './analytics/pageview'
+import { trackPVIfNew } from './analytics/trackingGuard'
+import { newConfigSession, trackLeaseTermsApply } from './analytics'
 
-// Create a new router instance
-const router = createRouter({ 
-  routeTree,
-  defaultPreload: 'intent',
-  defaultPreloadDelay: 100,
-})
-
-// Register the router instance for type safety
+// Register router type for TanStack Router type safety
 declare module '@tanstack/react-router' {
   interface Register {
-    router: typeof router
+    router: ReturnType<typeof createRouter>
   }
 }
 
 function App() {
+  // Create router instance inside component to ensure fresh instance per mount
+  // This prevents duplicate subscriptions in React StrictMode during development
+  const router = useMemo(() => createRouter({ 
+    routeTree,
+    defaultPreload: 'intent',
+    defaultPreloadDelay: 100,
+  }), [])
   useEffect(() => {
     // Initialize analytics on app startup
     const token = import.meta.env.VITE_MIXPANEL_TOKEN
     if (token) {
-      analytics.init({
-        token,
-        eu: true // Always use EU endpoint for GDPR compliance
-      })
-      
+      if (!analytics.isInitialized()) {
+        analytics.init({
+          token,
+          eu: true // Always use EU endpoint for GDPR compliance
+        })
+      }
+
       // Grant consent for now (in production, this should be behind a consent UI)
       // TODO: Implement proper consent management UI
-      analytics.grantConsent()
-      
-      console.log('[Analytics] Initialized and consent granted')
+      if (!analytics.hasConsent()) {
+        analytics.grantConsent()
+        console.log('[Analytics] Initialized and consent granted')
+      }
     } else {
       console.warn('[Analytics] No VITE_MIXPANEL_TOKEN found, analytics disabled')
     }
     
-    // Track initial page load - send exactly once per tab session
-    if (!hasSentInitialPV()) {
-      trackInitialPageView()
-      markInitialPV()
-    }
+    // Track initial page load using URL-based deduplication guard
+    const currentUrl = window.location.pathname + window.location.search
+    const context = buildPageViewContext(window.location.pathname, parseSearchParams(window.location.search), false)
+    trackPVIfNew(currentUrl, context)
     
-    // Subscribe to router navigation events
-    const unsubscribe = router.subscribe('onLoad', () => {
-      // If the initial onLoad arrives after our manual call, ignore it
-      if (!hasSentInitialPV()) {
-        markInitialPV()
+    // Subscribe to router navigation events (use onResolved to avoid multiple onLoad firings per navigation)
+    // Skip the first resolved event since we already tracked the initial load above
+    let skipFirstResolved = true
+    const unsubscribe = router.subscribe('onResolved', (event) => {
+      if (skipFirstResolved) {
+        skipFirstResolved = false
         return
       }
-      
+
+      // Only track if the URL actually changed (ignore internal re-resolves)
+      if (!event.hrefChanged && !event.pathChanged) {
+        return
+      }
+
+      // Skip hash-only changes (same path + search, different hash)
+      if (
+        event.hashChanged &&
+        !event.pathChanged &&
+        (event.fromLocation?.searchStr === event.toLocation.searchStr)
+      ) {
+        return
+      }
+
+      // If on listing detail and only terms changed (km/mdr/udb or selected*), track lease_terms_apply instead of page_view
+      const isDetail = event.toLocation.pathname.startsWith('/listing/')
+      if (isDetail && !event.pathChanged) {
+        const parse = (s?: string) => {
+          const params: Record<string, string> = {}
+          if (s) {
+            const usp = new URLSearchParams(s)
+            for (const [k, v] of usp.entries()) params[k] = v
+          }
+          return params
+        }
+        const prev = parse(event.fromLocation?.searchStr)
+        const next = parse(event.toLocation.searchStr)
+        const keys = new Set([...Object.keys(prev), ...Object.keys(next)])
+        const changedKeys: string[] = []
+        keys.forEach(k => {
+          if ((prev[k] || '') !== (next[k] || '')) changedKeys.push(k)
+        })
+        const leaseKeys = ['km', 'mdr', 'udb', 'selectedMileage', 'selectedTerm', 'selectedDeposit']
+        const onlyLeaseChanged = changedKeys.length > 0 && changedKeys.every(k => leaseKeys.includes(k))
+        if (onlyLeaseChanged) {
+          const idMatch = event.toLocation.pathname.match(/\/listing\/([^/]+)/)
+          const listingId = idMatch ? idMatch[1] : ''
+          const to = {
+            mileage_km_per_year: next.selectedMileage ? Number(next.selectedMileage) : (next.km ? Number(next.km) : undefined),
+            term_months: next.selectedTerm ? Number(next.selectedTerm) : (next.mdr ? Number(next.mdr) : undefined),
+            first_payment_dkk: next.selectedDeposit ? Number(next.selectedDeposit) : (next.udb ? Number(next.udb) : undefined),
+          }
+          const from = {
+            mileage_km_per_year: prev.selectedMileage ? Number(prev.selectedMileage) : (prev.km ? Number(prev.km) : undefined),
+            term_months: prev.selectedTerm ? Number(prev.selectedTerm) : (prev.mdr ? Number(prev.mdr) : undefined),
+            first_payment_dkk: prev.selectedDeposit ? Number(prev.selectedDeposit) : (prev.udb ? Number(prev.udb) : undefined),
+          }
+          const changed: (keyof typeof to)[] = []
+          ;(['mileage_km_per_year','term_months','first_payment_dkk'] as const).forEach(k => {
+            if ((from as any)[k] !== (to as any)[k]) changed.push(k)
+          })
+          const sessionId = newConfigSession()
+          if (to.mileage_km_per_year != null && to.term_months != null && to.first_payment_dkk != null) {
+            trackLeaseTermsApply({
+              listing_id: listingId,
+              mileage_km_per_year: to.mileage_km_per_year,
+              term_months: to.term_months,
+              first_payment_dkk: to.first_payment_dkk,
+              previous: from,
+              changed_keys: changed as any,
+              changed_keys_count: changed.length,
+              selection_method: 'dropdown',
+              ui_surface: 'inline',
+              config_session_id: sessionId,
+            })
+          }
+          return
+        }
+      }
+
       // Mark as SPA navigation for accurate page load type detection
       analytics.markAsSpaNavigation()
-      
-      // Track SPA navigation (not initial load)
-      // Use window location as it's more reliable for getting the actual URL
-      trackRouteNavigation(window.location.pathname, window.location.search)
+
+      // Use the resolved toLocation for accuracy
+      const nextPath = event.toLocation.pathname
+      const nextSearchStr = event.toLocation.searchStr || ''
+      const nextHref = event.toLocation.href
+
+      const context = buildPageViewContext(nextPath, parseSearchParams(nextSearchStr), true)
+      trackPVIfNew(nextHref, context)
     })
     
     return unsubscribe
@@ -77,37 +155,17 @@ function App() {
 }
 
 /**
- * Track initial page view on app startup
+ * Parse URL search parameters into a record
  */
-function trackInitialPageView() {
-  const currentPath = window.location.pathname
-  const currentSearch = window.location.search
-  
-  trackRouteNavigation(currentPath, currentSearch, false)
-}
-
-/**
- * Track route navigation (both initial and SPA)
- */
-function trackRouteNavigation(pathname: string, search: string, isSpaNavigation = true) {
-  try {
-    // Parse query parameters
-    const query: Record<string, string> = {}
-    if (search) {
-      const searchParams = new URLSearchParams(search)
-      for (const [key, value] of searchParams.entries()) {
-        query[key] = value
-      }
+function parseSearchParams(search: string): Record<string, string> {
+  const query: Record<string, string> = {}
+  if (search) {
+    const searchParams = new URLSearchParams(search)
+    for (const [key, value] of searchParams.entries()) {
+      query[key] = value
     }
-    
-    // Detect page type and build context
-    const context = buildPageViewContext(pathname, query, isSpaNavigation)
-    
-    // Track the page view
-    trackPageView(context)
-  } catch (error) {
-    console.error('[Analytics] Route tracking failed:', error)
   }
+  return query
 }
 
 /**
@@ -166,6 +224,11 @@ function buildPageViewContext(pathname: string, query: Record<string, string>, i
       } else {
         baseContext.entryMethod = 'ad' // External referrer
       }
+    }
+
+    // Capture click source event id if provided via search params
+    if (query.source_event_id) {
+      baseContext.sourceEventId = query.source_event_id
     }
   }
   

@@ -1,0 +1,241 @@
+/**
+ * Listing Events Tracking (Phase 2)
+ * - listing_view: impression of a listing card
+ * - listing_click: click on a listing card
+ */
+
+import { analytics } from './mp'
+import { getCurrentResultsSessionId } from './pageview'
+import { 
+  validateListingViewOrWarn, 
+  validateListingClickOrWarn, 
+  type ListingViewEvent, 
+  type ListingClickEvent,
+  validateLeaseTermsOpenOrWarn,
+  validateLeaseTermsApplyOrWarn,
+  type LeaseTermsOpenEvent,
+  type LeaseTermsApplyEvent,
+} from './schema'
+
+type LeaseScoreBand = 'excellent' | 'good' | 'fair' | 'weak'
+
+function getLeaseScoreBand(score: number): LeaseScoreBand {
+  if (score >= 80) return 'excellent'
+  if (score >= 60) return 'good'
+  if (score >= 40) return 'fair'
+  return 'weak'
+}
+
+export function uuidv4(): string {
+  // Simple RFC4122 v4 generator
+  // eslint-disable-next-line no-bitwise
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
+
+interface ListingContextBase {
+  listingId: string
+  priceMonthly?: number
+  leaseScore?: number
+  position?: number
+}
+
+interface TrackViewOptions extends ListingContextBase {
+  container?: 'results_grid' | 'similar_grid' | 'carousel'
+}
+
+export function trackListingView(options: TrackViewOptions): void {
+  if (!analytics.hasConsent()) return
+
+  try {
+    const props: ListingViewEvent = {
+      schema_version: '1',
+      session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      device_type: analytics.getDeviceType() || 'desktop',
+      path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      referrer_host: analytics.getReferrerHost(),
+      listing_id: options.listingId,
+      results_session_id: getCurrentResultsSessionId() || undefined,
+      position: options.position,
+      price_dkk: options.priceMonthly != null ? Math.round(options.priceMonthly) : undefined,
+      lease_score: options.leaseScore != null ? Math.round(options.leaseScore) : undefined,
+      lease_score_band: options.leaseScore != null ? getLeaseScoreBand(options.leaseScore) : undefined,
+      container: options.container,
+    }
+
+    validateListingViewOrWarn(props)
+    analytics.track('listing_view', props)
+  } catch (error) {
+    console.error('[Analytics] Listing view tracking failed:', error)
+  }
+}
+
+interface TrackClickOptions extends ListingContextBase {
+  entryMethod?: 'internal_grid_click' | 'internal_similar'
+  sourceEventId?: string
+}
+
+export function trackListingClick(options: TrackClickOptions): string {
+  if (!analytics.hasConsent()) return ''
+
+  try {
+    const sourceEventId = options.sourceEventId || uuidv4()
+    const props: ListingClickEvent = {
+      schema_version: '1',
+      session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      device_type: analytics.getDeviceType() || 'desktop',
+      path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      referrer_host: analytics.getReferrerHost(),
+      listing_id: options.listingId,
+      entry_method: options.entryMethod || 'internal_grid_click',
+      results_session_id: getCurrentResultsSessionId() || undefined,
+      position: options.position,
+      price_dkk: options.priceMonthly != null ? Math.round(options.priceMonthly) : undefined,
+      lease_score: options.leaseScore != null ? Math.round(options.leaseScore) : undefined,
+      lease_score_band: options.leaseScore != null ? getLeaseScoreBand(options.leaseScore) : undefined,
+      source_event_id: sourceEventId,
+    }
+    validateListingClickOrWarn(props)
+    analytics.track('listing_click', props)
+    return sourceEventId
+  } catch (error) {
+    console.error('[Analytics] Listing click tracking failed:', error)
+    return ''
+  }
+}
+
+// Lease config change tracking (detail page)
+// ========== Lease Terms helpers and trackers ==========
+
+export type UiSurface = 'dropdown' | 'drawer' | 'modal' | 'inline'
+export type SelectionMethod = 'dropdown' | 'matrix' | 'chip'
+export type TriggerSource = 'chip' | 'button' | 'control' | 'auto' | 'other'
+
+export interface CurrentSelection {
+  pricing_id?: string
+  mileage_km_per_year?: number
+  term_months?: number
+  first_payment_dkk?: number
+}
+
+export interface LeaseTermsOpenPayload {
+  listing_id: string
+  ui_surface: UiSurface
+  trigger_source: TriggerSource
+  config_session_id: string
+  current_selection?: CurrentSelection
+  editable_fields?: Array<'mileage_km_per_year'|'term_months'|'first_payment_dkk'>
+  options_count?: number
+  initial_field_open?: 'mileage_km_per_year' | 'term_months' | 'first_payment_dkk'
+}
+
+export interface LeaseTermsApplyPayload {
+  listing_id: string
+  mileage_km_per_year: number
+  term_months: number
+  first_payment_dkk: number
+  previous?: CurrentSelection
+  changed_keys: Array<'mileage_km_per_year'|'term_months'|'first_payment_dkk'>
+  changed_keys_count: number
+  selection_method: SelectionMethod
+  ui_surface: UiSurface
+  config_session_id: string
+  pricing_id?: string
+  monthly_price_dkk?: number
+}
+
+// Internal reopen throttle by listing
+const lastOpenByListing = new Map<string, number>()
+
+// Debounce store per config session
+const applyDebouncers = new Map<string, ReturnType<typeof setTimeout>>()
+
+export function newConfigSession(): string {
+  return uuidv4()
+}
+
+export function trackLeaseTermsOpen(p: LeaseTermsOpenPayload): void {
+  if (!analytics.hasConsent()) return
+  try {
+    const now = Date.now()
+    const last = lastOpenByListing.get(p.listing_id) || 0
+    if (now - last < 2000) return // throttle reopen within 2s
+    lastOpenByListing.set(p.listing_id, now)
+
+    const event: LeaseTermsOpenEvent = {
+      schema_version: '1',
+      session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      device_type: analytics.getDeviceType() || 'desktop',
+      path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      referrer_host: analytics.getReferrerHost(),
+      ...p,
+    }
+    validateLeaseTermsOpenOrWarn(event)
+    analytics.track('lease_terms_open', event)
+  } catch (error) {
+    console.error('[Analytics] lease_terms_open failed:', error)
+  }
+}
+
+export function trackLeaseTermsApply(p: LeaseTermsApplyPayload): void {
+  if (!analytics.hasConsent()) return
+  try {
+    // No-op guard: compute changes if needed
+    let changedKeys = p.changed_keys
+    if (!changedKeys || changedKeys.length === 0) {
+      changedKeys = []
+      if (p.previous) {
+        if (p.previous.mileage_km_per_year !== undefined && p.previous.mileage_km_per_year !== p.mileage_km_per_year) changedKeys.push('mileage_km_per_year')
+        if (p.previous.term_months !== undefined && p.previous.term_months !== p.term_months) changedKeys.push('term_months')
+        if (p.previous.first_payment_dkk !== undefined && p.previous.first_payment_dkk !== p.first_payment_dkk) changedKeys.push('first_payment_dkk')
+      } else {
+        // If no previous provided, assume all provided fields have changed
+        changedKeys = ['mileage_km_per_year','term_months','first_payment_dkk']
+      }
+    }
+    const changedCount = p.changed_keys_count ?? changedKeys.length
+    if (changedCount === 0) return // nothing changed
+
+    const event: LeaseTermsApplyEvent = {
+      schema_version: '1',
+      session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      device_type: analytics.getDeviceType() || 'desktop',
+      path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      referrer_host: analytics.getReferrerHost(),
+      listing_id: p.listing_id,
+      mileage_km_per_year: Math.round(p.mileage_km_per_year),
+      term_months: Math.round(p.term_months),
+      first_payment_dkk: Math.round(p.first_payment_dkk),
+      previous: p.previous,
+      changed_keys: changedKeys,
+      changed_keys_count: changedCount,
+      selection_method: p.selection_method,
+      ui_surface: p.ui_surface,
+      config_session_id: p.config_session_id,
+      pricing_id: p.pricing_id,
+      monthly_price_dkk: p.monthly_price_dkk != null ? Math.round(p.monthly_price_dkk) : undefined,
+    }
+
+    // Debounce by config_session_id (300-500ms)
+    const key = p.config_session_id
+    if (applyDebouncers.has(key)) {
+      clearTimeout(applyDebouncers.get(key)!)
+    }
+    const timeout = setTimeout(() => {
+      try {
+        validateLeaseTermsApplyOrWarn(event)
+        analytics.track('lease_terms_apply', event)
+      } catch (err) {
+        console.error('[Analytics] lease_terms_apply failed:', err)
+      } finally {
+        applyDebouncers.delete(key)
+      }
+    }, 350)
+    applyDebouncers.set(key, timeout)
+  } catch (error) {
+    console.error('[Analytics] lease_terms_apply schedule failed:', error)
+  }
+}

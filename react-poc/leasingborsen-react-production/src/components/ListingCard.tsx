@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useSearch, useNavigate } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
 import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
+import { trackListingClick, trackListingView } from '@/analytics/listing'
 
 interface ListingCardProps {
   car?: CarListing | null
@@ -31,9 +32,11 @@ interface ListingCardProps {
   // Optional: if provided (e.g., from similar-cars on Listing page), use this
   // lease configuration instead of reading from /listings route params.
   initialLeaseConfig?: Partial<LeaseConfigSearchParams>
+  // Optional card position in the current grid (1-based)
+  position?: number
 }
 
-const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig }) => {
+const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig, position }) => {
   /**
    * LEASE CONFIGURATION URL SYNC STRATEGY
    * 
@@ -165,6 +168,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       sessionStorage.setItem('leasingborsen-detail-forward', JSON.stringify(marker))
     } catch {}
 
+    // Phase 2: Track click and attach source_event_id to navigation
+    const clickId = trackListingClick({
+      listingId: car.id || car.listing_id || '',
+      entryMethod: 'internal_grid_click',
+      position,
+      priceMonthly: car.monthly_price,
+      leaseScore: car.selected_lease_score,
+    })
+
     // Navigate with selected offer settings to maintain context
     setTimeout(() => {
       navigate({ 
@@ -183,7 +195,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
            */
           selectedDeposit: currentLeaseConfig.selectedDeposit ?? car.selected_deposit ?? car.first_payment,
           selectedMileage: currentLeaseConfig.selectedMileage ?? car.selected_mileage ?? car.mileage_per_year,
-          selectedTerm: currentLeaseConfig.selectedTerm ?? car.selected_term ?? car.period_months
+          selectedTerm: currentLeaseConfig.selectedTerm ?? car.selected_term ?? car.period_months,
+          // Provide click correlation id for page_view on detail
+          ...(clickId ? { source_event_id: clickId } : {})
         }
       })
     }, 0)
@@ -205,7 +219,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       clearTimeout(navigationTimer)
       setNavigating(false)
     }
-  }, [car, navigate, prepareListingNavigation, currentPage, currentLeaseConfig])
+  }, [car, navigate, prepareListingNavigation, currentPage, currentLeaseConfig, position])
   
   // Keyboard navigation handler for accessibility
   const onKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -313,8 +327,36 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     return null
   }
 
+  // Track impression when card is ≥50% visible (once per mount)
+  const cardRef = useRef<HTMLDivElement>(null)
+  const impressionSentRef = useRef(false)
+  useEffect(() => {
+    if (!car) return
+    const el = cardRef.current
+    if (!el || impressionSentRef.current) return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && !impressionSentRef.current) {
+        impressionSentRef.current = true
+        trackListingView({
+          listingId: car.id || car.listing_id || '',
+          position,
+          priceMonthly: car.monthly_price,
+          leaseScore: car.selected_lease_score,
+          container: window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid',
+        })
+        observer.disconnect()
+      }
+    }, { threshold: [0.5], rootMargin: '0px' })
+
+    observer.observe(el)
+    return () => observer.disconnect()
+    // Re-observe only if identity changes
+  }, [car?.id, car?.listing_id, position])
+
   return (
     <div
+      ref={cardRef}
       className="block group no-underline relative cursor-pointer"
       onClick={onCardClick}
       onPointerEnter={preloadDetailImage}

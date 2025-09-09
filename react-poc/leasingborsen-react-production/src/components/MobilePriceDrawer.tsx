@@ -1,7 +1,10 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef } from 'react'
 import {
   Drawer,
   DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
 } from '@/components/ui/drawer'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectTrigger } from '@/components/ui/select'
@@ -11,6 +14,7 @@ import { X } from 'lucide-react'
 
 import type { LeaseOption, LeaseOptionWithScore, CarListing } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
+import { newConfigSession, trackLeaseTermsOpen } from '@/analytics'
 
 interface MobilePriceDrawerProps {
   isOpen: boolean
@@ -61,6 +65,29 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
   upfrontPriceImpacts,
   onHoverOption
 }) => {
+  const configSessionRef = useRef<string | null>(null)
+  const listingId = car.listing_id || car.id || ''
+  const ensureSession = () => {
+    if (!configSessionRef.current) configSessionRef.current = newConfigSession()
+    return configSessionRef.current
+  }
+  const emitOpen = (initial?: 'mileage_km_per_year'|'term_months'|'first_payment_dkk') => {
+    const session = ensureSession()
+    trackLeaseTermsOpen({
+      listing_id: String(listingId),
+      ui_surface: 'drawer',
+      trigger_source: 'button',
+      config_session_id: session,
+      current_selection: {
+        mileage_km_per_year: selectedMileage ?? undefined,
+        term_months: selectedPeriod ?? undefined,
+        first_payment_dkk: selectedUpfront ?? undefined,
+      },
+      editable_fields: ['mileage_km_per_year','term_months','first_payment_dkk'],
+      initial_field_open: initial,
+    })
+  }
+  // lease_terms_apply is emitted via router suppression when selected* URL changes
   // Hover handlers for price impact display
   const handleMileageHover = useCallback((mileage: number) => {
     onHoverOption?.({ dimension: 'mileage', value: mileage })
@@ -81,6 +108,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
     <Drawer 
       open={isOpen}
       onOpenChange={(open) => {
+        if (open) emitOpen()
         if (!open) onClose()
       }}
     >
@@ -88,7 +116,10 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
         <div className="grid grid-rows-[auto_auto]">
           <div className="p-5 border-b border-border/50 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold">Tilpas pris</h2>
+              <DrawerHeader className="p-0">
+                <DrawerTitle className="text-lg font-bold">Tilpas pris</DrawerTitle>
+                <DrawerDescription className="sr-only">Tilpasning af leasingvilkår</DrawerDescription>
+              </DrawerHeader>
               <Button
                 variant="ghost"
                 size="sm"
@@ -141,7 +172,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Interactive dropdown
                     <Select 
                       value={selectedMileage?.toString() || ''} 
-                      onValueChange={(value) => onMileageChange(parseInt(value))}
+                      onValueChange={(value) => { const v = parseInt(value); onMileageChange(v) }}
                     >
                       <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                         <div className="flex flex-col items-start w-full">
@@ -189,7 +220,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Interactive dropdown
                     <Select 
                       value={selectedPeriod?.toString() || ''} 
-                      onValueChange={(value) => onPeriodChange(parseInt(value))}
+                      onValueChange={(value) => { const v = parseInt(value); onPeriodChange(v) }}
                     >
                       <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                         <div className="flex flex-col items-start w-full">
@@ -237,7 +268,7 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                     // Interactive dropdown
                     <Select 
                       value={selectedUpfront?.toString() || ''} 
-                      onValueChange={(value) => onUpfrontChange(parseInt(value))}
+                      onValueChange={(value) => { const v = parseInt(value); onUpfrontChange(v) }}
                     >
                       <SelectTrigger className="h-[66px] py-3 px-4 text-left border-0 rounded-none focus:ring-0 focus:ring-offset-0 bg-white">
                         <div className="flex flex-col items-start w-full">
