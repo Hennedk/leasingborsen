@@ -8,6 +8,7 @@ import { routeTree } from './routeTree.gen'
 // Import analytics
 import { analytics } from './analytics/mp'
 import { trackPageView, type PageViewContext, type PageType } from './analytics/pageview'
+import { hasSentInitialPV, markInitialPV } from './analytics/session'
 
 // Create a new router instance
 const router = createRouter({ 
@@ -42,11 +43,23 @@ function App() {
       console.warn('[Analytics] No VITE_MIXPANEL_TOKEN found, analytics disabled')
     }
     
-    // Track initial page load
-    trackInitialPageView()
+    // Track initial page load - send exactly once per tab session
+    if (!hasSentInitialPV()) {
+      trackInitialPageView()
+      markInitialPV()
+    }
     
     // Subscribe to router navigation events
     const unsubscribe = router.subscribe('onLoad', () => {
+      // If the initial onLoad arrives after our manual call, ignore it
+      if (!hasSentInitialPV()) {
+        markInitialPV()
+        return
+      }
+      
+      // Mark as SPA navigation for accurate page load type detection
+      analytics.markAsSpaNavigation()
+      
       // Track SPA navigation (not initial load)
       // Use window location as it's more reliable for getting the actual URL
       trackRouteNavigation(window.location.pathname, window.location.search)
@@ -125,6 +138,8 @@ function buildPageViewContext(pathname: string, query: Record<string, string>, i
     if (query.sort) filters.sort_option = query.sort
     if (query.km) filters.mileage_km_per_year = parseInt(query.km) || undefined
     if (query.mdr) filters.term_months = parseInt(query.mdr) || undefined
+    // Support both price_max (standard) and max_price (legacy) for backward compatibility
+    if (query.price_max) filters.price_max = parseInt(query.price_max) || undefined
     if (query.max_price) filters.price_max = parseInt(query.max_price) || undefined
     
     if (Object.keys(filters).length > 0) {
