@@ -5,6 +5,7 @@
  */
 
 import { analytics, type Device } from './mp'
+import { validatePageViewOrWarn } from './schema'
 
 export type PageType = 'home' | 'results' | 'listing_detail' | 'other'
 export type PageLoad = 'cold' | 'warm' | 'bfcache' | 'spa'
@@ -73,6 +74,93 @@ let currentResultsSessionId: string | null = null
 let lastFiltersKey = ''
 
 /**
+ * Create a canonical, normalized representation of query parameters for stable comparison
+ * - Sorts keys alphabetically to avoid order dependency
+ * - Lowercases string values for enum parameters
+ * - Removes null/undefined values
+ * - Returns a stable string for hashing
+ */
+function canonicalizeQuery(query?: Record<string, any>): string {
+  if (!query || Object.keys(query).length === 0) {
+    return ''
+  }
+
+  const normalized: Record<string, string | number | boolean> = {}
+  
+  // Process each key-value pair
+  Object.entries(query).forEach(([key, value]) => {
+    // Skip null/undefined values
+    if (value == null) return
+    
+    // Normalize based on value type
+    if (typeof value === 'string') {
+      // Lowercase string values for enum consistency (fuel_type, body_type, etc.)
+      normalized[key] = value.toLowerCase()
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      normalized[key] = value
+    } else {
+      // Convert other types to string
+      normalized[key] = String(value).toLowerCase()
+    }
+  })
+  
+  // Sort keys alphabetically and create stable string
+  return Object.keys(normalized)
+    .sort()
+    .map(key => `${key}:${normalized[key]}`)
+    .join('|')
+}
+
+/**
+ * Create a canonical search fingerprint for results session management
+ * Only includes significant filter changes that warrant a new search session
+ * - Normalizes filter values for consistent comparison
+ * - Excludes minor parameters like sort_option
+ * - Returns stable hash for session comparison
+ */
+function getSearchFingerprint(filters?: Record<string, any>): string {
+  if (!filters || Object.keys(filters).length === 0) {
+    return ''
+  }
+
+  // Define which filters are significant enough to trigger a new search session
+  const significantFilters = [
+    'make', 'model', 'fuel_type', 'body_type', 
+    'price_min', 'price_max', 'mileage_km_per_year', 'term_months'
+  ]
+  
+  const normalized: Record<string, string | number> = {}
+  
+  // Only include significant filters in the fingerprint
+  significantFilters.forEach(key => {
+    const value = filters[key]
+    if (value == null) return
+    
+    if (typeof value === 'string') {
+      // Normalize string values (lowercase, trim)
+      normalized[key] = value.toLowerCase().trim()
+    } else if (typeof value === 'number') {
+      normalized[key] = value
+    } else if (Array.isArray(value)) {
+      // Handle array filters (makes, models, etc.) - sort for consistency
+      const arrayValues = value.filter(v => v != null).map(v => String(v).toLowerCase().trim())
+      if (arrayValues.length > 0) {
+        normalized[key] = arrayValues.sort().join(',')
+      }
+    } else {
+      // Convert other types to normalized string
+      normalized[key] = String(value).toLowerCase().trim()
+    }
+  })
+  
+  // Create stable fingerprint
+  return Object.keys(normalized)
+    .sort()
+    .map(key => `${key}:${normalized[key]}`)
+    .join('|')
+}
+
+/**
  * Track a page view event with context
  */
 export function trackPageView(context: PageViewContext): void {
@@ -84,8 +172,9 @@ export function trackPageView(context: PageViewContext): void {
     // Build the complete event payload
     const event = buildPageViewEvent(context)
     
-    // De-duplication check
-    const pageKey = `${event.path}${JSON.stringify(event.query || {})}`
+    // De-duplication check using canonical query representation
+    const canonicalQuery = canonicalizeQuery(event.query)
+    const pageKey = `${event.path}${canonicalQuery ? `?${canonicalQuery}` : ''}`
     const now = Date.now()
     
     if (pageKey === lastPageViewKey && (now - lastPageViewTime) < DEDUPE_WINDOW_MS) {
@@ -95,6 +184,9 @@ export function trackPageView(context: PageViewContext): void {
     
     lastPageViewKey = pageKey
     lastPageViewTime = now
+    
+    // Validate event in development
+    validatePageViewOrWarn(event)
     
     // Track the event
     analytics.track('page_view', event)
@@ -143,14 +235,17 @@ function buildPageViewEvent(context: PageViewContext): PageViewEvent {
   // Base properties
   const baseProps: BaseProps = {
     schema_version: '1',
-    session_id: analytics.getSessionId(),
-    device_type: context.deviceType || analytics.getDeviceType(),
+    session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    device_type: context.deviceType || analytics.getDeviceType() || 'desktop',
     page_type: context.pageType,
     path: context.path,
-    page_load_type: context.pageLoadType || analytics.getPageLoadType(),
+    page_load_type: context.pageLoadType || analytics.getPageLoadType() || 'cold',
     ...(context.featureFlags && { feature_flags: context.featureFlags }),
     ...(context.pageName && { page_name: context.pageName }),
-    ...(context.query && { query: sanitizeQuery(context.query) }),
+    ...(context.query && (() => {
+      const sanitized = sanitizeQuery(context.query)
+      return sanitized && Object.keys(sanitized).length > 0 ? { query: sanitized } : {}
+    })()),
     ...(analytics.getReferrerHost() && { referrer_host: analytics.getReferrerHost() })
   }
   
@@ -178,10 +273,12 @@ function buildPageViewEvent(context: PageViewContext): PageViewEvent {
  */
 function buildResultsContext(context: PageViewContext): ResultsContext {
   // Generate new results session if filters changed significantly
-  const filtersKey = JSON.stringify(context.filters || {})
-  if (filtersKey !== lastFiltersKey) {
+  // Uses canonical fingerprint to detect meaningful search changes
+  const searchFingerprint = getSearchFingerprint(context.filters)
+  if (searchFingerprint !== lastFiltersKey) {
     currentResultsSessionId = `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-    lastFiltersKey = filtersKey
+    lastFiltersKey = searchFingerprint
+    console.log('[Analytics] New results session:', currentResultsSessionId, 'fingerprint:', searchFingerprint)
   }
   
   const resultsContext: ResultsContext = {
@@ -278,10 +375,14 @@ function trimFilters(filters: Record<string, any>): Record<string, string | numb
       const value = filters[key]
       
       // Normalize value type
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      if (typeof value === 'string') {
+        trimmed[key] = value.toLowerCase().trim()
+      } else if (typeof value === 'number' || typeof value === 'boolean') {
         trimmed[key] = value
       } else {
-        trimmed[key] = String(value)
+        const asStr = String(value)
+        const asNum = Number(asStr)
+        trimmed[key] = Number.isFinite(asNum) ? asNum : asStr.toLowerCase().trim()
       }
     }
   })
@@ -305,7 +406,7 @@ function getLeaseScoreBand(score: number): 'excellent' | 'good' | 'fair' | 'weak
 function normalizeFuelType(fuelType: string): 'ev' | 'phev' | 'ice' | null {
   const normalized = fuelType.toLowerCase()
   
-  if (normalized.includes('el') || normalized === 'electric') return 'ev'
+  if (normalized === 'ev' || normalized === 'bev' || normalized === 'el' || normalized === 'elbil' || normalized.includes('electric')) return 'ev'
   if (normalized.includes('hybrid') || normalized.includes('phev')) return 'phev'
   if (normalized.includes('benzin') || normalized.includes('diesel') || 
       normalized.includes('gasoline') || normalized.includes('petrol')) return 'ice'
@@ -319,4 +420,11 @@ function normalizeFuelType(fuelType: string): 'ev' | 'phev' | 'ice' | null {
 export function resetResultsSession(): void {
   currentResultsSessionId = null
   lastFiltersKey = ''
+}
+
+/**
+ * Get current results session ID for linking related events (impressions/clicks)
+ */
+export function getCurrentResultsSessionId(): string | null {
+  return currentResultsSessionId
 }

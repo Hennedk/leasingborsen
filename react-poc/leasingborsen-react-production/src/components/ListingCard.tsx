@@ -174,7 +174,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       entryMethod: 'internal_grid_click',
       position,
       priceMonthly: car.monthly_price,
-      leaseScore: car.selected_lease_score,
+      leaseScore: (car.selected_lease_score ?? undefined),
     })
 
     // Navigate with selected offer settings to maintain context
@@ -342,7 +342,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
           listingId: car.id || car.listing_id || '',
           position,
           priceMonthly: car.monthly_price,
-          leaseScore: car.selected_lease_score,
+          leaseScore: (car.selected_lease_score ?? undefined),
           container: window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid',
         })
         observer.disconnect()

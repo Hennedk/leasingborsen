@@ -30,6 +30,8 @@ class MixpanelAnalytics {
   private readonly SESSION_TTL_MS = 30 * 60 * 1000 // 30 minutes
   private readonly MAX_PAYLOAD_SIZE = 32 * 1024 // 32KB
   private firstTouchUTM: Record<string, string> = {}
+  private isBfcacheNavigation = false
+  private isSpaNavigation = false
 
   /**
    * Initialize Mixpanel with EU configuration
@@ -55,6 +57,7 @@ class MixpanelAnalytics {
 
       this.initialized = true
       this.captureFirstTouchUTM()
+      this.setupPageshowListener()
 
       console.log(`[Analytics] Initialized (EU: ${options.eu}, opted out by default)`)
     } catch (error) {
@@ -230,31 +233,93 @@ class MixpanelAnalytics {
   }
 
   /**
-   * Detect page load type
+   * Setup pageshow event listener for bfcache detection
+   * Should be called during initialization
+   */
+  private setupPageshowListener(): void {
+    if (typeof window === 'undefined') return
+
+    // Listen for pageshow events to detect bfcache navigation
+    window.addEventListener('pageshow', (event) => {
+      if (event.persisted) {
+        this.isBfcacheNavigation = true
+        console.log('[Analytics] Bfcache navigation detected via pageshow')
+      }
+    })
+  }
+
+  /**
+   * Mark next page view as SPA navigation
+   * Should be called by router on client-side navigation
+   */
+  markAsSpaNavigation(): void {
+    this.isSpaNavigation = true
+  }
+
+  /**
+   * Detect page load type with deterministic rules
+   * - cold: Initial page load (first visit or hard refresh)
+   * - warm: Page reload (F5, Cmd+R)
+   * - bfcache: Back/forward from browser cache (pageshow persisted=true)
+   * - spa: Client-side route navigation
    */
   getPageLoadType(): 'cold' | 'warm' | 'bfcache' | 'spa' {
     if (typeof window === 'undefined') return 'cold'
 
-    // Check for back/forward cache
-    if (window.performance?.getEntriesByType) {
-      const entries = window.performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
-      if (entries.length > 0 && entries[0].type === 'back_forward') {
-        return 'bfcache'
-      }
-    }
-
-    // Check if this is likely an SPA navigation (not first page load)
-    if (window.performance?.timing && Date.now() - window.performance.timing.navigationStart > 100) {
+    // 1. Check if explicitly marked as SPA navigation
+    if (this.isSpaNavigation) {
+      this.isSpaNavigation = false // Reset for next navigation
       return 'spa'
     }
 
-    // Distinguish cold vs warm based on loading performance
-    if (window.performance?.timing) {
-      const timing = window.performance.timing
-      const loadTime = timing.loadEventEnd - timing.navigationStart
-      return loadTime < 1000 ? 'warm' : 'cold'
+    // 2. Check for bfcache navigation (most reliable indicator)
+    if (this.isBfcacheNavigation) {
+      this.isBfcacheNavigation = false // Reset for next navigation
+      return 'bfcache'
     }
 
+    // 3. Check PerformanceNavigationTiming API for navigation type
+    try {
+      const entries = window.performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+      if (entries.length > 0) {
+        const entry = entries[0]
+        
+        // Back/forward navigation (could be bfcache or regular back/forward)
+        if (entry.type === 'back_forward') {
+          return 'bfcache'
+        }
+        
+        // Page reload
+        if (entry.type === 'reload') {
+          return 'warm'
+        }
+        
+        // Navigate type (could be cold or warm depending on caching)
+        if (entry.type === 'navigate') {
+          // Use DNS lookup time as indicator - if 0, likely cached
+          return entry.domainLookupStart === entry.domainLookupEnd ? 'warm' : 'cold'
+        }
+      }
+    } catch (error) {
+      console.warn('[Analytics] Performance API failed:', error)
+    }
+
+    // 4. Fallback to legacy performance.navigation (deprecated but still available)
+    try {
+      const navigation = (window.performance as any).navigation
+      if (navigation) {
+        // TYPE_RELOAD = 1
+        if (navigation.type === 1) return 'warm'
+        // TYPE_BACK_FORWARD = 2  
+        if (navigation.type === 2) return 'bfcache'
+        // TYPE_NAVIGATE = 0 (assume cold for initial navigation)
+        if (navigation.type === 0) return 'cold'
+      }
+    } catch (error) {
+      // Legacy API not available
+    }
+
+    // 5. Default fallback
     return 'cold'
   }
 
