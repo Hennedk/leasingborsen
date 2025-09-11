@@ -318,7 +318,7 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     }
     
     // Debug logging for development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log('[LeaseCalc] Effect run', {
         carKey,
         initializedFor: initializedForCarRef.current,
@@ -349,14 +349,12 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
       // Handle error state
       if (error) {
         setInitStatus('error')
-        initializedForCarRef.current = carKey // Mark as handled
         return
       }
       
       // Handle empty state (no offers available)
       if (!leaseOptions.length) {
         setInitStatus('empty')
-        initializedForCarRef.current = carKey // Mark as handled
         return
       }
       
@@ -420,6 +418,79 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
         setInitStatus('initialized')
         initSourceRef.current = 'default'
       }
+    } else {
+      // Recovery logic for previously initialized car
+      // Check if we can recover from error/empty states
+      if ((initStatus === 'error' || initStatus === 'empty') && !isLoading && !error && leaseOptions.length > 0) {
+        // Retry initialization for error/empty recovery
+        const targetMileage = car?.selected_mileage ?? car?.mileage_per_year ?? null
+        const targetPeriod = car?.selected_term ?? car?.period_months ?? null
+        const targetUpfront = car?.selected_deposit ?? car?.first_payment ?? null
+
+        if (targetMileage != null) {
+          // Try exact match first
+          const exact = leaseOptions.find(o =>
+            o.mileage_per_year === targetMileage &&
+            (targetPeriod == null || o.period_months === targetPeriod) &&
+            (targetUpfront == null || o.first_payment === targetUpfront)
+          )
+          if (exact) {
+            setSelectedMileage(exact.mileage_per_year)
+            setSelectedPeriod(exact.period_months)
+            setSelectedUpfront(exact.first_payment)
+            initializedForCarRef.current = carKey
+            setInitStatus('initialized')
+            initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+            return
+          }
+
+          // Try best option with same mileage
+          const sameMileage = leaseOptions.filter(o => o.mileage_per_year === targetMileage)
+          if (sameMileage.length) {
+            const periodPref = [36, 24, 48]
+            let best = sameMileage
+              .filter(o => periodPref.includes(o.period_months))
+              .sort((a, b) => {
+                const ai = periodPref.indexOf(a.period_months)
+                const bi = periodPref.indexOf(b.period_months)
+                if (ai !== bi) return ai - bi
+                return a.monthly_price - b.monthly_price
+              })[0]
+
+            if (!best) {
+              best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
+            }
+
+            setSelectedMileage(best.mileage_per_year)
+            setSelectedPeriod(best.period_months)
+            setSelectedUpfront(best.first_payment)
+            initializedForCarRef.current = carKey
+            setInitStatus('initialized')
+            initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+            return
+          }
+        }
+
+        // Final fallback: cheapest overall
+        if (cheapestOption) {
+          setSelectedMileage(cheapestOption.mileage_per_year)
+          setSelectedPeriod(cheapestOption.period_months)
+          setSelectedUpfront(cheapestOption.first_payment)
+          initializedForCarRef.current = carKey
+          setInitStatus('initialized')
+          initSourceRef.current = 'recovery'
+        }
+      }
+
+      // Mismatch fallback: Handle invalid selections
+      if (initStatus === 'initialized' && leaseOptions.length > 0 && !selectedLease) {
+        if (cheapestOption) {
+          setSelectedMileage(cheapestOption.mileage_per_year)
+          setSelectedPeriod(cheapestOption.period_months)
+          setSelectedUpfront(cheapestOption.first_payment)
+          initSourceRef.current = 'fallback'
+        }
+      }
     }
     
   }, [
@@ -428,8 +499,10 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     leaseOptions.length, cheapestOption,
     car?.selected_mileage, car?.mileage_per_year,
     car?.selected_term, car?.period_months,
-    car?.selected_deposit, car?.first_payment
-    // Do NOT include selected* states to avoid loops
+    car?.selected_deposit, car?.first_payment,
+    selectedLease, // Needed for mismatch fallback logic
+    initStatus // Needed for recovery logic
+    // Do NOT include selected* states to avoid loops (except selectedLease for fallback)
   ])
 
   return {

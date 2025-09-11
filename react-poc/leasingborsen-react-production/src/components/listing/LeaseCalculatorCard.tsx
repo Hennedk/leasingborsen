@@ -69,7 +69,7 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     onHoverOption?.(null)
   }, [onHoverOption])
   // Handle different initialization states
-  if (initStatus === 'loading') {
+  if (initStatus === 'loading' || initStatus === 'pending') {
     return (
       <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
         <CardContent className="p-5 space-y-4 relative">
@@ -114,12 +114,12 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
     )
   }
 
-  // Only render the full calculator UI when initialized or pending
+  // Only render the full calculator UI when initialized
   return (
     <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
       <CardContent className="p-5 space-y-4 relative">
         {/* Content - Show when initialized */}
-        {(initStatus === 'initialized' || initStatus === 'pending') && (
+        {initStatus === 'initialized' && (
           <div className="flex flex-col space-y-6">
             {/* Section 1: Car Title */}
             <div className="space-y-1">
