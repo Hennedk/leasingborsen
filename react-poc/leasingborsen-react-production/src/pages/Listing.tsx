@@ -111,8 +111,6 @@ const Listing: React.FC = () => {
     setSelectedUpfront,
     resetToCheapest,
     selectBestScore: _selectBestScore,
-    isLoading: leaseLoading,
-    error: leaseError,
     bestScoreOption: _bestScoreOption,
     mileagePriceImpacts,
     periodPriceImpacts,

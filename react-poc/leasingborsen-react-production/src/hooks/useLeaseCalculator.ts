@@ -75,7 +75,7 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
 
   // Enhanced refs for explicit initialization tracking
   const initializedForCarRef = useRef<string | null>(null)
-  const initSourceRef = useRef<'url' | 'car' | 'default' | null>(null)
+  const initSourceRef = useRef<'url' | 'car' | 'default' | 'recovery' | 'fallback' | null>(null)
 
   // SSR-safe layout effect for preventing flicker
   const useIsomorphicLayoutEffect = 
