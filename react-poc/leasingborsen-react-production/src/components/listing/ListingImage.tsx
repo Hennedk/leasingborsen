@@ -50,9 +50,9 @@ const ListingImage = React.memo<ListingImageProps>(({ car, selectedLeaseScore })
         )}
         
         {/* Lease Score Pill - positioned absolutely in top-right corner (mobile only) */}
-        {(selectedLeaseScore !== undefined || car.lease_score !== undefined) && car.retail_price && (
+        {(selectedLeaseScore !== undefined || car.selected_lease_score !== undefined || car.lease_score !== undefined) && car.retail_price && (
           <LeaseScorePill 
-            score={selectedLeaseScore ?? car.lease_score!}
+            score={selectedLeaseScore ?? car.selected_lease_score ?? car.lease_score!}
             size="sm"
             className="absolute top-4 right-4 z-10 md:hidden"
           />

@@ -151,9 +151,9 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
                   {selectedLease?.monthly_price?.toLocaleString('da-DK')} kr./md.
                 </p>
                 {/* LeaseScore Pill - positioned to the right of price */}
-                {(selectedLeaseScore !== undefined || car.lease_score !== undefined) && car.retail_price && (
+                {(selectedLeaseScore !== undefined || car.selected_lease_score !== undefined || car.lease_score !== undefined) && car.retail_price && (
                   <LeaseScorePill 
-                    score={selectedLeaseScore ?? car.lease_score!}
+                    score={selectedLeaseScore ?? car.selected_lease_score ?? car.lease_score!}
                     size="xs"
                     className="border border-border/20 shadow-sm"
                   />

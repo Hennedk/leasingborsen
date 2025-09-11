@@ -146,9 +146,9 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
                   />
                 </div>
                 {/* LeaseScore Pill - positioned horizontally with price */}
-                {(selectedLeaseScore !== undefined || car.lease_score !== undefined) && car.retail_price && (
+                {(selectedLeaseScore !== undefined || car.selected_lease_score !== undefined || car.lease_score !== undefined) && car.retail_price && (
                   <LeaseScorePill 
-                    score={selectedLeaseScore ?? car.lease_score!}
+                    score={selectedLeaseScore ?? car.selected_lease_score ?? car.lease_score!}
                     size="xs"
                     className="border border-border/20 shadow-sm"
                   />

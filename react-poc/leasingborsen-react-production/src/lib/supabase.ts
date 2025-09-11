@@ -476,6 +476,17 @@ export class CarListingQueries {
       )
 
       if (selectedOffer) {
+        // Calculate lease score for the specifically selected offer (aligns with listings grid)
+        const selectedLeaseScore = baseListing.retail_price && selectedOffer.monthly_price
+          ? calculateLeaseScoreSimple({
+              monthlyPrice: selectedOffer.monthly_price,
+              retailPrice: baseListing.retail_price,
+              mileagePerYear: selectedOffer.mileage_per_year,
+              firstPayment: selectedOffer.first_payment || 0,
+              contractMonths: selectedOffer.period_months
+            })
+          : null
+
         // Override the listing data with the selected offer values
         finalListing = {
           ...baseListing,
@@ -489,6 +500,7 @@ export class CarListingQueries {
           selected_term: selectedOffer.period_months,
           selected_deposit: selectedOffer.first_payment,
           selected_monthly_price: selectedOffer.monthly_price,
+          selected_lease_score: selectedLeaseScore,
           offer_selection_method: selectedOffer.selection_method
         }
       }
