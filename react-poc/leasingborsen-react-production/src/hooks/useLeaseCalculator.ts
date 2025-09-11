@@ -75,7 +75,6 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
 
   // Enhanced refs for explicit initialization tracking
   const initializedForCarRef = useRef<string | null>(null)
-  const prevCarKeyRef = useRef<string | null>(null)  // TODO: Remove after migration
   const initSourceRef = useRef<'url' | 'car' | 'default' | null>(null)
 
   // SSR-safe layout effect for preventing flicker

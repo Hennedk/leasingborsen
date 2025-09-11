@@ -320,8 +320,6 @@ const Listing: React.FC = () => {
                 onPeriodChange={handlePeriodChange}
                 onUpfrontChange={handleUpfrontChange}
                 onShowSeller={() => setSellerModalOpen(true)}
-                isLoading={leaseLoading}
-                error={leaseError}
                 mileagePriceImpacts={mileagePriceImpacts}
                 periodPriceImpacts={periodPriceImpacts}
                 upfrontPriceImpacts={upfrontPriceImpacts}

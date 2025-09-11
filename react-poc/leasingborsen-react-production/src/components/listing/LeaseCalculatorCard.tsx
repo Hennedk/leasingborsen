@@ -25,8 +25,6 @@ interface LeaseCalculatorCardProps {
   onPeriodChange: (value: number) => void
   onUpfrontChange: (value: number) => void
   onShowSeller: () => void
-  isLoading?: boolean
-  error?: any
   mileagePriceImpacts?: Map<number, PriceImpactData>
   periodPriceImpacts?: Map<number, PriceImpactData>
   upfrontPriceImpacts?: Map<number, PriceImpactData>
@@ -48,8 +46,6 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   onPeriodChange,
   onUpfrontChange,
   onShowSeller,
-  isLoading = false,
-  error = null,
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,

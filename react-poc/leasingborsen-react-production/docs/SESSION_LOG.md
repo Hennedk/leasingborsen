@@ -1,5 +1,95 @@
 # Session Log
 
+## 2025-09-11: Lease Calculator Navigation Issues - PARTIAL FIX ⚠️
+
+### Session Overview
+Identified and fixed multiple issues with the lease calculator initialization when navigating between listings. Discovered a critical bug in similar cars navigation that needs to be addressed in the next session.
+
+### What Changed
+
+#### Fixed Issues ✅
+1. **MobilePriceDrawer Analytics Tracking**
+   - Fixed `lease_terms_open` event not firing when drawer opened programmatically
+   - Added `useEffect` to track `isOpen` prop changes
+   - Ensures tracking works for all drawer open scenarios
+   - Commit: `882f426`
+
+2. **URL Parameter Initialization Race Condition**
+   - Fixed issue where URL mileage parameter (e.g., `km=25000`) wasn't applied to lease calculator
+   - Replaced dual `useEffect` hooks with single `useIsomorphicLayoutEffect`
+   - Added stable car key tracking with `prevCarKeyRef`
+   - Prevents flicker with SSR-safe layout effect
+   - Commit: `1723f45`
+
+#### Identified Issues (Pending Fix) ⚠️
+1. **Similar Cars Navigation Bug**
+   - Lease offers become null when navigating from listing A to B via similar cars
+   - Root cause: Effect bails on `!leaseOptions.length` without checking `isLoading`
+   - The ref isn't updated when bailing, preventing retry when offers load
+   - Comprehensive analysis documented in `docs/LEASE_CALCULATOR_NAVIGATION_ISSUE.md`
+
+### Files Modified
+- `src/components/MobilePriceDrawer.tsx` - Added useEffect for tracking
+- `src/hooks/useLeaseCalculator.ts` - Fixed race condition with combined effect
+- `docs/LEASE_CALCULATOR_NAVIGATION_ISSUE.md` - Created comprehensive issue analysis with implementation guide
+
+### Known Issues Remaining
+1. **Critical**: Similar cars navigation causes null lease offers
+   - Solution designed (Solution C with explicit initialization tracking)
+   - Implementation guide ready in documentation
+   - Requires adding `initializedForCarRef` and `initStatus` state
+   - Must distinguish between "loading", "empty", and "initialized" states
+
+2. **Minor**: Consider prefetching offers on hover for smoother transitions
+
+### Next Steps for Continuation
+1. **Implement Enhanced Solution C** from `docs/LEASE_CALCULATOR_NAVIGATION_ISSUE.md`
+   - Add `initializedForCarRef` for explicit tracking
+   - Add `initStatus` state machine (pending|loading|empty|initialized|error)
+   - Update effect to handle all states properly
+   - Update UI components to show appropriate loading/empty/error states
+
+2. **Testing Required**
+   - Test similar cars navigation thoroughly
+   - Test with network throttling (3G)
+   - Test rapid navigation between cars
+   - Verify no regression in URL parameter handling
+   - Test React StrictMode behavior
+
+3. **Optional Enhancements**
+   - Add prefetching on hover in ListingCard
+   - Use `placeholderData` for smoother transitions
+   - Add analytics for initialization failures
+
+### Technical Context
+The lease calculator uses a complex initialization flow:
+1. URL parameters → backend (`car.selected_*` fields)
+2. Backend returns best matching offer
+3. `useLeaseCalculator` initializes from car data
+4. Effect must handle async offer loading properly
+
+The current implementation conflates "no data yet" with "no offers exist", causing initialization to fail during navigation. The fix requires explicit tracking of initialization state per car.
+
+### Important Implementation Notes
+⚠️ **Critical Points**:
+1. **Don't use triple-null check** - It's brittle and fails with partial state
+2. **Track initialization explicitly** - Use `initializedForCarRef` not `prevCarKeyRef`
+3. **Handle all states** - loading, empty, error, initialized
+4. **Add isLoading to dependencies** - Critical for proper async handling
+5. **Keep SSR-safe** - Continue using `useIsomorphicLayoutEffect`
+6. **Separate concerns** - "which car" vs "initialized for this car"
+
+### Session Summary
+Fixed two critical issues with lease calculator initialization:
+1. ✅ Analytics tracking for mobile drawer (quick fix)
+2. ✅ URL parameter race condition (complex fix)
+
+⚠️ Identified but didn't fix the similar cars navigation bug due to complexity. Created comprehensive documentation with production-ready implementation guide for next session. The fix requires careful handling of async data loading and explicit state tracking.
+
+All changes committed, documentation updated, and implementation guide prepared for next session.
+
+---
+
 ## 2025-01-09: Duplicate Pageview Fix Implementation - COMPLETE ✅
 
 ### Problem Solved
