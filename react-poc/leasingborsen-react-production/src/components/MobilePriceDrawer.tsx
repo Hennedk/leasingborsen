@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useEffect } from 'react'
 import {
   Drawer,
   DrawerContent,
@@ -87,6 +87,14 @@ const MobilePriceDrawer: React.FC<MobilePriceDrawerProps> = ({
       initial_field_open: initial,
     })
   }
+  
+  // Track when drawer opens via prop changes
+  useEffect(() => {
+    if (isOpen) {
+      emitOpen()
+    }
+  }, [isOpen])
+  
   // lease_terms_apply is emitted via router suppression when selected* URL changes
   // Hover handlers for price impact display
   const handleMileageHover = useCallback((mileage: number) => {
