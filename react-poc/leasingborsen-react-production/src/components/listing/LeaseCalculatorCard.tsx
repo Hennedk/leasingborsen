@@ -8,6 +8,7 @@ import AnimatedPrice from './AnimatedPrice'
 import PriceImpactSelectItem from './PriceImpactSelectItem'
 import type { LeaseOption, CarListing } from '@/types'
 import type { PriceImpactData, HoveredOption } from '@/types/priceImpact'
+import type { InitStatus } from '@/hooks/useLeaseCalculator'
 // lease_terms_apply is emitted by router suppression to avoid duplicates
 
 interface LeaseCalculatorCardProps {
@@ -30,6 +31,7 @@ interface LeaseCalculatorCardProps {
   periodPriceImpacts?: Map<number, PriceImpactData>
   upfrontPriceImpacts?: Map<number, PriceImpactData>
   onHoverOption?: (option: HoveredOption | null) => void
+  initStatus?: InitStatus
 }
 
 const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
@@ -51,7 +53,8 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   mileagePriceImpacts,
   periodPriceImpacts,
   upfrontPriceImpacts,
-  onHoverOption
+  onHoverOption,
+  initStatus = 'pending'
 }) => {
   // lease_terms_apply is emitted by router suppression when selected* URL changes
   const handleMileageHover = useCallback((mileage: number) => {
@@ -69,31 +72,58 @@ const LeaseCalculatorCard = React.memo<LeaseCalculatorCardProps>(({
   const handleHoverEnd = useCallback(() => {
     onHoverOption?.(null)
   }, [onHoverOption])
-  return (
-    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
-      <CardContent className="p-5 space-y-4 relative">
-        {/* Loading State */}
-        {isLoading && (
+  // Handle different initialization states
+  if (initStatus === 'loading') {
+    return (
+      <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
+        <CardContent className="p-5 space-y-4 relative">
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Indlæser prisindstillinger...</p>
+              <p className="text-sm text-muted-foreground">Indlæser leasingpriser...</p>
             </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
+    )
+  }
 
-        {/* Error State */}
-        {error && !isLoading && (
+  if (initStatus === 'empty') {
+    return (
+      <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
+        <CardContent className="p-5 space-y-4 relative">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <AlertTriangle className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">Ingen leasingpriser tilgængelige for denne bil</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (initStatus === 'error') {
+    return (
+      <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
+        <CardContent className="p-5 space-y-4 relative">
           <div className="flex items-center justify-center py-8">
             <div className="text-center">
               <AlertTriangle className="w-6 h-6 text-destructive mx-auto mb-2" />
-              <p className="text-sm text-destructive">Kunne ikke indlæse prisindstillinger</p>
+              <p className="text-sm text-destructive">Der opstod en fejl ved indlæsning af priser</p>
             </div>
           </div>
-        )}
+        </CardContent>
+      </Card>
+    )
+  }
 
-        {/* Content - Only show when not loading and no error */}
-        {!isLoading && !error && (
+  // Only render the full calculator UI when initialized or pending
+  return (
+    <Card className="hidden lg:block bg-card border border-border/50 rounded-xl overflow-hidden sticky top-4">
+      <CardContent className="p-5 space-y-4 relative">
+        {/* Content - Show when initialized */}
+        {(initStatus === 'initialized' || initStatus === 'pending') && (
           <div className="flex flex-col space-y-6">
             {/* Section 1: Car Title */}
             <div className="space-y-1">

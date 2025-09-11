@@ -117,7 +117,8 @@ const Listing: React.FC = () => {
     mileagePriceImpacts,
     periodPriceImpacts,
     upfrontPriceImpacts,
-    setHoveredOption
+    setHoveredOption,
+    initStatus
   } = useLeaseCalculator(car)
 
   // Sync detail selection to URL so back navigation restores latest values
@@ -325,6 +326,7 @@ const Listing: React.FC = () => {
                 periodPriceImpacts={periodPriceImpacts}
                 upfrontPriceImpacts={upfrontPriceImpacts}
                 onHoverOption={setHoveredOption}
+                initStatus={initStatus}
               />
             </ErrorBoundary>
           </div>

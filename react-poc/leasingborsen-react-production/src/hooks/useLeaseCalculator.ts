@@ -29,6 +29,9 @@ export const calculateLeaseScore = (
   })
 }
 
+// Initialization status for clearer UI state management
+export type InitStatus = 'pending' | 'loading' | 'empty' | 'initialized' | 'error'
+
 export interface LeaseCalculatorData {
   selectedMileage: number | null
   selectedPeriod: number | null
@@ -58,6 +61,7 @@ export interface LeaseCalculatorData {
   upfrontPriceImpacts: Map<number, PriceImpactData>
   setHoveredOption: (option: HoveredOption | null) => void
   hoveredPriceImpact: PriceImpactData | null
+  initStatus: InitStatus  // New: explicit status for UI
 }
 
 export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculatorData => {
@@ -65,9 +69,13 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
   const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
   const [hoveredOption, setHoveredOption] = useState<HoveredOption | null>(null)
+  
+  // New: Initialization status state machine
+  const [initStatus, setInitStatus] = useState<InitStatus>('pending')
 
-  // Refs for stable car tracking and initialization source debugging
-  const prevCarKeyRef = useRef<string | null>(null)
+  // Enhanced refs for explicit initialization tracking
+  const initializedForCarRef = useRef<string | null>(null)
+  const prevCarKeyRef = useRef<string | null>(null)  // TODO: Remove after migration
   const initSourceRef = useRef<'url' | 'car' | 'default' | null>(null)
 
   // SSR-safe layout effect for preventing flicker
@@ -300,30 +308,60 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedUpfront(bestScoreOption.first_payment)
   }, [bestScoreOption])
 
-  // Bulletproof car initialization and reset logic
+  // Enhanced Solution C: Deterministic initialization with explicit tracking
   useIsomorphicLayoutEffect(() => {
-    // Stable car key - prefer listing_id over id
     const carKey = car?.listing_id || car?.id || null
     
-    // Guard against null blips during transitions
-    if (!carKey) return
-    
-    // Check if this is genuinely a new car
-    if (prevCarKeyRef.current !== null && prevCarKeyRef.current !== carKey) {
-      // Reset for new car
-      setSelectedMileage(null)
-      setSelectedPeriod(null)
-      setSelectedUpfront(null)
-      prevCarKeyRef.current = carKey  // Record reset
-      initSourceRef.current = null
-      return // Let next render handle initialization
+    // Guard against null keys during transitions
+    if (!carKey) {
+      setInitStatus('pending')
+      return
     }
-
-    // Bail if no options yet (don't update ref!)
-    if (!leaseOptions.length) return
     
-    // Initialize only if not yet initialized
-    if (selectedMileage === null && selectedPeriod === null && selectedUpfront === null) {
+    // Debug logging for development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[LeaseCalc] Effect run', {
+        carKey,
+        initializedFor: initializedForCarRef.current,
+        isLoading,
+        hasError: !!error,
+        optionsCount: leaseOptions.length,
+        initStatus,
+        source: initSourceRef.current
+      })
+    }
+    
+    // Check if we need to initialize for this car
+    if (initializedForCarRef.current !== carKey) {
+      // Reset state for genuinely new car (not first mount)
+      if (initializedForCarRef.current !== null) {
+        setSelectedMileage(null)
+        setSelectedPeriod(null)
+        setSelectedUpfront(null)
+        initSourceRef.current = null
+      }
+      
+      // Handle loading state - wait for offers
+      if (isLoading) {
+        setInitStatus('loading')
+        return
+      }
+      
+      // Handle error state
+      if (error) {
+        setInitStatus('error')
+        initializedForCarRef.current = carKey // Mark as handled
+        return
+      }
+      
+      // Handle empty state (no offers available)
+      if (!leaseOptions.length) {
+        setInitStatus('empty')
+        initializedForCarRef.current = carKey // Mark as handled
+        return
+      }
+      
+      // Proceed with initialization
       const targetMileage = car?.selected_mileage ?? car?.mileage_per_year ?? null
       const targetPeriod = car?.selected_term ?? car?.period_months ?? null
       const targetUpfront = car?.selected_deposit ?? car?.first_payment ?? null
@@ -339,7 +377,8 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           setSelectedMileage(exact.mileage_per_year)
           setSelectedPeriod(exact.period_months)
           setSelectedUpfront(exact.first_payment)
-          prevCarKeyRef.current = carKey  // Record successful init
+          initializedForCarRef.current = carKey
+          setInitStatus('initialized')
           initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
           return
         }
@@ -366,7 +405,8 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           setSelectedMileage(best.mileage_per_year)
           setSelectedPeriod(best.period_months)
           setSelectedUpfront(best.first_payment)
-          prevCarKeyRef.current = carKey  // Record successful init
+          initializedForCarRef.current = carKey
+          setInitStatus('initialized')
           initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
           return
         }
@@ -377,30 +417,21 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
         setSelectedMileage(cheapestOption.mileage_per_year)
         setSelectedPeriod(cheapestOption.period_months)
         setSelectedUpfront(cheapestOption.first_payment)
-        prevCarKeyRef.current = carKey  // Record successful init
-        initSourceRef.current = 'default'
-      }
-    } else if (leaseOptions.length && !selectedLease) {
-      // If we have partial selection but no matching offer yet, fallback to cheapest
-      if (cheapestOption) {
-        setSelectedMileage(cheapestOption.mileage_per_year)
-        setSelectedPeriod(cheapestOption.period_months)
-        setSelectedUpfront(cheapestOption.first_payment)
-        prevCarKeyRef.current = carKey  // Record successful fallback
+        initializedForCarRef.current = carKey
+        setInitStatus('initialized')
         initSourceRef.current = 'default'
       }
     }
     
-    // If already initialized, just ensure ref is current
-    if (selectedMileage !== null || selectedPeriod !== null || selectedUpfront !== null) {
-      prevCarKeyRef.current = carKey
-    }
-    
-  }, [leaseOptions.length, cheapestOption, 
-      car?.listing_id, car?.id,
-      car?.selected_mileage, car?.mileage_per_year, 
-      car?.selected_term, car?.period_months, 
-      car?.selected_deposit, car?.first_payment])
+  }, [
+    car?.listing_id, car?.id,
+    isLoading, error,  // Add these to dependencies for proper state handling
+    leaseOptions.length, cheapestOption,
+    car?.selected_mileage, car?.mileage_per_year,
+    car?.selected_term, car?.period_months,
+    car?.selected_deposit, car?.first_payment
+    // Do NOT include selected* states to avoid loops
+  ])
 
   return {
     selectedMileage,
@@ -430,6 +461,7 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     periodPriceImpacts,
     upfrontPriceImpacts,
     setHoveredOption,
-    hoveredPriceImpact
+    hoveredPriceImpact,
+    initStatus
   }
 }
