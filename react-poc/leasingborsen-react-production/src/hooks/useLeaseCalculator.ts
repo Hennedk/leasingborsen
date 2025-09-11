@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react'
 import type { CarListing, LeaseOptionWithScore } from '@/types'
 import type { HoveredOption, PriceImpactData } from '@/types/priceImpact'
 import { useOffers } from './useOffers'
@@ -65,6 +65,14 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
   const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
   const [hoveredOption, setHoveredOption] = useState<HoveredOption | null>(null)
+
+  // Refs for stable car tracking and initialization source debugging
+  const prevCarKeyRef = useRef<string | null>(null)
+  const initSourceRef = useRef<'url' | 'car' | 'default' | null>(null)
+
+  // SSR-safe layout effect for preventing flicker
+  const useIsomorphicLayoutEffect = 
+    typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
   // Fetch real pricing data from database instead of using mock data
   // Use both possible ID fields for compatibility with different data sources
@@ -292,18 +300,29 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     setSelectedUpfront(bestScoreOption.first_payment)
   }, [bestScoreOption])
 
-  // Reset calculator state when navigating to a different car
-  useEffect(() => {
-    setSelectedMileage(null)
-    setSelectedPeriod(null)
-    setSelectedUpfront(null)
-  }, [car?.id, car?.listing_id])
+  // Bulletproof car initialization and reset logic
+  useIsomorphicLayoutEffect(() => {
+    // Stable car key - prefer listing_id over id
+    const carKey = car?.listing_id || car?.id || null
+    
+    // Guard against null blips during transitions
+    if (!carKey) return
+    
+    // Check if this is genuinely a new car
+    if (prevCarKeyRef.current !== null && prevCarKeyRef.current !== carKey) {
+      // Reset for new car
+      setSelectedMileage(null)
+      setSelectedPeriod(null)
+      setSelectedUpfront(null)
+      prevCarKeyRef.current = carKey  // Record reset
+      initSourceRef.current = null
+      return // Let next render handle initialization
+    }
 
-  // Initialize with cheapest option
-  useEffect(() => {
+    // Bail if no options yet (don't update ref!)
     if (!leaseOptions.length) return
-
-    // If no selection yet, try initializing from car's selected values first
+    
+    // Initialize only if not yet initialized
     if (selectedMileage === null && selectedPeriod === null && selectedUpfront === null) {
       const targetMileage = car?.selected_mileage ?? car?.mileage_per_year ?? null
       const targetPeriod = car?.selected_term ?? car?.period_months ?? null
@@ -320,6 +339,8 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           setSelectedMileage(exact.mileage_per_year)
           setSelectedPeriod(exact.period_months)
           setSelectedUpfront(exact.first_payment)
+          prevCarKeyRef.current = carKey  // Record successful init
+          initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
           return
         }
 
@@ -345,19 +366,41 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           setSelectedMileage(best.mileage_per_year)
           setSelectedPeriod(best.period_months)
           setSelectedUpfront(best.first_payment)
+          prevCarKeyRef.current = carKey  // Record successful init
+          initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
           return
         }
       }
 
       // 3) Final fallback: cheapest overall
-      if (!selectedLease) {
-        resetToCheapest()
+      if (cheapestOption) {
+        setSelectedMileage(cheapestOption.mileage_per_year)
+        setSelectedPeriod(cheapestOption.period_months)
+        setSelectedUpfront(cheapestOption.first_payment)
+        prevCarKeyRef.current = carKey  // Record successful init
+        initSourceRef.current = 'default'
       }
     } else if (leaseOptions.length && !selectedLease) {
       // If we have partial selection but no matching offer yet, fallback to cheapest
-      resetToCheapest()
+      if (cheapestOption) {
+        setSelectedMileage(cheapestOption.mileage_per_year)
+        setSelectedPeriod(cheapestOption.period_months)
+        setSelectedUpfront(cheapestOption.first_payment)
+        prevCarKeyRef.current = carKey  // Record successful fallback
+        initSourceRef.current = 'default'
+      }
     }
-  }, [leaseOptions, selectedLease, resetToCheapest, car?.selected_mileage, car?.mileage_per_year, car?.selected_term, car?.period_months, car?.selected_deposit, car?.first_payment, selectedMileage, selectedPeriod, selectedUpfront])
+    
+    // If already initialized, just ensure ref is current
+    if (selectedMileage !== null || selectedPeriod !== null || selectedUpfront !== null) {
+      prevCarKeyRef.current = carKey
+    }
+    
+  }, [leaseOptions.length, cheapestOption, 
+      car?.listing_id, car?.id,
+      car?.selected_mileage, car?.mileage_per_year, 
+      car?.selected_term, car?.period_months, 
+      car?.selected_deposit, car?.first_payment])
 
   return {
     selectedMileage,
