@@ -13,10 +13,20 @@ import {
   type AllowedFilterKey,
   type SearchResults 
 } from '@/analytics/filters'
+import { recomputeResultsSessionId } from '@/analytics/resultsSession'
 
-// Internal RSID management functions
-function generateResultsSessionId(): string {
-  return `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+// Map store state to canonical filters used for RSID fingerprinting
+function buildCanonicalFilters(state: Pick<FilterState, 'makes'|'models'|'fuel_type'|'body_type'|'price_min'|'price_max'|'mileage_selected'|'sortOrder'>): Record<string, any> {
+  const canonical: Record<string, any> = {}
+  if (state.makes && state.makes.length > 0) canonical.make = state.makes.join(',')
+  if (state.models && state.models.length > 0) canonical.model = state.models.join(',')
+  if (state.fuel_type && state.fuel_type.length > 0) canonical.fuel_type = state.fuel_type.join(',')
+  if (state.body_type && state.body_type.length > 0) canonical.body_type = state.body_type.join(',')
+  if (state.price_min != null) canonical.price_min = state.price_min
+  if (state.price_max != null) canonical.price_max = state.price_max
+  if (state.mileage_selected != null) canonical.mileage_km_per_year = state.mileage_selected
+  if (state.sortOrder) canonical.sort_option = state.sortOrder
+  return canonical
 }
 
 /* Claude Change Summary:
@@ -222,7 +232,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         if (key !== 'sortOrder' as any) { // Skip tracking sortOrder changes here (handled in setSortOrder)
           try {
             const state = get()
-            const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
+            const canonical = buildCanonicalFilters(state)
+            const resultsSessionId = recomputeResultsSessionId(canonical)
+            if (state._resultsSessionId !== resultsSessionId) {
+              set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+            }
             const filterAction = 
               previousValue == null && value != null ? 'add' :
               previousValue != null && value == null ? 'clear' :
@@ -299,7 +313,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Analytics: Track filter change
         try {
           const state = get()
-          const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
+          const canonical = buildCanonicalFilters(state)
+          const resultsSessionId = recomputeResultsSessionId(canonical)
+          if (state._resultsSessionId !== resultsSessionId) {
+            set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+          }
           const isRemoving = previousArray.includes(value)
           const filterAction = isRemoving ? 'remove' : 'add'
           
@@ -375,13 +393,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Analytics: Track individual clear events for each active filter
         try {
           const state = get()
-          const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
+          const canonical = buildCanonicalFilters(state)
+          const resultsSessionId = recomputeResultsSessionId(canonical)
           const activeFilters = previousState.getActiveFilters()
           
-          // Ensure store has RSID
-          if (!state._resultsSessionId) {
-            set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
-          }
+          set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
           
           // Track clear action for each active filter
           activeFilters.forEach(filter => {
@@ -432,12 +448,9 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         if (order !== previousOrder) {
           try {
             const state = get()
-            const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
-            
-            // Ensure store has RSID
-            if (!state._resultsSessionId) {
-              set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
-            }
+            const canonical = buildCanonicalFilters(state)
+            const resultsSessionId = recomputeResultsSessionId(canonical)
+            set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
             
             trackFiltersChange({
               filter_key: 'sortOrder' as AllowedFilterKey,
@@ -629,24 +642,10 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           horsepower_max: state.horsepower_max
         })
         
-        // Internal RSID management - reset session if fingerprint changed
-        let currentRSID = state._resultsSessionId
-        if (newFingerprint !== state._lastSearchFingerprint) {
-          currentRSID = generateResultsSessionId()
-          console.log('[Analytics] Results session reset:', state._resultsSessionId, '→', currentRSID)
-          
-          // Update store state with new session
-          set((prev) => ({
-            ...prev,
-            _resultsSessionId: currentRSID,
-            _lastSearchFingerprint: newFingerprint
-          }))
-        } else if (!currentRSID) {
-          // Ensure we have an RSID
-          currentRSID = generateResultsSessionId()
-          console.log('[Analytics] New results session created:', currentRSID)
-          set((prev) => ({ ...prev, _resultsSessionId: currentRSID }))
-        }
+        // Central RSID handling: recompute based on canonical filters
+        const canonical = buildCanonicalFilters(state)
+        const currentRSID = recomputeResultsSessionId(canonical)
+        set((prev) => ({ ...prev, _resultsSessionId: currentRSID, _lastSearchFingerprint: newFingerprint }))
         
         // Only emit filters_apply if we have pending changes
         if (state._pendingChanges.size > 0) {
