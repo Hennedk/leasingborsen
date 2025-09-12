@@ -12,6 +12,7 @@ import {
   validateFiltersOverlayOpenOrWarn,
   validateFiltersOverlayCloseOrWarn
 } from './schema'
+import { normalizeValue } from './normalization'
 
 // Type definitions matching store filter keys
 export type AllowedFilterKey = 
@@ -76,7 +77,7 @@ export interface SearchResults {
   data?: any[]
 }
 
-import { getCurrentResultsSessionId, resetResultsSession, getSearchFingerprint } from './resultsSession'
+import { getCurrentResultsSessionId, resetResultsSession, getSearchFingerprint, getOrCreateResultsSessionId } from './resultsSession'
 
 // Session management (RSID now handled by resultsSession module)
 let lastSearchFingerprint = ''
@@ -106,43 +107,21 @@ function createChangeKey(filter_key: AllowedFilterKey, filter_method: FilterMeth
  * Create a hash of the change value for deduplication
  */
 function createValueHash(filter_value: string | number | boolean | null | undefined): string {
-  return JSON.stringify(sanitizeFilterValue(filter_value))
+  return JSON.stringify(normalizeValue(filter_value))
 }
 
 /**
  * Get current results session ID (delegates to central module)
+ * Creates a new session if none exists
  */
 export function getResultsSessionId(): string {
-  const sessionId = getCurrentResultsSessionId()
-  if (!sessionId) {
-    // This shouldn't happen in normal flow, but provide fallback
-    console.warn('[Analytics] No results session available, this may indicate a timing issue')
-    return 'rs_fallback_' + Date.now()
-  }
-  return sessionId
+  return getOrCreateResultsSessionId()
 }
 
 // Re-export computeSearchFingerprint for backward compatibility
 export const computeSearchFingerprint = getSearchFingerprint
 
 
-/**
- * Sanitize filter value for analytics
- */
-function sanitizeFilterValue(value: any): string | number | boolean | null {
-  if (value == null) return null
-  if (typeof value === 'boolean') return value
-  if (typeof value === 'number') return Math.round(value)
-  if (typeof value === 'string') return value.toLowerCase().trim()
-  if (Array.isArray(value)) {
-    return value.filter(v => v != null).map(v => String(v).toLowerCase().trim()).sort().join(',')
-  }
-  if (typeof value === 'object') {
-    // For complex objects like selectedCars, create a stable string representation
-    return JSON.stringify(value)
-  }
-  return String(value).toLowerCase().trim()
-}
 
 /**
  * Track a filter change event (with debouncing for sliders/inputs)
@@ -191,8 +170,8 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
         results_session_id: params.results_session_id,
         filter_key: params.filter_key,
         filter_action: params.filter_action,
-        filter_value: sanitizeFilterValue(params.filter_value),
-        previous_value: sanitizeFilterValue(params.previous_value),
+        filter_value: normalizeValue(params.filter_value),
+        previous_value: normalizeValue(params.previous_value),
         filter_method: params.filter_method,
         total_active_filters: Math.round(params.total_active_filters)
       }
@@ -333,6 +312,9 @@ export function resetFilterTracking(): void {
   
   // Clear per-key duplicate tracking
   lastEmittedChanges.clear()
+  
+  // Also reset results session state
+  resetResultsSession()
 }
 
 /**

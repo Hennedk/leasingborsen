@@ -202,7 +202,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           newState.filterOrder = newFilterOrder
           
           // Analytics: Add to pending changes and mark search as pending
-          if (key in newState) { // Ensure key is valid
+          // Skip tracking for URL-driven restorations (method === 'url')
+          if (key in newState && method !== 'url') { // Ensure key is valid and not URL restoration
             newState._pendingChanges = new Set([...state._pendingChanges, key as AllowedFilterKey])
             if (!newState._searchStartTime) {
               newState._searchStartTime = Date.now()
@@ -273,19 +274,22 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           }
           
           // Analytics: Add to pending changes and mark search as pending
+          // Skip tracking for URL-driven restorations (method === 'url')
           const newState = {
             ...state,
             [key]: newArray,
             filterOrder: newFilterOrder,
-            _pendingChanges: new Set([...state._pendingChanges, key as AllowedFilterKey])
+            _pendingChanges: method !== 'url' ? 
+              new Set([...state._pendingChanges, key as AllowedFilterKey]) :
+              state._pendingChanges
           }
           
-          if (!newState._searchStartTime) {
+          if (!newState._searchStartTime && method !== 'url') {
             newState._searchStartTime = Date.now()
           }
           
           // Overlay: Track changes during overlay session
-          if (state._overlayId) {
+          if (state._overlayId && method !== 'url') {
             newState._overlayChangedKeys = new Set([...state._overlayChangedKeys, key as AllowedFilterKey])
           }
           
@@ -413,13 +417,13 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         set((state) => ({
           ...state,
           sortOrder: order,
-          // Analytics: Mark search as pending if sort changed
-          _pendingChanges: order !== previousOrder ? 
+          // Analytics: Mark search as pending if sort changed (skip for URL restorations)
+          _pendingChanges: order !== previousOrder && method !== 'url' ? 
             new Set([...state._pendingChanges, 'sortOrder' as AllowedFilterKey]) : 
             state._pendingChanges,
-          _searchStartTime: order !== previousOrder && !state._searchStartTime ? Date.now() : state._searchStartTime,
-          // Overlay: Track changes during overlay session
-          _overlayChangedKeys: order !== previousOrder && state._overlayId ? 
+          _searchStartTime: order !== previousOrder && method !== 'url' && !state._searchStartTime ? Date.now() : state._searchStartTime,
+          // Overlay: Track changes during overlay session (skip for URL restorations)
+          _overlayChangedKeys: order !== previousOrder && method !== 'url' && state._overlayId ? 
             new Set([...state._overlayChangedKeys, 'sortOrder' as AllowedFilterKey]) : 
             state._overlayChangedKeys
         }))

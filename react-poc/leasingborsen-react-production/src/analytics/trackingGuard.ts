@@ -6,6 +6,7 @@
  */
 
 import { trackPageView, type PageViewContext } from './pageview'
+import { normalizePath } from './normalization'
 
 // Guard state
 let lastTrackedPathname: string | null = null
@@ -14,15 +15,6 @@ let lastTrackedTime: number = 0
 // Time window to prevent rapid-fire duplicates for the same pathname
 const DUPLICATE_WINDOW_MS = 500
 
-/**
- * Normalize pathname for consistent comparison
- */
-function normalizePath(pathname: string): string {
-  return pathname
-    .toLowerCase() // Case-insensitive comparison
-    .replace(/\/+$/, '') // Remove trailing slashes
-    .replace(/^\/+/, '/') // Ensure single leading slash
-}
 
 /**
  * Track a pageview only if the pathname has changed or enough time has passed

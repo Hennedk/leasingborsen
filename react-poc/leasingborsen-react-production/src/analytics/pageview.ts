@@ -6,6 +6,13 @@
 
 import { analytics, type Device } from './mp'
 import { validatePageViewOrWarn } from './schema'
+import { 
+  canonicalizeQuery, 
+  sanitizeQuery, 
+  normalizeFuelType, 
+  normalizeLeaseScoreBand,
+  normalizeRecord
+} from './normalization'
 
 export type PageType = 'home' | 'results' | 'listing_detail' | 'other'
 export type PageLoad = 'cold' | 'warm' | 'bfcache' | 'spa'
@@ -71,61 +78,6 @@ const ALLOWED_FILTER_KEYS = [
 
 import { recomputeResultsSessionId } from './resultsSession'
 
-/**
- * Create a canonical, normalized representation of query parameters for stable comparison
- * - Sorts keys alphabetically to avoid order dependency
- * - Lowercases string values for enum parameters
- * - Removes null/undefined values
- * - Returns a stable string for hashing
- */
-function canonicalizeQuery(query?: Record<string, any>): string | undefined {
-  if (!query || Object.keys(query).length === 0) {
-    return undefined
-  }
-
-  const normalized: Record<string, string | number | boolean> = {}
-  
-  // Process each key-value pair
-  Object.entries(query).forEach(([key, value]) => {
-    // Skip null/undefined values
-    if (value == null) return
-    
-    // Normalize based on value type
-    if (typeof value === 'string') {
-      const trimmedValue = value.toLowerCase().trim()
-      
-      // Try to convert numeric strings to numbers for consistent comparison
-      const asNum = Number(trimmedValue)
-      if (Number.isFinite(asNum) && trimmedValue !== '') {
-        normalized[key] = asNum
-      } else {
-        normalized[key] = trimmedValue
-      }
-    } else if (typeof value === 'number' || typeof value === 'boolean') {
-      normalized[key] = value
-    } else {
-      // Convert other types to string, then try numeric conversion
-      const asStr = String(value).toLowerCase().trim()
-      const asNum = Number(asStr)
-      if (Number.isFinite(asNum) && asStr !== '') {
-        normalized[key] = asNum
-      } else {
-        normalized[key] = asStr
-      }
-    }
-  })
-  
-  // Sort keys alphabetically and create stable string
-  const keys = Object.keys(normalized)
-  if (keys.length === 0) {
-    return undefined
-  }
-  
-  return keys
-    .sort()
-    .map(key => `${key}:${normalized[key]}`)
-    .join('|')
-}
 
 /**
  * Track a page view event with context
@@ -277,7 +229,7 @@ function buildListingContext(context: PageViewContext): ListingContext {
   // Add optional product fields
   if (context.leaseScore !== undefined) {
     listingContext.lease_score = Math.round(context.leaseScore)
-    listingContext.lease_score_band = getLeaseScoreBand(context.leaseScore)
+    listingContext.lease_score_band = normalizeLeaseScoreBand(context.leaseScore)
   }
   
   if (context.priceMonthly !== undefined) {
@@ -310,85 +262,15 @@ function buildListingContext(context: PageViewContext): ListingContext {
   return listingContext
 }
 
-/**
- * Sanitize query parameters for tracking
- */
-function sanitizeQuery(query: Record<string, any>): Record<string, string | number | boolean> {
-  const sanitized: Record<string, string | number | boolean> = {}
-  
-  Object.entries(query).forEach(([key, value]) => {
-    // Only include simple types, convert to appropriate format
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      sanitized[key] = value
-    } else if (value != null) {
-      sanitized[key] = String(value)
-    }
-  })
-  
-  return sanitized
-}
 
 /**
  * Trim filters to only allowed keys and ensure reasonable payload size
  */
 function trimFilters(filters: Record<string, any>): Record<string, string | number | boolean> | undefined {
-  const trimmed: Record<string, string | number | boolean> = {}
-  
-  // Define which keys should be treated as numeric
-  const numericKeys = ['price_max', 'price_min', 'mileage_km_per_year', 'term_months']
-  
-  ALLOWED_FILTER_KEYS.forEach(key => {
-    if (filters[key] !== undefined && filters[key] !== null) {
-      const value = filters[key]
-      
-      // Normalize value type
-      if (typeof value === 'string') {
-        const trimmedValue = value.toLowerCase().trim()
-        
-        // Try to convert numeric fields to numbers
-        if (numericKeys.includes(key)) {
-          const asNum = Number(trimmedValue)
-          trimmed[key] = Number.isFinite(asNum) ? asNum : trimmedValue
-        } else {
-          trimmed[key] = trimmedValue
-        }
-      } else if (typeof value === 'number' || typeof value === 'boolean') {
-        trimmed[key] = value
-      } else {
-        const asStr = String(value)
-        const asNum = Number(asStr)
-        trimmed[key] = Number.isFinite(asNum) ? asNum : asStr.toLowerCase().trim()
-      }
-    }
-  })
-  
-  // Return undefined if no filters were included
-  return Object.keys(trimmed).length > 0 ? trimmed : undefined
+  return normalizeRecord(filters, ALLOWED_FILTER_KEYS)
 }
 
-/**
- * Convert lease score to band
- */
-function getLeaseScoreBand(score: number): 'excellent' | 'good' | 'fair' | 'weak' {
-  if (score >= 80) return 'excellent'
-  if (score >= 60) return 'good'  
-  if (score >= 40) return 'fair'
-  return 'weak'
-}
 
-/**
- * Normalize fuel type to standard values
- */
-function normalizeFuelType(fuelType: string): 'ev' | 'phev' | 'ice' | null {
-  const normalized = fuelType.toLowerCase()
-  
-  if (normalized === 'ev' || normalized === 'bev' || normalized === 'el' || normalized === 'elbil' || normalized.includes('electric')) return 'ev'
-  if (normalized.includes('hybrid') || normalized.includes('phev')) return 'phev'
-  if (normalized.includes('benzin') || normalized.includes('diesel') || 
-      normalized.includes('gasoline') || normalized.includes('petrol')) return 'ice'
-  
-  return null
-}
 
 /**
  * Reset pageview deduplication state (for testing)
