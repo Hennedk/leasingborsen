@@ -134,9 +134,13 @@ export const testHelpers = {
   
   /**
    * Advance time for testing TTL and de-duplication
+   * Updated to advance both timers AND system time for Date.now()
    */
   advanceTime: (ms: number) => {
     vi.advanceTimersByTime(ms)
+    // Also advance system time so Date.now() returns the advanced time
+    const currentTime = Date.now()
+    vi.setSystemTime(currentTime + ms)
   },
   
   /**

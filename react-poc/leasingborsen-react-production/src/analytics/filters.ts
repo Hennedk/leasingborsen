@@ -76,8 +76,9 @@ export interface SearchResults {
   data?: any[]
 }
 
-// Session management
-let currentResultsSessionId: string | null = null
+import { getCurrentResultsSessionId, recomputeResultsSessionId } from './resultsSession'
+
+// Session management (RSID now handled by resultsSession module)
 let lastSearchFingerprint = ''
 let lastCommittedChangeAt = 0
 let lastSettledState: {
@@ -109,79 +110,19 @@ function createValueHash(filter_value: string | number | boolean | null | undefi
 }
 
 /**
- * Generate a new results session ID
- */
-function generateResultsSessionId(): string {
-  return `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-}
-
-/**
- * Get or create current results session ID
+ * Get current results session ID (delegates to central module)
  */
 export function getResultsSessionId(): string {
-  if (!currentResultsSessionId) {
-    currentResultsSessionId = generateResultsSessionId()
-    console.log('[Analytics] New results session created:', currentResultsSessionId)
+  const sessionId = getCurrentResultsSessionId()
+  if (!sessionId) {
+    // This shouldn't happen in normal flow, but provide fallback
+    console.warn('[Analytics] No results session available, this may indicate a timing issue')
+    return 'rs_fallback_' + Date.now()
   }
-  return currentResultsSessionId
+  return sessionId
 }
 
-/**
- * Reset results session (when search fingerprint changes significantly)
- */
-export function resetResultsSession(): string {
-  const previousId = currentResultsSessionId
-  currentResultsSessionId = generateResultsSessionId()
-  
-  if (previousId !== currentResultsSessionId) {
-    console.log('[Analytics] Results session reset:', previousId, '→', currentResultsSessionId)
-  }
-  
-  return currentResultsSessionId
-}
-
-/**
- * Create canonical search fingerprint for session management
- * Only includes significant filter changes that warrant new session
- */
-export function computeSearchFingerprint(filters: Record<string, any>): string {
-  // Significant filters that trigger new search session
-  const significantKeys: AllowedFilterKey[] = [
-    'makes', 'models', 'selectedCars', 'fuel_type', 'body_type', 'transmission',
-    'price_min', 'price_max', 'mileage_selected', 'mileage_km_per_year',
-    'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max'
-  ]
-  
-  const normalized: Record<string, string | number> = {}
-  
-  significantKeys.forEach(key => {
-    const value = filters[key]
-    if (value == null) return
-    
-    if (typeof value === 'string') {
-      normalized[key] = value.toLowerCase().trim()
-    } else if (typeof value === 'number') {
-      normalized[key] = value
-    } else if (Array.isArray(value)) {
-      // Handle array filters (makes, models, etc.)
-      const arrayValues = value.filter(v => v != null).map(v => String(v).toLowerCase().trim())
-      if (arrayValues.length > 0) {
-        normalized[key] = arrayValues.sort().join(',')
-      }
-    } else if (typeof value === 'object' && value !== null) {
-      // Handle selectedCars object format
-      normalized[key] = JSON.stringify(value)
-    } else {
-      normalized[key] = String(value).toLowerCase().trim()
-    }
-  })
-  
-  // Create stable fingerprint
-  return Object.keys(normalized)
-    .sort()
-    .map(key => `${key}:${normalized[key]}`)
-    .join('|')
-}
+// computeSearchFingerprint removed - now handled by resultsSession module
 
 
 /**

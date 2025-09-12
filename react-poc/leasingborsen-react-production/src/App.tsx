@@ -126,8 +126,20 @@ function App() {
         }
       }
 
-      // Only track page_view if the pathname actually changed (ignore query-only changes)
+      // Recompute RSID on any filter/sort changes, even if pathname didn't change
       if (!event.pathChanged) {
+        // Query-only change - recompute RSID but don't emit page_view
+        const nextSearchStr = event.toLocation.searchStr || ''
+        const query = parseSearchParams(nextSearchStr)
+        
+        // Only recompute RSID for results pages to avoid unnecessary churn
+        const currentPath = event.fromLocation.pathname
+        if (currentPath === '/listings') {
+          // Import recomputeResultsSessionId dynamically to avoid circular imports
+          import('./analytics/resultsSession').then(({ recomputeResultsSessionId }) => {
+            recomputeResultsSessionId(query)
+          })
+        }
         return
       }
 

@@ -22,7 +22,7 @@ vi.mock('../schema', () => ({
 }))
 
 // Import pageview functions after mocking
-const { trackPageView, resetResultsSession } = await import('../pageview')
+const { trackPageView, resetResultsSession, resetPageViewState } = await import('../pageview')
 
 describe('PageView Tracking (pageview.ts)', () => {
   beforeEach(() => {
@@ -30,6 +30,7 @@ describe('PageView Tracking (pageview.ts)', () => {
     vi.clearAllMocks()
     mockAnalytics.hasConsent.mockReturnValue(true)
     resetResultsSession()
+    resetPageViewState()
   })
 
   afterEach(() => {
@@ -162,7 +163,7 @@ describe('PageView Tracking (pageview.ts)', () => {
           query,
         }
         
-        if (index > 0) testHelpers.advanceTime(50) // Within dedupe window
+        // Don't advance time - all calls should be immediate duplicates
         trackPageView(context)
       })
       
@@ -229,7 +230,7 @@ describe('PageView Tracking (pageview.ts)', () => {
       expect(firstSessionId).not.toBe(secondSessionId)
     })
 
-    it('should maintain session when only sort changes', () => {
+    it('should create new session when sort changes', () => {
       const context1 = testFixtures.contexts.results
       const context2: PageViewContext = {
         ...context1,
@@ -243,7 +244,7 @@ describe('PageView Tracking (pageview.ts)', () => {
       trackPageView(context2)
       const secondSessionId = testHelpers.getLastCall(mockAnalytics.track)[1].results_session_id
       
-      expect(firstSessionId).toBe(secondSessionId)
+      expect(firstSessionId).not.toBe(secondSessionId)
     })
 
     it('should handle array filters consistently', () => {

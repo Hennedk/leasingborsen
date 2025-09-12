@@ -69,9 +69,7 @@ const ALLOWED_FILTER_KEYS = [
   'body_type'
 ] as const
 
-// Results session management
-let currentResultsSessionId: string | null = null
-let lastFiltersKey = ''
+import { getCurrentResultsSessionId, recomputeResultsSessionId } from './resultsSession'
 
 /**
  * Create a canonical, normalized representation of query parameters for stable comparison
@@ -80,9 +78,9 @@ let lastFiltersKey = ''
  * - Removes null/undefined values
  * - Returns a stable string for hashing
  */
-function canonicalizeQuery(query?: Record<string, any>): string {
+function canonicalizeQuery(query?: Record<string, any>): string | undefined {
   if (!query || Object.keys(query).length === 0) {
-    return ''
+    return undefined
   }
 
   const normalized: Record<string, string | number | boolean> = {}
@@ -94,68 +92,36 @@ function canonicalizeQuery(query?: Record<string, any>): string {
     
     // Normalize based on value type
     if (typeof value === 'string') {
-      // Lowercase string values for enum consistency (fuel_type, body_type, etc.)
-      normalized[key] = value.toLowerCase()
+      const trimmedValue = value.toLowerCase().trim()
+      
+      // Try to convert numeric strings to numbers for consistent comparison
+      const asNum = Number(trimmedValue)
+      if (Number.isFinite(asNum) && trimmedValue !== '') {
+        normalized[key] = asNum
+      } else {
+        normalized[key] = trimmedValue
+      }
     } else if (typeof value === 'number' || typeof value === 'boolean') {
       normalized[key] = value
     } else {
-      // Convert other types to string
-      normalized[key] = String(value).toLowerCase()
+      // Convert other types to string, then try numeric conversion
+      const asStr = String(value).toLowerCase().trim()
+      const asNum = Number(asStr)
+      if (Number.isFinite(asNum) && asStr !== '') {
+        normalized[key] = asNum
+      } else {
+        normalized[key] = asStr
+      }
     }
   })
   
   // Sort keys alphabetically and create stable string
-  return Object.keys(normalized)
-    .sort()
-    .map(key => `${key}:${normalized[key]}`)
-    .join('|')
-}
-
-/**
- * Create a canonical search fingerprint for results session management
- * Only includes significant filter changes that warrant a new search session
- * - Normalizes filter values for consistent comparison
- * - Includes sort_option as it affects result ordering and impression context
- * - Returns stable hash for session comparison
- */
-function getSearchFingerprint(filters?: Record<string, any>): string {
-  if (!filters || Object.keys(filters).length === 0) {
-    return ''
+  const keys = Object.keys(normalized)
+  if (keys.length === 0) {
+    return undefined
   }
-
-  // Define which filters are significant enough to trigger a new search session
-  const significantFilters = [
-    'make', 'model', 'fuel_type', 'body_type', 
-    'price_min', 'price_max', 'mileage_km_per_year', 'term_months',
-    'sort_option'
-  ]
   
-  const normalized: Record<string, string | number> = {}
-  
-  // Only include significant filters in the fingerprint
-  significantFilters.forEach(key => {
-    const value = filters[key]
-    if (value == null) return
-    
-    if (typeof value === 'string') {
-      // Normalize string values (lowercase, trim)
-      normalized[key] = value.toLowerCase().trim()
-    } else if (typeof value === 'number') {
-      normalized[key] = value
-    } else if (Array.isArray(value)) {
-      // Handle array filters (makes, models, etc.) - sort for consistency
-      const arrayValues = value.filter(v => v != null).map(v => String(v).toLowerCase().trim())
-      if (arrayValues.length > 0) {
-        normalized[key] = arrayValues.sort().join(',')
-      }
-    } else {
-      // Convert other types to normalized string
-      normalized[key] = String(value).toLowerCase().trim()
-    }
-  })
-  
-  // Create stable fingerprint
-  return Object.keys(normalized)
+  return keys
     .sort()
     .map(key => `${key}:${normalized[key]}`)
     .join('|')
@@ -273,17 +239,11 @@ function buildPageViewEvent(context: PageViewContext): PageViewEvent {
  * Build results page context with session management
  */
 function buildResultsContext(context: PageViewContext): ResultsContext {
-  // Generate new results session if filters changed significantly
-  // Uses canonical fingerprint to detect meaningful search changes
-  const searchFingerprint = getSearchFingerprint(context.filters)
-  if (searchFingerprint !== lastFiltersKey) {
-    currentResultsSessionId = `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-    lastFiltersKey = searchFingerprint
-    console.log('[Analytics] New results session:', currentResultsSessionId, 'fingerprint:', searchFingerprint)
-  }
+  // Recompute results session if filters changed significantly
+  const resultsSessionId = recomputeResultsSessionId(context.filters)
   
   const resultsContext: ResultsContext = {
-    results_session_id: currentResultsSessionId || `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+    results_session_id: resultsSessionId
   }
   
   // Add optional fields
@@ -295,9 +255,12 @@ function buildResultsContext(context: PageViewContext): ResultsContext {
     resultsContext.latency_ms = Math.round(context.latency)
   }
   
-  // Add trimmed filters
+  // Add trimmed filters only if there are any
   if (context.filters) {
-    resultsContext.filters_active = trimFilters(context.filters)
+    const trimmedFilters = trimFilters(context.filters)
+    if (trimmedFilters) {
+      resultsContext.filters_active = trimmedFilters
+    }
   }
   
   return resultsContext
@@ -368,8 +331,11 @@ function sanitizeQuery(query: Record<string, any>): Record<string, string | numb
 /**
  * Trim filters to only allowed keys and ensure reasonable payload size
  */
-function trimFilters(filters: Record<string, any>): Record<string, string | number | boolean> {
+function trimFilters(filters: Record<string, any>): Record<string, string | number | boolean> | undefined {
   const trimmed: Record<string, string | number | boolean> = {}
+  
+  // Define which keys should be treated as numeric
+  const numericKeys = ['price_max', 'price_min', 'mileage_km_per_year', 'term_months']
   
   ALLOWED_FILTER_KEYS.forEach(key => {
     if (filters[key] !== undefined && filters[key] !== null) {
@@ -377,7 +343,15 @@ function trimFilters(filters: Record<string, any>): Record<string, string | numb
       
       // Normalize value type
       if (typeof value === 'string') {
-        trimmed[key] = value.toLowerCase().trim()
+        const trimmedValue = value.toLowerCase().trim()
+        
+        // Try to convert numeric fields to numbers
+        if (numericKeys.includes(key)) {
+          const asNum = Number(trimmedValue)
+          trimmed[key] = Number.isFinite(asNum) ? asNum : trimmedValue
+        } else {
+          trimmed[key] = trimmedValue
+        }
       } else if (typeof value === 'number' || typeof value === 'boolean') {
         trimmed[key] = value
       } else {
@@ -388,7 +362,8 @@ function trimFilters(filters: Record<string, any>): Record<string, string | numb
     }
   })
   
-  return trimmed
+  // Return undefined if no filters were included
+  return Object.keys(trimmed).length > 0 ? trimmed : undefined
 }
 
 /**
@@ -416,16 +391,12 @@ function normalizeFuelType(fuelType: string): 'ev' | 'phev' | 'ice' | null {
 }
 
 /**
- * Reset results session (useful for testing or when needed)
+ * Reset pageview deduplication state (for testing)
  */
-export function resetResultsSession(): void {
-  currentResultsSessionId = null
-  lastFiltersKey = ''
+export function resetPageViewState(): void {
+  lastPageViewKey = ''
+  lastPageViewTime = 0
 }
 
-/**
- * Get current results session ID for linking related events (impressions/clicks)
- */
-export function getCurrentResultsSessionId(): string | null {
-  return currentResultsSessionId
-}
+// Export from results session module for backward compatibility
+export { getCurrentResultsSessionId, resetResultsSession } from './resultsSession'
