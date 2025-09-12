@@ -709,4 +709,42 @@ describe('Filter Tracking', () => {
       vi.useRealTimers()
     })
   })
+
+  describe('URL Navigation Filter Changes', () => {
+    it('should skip tracking when filter method is url', () => {
+      const urlParams = {
+        filter_key: 'makes' as const,
+        filter_action: 'add' as const,
+        filter_value: 'BMW',
+        previous_value: null,
+        filter_method: 'url' as const, // URL-driven change
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      }
+      
+      // Track URL-driven filter change
+      trackFiltersChange(urlParams)
+      
+      // Should not track analytics event for URL changes
+      expect(mockAnalytics.track).not.toHaveBeenCalled()
+    })
+
+    it('should still track non-url filter methods', () => {
+      const userParams = {
+        filter_key: 'makes' as const,
+        filter_action: 'add' as const,
+        filter_value: 'BMW',
+        previous_value: null,
+        filter_method: 'dropdown' as const, // User-driven change
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      }
+      
+      // Track user-driven filter change
+      trackFiltersChange(userParams)
+      
+      // Should track analytics event for user changes
+      expect(mockAnalytics.track).toHaveBeenCalledWith('filters_change', expect.any(Object))
+    })
+  })
 })

@@ -207,6 +207,12 @@ function sanitizeFilterValue(value: any): string | number | boolean | null {
  */
 export function trackFiltersChange(params: FiltersChangeParams): void {
   if (!analytics.hasConsent()) return
+  
+  // Skip tracking for URL-driven filter changes (navigation restoration)
+  if (params.filter_method === 'url') {
+    console.log('[Analytics] Skipping URL-driven filter change:', params.filter_key, params.filter_value)
+    return
+  }
 
   try {
     // Create keys for tracking

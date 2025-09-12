@@ -152,49 +152,49 @@ export const useUrlSync = () => {
       // Apply URL parameters synchronously to override existing state
       // Handle single make parameter
       if (urlMake) {
-        setFilter('makes', [urlMake])
+        setFilter('makes', [urlMake], 'url')
       }
 
       // Handle single model parameter
       if (urlModel) {
-        setFilter('models', [urlModel])
+        setFilter('models', [urlModel], 'url')
       }
       
       // Handle array-based filters
       const urlBodyTypeArray = parseArrayParam(urlBodyType)
       if (urlBodyTypeArray.length > 0) {
-        setFilter('body_type', urlBodyTypeArray)
+        setFilter('body_type', urlBodyTypeArray, 'url')
       }
 
       const urlFuelTypeArray = parseArrayParam(urlFuelType)
       if (urlFuelTypeArray.length > 0) {
-        setFilter('fuel_type', urlFuelTypeArray)
+        setFilter('fuel_type', urlFuelTypeArray, 'url')
       }
 
       const urlTransmissionArray = parseArrayParam(urlTransmission)
       if (urlTransmissionArray.length > 0) {
-        setFilter('transmission', urlTransmissionArray)
+        setFilter('transmission', urlTransmissionArray, 'url')
       }
 
       // Handle numeric parameters
       const parsedPriceMin = parseNumericParam(urlPriceMin)
       if (parsedPriceMin !== null) {
-        setFilter('price_min', parsedPriceMin)
+        setFilter('price_min', parsedPriceMin, 'url')
       }
 
       const parsedPriceMax = parseNumericParam(urlPriceMax)
       if (parsedPriceMax !== null) {
-        setFilter('price_max', parsedPriceMax)
+        setFilter('price_max', parsedPriceMax, 'url')
       }
 
       const parsedSeatsMin = parseNumericParam(urlSeatsMin)
       if (parsedSeatsMin !== null) {
-        setFilter('seats_min', parsedSeatsMin)
+        setFilter('seats_min', parsedSeatsMin, 'url')
       }
 
       const parsedSeatsMax = parseNumericParam(urlSeatsMax)
       if (parsedSeatsMax !== null) {
-        setFilter('seats_max', parsedSeatsMax)
+        setFilter('seats_max', parsedSeatsMax, 'url')
       }
 
       // Handle mileage parameter
@@ -202,7 +202,7 @@ export const useUrlSync = () => {
       if (parsedKm !== null) {
         const validMileages = [10000, 15000, 20000, 25000, 30000, 35000]
         if (validMileages.includes(parsedKm)) {
-          setFilter('mileage_selected', parsedKm as any)
+          setFilter('mileage_selected', parsedKm as any, 'url')
         }
       }
 
