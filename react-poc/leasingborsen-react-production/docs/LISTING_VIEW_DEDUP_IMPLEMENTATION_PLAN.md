@@ -28,7 +28,9 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 ## Must‑Fix Alignment
 
 - Single source of truth for `results_session_id` (RSID): keep ownership in `src/analytics/pageview.ts`; expose a getter and ensure all emitters read it. Do not compute RSID in multiple places.
+- RSID recompute independent of page_view: wire a router/query-change listener (or store hook) that recomputes RSID from the canonical fingerprint whenever filter/sort query changes occur, even if no `page_view` fires.
 - Include `sort_option` in the fingerprint and normalize arrays (lowercase, trim, sort) so RSID is stable and changes on sort switches.
+- Use a shared normalization helper for both fingerprinting and filters serialization (`filters_applied`) to prevent drift.
 - Naming: use `container` consistently for component context with values `"results_grid" | "similar_grid" | "carousel"`; ensure `listing_click` aligns where context applies.
 - Dwell fire check: when the 300ms timer fires, re‑read the last IntersectionObserverEntry and also verify `document.visibilityState === 'visible'` and `intersectionRatio >= 0.5` before emitting.
 
@@ -79,7 +81,7 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
   - `const seenByResults: Map<string, Map<string, Set<string>>> = new Map()`
   - `let lastAnalyticsSessionId: string | null = null`
 - Export `shouldTrackListingView(listingId: string, container?: 'results_grid' | 'similar_grid' | 'carousel'): boolean`:
-  - Get `resultsKey = getCurrentResultsSessionId() || 'no_rs'`.
+  - Get `resultsKey = getCurrentResultsSessionId()`; if absent, return `false` (do not emit and do not mark seen).
   - On first call, if `analytics.getSessionId() !== lastAnalyticsSessionId`, clear `seenByResults` and set `lastAnalyticsSessionId`.
   - Ensure `seenByResults.get(resultsKey)?.get(containerKey)` exists.
   - If `listingId` not in set: add it, persist to sessionStorage if mirroring enabled, return true; else return false.
@@ -97,6 +99,7 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
   - Cancel timer on exit or unmount.
   - Keep an instance ref to avoid repeated timers for same visibility window; dedup store will prevent duplicates anyway.
   - Cancel timers on `visibilitychange` to hidden. On BFCache `pageshow` restore (persisted), do not clear dedup.
+  - Cancel pending dwell timers if RSID changes mid‑dwell; the fire callback must read the current RSID at execution time.
 
 5) Tests (minimal but high‑value)
 - File: `src/analytics/__tests__/listing.test.ts`
@@ -106,6 +109,8 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
   - Different `container` → independent counts.
   - Analytics session TTL change (mock `analytics.getSessionId()` change) clears dedup.
   - Sort change alters fingerprint → new RSID → can re‑fire.
+  - Mid‑dwell RSID change: start dwell → change filters (RSID changes) → timer fires → no emit under old RSID; next sustained ≥300ms under new RSID → single emit.
+  - RSID not ready at mount: card visible before RSID exists → no emit; once RSID available and visibility sustained ≥300ms → single emit.
 - File: `src/components/__tests__/ListingCard.impression.test.tsx` (or extend existing ListingCard tests)
   - Simulate IO entries to verify 300ms dwell: 250ms → no fire; ≥300ms sustained → fire.
   - Hidden tab while timer pending → no fire.
@@ -127,8 +132,17 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 - Filter change where some items remain in view: only new, not-yet-seen IDs (for the new `results_session_id`) will fire when they hit dwell again.
 - Back from detail: same `results_session_id` → no re-fire.
 - Infinite scroll/virtualization: newly revealed cards fire once; scrolling back up or remounts won’t re-fire.
-- RSID not ready at mount: observe but do not emit or mark seen until RSID exists.
+- RSID not ready at mount: observe but do not emit or mark seen until RSID exists; arm dwell only after RSID appears.
 - BFCache restore (pageshow persisted): do not clear dedup sets; timers should be re‑armed via IO on re‑visibility.
+
+## Optional Enhancements
+
+- Sampling flag for impressions (e.g., 25%) as a safeguard if volume spikes.
+- Skip persistence for `carousel` context to save sessionStorage space.
+
+## Notes on Long Sessions
+
+- An LRU of last ~3 RSIDs is maintained. In very long browsing sessions, items from older RSIDs may not re-count if the RSID fell out of the LRU. This is acceptable MVP behavior and avoids unbounded memory.
 
 ## Rollout
 

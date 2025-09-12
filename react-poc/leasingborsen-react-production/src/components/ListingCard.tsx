@@ -25,6 +25,11 @@ import type { LeaseConfigSearchParams } from '@/types'
 import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
 import { trackListingClick, trackListingView, shouldTrackListingView } from '@/analytics/listing'
 
+type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
+type OriginSurface = 'listings' | 'detail' | 'home'
+type OriginType = 'grid' | 'module' | 'carousel'
+type OriginName = 'results_grid' | 'similar_cars' | 'home_featured' | 'home_carousel' | 'home_grid'
+
 interface ListingCardProps {
   car?: CarListing | null
   loading?: boolean
@@ -34,9 +39,18 @@ interface ListingCardProps {
   initialLeaseConfig?: Partial<LeaseConfigSearchParams>
   // Optional card position in the current grid (1-based)
   position?: number
+  // Optional context for analytics
+  container?: Container
+  origin?: {
+    surface: OriginSurface
+    type: OriginType
+    name: OriginName
+    module_id?: string
+    instance_id?: string
+  }
 }
 
-const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig, position }) => {
+const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false, currentPage = 1, initialLeaseConfig, position, container: containerProp, origin }) => {
   /**
    * LEASE CONFIGURATION URL SYNC STRATEGY
    * 
@@ -169,12 +183,20 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     } catch {}
 
     // Phase 2: Track click and attach source_event_id to navigation
+    // Determine interaction mechanics and target
+    const isKeyboard = e && 'key' in e
+    const me = (e as React.MouseEvent | undefined)
+    const newTab = !!(me && (me.metaKey || me.ctrlKey || (me as any).button === 1))
+    
     const clickId = trackListingClick({
       listingId: car.id || car.listing_id || '',
-      entryMethod: 'internal_grid_click',
+      entryMethod: isKeyboard ? 'keyboard' : 'click',
+      openTarget: newTab ? 'new_tab' : 'same_tab',
       position,
       priceMonthly: car.monthly_price,
       leaseScore: (car.selected_lease_score ?? undefined),
+      container: containerProp,
+      origin,
     })
 
     // Navigate with selected offer settings to maintain context
@@ -362,9 +384,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                                document.visibilityState === 'visible'
           
           if (isStillVisible && isPageVisible) {
-            // Determine container context
-            const container: 'results_grid' | 'similar_grid' | 'carousel' = 
-              window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid'
+            // Determine container context (prefer explicit prop, fallback to pathname inference)
+            const container: Container = containerProp
+              ?? (window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid')
             
             // Check deduplication before tracking
             const shouldTrack = shouldTrackListingView(

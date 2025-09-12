@@ -346,6 +346,8 @@ const Listing: React.FC = () => {
                   selectedTerm: selectedPeriod ?? null,
                   selectedDeposit: selectedUpfront ?? null
                 }}
+                container="similar_grid"
+                origin={{ surface: 'detail', type: 'module', name: 'similar_cars', module_id: 'similar_cars' }}
               />
             </ErrorBoundary>
           </div>

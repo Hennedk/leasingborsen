@@ -201,19 +201,33 @@ export const ListingViewSchema = ListingBaseSchema.extend({
   price_dkk: z.number().int().min(0).max(1000000).optional(),
   lease_score: z.number().int().min(0).max(100).optional(),
   lease_score_band: z.enum(['excellent', 'good', 'fair', 'weak']).optional(),
-  container: z.enum(['results_grid', 'similar_grid', 'carousel']).optional(),
+  container: z.enum(['results_grid', 'similar_grid', 'carousel', 'home_grid', 'home_carousel']).optional(),
 })
 
 // listing_click: user clicks a listing card
+// Separates interaction mechanics from origin of the click
+const OriginSchema = z.object({
+  surface: z.enum(['listings', 'detail', 'home']),
+  type: z.enum(['grid', 'module', 'carousel']),
+  name: z.enum(['results_grid', 'similar_cars', 'home_featured', 'home_carousel', 'home_grid']),
+  module_id: z.string().min(1).optional(),
+  instance_id: z.string().uuid().optional(),
+})
+
 export const ListingClickSchema = ListingBaseSchema.extend({
   listing_id: z.string().min(1),
-  entry_method: z.enum(['internal_grid_click', 'internal_similar']).default('internal_grid_click'),
+  entry_method: z.enum(['click', 'keyboard', 'context_menu']).default('click'),
+  open_target: z.enum(['same_tab', 'new_tab']).optional(),
   results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format').optional(),
+  results_ctx_hash: z.string().regex(/^[a-f0-9]{6,}$/).optional(),
   position: z.number().int().min(1).max(1000).optional(),
+  position_bucket: z.enum(['1-3','4-6','7-12','13+']).optional(),
   price_dkk: z.number().int().min(0).max(1000000).optional(),
   lease_score: z.number().int().min(0).max(100).optional(),
   lease_score_band: z.enum(['excellent', 'good', 'fair', 'weak']).optional(),
   source_event_id: z.string().uuid().optional(),
+  container: z.enum(['results_grid', 'similar_grid', 'carousel', 'home_grid', 'home_carousel']).optional(),
+  origin: OriginSchema.optional(),
 })
 
 export type ListingViewEvent = z.infer<typeof ListingViewSchema>

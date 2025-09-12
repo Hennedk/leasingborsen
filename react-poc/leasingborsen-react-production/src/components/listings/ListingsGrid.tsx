@@ -100,6 +100,9 @@ const ListingsGrid: React.FC<ListingsGridProps> = ({
               id: car.listing_id || car.id
             }}
             currentPage={currentPage}
+            position={index + 1}
+            container="results_grid"
+            origin={{ surface: 'listings', type: 'grid', name: 'results_grid' }}
           />
         ))}
       </div>

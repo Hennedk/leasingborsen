@@ -32,12 +32,12 @@ const MAX_LRU_SIZE = 3
 /**
  * Check if a listing impression should be tracked based on deduplication rules
  * @param listingId - The listing ID to check
- * @param container - The container context ('results_grid' | 'similar_grid' | 'carousel')
+ * @param container - The container context
  * @returns true if impression should be tracked, false if already seen
  */
 export function shouldTrackListingView(
-  listingId: string, 
-  container: 'results_grid' | 'similar_grid' | 'carousel' = 'results_grid'
+  listingId: string,
+  container: 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel' = 'results_grid'
 ): boolean {
   // Get current results session ID - required for deduplication
   const resultsSessionId = getCurrentResultsSessionId()
@@ -158,7 +158,7 @@ function clearSessionStorageForSession(resultsSessionId: string): void {
   }
   
   try {
-    const containers = ['results_grid', 'similar_grid', 'carousel']
+    const containers = ['results_grid', 'similar_grid', 'carousel', 'home_grid', 'home_carousel']
     containers.forEach(container => {
       const key = `lv_seen_rs_${resultsSessionId}_${container}`
       window.sessionStorage.removeItem(key)
@@ -221,8 +221,10 @@ interface ListingContextBase {
   position?: number
 }
 
+type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
+
 interface TrackViewOptions extends ListingContextBase {
-  container?: 'results_grid' | 'similar_grid' | 'carousel'
+  container?: Container
 }
 
 export function trackListingView(options: TrackViewOptions): void {
@@ -251,9 +253,63 @@ export function trackListingView(options: TrackViewOptions): void {
   }
 }
 
+type OriginSurface = 'listings' | 'detail' | 'home'
+type OriginType = 'grid' | 'module' | 'carousel'
+type OriginName = 'results_grid' | 'similar_cars' | 'home_featured' | 'home_carousel' | 'home_grid'
+
+interface OriginDescriptor {
+  surface: OriginSurface
+  type: OriginType
+  name: OriginName
+  module_id?: string
+  instance_id?: string
+}
+
 interface TrackClickOptions extends ListingContextBase {
-  entryMethod?: 'internal_grid_click' | 'internal_similar'
+  entryMethod?: 'click' | 'keyboard' | 'context_menu'
+  openTarget?: 'same_tab' | 'new_tab'
+  container?: Container
+  origin?: OriginDescriptor
   sourceEventId?: string
+}
+
+function positionBucket(pos?: number): '1-3'|'4-6'|'7-12'|'13+'|undefined {
+  if (!pos || pos < 1) return undefined
+  if (pos <= 3) return '1-3'
+  if (pos <= 6) return '4-6'
+  if (pos <= 12) return '7-12'
+  return '13+'
+}
+
+function computeResultsCtxHash(): string | undefined {
+  try {
+    if (typeof window === 'undefined') return undefined
+    const sp = new URLSearchParams(window.location.search)
+    if (!sp || Array.from(sp.keys()).length === 0) return undefined
+    // Whitelist keys to stabilize cardinality
+    const allowed = ['price_max','mileage_km_per_year','term_months','fuel_type','sort_option','make','model','body_type'] as const
+    const entries: string[] = []
+    Array.from(sp.entries()).forEach(([k, v]) => {
+      if ((allowed as readonly string[]).includes(k) && v != null && v !== '') {
+        entries.push(`${k}:${String(v).toLowerCase()}`)
+      }
+    })
+    if (entries.length === 0) return undefined
+    entries.sort()
+    const basis = entries.join('|')
+    // djb2
+    let hash = 5381
+    for (let i = 0; i < basis.length; i++) {
+      // eslint-disable-next-line no-bitwise
+      hash = ((hash << 5) + hash) + basis.charCodeAt(i)
+      // eslint-disable-next-line no-bitwise
+      hash |= 0
+    }
+    const hex = (hash >>> 0).toString(16)
+    return hex
+  } catch {
+    return undefined
+  }
 }
 
 export function trackListingClick(options: TrackClickOptions): string {
@@ -268,13 +324,18 @@ export function trackListingClick(options: TrackClickOptions): string {
       path: typeof window !== 'undefined' ? window.location.pathname : undefined,
       referrer_host: analytics.getReferrerHost(),
       listing_id: options.listingId,
-      entry_method: options.entryMethod || 'internal_grid_click',
+      entry_method: options.entryMethod || 'click',
+      open_target: options.openTarget,
       results_session_id: getCurrentResultsSessionId() || undefined,
       position: options.position,
+      position_bucket: positionBucket(options.position),
       price_dkk: options.priceMonthly != null ? Math.round(options.priceMonthly) : undefined,
       lease_score: options.leaseScore != null ? Math.round(options.leaseScore) : undefined,
       lease_score_band: options.leaseScore != null ? getLeaseScoreBand(options.leaseScore) : undefined,
       source_event_id: sourceEventId,
+      container: options.container,
+      origin: options.origin,
+      results_ctx_hash: (getCurrentResultsSessionId() ? computeResultsCtxHash() : undefined),
     }
     validateListingClickOrWarn(props)
     analytics.track('listing_click', props)

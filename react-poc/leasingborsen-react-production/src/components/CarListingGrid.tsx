@@ -3,6 +3,11 @@ import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import ListingCard from '@/components/ListingCard'
 
+type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
+type OriginSurface = 'listings' | 'detail' | 'home'
+type OriginType = 'grid' | 'module' | 'carousel'
+type OriginName = 'results_grid' | 'similar_cars' | 'home_featured' | 'home_carousel' | 'home_grid'
+
 interface CarListingGridProps {
   title: string
   description?: string
@@ -20,6 +25,15 @@ interface CarListingGridProps {
     selectedTerm?: number | null
     selectedDeposit?: number | null
   }
+  // Optional analytics context to forward to ListingCard
+  container?: Container
+  origin?: {
+    surface: OriginSurface
+    type: OriginType
+    name: OriginName
+    module_id?: string
+    instance_id?: string
+  }
 }
 
 const CarListingGrid: React.FC<CarListingGridProps> = ({
@@ -32,7 +46,9 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
   showCta = true,
   maxCards = 4,
   className = "",
-  leaseConfig
+  leaseConfig,
+  container,
+  origin
 }) => {
   // Limit the number of displayed cars
   const displayedCars = cars.slice(0, maxCards)
@@ -92,7 +108,7 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
             
           /* Success State - Display car listings */
           ) : displayedCars.length > 0 ? (
-            displayedCars.map((car) => (
+            displayedCars.map((car, idx) => (
               <div 
                 key={car.listing_id || car.id}
                 className="flex-none w-[calc(85%-16px)] sm:w-[calc(50%-16px)] lg:w-[calc(23%-18px)] snap-start"
@@ -102,11 +118,14 @@ const CarListingGrid: React.FC<CarListingGridProps> = ({
                     ...car,
                     id: car.listing_id || car.id
                   }} 
+                  position={idx + 1}
                   initialLeaseConfig={{
                     selectedMileage: leaseConfig?.selectedMileage ?? undefined,
                     selectedTerm: leaseConfig?.selectedTerm ?? undefined,
                     selectedDeposit: leaseConfig?.selectedDeposit ?? undefined
                   }}
+                  container={container}
+                  origin={origin}
                 />
               </div>
             ))

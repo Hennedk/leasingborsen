@@ -100,6 +100,8 @@ const Home: React.FC = () => {
               ctaLink="/listings"
               showCta={true}
               maxCards={5}
+              container="home_carousel"
+              origin={{ surface: 'home', type: 'module', name: 'home_featured', module_id: 'home_featured' }}
             />
           </div>
         </section>

@@ -69,7 +69,7 @@ const ALLOWED_FILTER_KEYS = [
   'body_type'
 ] as const
 
-import { getCurrentResultsSessionId, recomputeResultsSessionId } from './resultsSession'
+import { recomputeResultsSessionId } from './resultsSession'
 
 /**
  * Create a canonical, normalized representation of query parameters for stable comparison

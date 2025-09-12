@@ -76,7 +76,7 @@ export interface SearchResults {
   data?: any[]
 }
 
-import { getCurrentResultsSessionId, recomputeResultsSessionId } from './resultsSession'
+import { getCurrentResultsSessionId, resetResultsSession, getSearchFingerprint } from './resultsSession'
 
 // Session management (RSID now handled by resultsSession module)
 let lastSearchFingerprint = ''
@@ -122,7 +122,8 @@ export function getResultsSessionId(): string {
   return sessionId
 }
 
-// computeSearchFingerprint removed - now handled by resultsSession module
+// Re-export computeSearchFingerprint for backward compatibility
+export const computeSearchFingerprint = getSearchFingerprint
 
 
 /**
@@ -322,7 +323,6 @@ export function getAccurateLatency(): number {
  * Reset all tracking state (useful for testing)
  */
 export function resetFilterTracking(): void {
-  currentResultsSessionId = null
   lastSearchFingerprint = ''
   lastCommittedChangeAt = 0
   lastSettledState = null

@@ -133,7 +133,7 @@ function App() {
         const query = parseSearchParams(nextSearchStr)
         
         // Only recompute RSID for results pages to avoid unnecessary churn
-        const currentPath = event.fromLocation.pathname
+        const currentPath = event.fromLocation?.pathname
         if (currentPath === '/listings') {
           // Import recomputeResultsSessionId dynamically to avoid circular imports
           import('./analytics/resultsSession').then(({ recomputeResultsSessionId }) => {
