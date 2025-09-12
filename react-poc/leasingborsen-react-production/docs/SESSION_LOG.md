@@ -1,5 +1,190 @@
 # Session Log
 
+## 2025-09-12 (Session 3): Listing View Deduplication Implementation ✅
+
+### Overview
+Implemented sophisticated listing view impression deduplication to ensure accurate analytics tracking. Prevents inflation from re-renders, virtualization, infinite scroll revisits, and back/forward navigation while maintaining 300ms dwell time requirement.
+
+### Key Features Implemented
+
+#### 1. Advanced Deduplication Logic ✅
+**Goal**: Count each listing impression exactly once per `(results_session_id, listing_id, container)` tuple
+**Implementation**:
+- Map-based dedup index: `Map<string, Map<string, Set<string>>>`
+- Analytics session rollover detection clears all dedup state on TTL change
+- LRU cache maintains last 3 results session IDs to prevent unbounded memory growth
+- SessionStorage persistence survives page reloads within same session
+- **Files Modified**: `src/analytics/listing.ts`
+- **Functions Added**: `shouldTrackListingView()`, `resetListingImpressionDedup()`
+
+#### 2. Enhanced Results Session Management ✅
+**Goal**: Include sort changes in results session fingerprint for proper deduplication scope
+**Implementation**:
+- Added `sort_option` to significant filters in `getSearchFingerprint()`
+- Sort changes now generate new `results_session_id` and allow re-impression
+- **File Modified**: `src/analytics/pageview.ts`
+
+#### 3. ListingCard Dwell Timer Implementation ✅
+**Goal**: 300ms dwell time requirement with ≥50% visibility threshold
+**Implementation**:
+- IntersectionObserver with 0.5 threshold and 300ms setTimeout
+- Visibility state checks prevent emission when tab is hidden
+- Timer cancellation on unmount, visibility loss, or RSID changes
+- BFCache pageshow event handling preserves dedup state across navigation
+- **File Modified**: `src/components/ListingCard.tsx`
+- **Features**: Timer management, visibility detection, BFCache handling
+
+#### 4. Container Context Independence ✅
+**Goal**: Track impressions independently across different UI contexts
+**Implementation**:
+- Container types: `"results_grid" | "similar_grid" | "carousel"`
+- Same listing can be impressed once per container within same results session
+- Automatic container detection based on current page context
+
+### Technical Architecture
+
+#### Deduplication Flow
+```typescript
+// Check if impression should be tracked
+const shouldTrack = shouldTrackListingView(listingId, container)
+if (shouldTrack) {
+  // Mark as seen and persist to sessionStorage
+  trackListingView({ listingId, container, ... })
+}
+```
+
+#### Reset Conditions
+- **Filter/Sort Changes**: New `results_session_id` → fresh dedup scope
+- **Analytics Session TTL**: 30min idle rollover clears all dedup state
+- **LRU Eviction**: Old session IDs automatically cleaned up (keep last 3)
+
+### Testing Coverage ✅
+**File**: `src/analytics/__tests__/listing.test.ts`
+**Test Categories**:
+- Basic deduplication within same tuple
+- Results session ID changes allow re-impression
+- Container context independence
+- Analytics session TTL rollover clearing
+- SessionStorage persistence and error handling
+- Edge cases and reset functionality
+**Test Results**: ✅ 15/15 tests passing
+
+### Quality Assurance
+
+#### Performance Considerations
+- LRU cache prevents unbounded memory growth
+- SessionStorage writes limited to ≤1000 IDs per set
+- Graceful error handling for storage quota issues
+
+#### Edge Case Handling
+- RSID not ready at mount: Skip tracking until available
+- Hidden tab visibility: Cancel pending dwell timers
+- BFCache restore: Preserve dedup state, rearm observers
+- SessionStorage errors: Fallback to in-memory only
+
+### Documentation Updates ✅
+**File**: `docs/ANALYTICS_FLOW_ARCHITECTURE.md`
+**Changes**:
+- Updated listing_view event description with dwell time and deduplication logic
+- Revised reliability section to reflect sophisticated deduplication
+- Added v1.1 changelog entry documenting implementation
+
+### Success Metrics
+- ✅ Prevents duplicate impressions from re-renders and navigation
+- ✅ Maintains accurate CTR metrics through proper deduplication
+- ✅ 300ms dwell time ensures meaningful visibility
+- ✅ Container-specific tracking for different UI contexts
+- ✅ Memory-safe with LRU cache management
+- ✅ Resilient to storage errors and edge cases
+
+### Files Modified
+- `src/analytics/listing.ts` - Core deduplication logic
+- `src/analytics/pageview.ts` - Sort option in fingerprint
+- `src/components/ListingCard.tsx` - Dwell timer implementation
+- `src/analytics/__tests__/listing.test.ts` - Comprehensive test coverage
+- `docs/ANALYTICS_FLOW_ARCHITECTURE.md` - Updated documentation
+
+---
+
+## 2025-09-12 (Session 2): Fixed Analytics + Navigation Issues ✅
+
+### Overview
+Fixed critical analytics issues and restored lease terms tracking after previous session's changes. Successfully resolved TypeScript compilation errors and prevented spurious filter_change events during navigation.
+
+### Key Issues Fixed
+
+#### 1. lease_terms_apply Events Not Firing ✅
+**Problem**: lease_terms_apply events stopped firing when lease options changed on listing detail pages
+**Root Cause**: Router subscription early return for !pathChanged blocked lease terms logic execution
+**Solution**: Moved lease terms check BEFORE pathname-only early return in App.tsx
+- **File Modified**: `src/App.tsx`
+- **Test Status**: ✅ router-terms-suppression test now passes
+- **Commit**: `324c8d9 - fix: restore lease_terms_apply event firing on listing detail pages`
+
+#### 2. TypeScript Compilation Errors ✅ 
+**Problem**: 10 TypeScript errors blocking deployment
+**Issues Fixed**:
+- Unused `getFilterAction` function removed
+- Type compatibility for `createValueHash` (added undefined support)
+- Array type handling in analytics tracking (convert to comma-separated strings)
+- MobileFilterOverlay onClick handler fixed
+- Unused variable warnings resolved
+**Solution**: Fixed all type errors while maintaining existing functionality
+- **Files Modified**: `src/analytics/filters.ts`, `src/components/MobileFilterOverlay.tsx`, `src/hooks/useUrlSync.ts`, `src/stores/consolidatedFilterStore.ts`
+- **Build Status**: ✅ Production build succeeds
+- **Commit**: `d6303fc - fix: resolve TypeScript errors blocking deployment`
+
+#### 3. Spurious filters_change Events on Listing Click ✅
+**Problem**: filters_change events incorrectly firing when clicking listings or navigating back from detail pages
+**Root Cause**: useUrlSync treated URL parameter restoration as user-initiated filter changes
+**Solution**: Skip analytics tracking when filter_method === 'url'
+- **Analytics Modified**: `src/analytics/filters.ts` - Added URL method filtering
+- **URL Sync Fixed**: `src/hooks/useUrlSync.ts` - All setFilter calls use 'url' method
+- **Tests Added**: 2 new test cases verify URL changes are properly skipped
+- **Test Status**: ✅ All 38 filter analytics tests pass
+- **Commit**: `79ca915 - fix: prevent filters_change events from firing on listing click/navigation`
+
+### Technical Implementation
+
+#### Analytics Tracking Logic
+```typescript
+// Skip tracking for URL-driven filter changes
+if (params.filter_method === 'url') {
+  console.log('[Analytics] Skipping URL-driven filter change:', params.filter_key)
+  return
+}
+```
+
+#### URL Sync Updates
+```typescript
+// All URL-driven filter updates now use 'url' method
+setFilter('makes', [urlMake], 'url')
+setFilter('body_type', urlBodyTypeArray, 'url')
+// etc...
+```
+
+### Session Results
+- **lease_terms_apply**: ✅ Now fires correctly on detail page config changes
+- **TypeScript**: ✅ Zero compilation errors, production build succeeds  
+- **Filter Analytics**: ✅ Clean tracking - no spurious events from navigation
+- **Test Coverage**: ✅ All analytics tests passing (38/38)
+- **Ready for Deploy**: ✅ Safe to push to production
+
+### Files Changed This Session
+- `src/App.tsx` - Router subscription logic fix
+- `src/analytics/filters.ts` - URL method filtering + unused function removal
+- `src/components/MobileFilterOverlay.tsx` - onClick handler fix
+- `src/hooks/useUrlSync.ts` - URL method parameter addition
+- `src/stores/consolidatedFilterStore.ts` - Type fixes for analytics
+- `src/analytics/__tests__/filters.test.ts` - New URL navigation tests
+
+### Commits This Session
+1. `324c8d9` - fix: restore lease_terms_apply event firing on listing detail pages
+2. `d6303fc` - fix: resolve TypeScript errors blocking deployment  
+3. `79ca915` - fix: prevent filters_change events from firing on listing click/navigation
+
+---
+
 ## 2025-09-12: Filter Analytics Implementation Complete ✅
 
 ### Overview

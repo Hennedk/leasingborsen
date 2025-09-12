@@ -26,9 +26,15 @@ Note: Monetary values are DKK integers. Mileage (km/year) and term (months) are 
 - Optional: utm_* (if available), referrer?:string.
 
 2) listing_view (impression)
-- When: Listing card is meaningfully visible in grid/module (or equivalent impression). Not fired on detail render (use listing_detail_view).
-- Sampling: 25% sample_rate; include sample_rate:0.25. Cap: max 50 per session. Dedupe per (listing_id + source) within session.
-- Required: product context; source:{ type:"grid"|"module", name:"results_grid"|"similar_cars"|"best_offer_home", variant?:string, position_in_module?:int }.
+- When: Listing card is ≥50% visible for ≥300ms (dwell time). Not fired on detail render (use listing_detail_view).
+- Deduplication: One impression per (results_session_id, listing_id, container) tuple with sophisticated dedup logic:
+  - Results session changes (filter/sort changes) allow re-impression
+  - Analytics session TTL rollover (30min idle) clears all dedup state
+  - LRU cache maintains last 3 results sessions to prevent unbounded memory
+  - SessionStorage persistence survives page reloads within same session
+  - Hidden tab visibility cancels pending dwell timers
+- Container contexts: "results_grid" | "similar_grid" | "carousel" (tracked independently)
+- Required: product context, container; results_session_id from search fingerprint.
 - Position: position_bucket:"r1"|"r2"|"r3_4"|"r5_8"|">r8" (buckets instead of raw index) to reduce cardinality.
 
 3) listing_click (in-app interactions only)
@@ -77,7 +83,7 @@ Auxiliary (non-core, recommended)
 
 ## 4) Reliability, Dedupe, Resilience
 
-- listing_view: sample at 25% with sample_rate. Cap at 50 impressions/session. Dedupe per (listing_id + source) within session.
+- listing_view: Sophisticated deduplication per (results_session_id, listing_id, container) with 300ms dwell requirement. Prevents inflation from re-renders, virtualization, infinite scroll revisits, and back/forward navigation. Resets on filter/sort changes or analytics session TTL rollover.
 - listing_click: include event_id; ignore duplicate event_id retries.
 - dealer_outbound: include event_id; dedupe repeats within 24h per session. Use server redirect concept (`/api/go?to=…`) to register outbound even with blockers (no code here; pattern only). Respect consent.
 
@@ -159,4 +165,5 @@ Auxiliary examples
 
 # Change Log
 
+- 2025-09-12 (v1.1 update): Implemented sophisticated listing_view deduplication with 300ms dwell time requirement and (results_session_id, listing_id, container) tuple-based tracking. Added sort_option to results session fingerprint. Enhanced ListingCard with visibility state checks, BFCache handling, and timer cancellation on tab visibility loss. Added comprehensive test coverage for deduplication logic.
 - 2025-09-08 (v1 update): Adapted to requested event model. Added listing_detail_view, constrained listing_click to in-app only, removed visit_id, added results_session_id lifecycle, refined page_view props (results/detail), listing_view sampling (25%) with cap and dedupe, added filters_change/filters_apply semantics, expanded dealer_outbound with selected_config, documented error/perf auxiliary events (~10% sampling), kept EU endpoint and privacy-first consent. All events continue to carry schema_version:"1".

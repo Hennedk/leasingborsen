@@ -23,7 +23,7 @@ import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
 import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
-import { trackListingClick, trackListingView } from '@/analytics/listing'
+import { trackListingClick, trackListingView, shouldTrackListingView } from '@/analytics/listing'
 
 interface ListingCardProps {
   car?: CarListing | null
@@ -327,32 +327,120 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     return null
   }
 
-  // Track impression when card is ≥50% visible (once per mount)
+  // Track impression with 300ms dwell time and deduplication
   const cardRef = useRef<HTMLDivElement>(null)
-  const impressionSentRef = useRef(false)
+  const dwellTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const lastEntryRef = useRef<IntersectionObserverEntry | null>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  
   useEffect(() => {
     if (!car) return
     const el = cardRef.current
-    if (!el || impressionSentRef.current) return
+    if (!el) return
+
+    // Clear any existing timer and observer
+    if (dwellTimerRef.current) {
+      clearTimeout(dwellTimerRef.current)
+      dwellTimerRef.current = null
+    }
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
 
     const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && !impressionSentRef.current) {
-        impressionSentRef.current = true
-        trackListingView({
-          listingId: car.id || car.listing_id || '',
-          position,
-          priceMonthly: car.monthly_price,
-          leaseScore: (car.selected_lease_score ?? undefined),
-          container: window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid',
-        })
-        observer.disconnect()
+      lastEntryRef.current = entry
+      
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        // Start 300ms dwell timer
+        dwellTimerRef.current = setTimeout(() => {
+          // Re-check conditions when timer fires
+          const currentEntry = lastEntryRef.current
+          const isStillVisible = currentEntry && 
+                                 currentEntry.isIntersecting && 
+                                 currentEntry.intersectionRatio >= 0.5
+          const isPageVisible = typeof document !== 'undefined' && 
+                               document.visibilityState === 'visible'
+          
+          if (isStillVisible && isPageVisible) {
+            // Determine container context
+            const container: 'results_grid' | 'similar_grid' | 'carousel' = 
+              window.location.pathname.startsWith('/listing/') ? 'similar_grid' : 'results_grid'
+            
+            // Check deduplication before tracking
+            const shouldTrack = shouldTrackListingView(
+              car.id || car.listing_id || '', 
+              container
+            )
+            
+            if (shouldTrack) {
+              trackListingView({
+                listingId: car.id || car.listing_id || '',
+                position,
+                priceMonthly: car.monthly_price,
+                leaseScore: (car.selected_lease_score ?? undefined),
+                container,
+              })
+            }
+          }
+          
+          dwellTimerRef.current = null
+        }, 300)
+      } else {
+        // Cancel timer if no longer visible
+        if (dwellTimerRef.current) {
+          clearTimeout(dwellTimerRef.current)
+          dwellTimerRef.current = null
+        }
       }
     }, { threshold: [0.5], rootMargin: '0px' })
 
+    observerRef.current = observer
     observer.observe(el)
-    return () => observer.disconnect()
-    // Re-observe only if identity changes
-  }, [car?.id, car?.listing_id, position])
+    
+    // Handle visibility change - cancel pending timers when tab becomes hidden
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        if (dwellTimerRef.current) {
+          clearTimeout(dwellTimerRef.current)
+          dwellTimerRef.current = null
+        }
+      }
+    }
+    
+    // Handle BFCache restore - don't clear deduplication on persisted pageshow
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // BFCache restore - rearm observer but don't clear dedup state
+        // The dedup state should persist across BFCache navigations
+        if (el && observerRef.current) {
+          observerRef.current.observe(el)
+        }
+      }
+    }
+    
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange)
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('pageshow', handlePageShow)
+    }
+    
+    return () => {
+      if (dwellTimerRef.current) {
+        clearTimeout(dwellTimerRef.current)
+      }
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+      }
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('pageshow', handlePageShow)
+      }
+    }
+    // Re-observe when car identity changes
+  }, [car?.id, car?.listing_id, position, car?.selected_lease_score, car?.monthly_price])
 
   return (
     <div

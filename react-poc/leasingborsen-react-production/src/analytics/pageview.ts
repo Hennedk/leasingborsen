@@ -115,7 +115,7 @@ function canonicalizeQuery(query?: Record<string, any>): string {
  * Create a canonical search fingerprint for results session management
  * Only includes significant filter changes that warrant a new search session
  * - Normalizes filter values for consistent comparison
- * - Excludes minor parameters like sort_option
+ * - Includes sort_option as it affects result ordering and impression context
  * - Returns stable hash for session comparison
  */
 function getSearchFingerprint(filters?: Record<string, any>): string {
@@ -126,7 +126,8 @@ function getSearchFingerprint(filters?: Record<string, any>): string {
   // Define which filters are significant enough to trigger a new search session
   const significantFilters = [
     'make', 'model', 'fuel_type', 'body_type', 
-    'price_min', 'price_max', 'mileage_km_per_year', 'term_months'
+    'price_min', 'price_max', 'mileage_km_per_year', 'term_months',
+    'sort_option'
   ]
   
   const normalized: Record<string, string | number> = {}
