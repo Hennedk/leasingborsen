@@ -61,11 +61,6 @@ function App() {
         return
       }
 
-      // Only track if the pathname actually changed (ignore query-only changes)
-      if (!event.pathChanged) {
-        return
-      }
-
       // Skip hash-only changes (same path + search, different hash)
       if (
         event.hashChanged &&
@@ -129,6 +124,11 @@ function App() {
           }
           return
         }
+      }
+
+      // Only track page_view if the pathname actually changed (ignore query-only changes)
+      if (!event.pathChanged) {
+        return
       }
 
       // Mark as SPA navigation for accurate page load type detection
