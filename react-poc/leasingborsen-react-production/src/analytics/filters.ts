@@ -439,7 +439,7 @@ export function flushPendingFilterTracking(): void {
   console.log(`[Analytics] Clearing ${changeDebounceTimers.size} pending filter tracking timers`)
 
   // Clear all pending timers (events will be lost, but prevents wrong origin_page)
-  changeDebounceTimers.forEach((timeout, key) => {
+  changeDebounceTimers.forEach((timeout) => {
     clearTimeout(timeout)
   })
   
