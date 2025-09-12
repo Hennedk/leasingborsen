@@ -1,5 +1,79 @@
 # Session Log
 
+## 2025-09-12 (Session 7): Hero Banner Mixpanel Tracking Implementation ✅
+
+### Overview
+Successfully implemented MVP hero banner analytics tracking with `origin_page` context. Homepage filter interactions now trigger immediate `filters_change` events with proper origin attribution, enabling distinction between homepage and results page analytics.
+
+### Key Changes
+
+#### 1) Call-Time Path Capture ✅
+- Added `mapOrigin()` helper function in `src/analytics/filters.ts`
+- Modified `trackFiltersChange()` to capture `pathAtCall` at invocation time (not send-time)
+- Prevents wrong `origin_page` attribution when users navigate quickly after filter changes
+- Enhanced console logging to include origin context
+
+#### 2) SearchForm Analytics Integration ✅
+- Updated `handleFilterChange()` in `src/components/SearchForm.tsx` to trigger immediate analytics
+- Each filter selection now calls `setFilter()` to emit `filters_change` events with `origin_page: 'home'`
+- Added dependency cascade handling (make → model clearing)
+- Removed duplicate `setFilter()` calls from navigation handlers to prevent double-tracking
+
+#### 3) Flush Mechanism for Navigation ✅
+- Implemented `flushPendingFilterTracking()` export in `src/analytics/filters.ts`
+- Clears debounced timers before navigation to prevent wrong origin attribution
+- Called in `handleSearch()` and `handleMoreFilters()` before route changes
+- Documented limitations of implementation approach
+
+#### 4) Schema Enhancement ✅
+- Added `origin_page` field to `FiltersChangeSchema` in `src/analytics/schema.ts`
+- Optional enum field with values: `'home' | 'results' | 'listing_detail' | 'other'`
+- Maintains backward compatibility (non-breaking change)
+
+### Technical Implementation
+
+**Analytics Flow:**
+```
+Homepage interaction → handleFilterChange() → setFilter() → trackFiltersChange() 
+→ captures origin_page: 'home' at call-time → emits event immediately
+```
+
+**Expected Output:**
+```javascript
+{
+  event: 'filters_change',
+  origin_page: 'home',     // 🎯 New context field
+  filter_key: 'makes',
+  filter_action: 'add', 
+  filter_value: 'Toyota',
+  path: '/',              // Call-time accurate path
+  // ... other standard fields
+}
+```
+
+### Verification & Testing
+- **All 38 analytics filter tests passing** ✅
+- **TypeScript compilation clean** ✅  
+- **Production build successful** ✅
+- **Dev servers running without errors** ✅
+- **Fixed TypeScript error**: Removed unused `key` parameter in forEach callback
+
+### Files Modified
+1. **`src/analytics/filters.ts`** - Call-time origin capture + flush function
+2. **`src/analytics/schema.ts`** - Added origin_page field 
+3. **`src/components/SearchForm.tsx`** - Immediate analytics integration
+
+### Commits Created
+- `6512168` - Main implementation with comprehensive feature set
+- `7fea1f4` - TypeScript compilation fix for production deployment
+
+### Next Steps
+- Monitor Mixpanel dashboard for `origin_page: 'home'` events
+- Verify funnel analysis: homepage filters → navigation → results page
+- Consider extending to other search entry points if successful
+
+---
+
 ## 2025-09-12 (Session 6): Playwright MCP Setup + Tracking Events Testing ✅
 
 ### Overview
