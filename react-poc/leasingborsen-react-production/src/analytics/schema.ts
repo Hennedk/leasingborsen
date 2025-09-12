@@ -363,7 +363,9 @@ export const FiltersChangeSchema = ListingBaseSchema.extend({
   filter_value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional(),
   previous_value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional(),
   filter_method: z.enum(FilterMethods),
-  total_active_filters: z.number().int().min(0).max(50)
+  total_active_filters: z.number().int().min(0).max(50),
+  // Origin page for context on where the change occurred
+  origin_page: z.enum(['home', 'results', 'listing_detail', 'other']).optional()
 })
 
 // filters_apply: search results settled after filter changes

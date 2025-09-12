@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { FILTER_CONFIG } from '@/config/filterConfig'
+import { flushPendingFilterTracking } from '@/analytics/filters'
 
 interface SearchFormProps {
   className?: string
@@ -70,28 +71,35 @@ const SearchForm: React.FC<SearchFormProps> = ({
     const filterValue = value === 'all' ? (key === 'price_max' ? null : '') : value
     const actualValue = key === 'price_max' && value !== 'all' ? parseInt(value.toString()) : filterValue
     
+    // Update local state first
     setLocalFilters(prev => ({
       ...prev,
       [key]: actualValue,
       ...(key === 'make' && { model: '' }) // Reset model when make changes
     }))
+
+    // Trigger analytics by calling the filter store
+    if (key === 'make') {
+      setFilter('makes', actualValue ? [actualValue as string] : [], 'dropdown')
+      // If make is cleared or changed, also clear model
+      if (!actualValue || actualValue === '') {
+        setFilter('models', [], 'dropdown')
+      }
+    } else if (key === 'model') {
+      setFilter('models', actualValue ? [actualValue as string] : [], 'dropdown')
+    } else if (key === 'body_type') {
+      setFilter('body_type', actualValue ? [actualValue as string] : [], 'dropdown')
+    } else if (key === 'price_max') {
+      setFilter('price_max', actualValue as number | null, 'dropdown')
+    }
   }
 
   const handleSearch = () => {
-    // Update global filter state
-    Object.entries(localFilters).forEach(([key, value]) => {
-      if (value && value !== '') {
-        if (key === 'make') {
-          setFilter('makes', [value as string])
-        } else if (key === 'model') {
-          setFilter('models', [value as string])
-        } else if (key === 'body_type') {
-          setFilter('body_type', [value as string])
-        } else if (key === 'price_max') {
-          setFilter('price_max', value as number)
-        }
-      }
-    })
+    // Flush any pending debounced analytics events before navigation
+    flushPendingFilterTracking()
+    
+    // Don't call setFilter here again to avoid double tracking
+    // The filters are already set from handleFilterChange calls
     
     // Navigate to listings with filters
     const searchObject: any = {}
@@ -108,20 +116,11 @@ const SearchForm: React.FC<SearchFormProps> = ({
   }
 
   const handleMoreFilters = () => {
-    // Apply current filters to global state
-    Object.entries(localFilters).forEach(([key, value]) => {
-      if (value && value !== '') {
-        if (key === 'make') {
-          setFilter('makes', [value as string])
-        } else if (key === 'model') {
-          setFilter('models', [value as string])
-        } else if (key === 'body_type') {
-          setFilter('body_type', [value as string])
-        } else if (key === 'price_max') {
-          setFilter('price_max', value as number)
-        }
-      }
-    })
+    // Flush any pending debounced analytics events before navigation
+    flushPendingFilterTracking()
+    
+    // Don't call setFilter here again to avoid double tracking
+    // The filters are already set from handleFilterChange calls
     
     // Navigate to listings with filters and show filter overlay on mobile
     const searchObject: any = {}

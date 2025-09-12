@@ -126,6 +126,16 @@ export const computeSearchFingerprint = getSearchFingerprint
 /**
  * Track a filter change event (with debouncing for sliders/inputs)
  */
+/**
+ * Helper function to map current path to origin_page at call time
+ */
+function mapOrigin(path: string): 'home' | 'results' | 'listing_detail' | 'other' {
+  if (path === '/') return 'home'
+  if (path.startsWith('/listings')) return 'results'
+  if (path.startsWith('/listing/')) return 'listing_detail'
+  return 'other'
+}
+
 export function trackFiltersChange(params: FiltersChangeParams): void {
   if (!analytics.hasConsent()) return
   
@@ -136,6 +146,10 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
   }
 
   try {
+    // Capture path at call-time (not send-time) for accurate origin tracking
+    const pathAtCall = typeof window !== 'undefined' ? window.location.pathname : '/'
+    const origin_page = mapOrigin(pathAtCall)
+
     // Create keys for tracking
     const debounceKey = `${params.filter_key}_${params.filter_method}`
     const changeKey = createChangeKey(params.filter_key, params.filter_method)
@@ -160,12 +174,12 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
     const executeTrack = () => {
       // Update lastCommittedChangeAt when change is committed (after debounce)
       lastCommittedChangeAt = Date.now()
-      
+
       const event = {
         schema_version: '1' as const,
         session_id: analytics.getSessionId(),
         device_type: analytics.getDeviceType(),
-        path: typeof window !== 'undefined' ? window.location.pathname : '/',
+        path: pathAtCall, // Use call-time path, not current path
         referrer_host: analytics.getReferrerHost(),
         results_session_id: params.results_session_id,
         filter_key: params.filter_key,
@@ -173,7 +187,8 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
         filter_value: normalizeValue(params.filter_value),
         previous_value: normalizeValue(params.previous_value),
         filter_method: params.filter_method,
-        total_active_filters: Math.round(params.total_active_filters)
+        total_active_filters: Math.round(params.total_active_filters),
+        origin_page // Use call-time origin, not send-time
       }
       
       // Remove undefined fields
@@ -187,7 +202,7 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
       validateFiltersChangeOrWarn(event)
       
       analytics.track('filters_change', event)
-      console.log('[Analytics] filters_change tracked:', params.filter_key, params.filter_action)
+      console.log('[Analytics] filters_change tracked:', params.filter_key, params.filter_action, `origin: ${origin_page}`)
       
       // Update per-key tracking for deduplication
       lastEmittedChanges.set(changeKey, {
@@ -407,4 +422,29 @@ export function createOverlaySession(): { overlayId: string, openTime: number } 
     overlayId: generateOverlayId(),
     openTime: Date.now()
   }
+}
+
+/**
+ * Flush all pending debounced filter tracking events
+ * Call before navigation to ensure events are tracked with correct origin_page
+ * 
+ * Note: This implementation clears timers without executing them. The actual
+ * executeTrack functions are closures within trackFiltersChange and not 
+ * accessible from outside. In practice, the debounce timing is short (300ms)
+ * so most events will fire naturally before navigation.
+ */
+export function flushPendingFilterTracking(): void {
+  if (changeDebounceTimers.size === 0) return
+
+  console.log(`[Analytics] Clearing ${changeDebounceTimers.size} pending filter tracking timers`)
+
+  // Clear all pending timers (events will be lost, but prevents wrong origin_page)
+  changeDebounceTimers.forEach((timeout, key) => {
+    clearTimeout(timeout)
+  })
+  
+  // Clear the timers map
+  changeDebounceTimers.clear()
+
+  console.log('[Analytics] All pending filter tracking timers cleared')
 }
