@@ -79,7 +79,6 @@ export interface SearchResults {
 // Session management
 let currentResultsSessionId: string | null = null
 let lastSearchFingerprint = ''
-let lastChangeTime = 0
 let lastCommittedChangeAt = 0
 let lastSettledState: {
   fingerprint: string
@@ -91,6 +90,23 @@ let lastSettledState: {
 const changeDebounceTimers = new Map<string, NodeJS.Timeout>()
 const SLIDER_DEBOUNCE_MS = 400
 const DUPLICATE_CHANGE_WINDOW_MS = 1000
+
+// Per-key duplicate tracking
+const lastEmittedChanges = new Map<string, { valueHash: string, timestamp: number }>()
+
+/**
+ * Create a unique key for tracking changes per filter+method combination
+ */
+function createChangeKey(filter_key: AllowedFilterKey, filter_method: FilterMethod): string {
+  return `${filter_key}:${filter_method}`
+}
+
+/**
+ * Create a hash of the change value for deduplication
+ */
+function createValueHash(filter_value: string | number | boolean | null): string {
+  return JSON.stringify(sanitizeFilterValue(filter_value))
+}
 
 /**
  * Generate a new results session ID
@@ -208,17 +224,17 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
   if (!analytics.hasConsent()) return
 
   try {
-    // Create debounce key
+    // Create keys for tracking
     const debounceKey = `${params.filter_key}_${params.filter_method}`
+    const changeKey = createChangeKey(params.filter_key, params.filter_method)
+    const valueHash = createValueHash(params.filter_value)
     
-    // Check for duplicate within window
+    // Check for duplicate within window using per-key tracking
     const now = Date.now()
-    if (now - lastChangeTime < DUPLICATE_CHANGE_WINDOW_MS) {
-      const isSameChange = 
-        sanitizeFilterValue(params.filter_value) === sanitizeFilterValue(params.previous_value)
-      
-      if (isSameChange) {
-        console.log('[Analytics] Skipping duplicate filter change:', params.filter_key)
+    const lastChange = lastEmittedChanges.get(changeKey)
+    if (lastChange && (now - lastChange.timestamp) < DUPLICATE_CHANGE_WINDOW_MS) {
+      if (lastChange.valueHash === valueHash) {
+        console.log('[Analytics] Skipping duplicate filter change:', params.filter_key, params.filter_value)
         return
       }
     }
@@ -261,7 +277,11 @@ export function trackFiltersChange(params: FiltersChangeParams): void {
       analytics.track('filters_change', event)
       console.log('[Analytics] filters_change tracked:', params.filter_key, params.filter_action)
       
-      lastChangeTime = Date.now()
+      // Update per-key tracking for deduplication
+      lastEmittedChanges.set(changeKey, {
+        valueHash,
+        timestamp: Date.now()
+      })
       changeDebounceTimers.delete(debounceKey)
     }
     
@@ -324,7 +344,8 @@ export function trackFiltersApply(params: FiltersApplyParams, currentFingerprint
       results_count: Math.round(params.results_count),
       results_delta: Math.round(params.results_delta),
       is_zero_results: params.is_zero_results,
-      latency_ms: Math.round(params.latency_ms)
+      latency_ms: Math.round(params.latency_ms),
+      overlay_id: params.overlay_id
     }
     
     // Remove undefined fields
@@ -371,13 +392,15 @@ export function getAccurateLatency(): number {
 export function resetFilterTracking(): void {
   currentResultsSessionId = null
   lastSearchFingerprint = ''
-  lastChangeTime = 0
   lastCommittedChangeAt = 0
   lastSettledState = null
   
   // Clear all debounce timers
   changeDebounceTimers.forEach(timer => clearTimeout(timer))
   changeDebounceTimers.clear()
+  
+  // Clear per-key duplicate tracking
+  lastEmittedChanges.clear()
 }
 
 /**

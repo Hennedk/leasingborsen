@@ -14,6 +14,12 @@ import { useFilterOptions } from '@/hooks/useFilterTranslations'
 import { FILTER_CONFIG, filterHelpers } from '@/config/filterConfig'
 import { useDebouncedSearch } from '@/hooks/useDebounce'
 import type { MileageOption } from '@/types'
+import { 
+  trackOverlayOpen, 
+  trackOverlayClose, 
+  createOverlaySession, 
+  getResultsSessionId 
+} from '@/analytics/filters'
 import { MobileFilterSkeleton } from '@/components/FilterSkeleton'
 import { cn } from '@/lib/utils'
 import { borderVariants } from '@/lib/borderStyles'
@@ -73,7 +79,10 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
     setFilter,
     toggleArrayFilter,
     resetFilters, 
-    getActiveFilters
+    getActiveFilters,
+    startOverlaySession,
+    closeOverlaySession,
+    getOverlayState
   } = useConsolidatedFilterStore()
   
   const { data: referenceData, isLoading: referenceDataLoading } = useReferenceData()
@@ -86,15 +95,65 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
   const [selectedMakeForModels, setSelectedMakeForModels] = useState<string | null>(null)
   const wasOpenRef = useRef(false)
   
-  // Reset view when overlay closes
+  // Handle overlay open/close with analytics tracking
   useEffect(() => {
-    if (!isOpen && wasOpenRef.current) {
+    if (isOpen && !wasOpenRef.current) {
+      // Overlay is opening
+      try {
+        const overlaySession = createOverlaySession()
+        const resultsSessionId = getResultsSessionId()
+        
+        // Start overlay session in store
+        startOverlaySession(overlaySession.overlayId)
+        
+        // Track overlay open
+        trackOverlayOpen({
+          results_session_id: resultsSessionId,
+          overlay_id: overlaySession.overlayId,
+          entry_surface: 'toolbar', // Mobile filter button
+          initial_filters: getActiveFilters().reduce((acc, filter) => {
+            acc[filter.key] = filter.value
+            return acc
+          }, {} as Record<string, any>)
+        })
+      } catch (error) {
+        console.error('[Analytics] Failed to track overlay open:', error)
+      }
+    } else if (!isOpen && wasOpenRef.current) {
+      // Overlay is closing
+      try {
+        const overlayState = getOverlayState()
+        
+        if (overlayState.overlayId && overlayState.openTime) {
+          const now = Date.now()
+          const dwellMs = now - overlayState.openTime
+          const changedKeysCount = overlayState.changedKeys.length
+          
+          // Track overlay close
+          trackOverlayClose({
+            results_session_id: getResultsSessionId(),
+            overlay_id: overlayState.overlayId,
+            dwell_ms: dwellMs,
+            changed_keys_count: changedKeysCount,
+            changed_filters: overlayState.changedKeys,
+            close_reason: 'apply_button', // Most closes are via "Vis X resultater"
+            had_pending_request: false // We don't track pending requests in mobile overlay
+          })
+        }
+        
+        // Close overlay session in store
+        closeOverlaySession()
+      } catch (error) {
+        console.error('[Analytics] Failed to track overlay close:', error)
+      }
+      
+      // Reset view state
       setCurrentView('filters')
       setSelectedMakeForModels(null)
       clearSearch()
     }
     wasOpenRef.current = isOpen
-  }, [isOpen, clearSearch])
+  }, [isOpen, clearSearch, startOverlaySession, closeOverlaySession, getOverlayState, getActiveFilters])
   
   // Get selected makes and models
   const selectedMakes = makes

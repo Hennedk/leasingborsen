@@ -13,6 +13,10 @@ import {
   resetFilterTracking,
   computeSearchFingerprint,
   checkAndResetSession,
+  getAccurateLatency,
+  trackOverlayOpen,
+  trackOverlayClose,
+  createOverlaySession,
   type FiltersChangeParams,
   type FiltersApplyParams
 } from '../filters'
@@ -31,7 +35,9 @@ vi.mock('../mp', () => ({
 // Mock schema validation
 vi.mock('../schema', () => ({
   validateFiltersChangeOrWarn: vi.fn(),
-  validateFiltersApplyOrWarn: vi.fn()
+  validateFiltersApplyOrWarn: vi.fn(),
+  validateFiltersOverlayOpenOrWarn: vi.fn(),
+  validateFiltersOverlayCloseOrWarn: vi.fn()
 }))
 
 describe('Filter Tracking', () => {
@@ -425,6 +431,282 @@ describe('Filter Tracking', () => {
       // Should generate new session
       const newSessionId = getResultsSessionId()
       expect(newSessionId).toMatch(/^rs_\d+_[a-z0-9]+$/)
+    })
+  })
+
+  describe('Enhanced Filter Apply Guards', () => {
+    it('should drop stale filters_apply when fingerprint mismatch', () => {
+      // Set up a session with known fingerprint
+      checkAndResetSession('current_fingerprint')
+      
+      const baseParams = {
+        results_session_id: getResultsSessionId(),
+        filters_applied: { makes: 'BMW' },
+        filters_count: 1,
+        changed_filters: ['makes'],
+        changed_keys_count: 1,
+        apply_trigger: 'auto' as const,
+        previous_results_count: 0,
+        results_count: 5,
+        results_delta: 5,
+        is_zero_results: false,
+        latency_ms: 100
+      }
+      
+      // Call with stale fingerprint (should be dropped)
+      trackFiltersApply(baseParams, 'stale_fingerprint')
+      
+      // Should not have tracked the event
+      expect(mockAnalytics.track).not.toHaveBeenCalled()
+    })
+
+    it('should allow filters_apply when fingerprint matches', () => {
+      // Set up a session with known fingerprint
+      checkAndResetSession('current_fingerprint')
+      
+      const baseParams = {
+        results_session_id: getResultsSessionId(),
+        filters_applied: { makes: 'BMW' },
+        filters_count: 1,
+        changed_filters: ['makes'],
+        changed_keys_count: 1,
+        apply_trigger: 'auto' as const,
+        previous_results_count: 0,
+        results_count: 5,
+        results_delta: 5,
+        is_zero_results: false,
+        latency_ms: 100
+      }
+      
+      // Call with matching fingerprint (should track)
+      trackFiltersApply(baseParams, 'current_fingerprint')
+      
+      // Should have tracked the event
+      expect(mockAnalytics.track).toHaveBeenCalledWith('filters_apply', expect.any(Object))
+    })
+
+    it('should skip advanced no-op when state matches lastSettledState', () => {
+      // First call to establish lastSettledState
+      const firstParams = {
+        results_session_id: getResultsSessionId(),
+        filters_applied: { makes: 'BMW' },
+        filters_count: 1,
+        changed_filters: ['makes'],
+        changed_keys_count: 1,
+        apply_trigger: 'auto' as const,
+        previous_results_count: 0,
+        results_count: 5,
+        results_delta: 5,
+        is_zero_results: false,
+        latency_ms: 100
+      }
+      
+      trackFiltersApply(firstParams, 'test_fingerprint')
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(1)
+      
+      // Second call with same fingerprint and results (should be no-op)
+      const noOpParams = {
+        ...firstParams,
+        changed_keys_count: 0, // Different change count
+        results_delta: 0, // No change in results
+        apply_trigger: 'auto' as const
+      }
+      
+      trackFiltersApply(noOpParams, 'test_fingerprint')
+      
+      // Should not track second event (no-op detected)
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('Accurate Latency Measurement', () => {
+    it('should return accurate latency from lastCommittedChangeAt', () => {
+      vi.useFakeTimers()
+      
+      const startTime = 1704067200000
+      vi.setSystemTime(startTime)
+      
+      // Simulate a filter change being committed
+      trackFiltersChange({
+        filter_key: 'makes',
+        filter_action: 'add',
+        filter_value: 'BMW',
+        previous_value: null,
+        filter_method: 'dropdown',
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      })
+      
+      // Wait for debounce (dropdown should track immediately, but let's advance time to be sure)
+      vi.advanceTimersByTime(100)
+      
+      // Move forward in time and get latency
+      const latencyCheckTime = startTime + 1200
+      vi.setSystemTime(latencyCheckTime)
+      
+      const latency = getAccurateLatency()
+      
+      // Should return time from when change was committed to now
+      expect(latency).toBeGreaterThan(0)
+      expect(latency).toBeLessThanOrEqual(1200)
+      
+      vi.useRealTimers()
+    })
+
+    it('should return 0 when no changes have been committed', () => {
+      const latency = getAccurateLatency()
+      expect(latency).toBe(0)
+    })
+  })
+
+  describe('Overlay Session Management', () => {
+    it('should create unique overlay session IDs', () => {
+      // Mock different random values for unique IDs
+      vi.spyOn(Math, 'random')
+        .mockReturnValueOnce(0.123456789)
+        .mockReturnValueOnce(0.987654321)
+      
+      const session1 = createOverlaySession()
+      const session2 = createOverlaySession()
+      
+      expect(session1.overlayId).toMatch(/^ov_\d+_[a-z0-9]+$/)
+      expect(session2.overlayId).toMatch(/^ov_\d+_[a-z0-9]+$/)
+      expect(session1.overlayId).not.toBe(session2.overlayId)
+      expect(typeof session1.openTime).toBe('number')
+      expect(typeof session2.openTime).toBe('number')
+    })
+
+    it('should track overlay open with correct parameters', () => {
+      const overlaySession = createOverlaySession()
+      const resultsSessionId = getResultsSessionId()
+      
+      trackOverlayOpen({
+        results_session_id: resultsSessionId,
+        overlay_id: overlaySession.overlayId,
+        entry_surface: 'toolbar',
+        initial_filters: { makes: 'BMW', fuel_type: 'ev' }
+      })
+      
+      expect(mockAnalytics.track).toHaveBeenCalledWith('filters_overlay_open', expect.objectContaining({
+        results_session_id: resultsSessionId,
+        overlay_id: overlaySession.overlayId,
+        entry_surface: 'toolbar',
+        initial_filters: { makes: 'BMW', fuel_type: 'ev' }
+      }))
+    })
+
+    it('should track overlay close with dwell time and changes', () => {
+      const overlaySession = createOverlaySession()
+      const resultsSessionId = getResultsSessionId()
+      
+      trackOverlayClose({
+        results_session_id: resultsSessionId,
+        overlay_id: overlaySession.overlayId,
+        dwell_ms: 5000,
+        changed_keys_count: 2,
+        changed_filters: ['makes', 'fuel_type'],
+        close_reason: 'apply_button',
+        had_pending_request: false
+      })
+      
+      expect(mockAnalytics.track).toHaveBeenCalledWith('filters_overlay_close', expect.objectContaining({
+        results_session_id: resultsSessionId,
+        overlay_id: overlaySession.overlayId,
+        dwell_ms: 5000,
+        changed_keys_count: 2,
+        changed_filters: ['makes', 'fuel_type'],
+        close_reason: 'apply_button'
+      }))
+    })
+
+    it('should include overlay_id in filters_apply when provided', () => {
+      const overlaySession = createOverlaySession()
+      
+      const applyParams = {
+        results_session_id: getResultsSessionId(),
+        filters_applied: { makes: 'BMW' },
+        filters_count: 1,
+        changed_filters: ['makes'],
+        changed_keys_count: 1,
+        apply_trigger: 'auto' as const,
+        previous_results_count: 0,
+        results_count: 5,
+        results_delta: 5,
+        is_zero_results: false,
+        latency_ms: 100,
+        overlay_id: overlaySession.overlayId
+      }
+      
+      trackFiltersApply(applyParams)
+      
+      expect(mockAnalytics.track).toHaveBeenCalledWith('filters_apply', expect.objectContaining({
+        overlay_id: overlaySession.overlayId
+      }))
+    })
+  })
+
+  describe('Per-Key Deduplication', () => {
+    it('should allow different filters with same value', () => {
+      const baseParams = {
+        filter_action: 'add' as const,
+        filter_value: 'BMW',
+        previous_value: null,
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      }
+      
+      // Track same value on different filters
+      trackFiltersChange({ ...baseParams, filter_key: 'makes', filter_method: 'dropdown' })
+      trackFiltersChange({ ...baseParams, filter_key: 'models', filter_method: 'dropdown' })
+      
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(2)
+    })
+
+    it('should block duplicate changes on same key within window', () => {
+      const baseParams = {
+        filter_key: 'makes' as const,
+        filter_action: 'add' as const,
+        filter_value: 'BMW',
+        previous_value: null,
+        filter_method: 'dropdown' as const,
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      }
+      
+      // First call should track
+      trackFiltersChange(baseParams)
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(1)
+      
+      // Second call with same key+method+value within window should be blocked
+      trackFiltersChange(baseParams)
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(1) // Still 1, not 2
+    })
+
+    it('should allow same filter change after window expires', () => {
+      vi.useFakeTimers()
+      
+      const baseParams = {
+        filter_key: 'makes' as const,
+        filter_action: 'add' as const,
+        filter_value: 'BMW',
+        previous_value: null,
+        filter_method: 'dropdown' as const,
+        total_active_filters: 1,
+        results_session_id: getResultsSessionId()
+      }
+      
+      // First call
+      trackFiltersChange(baseParams)
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(1)
+      
+      // Advance time beyond duplicate window (1000ms)
+      vi.advanceTimersByTime(1100)
+      
+      // Second call should now be allowed
+      trackFiltersChange(baseParams)
+      expect(mockAnalytics.track).toHaveBeenCalledTimes(2)
+      
+      vi.useRealTimers()
     })
   })
 })

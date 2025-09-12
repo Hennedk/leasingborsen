@@ -46,7 +46,8 @@ const Listings: React.FC = () => {
   const { 
     getActiveFilters,
     resetFilters,
-    setSortOrder
+    setSortOrder,
+    handleResultsSettled
   } = usePersistentFilterStore()
 
   // Use extracted filter management hook
@@ -80,6 +81,27 @@ const Listings: React.FC = () => {
 
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters, sortOrder)
+  
+  // Analytics: Track when results settle
+  useEffect(() => {
+    if (infiniteData && !isFetchingNextPage && !isLoading) {
+      // Results have settled - calculate total count and latency
+      const totalCount = infiniteData.pages.reduce(
+        (sum, page) => sum + (page.data?.length || 0), 0
+      )
+      
+      // Use count response if available, otherwise use total from pages
+      const actualCount = countResponse?.data ?? totalCount
+      
+      // Notify store that results have settled
+      // Store now uses getAccurateLatency() internally for precise timing
+      handleResultsSettled({
+        count: actualCount,
+        pages: infiniteData.pages.length,
+        data: infiniteData.pages.flatMap(page => page.data || [])
+      })
+    }
+  }, [infiniteData, isFetchingNextPage, isLoading, countResponse, handleResultsSettled])
   
   // Enable scroll restoration for this page with enhanced settings for better UX
   useListingsScrollRestoration(true)

@@ -9,8 +9,9 @@ import {
   getResultsSessionId, 
   computeSearchFingerprint, 
   checkAndResetSession,
+  getAccurateLatency,
   type FilterMethod,
-  type ApplyMethod,
+  type ApplyTrigger,
   type AllowedFilterKey,
   type SearchResults 
 } from '@/analytics/filters'
@@ -37,10 +38,15 @@ interface FilterState extends Filters {
   _pendingChanges: Set<AllowedFilterKey>
   _searchStartTime: number | null
   
+  // Overlay tracking state (not persisted)
+  _overlayId: string | null
+  _overlayOpenTime: number | null
+  _overlayChangedKeys: Set<AllowedFilterKey>
+  
   // Actions
   setFilter: <K extends keyof Filters>(key: K, value: Filters[K], method?: FilterMethod) => void
   toggleArrayFilter: (key: 'makes' | 'models' | 'body_type' | 'fuel_type' | 'transmission', value: string, method?: FilterMethod) => void
-  resetFilters: (method?: ApplyMethod) => void
+  resetFilters: (method?: ApplyTrigger) => void
   setResultCount: (count: number) => void
   setLoading: (loading: boolean) => void
   setSortOrder: (order: SortOrder, method?: FilterMethod) => void
@@ -51,6 +57,11 @@ interface FilterState extends Filters {
   handleResultsSettled: (results: SearchResults, latency?: number) => void
   markSearchPending: () => void
   getActiveFilterCount: () => number
+  
+  // Overlay tracking integration
+  startOverlaySession: (overlayId: string) => void
+  closeOverlaySession: () => void
+  getOverlayState: () => { overlayId: string | null, openTime: number | null, changedKeys: AllowedFilterKey[] }
   getWhitelistedFilters: () => Record<string, string | number | boolean>
   
   // Persistence helpers
@@ -128,7 +139,12 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         _lastSettledFilters: {},
         _lastResultsCount: 0,
         _pendingChanges: new Set<AllowedFilterKey>(),
-        _searchStartTime: null
+        _searchStartTime: null,
+        
+        // Overlay tracking state (not persisted)
+        _overlayId: null,
+        _overlayOpenTime: null,
+        _overlayChangedKeys: new Set<AllowedFilterKey>()
       }
       
       return {
@@ -175,6 +191,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
             newState._pendingChanges = new Set([...state._pendingChanges, key as AllowedFilterKey])
             if (!newState._searchStartTime) {
               newState._searchStartTime = Date.now()
+            }
+            
+            // Overlay: Track changes during overlay session
+            if (state._overlayId) {
+              newState._overlayChangedKeys = new Set([...state._overlayChangedKeys, key as AllowedFilterKey])
             }
           }
           
@@ -242,6 +263,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
             newState._searchStartTime = Date.now()
           }
           
+          // Overlay: Track changes during overlay session
+          if (state._overlayId) {
+            newState._overlayChangedKeys = new Set([...state._overlayChangedKeys, key as AllowedFilterKey])
+          }
+          
           return newState
         })
         
@@ -305,7 +331,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           _searchStartTime: Date.now(),
           _resultsSessionId: previousState._resultsSessionId, // Keep same session
           _lastSearchFingerprint: previousState._lastSearchFingerprint,
-          _lastResultsCount: previousState._lastResultsCount
+          _lastResultsCount: previousState._lastResultsCount,
+          // Overlay: Reset overlay state
+          _overlayId: null,
+          _overlayOpenTime: null,
+          _overlayChangedKeys: new Set<AllowedFilterKey>()
         })
         
         // Analytics: Track individual clear events for each active filter
@@ -322,7 +352,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
                 filter_action: 'clear',
                 filter_value: null,
                 previous_value: filter.value,
-                filter_method: method === 'reset_button' ? 'button' : 'url',
+                filter_method: 'url',
                 total_active_filters: 0, // After reset
                 results_session_id: resultsSessionId
               })
@@ -351,7 +381,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           _pendingChanges: order !== previousOrder ? 
             new Set([...state._pendingChanges, 'sortOrder' as AllowedFilterKey]) : 
             state._pendingChanges,
-          _searchStartTime: order !== previousOrder && !state._searchStartTime ? Date.now() : state._searchStartTime
+          _searchStartTime: order !== previousOrder && !state._searchStartTime ? Date.now() : state._searchStartTime,
+          // Overlay: Track changes during overlay session
+          _overlayChangedKeys: order !== previousOrder && state._overlayId ? 
+            new Set([...state._overlayChangedKeys, 'sortOrder' as AllowedFilterKey]) : 
+            state._overlayChangedKeys
         }))
         
         // Analytics: Track sort order change
@@ -575,8 +609,9 @@ export const useConsolidatedFilterStore = create<FilterState>()(
               results_count: results.count,
               results_delta: results.count - state._lastResultsCount,
               is_zero_results: results.count === 0,
-              latency_ms: latency
-            })
+              latency_ms: getAccurateLatency(),
+              overlay_id: state._overlayId || undefined
+            }, newFingerprint)
           } catch (error) {
             console.error('[Analytics] Failed to track filters apply:', error)
           }
@@ -668,6 +703,34 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         }
         
         return filters
+      },
+
+      // Overlay session management
+      startOverlaySession: (overlayId: string) => {
+        set((state) => ({
+          ...state,
+          _overlayId: overlayId,
+          _overlayOpenTime: Date.now(),
+          _overlayChangedKeys: new Set<AllowedFilterKey>()
+        }))
+      },
+
+      closeOverlaySession: () => {
+        set((state) => ({
+          ...state,
+          _overlayId: null,
+          _overlayOpenTime: null,
+          _overlayChangedKeys: new Set<AllowedFilterKey>()
+        }))
+      },
+
+      getOverlayState: () => {
+        const state = get()
+        return {
+          overlayId: state._overlayId,
+          openTime: state._overlayOpenTime,
+          changedKeys: Array.from(state._overlayChangedKeys)
+        }
       }
       }
     }),
