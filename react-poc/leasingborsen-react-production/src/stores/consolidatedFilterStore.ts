@@ -3,6 +3,17 @@ import { subscribeWithSelector } from 'zustand/middleware'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { filterTranslations } from '@/lib/translations/filterTranslations'
 import type { Filters, FilterChip, SortOrder, CarSelection } from '@/types'
+import { 
+  trackFiltersChange, 
+  trackFiltersApply, 
+  getResultsSessionId, 
+  computeSearchFingerprint, 
+  checkAndResetSession,
+  type FilterMethod,
+  type ApplyMethod,
+  type AllowedFilterKey,
+  type SearchResults 
+} from '@/analytics/filters'
 
 /* Claude Change Summary:
  * Consolidated filterStore.ts (274 lines) + persistentFilterStore.ts (143 lines) 
@@ -18,15 +29,29 @@ interface FilterState extends Filters {
   filterOrder: string[]
   selectedCars: CarSelection[]
   
+  // Analytics tracking state (not persisted)
+  _resultsSessionId: string | null
+  _lastSearchFingerprint: string
+  _lastSettledFilters: Record<string, any>
+  _lastResultsCount: number
+  _pendingChanges: Set<AllowedFilterKey>
+  _searchStartTime: number | null
+  
   // Actions
-  setFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void
-  toggleArrayFilter: (key: 'makes' | 'models' | 'body_type' | 'fuel_type' | 'transmission', value: string) => void
-  resetFilters: () => void
+  setFilter: <K extends keyof Filters>(key: K, value: Filters[K], method?: FilterMethod) => void
+  toggleArrayFilter: (key: 'makes' | 'models' | 'body_type' | 'fuel_type' | 'transmission', value: string, method?: FilterMethod) => void
+  resetFilters: (method?: ApplyMethod) => void
   setResultCount: (count: number) => void
   setLoading: (loading: boolean) => void
-  setSortOrder: (order: SortOrder) => void
+  setSortOrder: (order: SortOrder, method?: FilterMethod) => void
   setSelectedCars: (cars: CarSelection[]) => void
   getActiveFilters: () => FilterChip[]
+  
+  // Analytics integration
+  handleResultsSettled: (results: SearchResults, latency?: number) => void
+  markSearchPending: () => void
+  getActiveFilterCount: () => number
+  getWhitelistedFilters: () => Record<string, string | number | boolean>
   
   // Persistence helpers
   hasStoredFilters: () => boolean
@@ -50,7 +75,7 @@ const defaultFilters: Filters = {
 const persistenceConfig = {
   name: 'leasingborsen-filters', // localStorage key
   storage: createJSONStorage(() => localStorage),
-  // Only persist filter values and sort order, not UI state
+  // Only persist filter values and sort order, not UI state or analytics tracking
   partialize: (state: FilterState) => ({
     makes: state.makes,
     models: state.models,
@@ -66,6 +91,7 @@ const persistenceConfig = {
     mileage_selected: state.mileage_selected,
     sortOrder: state.sortOrder,
     filterOrder: state.filterOrder
+    // Note: Analytics tracking state (prefixed with _) is intentionally excluded
   }),
   // Simplified onRehydrateStorage to avoid state conflicts
   onRehydrateStorage: () => {
@@ -95,13 +121,22 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Explicitly ensure these exist
         body_type: [],
         fuel_type: [],
-        transmission: []
+        transmission: [],
+        // Analytics tracking state (not persisted)
+        _resultsSessionId: null,
+        _lastSearchFingerprint: '',
+        _lastSettledFilters: {},
+        _lastResultsCount: 0,
+        _pendingChanges: new Set<AllowedFilterKey>(),
+        _searchStartTime: null
       }
       
       return {
         ...initialState,
       
-      setFilter: (key, value) => {
+      setFilter: (key, value, method = 'dropdown') => {
+        const previousValue = get()[key]
+        
         set((state) => {
           const newState = { ...state, [key]: value }
           let newFilterOrder = [...state.filterOrder]
@@ -135,11 +170,47 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           
           newState.filterOrder = newFilterOrder
           
+          // Analytics: Add to pending changes and mark search as pending
+          if (key in newState) { // Ensure key is valid
+            newState._pendingChanges = new Set([...state._pendingChanges, key as AllowedFilterKey])
+            if (!newState._searchStartTime) {
+              newState._searchStartTime = Date.now()
+            }
+          }
+          
           return newState
         })
+        
+        // Analytics: Track filter change (after state update)
+        if (key !== 'sortOrder') { // Skip tracking sortOrder changes here (handled in setSortOrder)
+          try {
+            const resultsSessionId = getResultsSessionId()
+            const filterAction = 
+              previousValue == null && value != null ? 'add' :
+              previousValue != null && value == null ? 'clear' :
+              Array.isArray(value) && Array.isArray(previousValue) ?
+                (value.length > previousValue.length ? 'add' :
+                 value.length < previousValue.length ? 'remove' : 'update') :
+              'update'
+            
+            trackFiltersChange({
+              filter_key: key as AllowedFilterKey,
+              filter_action: filterAction,
+              filter_value: value,
+              previous_value: previousValue,
+              filter_method: method,
+              total_active_filters: get().getActiveFilterCount(),
+              results_session_id: resultsSessionId
+            })
+          } catch (error) {
+            console.error('[Analytics] Failed to track filter change:', error)
+          }
+        }
       },
 
-      toggleArrayFilter: (key, value) => {
+      toggleArrayFilter: (key, value, method = 'checkbox') => {
+        const previousArray = get()[key] as string[]
+        
         set((state) => {
           const currentArray = state[key] as string[]
           const newArray = currentArray.includes(value)
@@ -159,12 +230,39 @@ export const useConsolidatedFilterStore = create<FilterState>()(
             newFilterOrder = newFilterOrder.filter(k => k !== key)
           }
           
-          return {
+          // Analytics: Add to pending changes and mark search as pending
+          const newState = {
             ...state,
             [key]: newArray,
-            filterOrder: newFilterOrder
+            filterOrder: newFilterOrder,
+            _pendingChanges: new Set([...state._pendingChanges, key as AllowedFilterKey])
           }
+          
+          if (!newState._searchStartTime) {
+            newState._searchStartTime = Date.now()
+          }
+          
+          return newState
         })
+        
+        // Analytics: Track filter change
+        try {
+          const resultsSessionId = getResultsSessionId()
+          const isRemoving = previousArray.includes(value)
+          const filterAction = isRemoving ? 'remove' : 'add'
+          
+          trackFiltersChange({
+            filter_key: key as AllowedFilterKey,
+            filter_action: filterAction,
+            filter_value: value,
+            previous_value: previousArray,
+            filter_method: method,
+            total_active_filters: get().getActiveFilterCount(),
+            results_session_id: resultsSessionId
+          })
+        } catch (error) {
+          console.error('[Analytics] Failed to track array filter toggle:', error)
+        }
       },
 
       setSelectedCars: (cars: CarSelection[]) => {
@@ -187,7 +285,9 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         })
       },
       
-      resetFilters: () => {
+      resetFilters: (method = 'reset_button') => {
+        const previousState = get()
+        
         set({ 
           ...defaultFilters,
           resultCount: 0,
@@ -198,8 +298,39 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           selectedCars: [],
           body_type: [],
           fuel_type: [],
-          transmission: []
+          transmission: [],
+          // Analytics: Reset tracking state but preserve session for the apply event
+          _lastSettledFilters: {},
+          _pendingChanges: new Set(['makes', 'models', 'selectedCars', 'fuel_type', 'body_type', 'transmission', 'price_min', 'price_max'] as AllowedFilterKey[]),
+          _searchStartTime: Date.now(),
+          _resultsSessionId: previousState._resultsSessionId, // Keep same session
+          _lastSearchFingerprint: previousState._lastSearchFingerprint,
+          _lastResultsCount: previousState._lastResultsCount
         })
+        
+        // Analytics: Track individual clear events for each active filter
+        try {
+          const resultsSessionId = getResultsSessionId()
+          const activeFilters = previousState.getActiveFilters()
+          
+          // Track clear action for each active filter
+          activeFilters.forEach(filter => {
+            const [filterType, filterValue] = filter.key.split(':')
+            if (filterType) {
+              trackFiltersChange({
+                filter_key: filterType as AllowedFilterKey,
+                filter_action: 'clear',
+                filter_value: null,
+                previous_value: filter.value,
+                filter_method: method === 'reset_button' ? 'button' : 'url',
+                total_active_filters: 0, // After reset
+                results_session_id: resultsSessionId
+              })
+            }
+          })
+        } catch (error) {
+          console.error('[Analytics] Failed to track filter reset:', error)
+        }
       },
       
       setResultCount: (count) => {
@@ -210,8 +341,37 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         set({ isLoading: loading })
       },
       
-      setSortOrder: (order) => {
-        set({ sortOrder: order })
+      setSortOrder: (order, method = 'dropdown') => {
+        const previousOrder = get().sortOrder
+        
+        set((state) => ({
+          ...state,
+          sortOrder: order,
+          // Analytics: Mark search as pending if sort changed
+          _pendingChanges: order !== previousOrder ? 
+            new Set([...state._pendingChanges, 'sortOrder' as AllowedFilterKey]) : 
+            state._pendingChanges,
+          _searchStartTime: order !== previousOrder && !state._searchStartTime ? Date.now() : state._searchStartTime
+        }))
+        
+        // Analytics: Track sort order change
+        if (order !== previousOrder) {
+          try {
+            const resultsSessionId = getResultsSessionId()
+            
+            trackFiltersChange({
+              filter_key: 'sortOrder' as AllowedFilterKey,
+              filter_action: 'update',
+              filter_value: order,
+              previous_value: previousOrder,
+              filter_method: method,
+              total_active_filters: get().getActiveFilterCount(),
+              results_session_id: resultsSessionId
+            })
+          } catch (error) {
+            console.error('[Analytics] Failed to track sort order change:', error)
+          }
+        }
       },
       
       getActiveFilters: () => {
@@ -366,6 +526,148 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         } catch {
           return false
         }
+      },
+
+      // Analytics integration methods
+      handleResultsSettled: (results, latency = 0) => {
+        const state = get()
+        
+        // Check if session should reset based on search fingerprint
+        const newFingerprint = computeSearchFingerprint({
+          makes: state.makes,
+          models: state.models,
+          selectedCars: state.selectedCars,
+          fuel_type: state.fuel_type,
+          body_type: state.body_type,
+          transmission: state.transmission,
+          price_min: state.price_min,
+          price_max: state.price_max,
+          mileage_selected: state.mileage_selected,
+          seats_min: state.seats_min,
+          seats_max: state.seats_max,
+          horsepower_min: state.horsepower_min,
+          horsepower_max: state.horsepower_max
+        })
+        
+        if (checkAndResetSession(newFingerprint)) {
+          // Session was reset, update store state
+          set((prev) => ({
+            ...prev,
+            _resultsSessionId: getResultsSessionId(),
+            _lastSearchFingerprint: newFingerprint
+          }))
+        }
+        
+        // Only emit filters_apply if we have pending changes
+        if (state._pendingChanges.size > 0) {
+          try {
+            const whitelistedFilters = state.getWhitelistedFilters()
+            const changedFilters = Array.from(state._pendingChanges)
+            
+            trackFiltersApply({
+              results_session_id: state._resultsSessionId || getResultsSessionId(),
+              filters_applied: whitelistedFilters,
+              filters_count: Object.keys(whitelistedFilters).length,
+              changed_filters: changedFilters,
+              changed_keys_count: changedFilters.length,
+              apply_trigger: 'auto', // Most filter applications are automatic
+              previous_results_count: state._lastResultsCount,
+              results_count: results.count,
+              results_delta: results.count - state._lastResultsCount,
+              is_zero_results: results.count === 0,
+              latency_ms: latency
+            })
+          } catch (error) {
+            console.error('[Analytics] Failed to track filters apply:', error)
+          }
+        }
+        
+        // Update settled state
+        set((prev) => ({
+          ...prev,
+          _lastSettledFilters: state.getWhitelistedFilters(),
+          _lastResultsCount: results.count,
+          _pendingChanges: new Set(),
+          _searchStartTime: null,
+          _lastSearchFingerprint: newFingerprint
+        }))
+      },
+
+      markSearchPending: () => {
+        set((state) => ({
+          ...state,
+          _searchStartTime: state._searchStartTime || Date.now()
+        }))
+      },
+
+      getActiveFilterCount: () => {
+        const state = get()
+        let count = 0
+        
+        if (state.makes.length > 0) count++
+        if (state.models.length > 0) count++
+        if (state.selectedCars.length > 0) count++
+        if (state.fuel_type.length > 0) count++
+        if (state.body_type.length > 0) count++
+        if (state.transmission.length > 0) count++
+        if (state.price_min !== null || state.price_max !== null) count++
+        if (state.mileage_selected !== null) count++
+        if (state.seats_min !== null || state.seats_max !== null) count++
+        if (state.horsepower_min !== null || state.horsepower_max !== null) count++
+        if (state.sortOrder !== 'lease_score_desc') count++ // Non-default sort
+        
+        return count
+      },
+
+      getWhitelistedFilters: () => {
+        const state = get()
+        const filters: Record<string, string | number | boolean> = {}
+        
+        // Only include non-empty/non-default filters
+        if (state.makes.length > 0) {
+          filters.makes = state.makes.join(',')
+        }
+        if (state.models.length > 0) {
+          filters.models = state.models.join(',')
+        }
+        if (state.selectedCars.length > 0) {
+          filters.selectedCars = JSON.stringify(state.selectedCars)
+        }
+        if (state.fuel_type.length > 0) {
+          filters.fuel_type = state.fuel_type.join(',')
+        }
+        if (state.body_type.length > 0) {
+          filters.body_type = state.body_type.join(',')
+        }
+        if (state.transmission.length > 0) {
+          filters.transmission = state.transmission.join(',')
+        }
+        if (state.price_min !== null) {
+          filters.price_min = state.price_min
+        }
+        if (state.price_max !== null) {
+          filters.price_max = state.price_max
+        }
+        if (state.mileage_selected !== null) {
+          filters.mileage_selected = state.mileage_selected
+        }
+        if (state.seats_min !== null) {
+          filters.seats_min = state.seats_min
+        }
+        if (state.seats_max !== null) {
+          filters.seats_max = state.seats_max
+        }
+        if (state.horsepower_min !== null) {
+          filters.horsepower_min = state.horsepower_min
+        }
+        if (state.horsepower_max !== null) {
+          filters.horsepower_max = state.horsepower_max
+        }
+        if (state.sortOrder !== 'lease_score_desc') {
+          filters.sortOrder = state.sortOrder
+        }
+        
+        return filters
       }
       }
     }),

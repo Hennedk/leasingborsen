@@ -316,3 +316,136 @@ export function validateLeaseTermsApplyOrWarn(payload: unknown): asserts payload
     }
   }
 }
+
+// ========== Filter Events (Results Page) ==========
+
+// Filter-specific enums matching the filter store
+export const AllowedFilterKeys = [
+  'makes', 'models', 'selectedCars',
+  'fuel_type', 'body_type', 'transmission',
+  'price_min', 'price_max', 'mileage_selected', 'mileage_km_per_year',
+  'seats_min', 'seats_max', 'horsepower_min', 'horsepower_max',
+  'sortOrder'
+] as const
+
+export const FilterActions = ['add', 'remove', 'update', 'clear'] as const
+export const FilterMethods = ['dropdown', 'checkbox', 'slider', 'input', 'chip_remove', 'url'] as const  
+export const ApplyTriggers = ['auto', 'reset_button', 'url_navigation'] as const
+export const EntrySurfaces = ['toolbar', 'chip', 'cta'] as const
+export const CloseReasons = ['apply_button', 'backdrop', 'back', 'tab_change', 'system'] as const
+
+export type AllowedFilterKeyType = typeof AllowedFilterKeys[number]
+export type FilterActionType = typeof FilterActions[number]
+export type FilterMethodType = typeof FilterMethods[number]
+export type ApplyTriggerType = typeof ApplyTriggers[number]
+export type EntrySurfaceType = typeof EntrySurfaces[number]
+export type CloseReasonType = typeof CloseReasons[number]
+
+// filters_change: individual filter interactions
+export const FiltersChangeSchema = ListingBaseSchema.extend({
+  results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format'),
+  filter_key: z.enum(AllowedFilterKeys),
+  filter_action: z.enum(FilterActions),
+  filter_value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional(),
+  previous_value: z.union([z.string(), z.number(), z.boolean(), z.null()]).optional(),
+  filter_method: z.enum(FilterMethods),
+  total_active_filters: z.number().int().min(0).max(50)
+})
+
+// filters_apply: search results settled after filter changes
+export const FiltersApplySchema = ListingBaseSchema.extend({
+  results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format'),
+  filters_applied: z.record(z.enum(AllowedFilterKeys), z.union([z.string(), z.number(), z.boolean()])),
+  filters_count: z.number().int().min(0).max(50),
+  changed_filters: z.array(z.enum(AllowedFilterKeys)),
+  changed_keys_count: z.number().int().min(0).max(20),
+  apply_trigger: z.enum(ApplyTriggers),
+  previous_results_count: z.number().int().min(0).max(100000),
+  results_count: z.number().int().min(0).max(100000),
+  results_delta: z.number().int().min(-100000).max(100000),
+  is_zero_results: z.boolean(),
+  latency_ms: z.number().int().min(0).max(60000), // Max 1 minute latency
+  overlay_id: z.string().regex(/^ov_\d+_[a-z0-9]+$/, 'Invalid overlay ID format').optional() // Mobile overlay linkage
+})
+
+// filters_overlay_open: mobile filter overlay opened
+export const FiltersOverlayOpenSchema = ListingBaseSchema.extend({
+  device_type: z.literal('mobile'),
+  results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format'),
+  overlay_id: z.string().regex(/^ov_\d+_[a-z0-9]+$/, 'Invalid overlay ID format'),
+  entry_surface: z.enum(EntrySurfaces),
+  initial_filters: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]))
+})
+
+// filters_overlay_close: mobile filter overlay closed
+export const FiltersOverlayCloseSchema = ListingBaseSchema.extend({
+  device_type: z.literal('mobile'),
+  results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format'),
+  overlay_id: z.string().regex(/^ov_\d+_[a-z0-9]+$/, 'Invalid overlay ID format'),
+  close_reason: z.enum(CloseReasons),
+  dwell_ms: z.number().int().min(0).max(300000), // Max 5 minutes
+  changed_keys_count: z.number().int().min(0).max(20),
+  changed_filters: z.array(z.enum(AllowedFilterKeys)),
+  had_pending_request: z.boolean()
+})
+
+export type FiltersChangeEvent = z.infer<typeof FiltersChangeSchema>
+export type FiltersApplyEvent = z.infer<typeof FiltersApplySchema>
+export type FiltersOverlayOpenEvent = z.infer<typeof FiltersOverlayOpenSchema>
+export type FiltersOverlayCloseEvent = z.infer<typeof FiltersOverlayCloseSchema>
+
+export function validateFiltersChangeOrWarn(payload: unknown): asserts payload is FiltersChangeEvent {
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (isDev) {
+    const result = FiltersChangeSchema.safeParse(payload)
+    if (!result.success) {
+      console.warn('[Analytics] Invalid filters_change payload:', {
+        issues: result.error.issues,
+        payload
+      })
+      throw new Error(`Invalid filters_change payload: ${result.error.issues.map(i => i.message).join(', ')}`)
+    }
+  }
+}
+
+export function validateFiltersApplyOrWarn(payload: unknown): asserts payload is FiltersApplyEvent {
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (isDev) {
+    const result = FiltersApplySchema.safeParse(payload)
+    if (!result.success) {
+      console.warn('[Analytics] Invalid filters_apply payload:', {
+        issues: result.error.issues,
+        payload
+      })
+      throw new Error(`Invalid filters_apply payload: ${result.error.issues.map(i => i.message).join(', ')}`)
+    }
+  }
+}
+
+export function validateFiltersOverlayOpenOrWarn(payload: unknown): asserts payload is FiltersOverlayOpenEvent {
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (isDev) {
+    const result = FiltersOverlayOpenSchema.safeParse(payload)
+    if (!result.success) {
+      console.warn('[Analytics] Invalid filters_overlay_open payload:', {
+        issues: result.error.issues,
+        payload
+      })
+      throw new Error(`Invalid filters_overlay_open payload: ${result.error.issues.map(i => i.message).join(', ')}`)
+    }
+  }
+}
+
+export function validateFiltersOverlayCloseOrWarn(payload: unknown): asserts payload is FiltersOverlayCloseEvent {
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (isDev) {
+    const result = FiltersOverlayCloseSchema.safeParse(payload)
+    if (!result.success) {
+      console.warn('[Analytics] Invalid filters_overlay_close payload:', {
+        issues: result.error.issues,
+        payload
+      })
+      throw new Error(`Invalid filters_overlay_close payload: ${result.error.issues.map(i => i.message).join(', ')}`)
+    }
+  }
+}

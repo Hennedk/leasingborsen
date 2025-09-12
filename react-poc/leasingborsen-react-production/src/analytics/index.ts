@@ -22,3 +22,39 @@ export {
   trackLeaseTermsApply,
   newConfigSession,
 } from './listing'
+
+// Filter tracking events (Phase 3)
+export { 
+  trackFiltersChange, 
+  trackFiltersApply, 
+  getResultsSessionId,
+  resetFilterTracking,
+  computeSearchFingerprint,
+  getAccurateLatency,
+  trackOverlayOpen,
+  trackOverlayClose,
+  createOverlaySession
+} from './filters'
+export type { 
+  FiltersChangeParams, 
+  FiltersApplyParams, 
+  FiltersOverlayOpenParams,
+  FiltersOverlayCloseParams,
+  FilterMethod, 
+  FilterAction, 
+  ApplyTrigger, 
+  EntrySurface,
+  CloseReason,
+  AllowedFilterKey,
+  SearchResults
+} from './filters'
+
+// Schema validation and types
+export { 
+  validateFiltersChangeOrWarn, 
+  validateFiltersApplyOrWarn 
+} from './schema'
+export type { 
+  FiltersChangeEvent, 
+  FiltersApplyEvent 
+} from './schema'
