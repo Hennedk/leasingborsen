@@ -72,7 +72,8 @@ export const useUrlSync = () => {
     sortOrder,
     setFilter,
     setSortOrder,
-    resetFilters
+    resetFilters,
+    setUrlNavigation
   } = useFilterStore()
 
   // Parse array parameters from URL
@@ -136,6 +137,9 @@ export const useUrlSync = () => {
     if (hasUrlFilters) {
       // This is URL-driven filter change, not user interaction
       setFilterChangeContext(false, 'url-sync-complete')
+      
+      // Set URL navigation flag for analytics
+      setUrlNavigation(true)
       
       // Take snapshot of URL - create URLSearchParams from searchParams object
       urlSnapshot.current = new URLSearchParams()
@@ -338,6 +342,17 @@ export const useUrlSync = () => {
     navigate,
     setFilterChangeContext
   ])
+
+  // Listen for popstate events (back/forward navigation)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      console.log('[Navigation] Popstate detected - back/forward navigation')
+      setUrlNavigation(true)
+    }
+    
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [setUrlNavigation])
 
   return {
     // Return current filter state for convenience

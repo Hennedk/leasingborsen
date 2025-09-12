@@ -1,32 +1,43 @@
 /**
  * Pageview Tracking Guard
  * 
- * URL-based deduplication to prevent duplicate pageview events from
+ * Pathname-based deduplication to prevent duplicate pageview events from
  * React StrictMode, router subscription issues, or any other source.
  */
 
 import { trackPageView, type PageViewContext } from './pageview'
 
 // Guard state
-let lastTrackedHref: string | null = null
+let lastTrackedPathname: string | null = null
 let lastTrackedTime: number = 0
 
-// Time window to prevent rapid-fire duplicates for the same URL
+// Time window to prevent rapid-fire duplicates for the same pathname
 const DUPLICATE_WINDOW_MS = 500
 
 /**
- * Track a pageview only if the URL has changed or enough time has passed
+ * Normalize pathname for consistent comparison
+ */
+function normalizePath(pathname: string): string {
+  return pathname
+    .toLowerCase() // Case-insensitive comparison
+    .replace(/\/+$/, '') // Remove trailing slashes
+    .replace(/^\/+/, '/') // Ensure single leading slash
+}
+
+/**
+ * Track a pageview only if the pathname has changed or enough time has passed
  * This is the main guard function that prevents all duplicate pageviews
  * 
- * @param href - Full URL (pathname + search) for deduplication
+ * @param pathname - URL pathname for deduplication
  * @param context - Pageview context to track
  * @returns true if pageview was tracked, false if skipped as duplicate
  */
-export function trackPVIfNew(href: string, context: PageViewContext): boolean {
+export function trackPVIfNew(pathname: string, context: PageViewContext): boolean {
   const now = Date.now()
+  const normalizedPath = normalizePath(pathname)
   
-  // Check if this is a duplicate (same URL within time window)
-  if (lastTrackedHref === href && (now - lastTrackedTime) < DUPLICATE_WINDOW_MS) {
+  // Check if this is a duplicate (same pathname within time window)
+  if (lastTrackedPathname === normalizedPath && (now - lastTrackedTime) < DUPLICATE_WINDOW_MS) {
     return false
   }
   
@@ -34,7 +45,7 @@ export function trackPVIfNew(href: string, context: PageViewContext): boolean {
   trackPageView(context)
   
   // Update guard state
-  lastTrackedHref = href
+  lastTrackedPathname = normalizedPath
   lastTrackedTime = now
   return true
 }
@@ -43,16 +54,16 @@ export function trackPVIfNew(href: string, context: PageViewContext): boolean {
  * Reset the tracking guard state (useful for testing or manual reset)
  */
 export function resetTrackingGuard(): void {
-  lastTrackedHref = null
+  lastTrackedPathname = null
   lastTrackedTime = 0
 }
 
 /**
  * Get current guard state (for debugging)
  */
-export function getGuardState(): { lastHref: string | null, lastTime: number } {
+export function getGuardState(): { lastPathname: string | null, lastTime: number } {
   return {
-    lastHref: lastTrackedHref,
+    lastPathname: lastTrackedPathname,
     lastTime: lastTrackedTime
   }
 }

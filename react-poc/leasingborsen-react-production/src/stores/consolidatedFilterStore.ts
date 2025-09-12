@@ -6,15 +6,18 @@ import type { Filters, FilterChip, SortOrder, CarSelection } from '@/types'
 import { 
   trackFiltersChange, 
   trackFiltersApply, 
-  getResultsSessionId, 
-  computeSearchFingerprint, 
-  checkAndResetSession,
+  computeSearchFingerprint,
   getAccurateLatency,
   type FilterMethod,
   type ApplyTrigger,
   type AllowedFilterKey,
   type SearchResults 
 } from '@/analytics/filters'
+
+// Internal RSID management functions
+function generateResultsSessionId(): string {
+  return `rs_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+}
 
 /* Claude Change Summary:
  * Consolidated filterStore.ts (274 lines) + persistentFilterStore.ts (143 lines) 
@@ -43,6 +46,10 @@ interface FilterState extends Filters {
   _overlayOpenTime: number | null
   _overlayChangedKeys: Set<AllowedFilterKey>
   
+  // URL navigation tracking (not persisted)
+  _isUrlNavigation: boolean
+  _resetTrigger: ApplyTrigger | null
+  
   // Actions
   setFilter: <K extends keyof Filters>(key: K, value: Filters[K], method?: FilterMethod) => void
   toggleArrayFilter: (key: 'makes' | 'models' | 'body_type' | 'fuel_type' | 'transmission', value: string, method?: FilterMethod) => void
@@ -63,6 +70,10 @@ interface FilterState extends Filters {
   closeOverlaySession: () => void
   getOverlayState: () => { overlayId: string | null, openTime: number | null, changedKeys: AllowedFilterKey[] }
   getWhitelistedFilters: () => Record<string, string | number | boolean>
+  
+  // URL navigation tracking
+  setUrlNavigation: (isNavigation: boolean) => void
+  setApplyTrigger: (trigger: ApplyTrigger | null) => void
   
   // Persistence helpers
   hasStoredFilters: () => boolean
@@ -144,7 +155,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Overlay tracking state (not persisted)
         _overlayId: null,
         _overlayOpenTime: null,
-        _overlayChangedKeys: new Set<AllowedFilterKey>()
+        _overlayChangedKeys: new Set<AllowedFilterKey>(),
+        
+        // URL navigation tracking (not persisted)
+        _isUrlNavigation: false,
+        _resetTrigger: null
       }
       
       return {
@@ -205,7 +220,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Analytics: Track filter change (after state update)
         if (key !== 'sortOrder') { // Skip tracking sortOrder changes here (handled in setSortOrder)
           try {
-            const resultsSessionId = getResultsSessionId()
+            const state = get()
+            const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
             const filterAction = 
               previousValue == null && value != null ? 'add' :
               previousValue != null && value == null ? 'clear' :
@@ -213,6 +229,11 @@ export const useConsolidatedFilterStore = create<FilterState>()(
                 (value.length > previousValue.length ? 'add' :
                  value.length < previousValue.length ? 'remove' : 'update') :
               'update'
+            
+            // Ensure store has RSID
+            if (!state._resultsSessionId) {
+              set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+            }
             
             trackFiltersChange({
               filter_key: key as AllowedFilterKey,
@@ -273,9 +294,15 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         
         // Analytics: Track filter change
         try {
-          const resultsSessionId = getResultsSessionId()
+          const state = get()
+          const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
           const isRemoving = previousArray.includes(value)
           const filterAction = isRemoving ? 'remove' : 'add'
+          
+          // Ensure store has RSID
+          if (!state._resultsSessionId) {
+            set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+          }
           
           trackFiltersChange({
             filter_key: key as AllowedFilterKey,
@@ -335,13 +362,22 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           // Overlay: Reset overlay state
           _overlayId: null,
           _overlayOpenTime: null,
-          _overlayChangedKeys: new Set<AllowedFilterKey>()
+          _overlayChangedKeys: new Set<AllowedFilterKey>(),
+          // URL navigation: Set reset trigger
+          _isUrlNavigation: false,
+          _resetTrigger: method
         })
         
         // Analytics: Track individual clear events for each active filter
         try {
-          const resultsSessionId = getResultsSessionId()
+          const state = get()
+          const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
           const activeFilters = previousState.getActiveFilters()
+          
+          // Ensure store has RSID
+          if (!state._resultsSessionId) {
+            set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+          }
           
           // Track clear action for each active filter
           activeFilters.forEach(filter => {
@@ -391,7 +427,13 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         // Analytics: Track sort order change
         if (order !== previousOrder) {
           try {
-            const resultsSessionId = getResultsSessionId()
+            const state = get()
+            const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
+            
+            // Ensure store has RSID
+            if (!state._resultsSessionId) {
+              set((prev) => ({ ...prev, _resultsSessionId: resultsSessionId }))
+            }
             
             trackFiltersChange({
               filter_key: 'sortOrder' as AllowedFilterKey,
@@ -583,13 +625,23 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           horsepower_max: state.horsepower_max
         })
         
-        if (checkAndResetSession(newFingerprint)) {
-          // Session was reset, update store state
+        // Internal RSID management - reset session if fingerprint changed
+        let currentRSID = state._resultsSessionId
+        if (newFingerprint !== state._lastSearchFingerprint) {
+          currentRSID = generateResultsSessionId()
+          console.log('[Analytics] Results session reset:', state._resultsSessionId, '→', currentRSID)
+          
+          // Update store state with new session
           set((prev) => ({
             ...prev,
-            _resultsSessionId: getResultsSessionId(),
+            _resultsSessionId: currentRSID,
             _lastSearchFingerprint: newFingerprint
           }))
+        } else if (!currentRSID) {
+          // Ensure we have an RSID
+          currentRSID = generateResultsSessionId()
+          console.log('[Analytics] New results session created:', currentRSID)
+          set((prev) => ({ ...prev, _resultsSessionId: currentRSID }))
         }
         
         // Only emit filters_apply if we have pending changes
@@ -598,13 +650,21 @@ export const useConsolidatedFilterStore = create<FilterState>()(
             const whitelistedFilters = state.getWhitelistedFilters()
             const changedFilters = Array.from(state._pendingChanges)
             
+            // Determine apply_trigger based on context
+            let applyTrigger: ApplyTrigger = 'auto' // Default for user interactions
+            if (state._resetTrigger) {
+              applyTrigger = state._resetTrigger
+            } else if (state._isUrlNavigation) {
+              applyTrigger = 'url_navigation'
+            }
+            
             trackFiltersApply({
-              results_session_id: state._resultsSessionId || getResultsSessionId(),
+              results_session_id: currentRSID,
               filters_applied: whitelistedFilters,
               filters_count: Object.keys(whitelistedFilters).length,
               changed_filters: changedFilters,
               changed_keys_count: changedFilters.length,
-              apply_trigger: 'auto', // Most filter applications are automatic
+              apply_trigger: applyTrigger,
               previous_results_count: state._lastResultsCount,
               results_count: results.count,
               results_delta: results.count - state._lastResultsCount,
@@ -617,14 +677,18 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           }
         }
         
-        // Update settled state
+        // Update settled state and reset navigation flags
         set((prev) => ({
           ...prev,
           _lastSettledFilters: state.getWhitelistedFilters(),
           _lastResultsCount: results.count,
           _pendingChanges: new Set(),
           _searchStartTime: null,
-          _lastSearchFingerprint: newFingerprint
+          _lastSearchFingerprint: newFingerprint,
+          _resultsSessionId: currentRSID, // Ensure final state has the RSID
+          // Reset navigation flags after use
+          _isUrlNavigation: false,
+          _resetTrigger: null
         }))
       },
 
@@ -731,6 +795,21 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           openTime: state._overlayOpenTime,
           changedKeys: Array.from(state._overlayChangedKeys)
         }
+      },
+
+      // URL navigation tracking methods
+      setUrlNavigation: (isNavigation: boolean) => {
+        set((state) => ({
+          ...state,
+          _isUrlNavigation: isNavigation
+        }))
+      },
+
+      setApplyTrigger: (trigger: ApplyTrigger | null) => {
+        set((state) => ({
+          ...state,
+          _resetTrigger: trigger
+        }))
       }
       }
     }),

@@ -47,10 +47,10 @@ function App() {
       console.warn('[Analytics] No VITE_MIXPANEL_TOKEN found, analytics disabled')
     }
     
-    // Track initial page load using URL-based deduplication guard
-    const currentUrl = window.location.pathname + window.location.search
-    const context = buildPageViewContext(window.location.pathname, parseSearchParams(window.location.search), false)
-    trackPVIfNew(currentUrl, context)
+    // Track initial page load using pathname-based deduplication guard
+    const currentPath = window.location.pathname
+    const context = buildPageViewContext(currentPath, parseSearchParams(window.location.search), false)
+    trackPVIfNew(currentPath, context)
     
     // Subscribe to router navigation events (use onResolved to avoid multiple onLoad firings per navigation)
     // Skip the first resolved event since we already tracked the initial load above
@@ -61,8 +61,8 @@ function App() {
         return
       }
 
-      // Only track if the URL actually changed (ignore internal re-resolves)
-      if (!event.hrefChanged && !event.pathChanged) {
+      // Only track if the pathname actually changed (ignore query-only changes)
+      if (!event.pathChanged) {
         return
       }
 
@@ -137,10 +137,9 @@ function App() {
       // Use the resolved toLocation for accuracy
       const nextPath = event.toLocation.pathname
       const nextSearchStr = event.toLocation.searchStr || ''
-      const nextHref = event.toLocation.href
 
       const context = buildPageViewContext(nextPath, parseSearchParams(nextSearchStr), true)
-      trackPVIfNew(nextHref, context)
+      trackPVIfNew(nextPath, context)
     })
     
     return unsubscribe
