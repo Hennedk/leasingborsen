@@ -104,7 +104,7 @@ function createChangeKey(filter_key: AllowedFilterKey, filter_method: FilterMeth
 /**
  * Create a hash of the change value for deduplication
  */
-function createValueHash(filter_value: string | number | boolean | null): string {
+function createValueHash(filter_value: string | number | boolean | null | undefined): string {
   return JSON.stringify(sanitizeFilterValue(filter_value))
 }
 
@@ -183,21 +183,6 @@ export function computeSearchFingerprint(filters: Record<string, any>): string {
     .join('|')
 }
 
-/**
- * Determine filter action based on previous and new values
- */
-function getFilterAction(previousValue: any, newValue: any): FilterAction {
-  if (previousValue == null && newValue != null) return 'add'
-  if (previousValue != null && newValue == null) return 'clear'
-  if (Array.isArray(newValue) && Array.isArray(previousValue)) {
-    if (newValue.length === 0 && previousValue.length > 0) return 'clear'
-    if (newValue.length > previousValue.length) return 'add'
-    if (newValue.length < previousValue.length) return 'remove'
-    return 'update'
-  }
-  if (newValue === null || newValue === undefined || newValue === '') return 'clear'
-  return 'update'
-}
 
 /**
  * Sanitize filter value for analytics

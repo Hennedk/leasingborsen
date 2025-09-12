@@ -218,7 +218,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
         })
         
         // Analytics: Track filter change (after state update)
-        if (key !== 'sortOrder') { // Skip tracking sortOrder changes here (handled in setSortOrder)
+        if (key !== 'sortOrder' as any) { // Skip tracking sortOrder changes here (handled in setSortOrder)
           try {
             const state = get()
             const resultsSessionId = state._resultsSessionId || generateResultsSessionId()
@@ -238,8 +238,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
             trackFiltersChange({
               filter_key: key as AllowedFilterKey,
               filter_action: filterAction,
-              filter_value: value,
-              previous_value: previousValue,
+              filter_value: Array.isArray(value) ? value.join(',') : value as string | number | boolean | null,
+              previous_value: Array.isArray(previousValue) ? previousValue.join(',') : previousValue as string | number | boolean | null,
               filter_method: method,
               total_active_filters: get().getActiveFilterCount(),
               results_session_id: resultsSessionId
@@ -307,8 +307,8 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           trackFiltersChange({
             filter_key: key as AllowedFilterKey,
             filter_action: filterAction,
-            filter_value: value,
-            previous_value: previousArray,
+            filter_value: value as string | number | boolean | null,
+            previous_value: previousArray.join(','),
             filter_method: method,
             total_active_filters: get().getActiveFilterCount(),
             results_session_id: resultsSessionId
@@ -381,7 +381,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
           
           // Track clear action for each active filter
           activeFilters.forEach(filter => {
-            const [filterType, filterValue] = filter.key.split(':')
+            const [filterType, _filterValue] = filter.key.split(':')
             if (filterType) {
               trackFiltersChange({
                 filter_key: filterType as AllowedFilterKey,
@@ -605,7 +605,7 @@ export const useConsolidatedFilterStore = create<FilterState>()(
       },
 
       // Analytics integration methods
-      handleResultsSettled: (results, latency = 0) => {
+      handleResultsSettled: (results, _latency = 0) => {
         const state = get()
         
         // Check if session should reset based on search fingerprint

@@ -25,12 +25,20 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 - Fingerprint currently excludes sort; should include sort to represent the “results context” fully.
 - No persistence across SPA route changes or reloads.
 
+## Must‑Fix Alignment
+
+- Single source of truth for `results_session_id` (RSID): keep ownership in `src/analytics/pageview.ts`; expose a getter and ensure all emitters read it. Do not compute RSID in multiple places.
+- Include `sort_option` in the fingerprint and normalize arrays (lowercase, trim, sort) so RSID is stable and changes on sort switches.
+- Naming: use `container` consistently for component context with values `"results_grid" | "similar_grid" | "carousel"`; ensure `listing_click` aligns where context applies.
+- Dwell fire check: when the 300ms timer fires, re‑read the last IntersectionObserverEntry and also verify `document.visibilityState === 'visible'` and `intersectionRatio >= 0.5` before emitting.
+
 ## Design
 
 ### Single Source of `results_session_id`
 
 - Use `pageview.ts` as the sole source for `results_session_id` (already used by listing events via `getCurrentResultsSessionId()`).
 - Include `sort_option` in the filters fingerprint so that changing sort produces a new `results_session_id`.
+- Normalize arrays (lowercase + sorted) before hashing for stability.
 
 ### Dedup Store (MVP)
 
@@ -43,13 +51,20 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 ### Dwell Logic
 
 - In `ListingCard`, use `IntersectionObserver` with threshold `0.5`.
-- On enter: start a 300ms timer. If still ≥50% visible at timer end, query dedup store; only then emit.
+- On enter: start a 300ms timer. When it elapses, re‑check the last IO entry, confirm `document.visibilityState === 'visible'` and still ≥50% visible; then query dedup store; only then emit.
 - On exit before 300ms: cancel timer.
+
+### Timing & Race Hardening
+
+- Require a valid RSID to schedule emission: if a card mounts before RSID is ready, observe but do not emit or add to the seen set; arm the dwell only after RSID exists.
+- BFCache and tab visibility:
+  - On `pageshow` with `event.persisted === true`, do not clear the dedup map.
+  - On `visibilitychange` to `hidden`, cancel any pending dwell timers; do not emit while hidden.
 
 ### Reset Rules
 
-- When `results_session_id` changes: initialize a fresh set for that `resultsKey` (do not clear other sessions’ sets).
-- When analytics `session_id` changes (TTL rollover): clear all dedup maps (fresh journey).
+- When `results_session_id` changes: initialize a fresh set for that `resultsKey` (do not clear other sessions’ sets). Keep an LRU of the last 3 RSIDs and drop older ones to cap memory.
+- When analytics `session_id` changes (TTL rollover): clear all dedup maps (document as “new journey → impressions can re‑count”).
 
 ## Implementation Steps
 
@@ -73,30 +88,36 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 3) Add optional sessionStorage mirror (MVP-friendly)
 - On first access of `(resultsKey, containerKey)`, attempt to load `sessionStorage['lv_seen_rs_${resultsKey}_${containerKey}']` as array → Set.
 - After adding `listingId`, write back the array stringified.
+ - Do not persist if a set grows beyond ~1,000 IDs to avoid quota issues.
 
-4) Add 300ms dwell in `ListingCard`
+4) Add 300ms dwell in `ListingCard` (+ visibility/BFCache guards)
 - File: `src/components/ListingCard.tsx`
 - Replace the simple per-mount guard with:
-  - On intersection ≥0.5: start `setTimeout(300ms)`; on fire, if still ≥0.5, call `shouldTrackListingView(listingId, container)`; if true, call `trackListingView(...)`.
+  - On intersection ≥0.5: start `setTimeout(300ms)`; on fire, if still ≥0.5 and tab visible, call `shouldTrackListingView(listingId, container)`; if true, call `trackListingView(...)`.
   - Cancel timer on exit or unmount.
   - Keep an instance ref to avoid repeated timers for same visibility window; dedup store will prevent duplicates anyway.
+  - Cancel timers on `visibilitychange` to hidden. On BFCache `pageshow` restore (persisted), do not clear dedup.
 
-5) Tests
+5) Tests (minimal but high‑value)
 - File: `src/analytics/__tests__/listing.test.ts`
 - Add cases:
   - Dedup within same `(rs, id, container)`.
   - New `results_session_id` → impression allowed again.
   - Different `container` → independent counts.
   - Analytics session TTL change (mock `analytics.getSessionId()` change) clears dedup.
+  - Sort change alters fingerprint → new RSID → can re‑fire.
 - File: `src/components/__tests__/ListingCard.impression.test.tsx` (or extend existing ListingCard tests)
-  - Simulate IntersectionObserver entries to verify 300ms dwell requirement.
+  - Simulate IO entries to verify 300ms dwell: 250ms → no fire; ≥300ms sustained → fire.
+  - Hidden tab while timer pending → no fire.
+  - Remount/rerender within same RSID → no re‑fire.
+  - Back from detail (same RSID) → no re‑fire.
 
 6) Documentation
 - Update `docs/ANALYTICS_FLOW_ARCHITECTURE.md` (or this file suffices) to describe impression scope and reset semantics.
 
 ## Data Structures
 
-- Map nesting for fast lookup and scoped memory:
+- Map nesting for fast lookup and scoped memory (with LRU of last ~3 RSIDs):
   - `seenByResults: Map<results_session_id, Map<container, Set<listing_id>>>`
 - sessionStorage keys:
   - `lv_seen_rs_${results_session_id}_${container}` → `string[]` of listing IDs.
@@ -106,7 +127,8 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 - Filter change where some items remain in view: only new, not-yet-seen IDs (for the new `results_session_id`) will fire when they hit dwell again.
 - Back from detail: same `results_session_id` → no re-fire.
 - Infinite scroll/virtualization: newly revealed cards fire once; scrolling back up or remounts won’t re-fire.
-- Missing `results_session_id`: fallback to `'no_rs'` resultsKey to avoid crashes; low likelihood on results page.
+- RSID not ready at mount: observe but do not emit or mark seen until RSID exists.
+- BFCache restore (pageshow persisted): do not clear dedup sets; timers should be re‑armed via IO on re‑visibility.
 
 ## Rollout
 
@@ -132,4 +154,3 @@ Goal: Count a `listing_view` impression exactly once per `(results_session_id, l
 - Views do not inflate on back/forward or rerenders.
 - Views reset appropriately on new fingerprint (filters+sort) or analytics session TTL roll.
 - Dwell constraint enforced (≥50% for ≥300ms).
-

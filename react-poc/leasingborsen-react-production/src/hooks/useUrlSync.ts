@@ -345,7 +345,7 @@ export const useUrlSync = () => {
 
   // Listen for popstate events (back/forward navigation)
   useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
+    const handlePopState = (_event: PopStateEvent) => {
       console.log('[Navigation] Popstate detected - back/forward navigation')
       setUrlNavigation(true)
     }

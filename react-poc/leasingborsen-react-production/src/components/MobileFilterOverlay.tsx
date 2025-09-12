@@ -720,7 +720,7 @@ const MobileFilterOverlayComponent: React.FC<MobileFilterOverlayProps> = ({
         {activeFiltersCount > 0 && (
           <Button
             variant="outline"
-            onClick={resetFilters}
+            onClick={() => resetFilters('reset_button')}
             className="flex-shrink-0 h-12"
           >
             Nulstil
