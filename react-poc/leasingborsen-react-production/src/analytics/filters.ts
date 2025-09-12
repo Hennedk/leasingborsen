@@ -77,7 +77,7 @@ export interface SearchResults {
   data?: any[]
 }
 
-import { getCurrentResultsSessionId, resetResultsSession, getSearchFingerprint, getOrCreateResultsSessionId } from './resultsSession'
+import { resetResultsSession, getSearchFingerprint, getOrCreateResultsSessionId } from './resultsSession'
 
 // Session management (RSID now handled by resultsSession module)
 let lastSearchFingerprint = ''

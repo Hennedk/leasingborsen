@@ -267,7 +267,7 @@ function buildListingContext(context: PageViewContext): ListingContext {
  * Trim filters to only allowed keys and ensure reasonable payload size
  */
 function trimFilters(filters: Record<string, any>): Record<string, string | number | boolean> | undefined {
-  return normalizeRecord(filters, ALLOWED_FILTER_KEYS)
+  return normalizeRecord(filters, Array.from(ALLOWED_FILTER_KEYS) as string[])
 }
 
 

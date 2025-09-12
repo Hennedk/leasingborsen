@@ -131,13 +131,25 @@ function App() {
         // Query-only change - recompute RSID but don't emit page_view
         const nextSearchStr = event.toLocation.searchStr || ''
         const query = parseSearchParams(nextSearchStr)
-        
+
         // Only recompute RSID for results pages to avoid unnecessary churn
         const currentPath = event.fromLocation?.pathname
         if (currentPath === '/listings') {
+          // Map URL query to canonical filters shape used by page_view
+          const filters: Record<string, any> = {}
+          if (query.make) filters.make = query.make
+          if (query.model) filters.model = query.model
+          if (query.fuel_type) filters.fuel_type = query.fuel_type
+          if (query.body_type) filters.body_type = query.body_type
+          if (query.sort) filters.sort_option = query.sort
+          if (query.km) filters.mileage_km_per_year = parseInt(query.km) || undefined
+          if (query.mdr) filters.term_months = parseInt(query.mdr) || undefined
+          if (query.price_max) filters.price_max = parseInt(query.price_max) || undefined
+          if (query.max_price) filters.price_max = parseInt(query.max_price) || undefined
+
           // Import recomputeResultsSessionId dynamically to avoid circular imports
           import('./analytics/resultsSession').then(({ recomputeResultsSessionId }) => {
-            recomputeResultsSessionId(query)
+            recomputeResultsSessionId(filters)
           })
         }
         return
