@@ -125,6 +125,44 @@ Deploy to Vercel    PR + Review         npm run dev
 - New features
 - User-reported issues
 
+### End-to-End Testing (Playwright MCP)
+
+**Setup**: Playwright MCP is configured for automated browser testing
+
+```bash
+# E2E Testing Commands
+npm run test:e2e         # Run all E2E tests (headless)
+npm run test:e2e:ui      # Run E2E tests with UI
+npm run test:e2e:debug   # Run E2E tests in debug mode
+npm run test:e2e:headed  # Run E2E tests with visible browser
+npm run mcp:playwright   # Start Playwright MCP server (headless Chrome)
+
+# Configuration
+# MCP Server: .mcp.json (playwright server on port 3344)
+# Test Config: playwright.config.ts (mobile-first testing)
+# Test Location: tests/e2e/
+```
+
+**Test Patterns**:
+```typescript
+// Example E2E test structure
+import { test, expect } from '@playwright/test'
+
+test('user can filter cars by make', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Toyota' }).click()
+  await expect(page.locator('[data-testid="listing-card"]')).toContainText('Toyota')
+})
+```
+
+**Mobile-First Testing**: Default configuration uses iPhone 14 Pro viewport for mobile-first approach
+
+**Key Test Areas**:
+- PDF extraction workflow
+- Admin operations (CRUD)
+- Filter combinations
+- Analytics tracking
+
 ## 💻 Development Guidelines
 
 ### Component Patterns
@@ -191,6 +229,7 @@ const messages = {
 npm run dev              # Start development server
 npm run build            # Production build
 npm run test             # Run tests (watch mode)
+npm run test:e2e         # Run E2E tests with Playwright
 npm run lint             # Check code quality
 
 # Edge Functions (14 total)
@@ -213,7 +252,7 @@ supabase db push         # Push migrations
 - **UI**: Tailwind CSS 4 + shadcn/ui components
 - **Backend**: Supabase (PostgreSQL + Edge Functions)
 - **State**: Zustand + React Query 5
-- **Testing**: Vitest + React Testing Library
+- **Testing**: Vitest + React Testing Library + Playwright E2E
 - **AI**: OpenAI GPT-4 + Anthropic Claude
 
 ### Project Structure
@@ -309,3 +348,4 @@ This platform automates Danish car leasing comparisons through:
 | Update lease scoring | `calculate-lease-score`, `LeaseScoreBadge.tsx` | `docs/LEASE_SCORE_SYSTEM.md` |
 | Add admin feature | `admin-*-operations`, admin hooks | `docs/CODE_PATTERNS.md` |
 | Debug database | Supabase dashboard, `full_listing_view` | `docs/DATABASE_SCHEMA.md` |
+| Write E2E tests | `tests/e2e/`, `playwright.config.ts` | Playwright MCP section above |

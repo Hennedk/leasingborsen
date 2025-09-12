@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e5]:
+    - alert [ref=e6]:
+      - img [ref=e7]
+      - generic [ref=e9]: 🚧 STAGING ENVIRONMENT - Using Staging Database - Safe for Testing - No Production Impact 🚧
+    - banner [ref=e10]:
+      - link "Leasingbuddy" [ref=e13]:
+        - /url: /
+        - generic [ref=e14]: Leasingbuddy
+    - main [ref=e15]:
+      - button "Åben filtre" [ref=e19]:
+        - img
+      - main "Billeasing søgning" [ref=e22]:
+        - generic [ref=e24]:
+          - heading "0 tilbud fundet" [level=1] [ref=e25]
+          - generic [ref=e26]: Sorteret efter bedste tilbud
+        - region "Søgeresultater" [ref=e27]:
+          - status "Indlæser annoncer" [ref=e28]:
+            - generic [ref=e281]: Indlæser billeasing annoncer...
+    - contentinfo [ref=e282]:
+      - generic [ref=e284]:
+        - link "Leasingbuddy" [ref=e285]:
+          - /url: /
+          - generic [ref=e286]: Leasingbuddy
+        - paragraph [ref=e287]: Få overblik over hele markedets privatleasingtilbud, sammenlign priser og vilkår, og vælg den bil, der passer perfekt til dine behov.
+        - paragraph [ref=e288]: © 2025 Leasingbuddy. Alle rettigheder forbeholdes.
+    - button "🔧 STAGING" [ref=e289]
+  - generic [ref=e290]:
+    - img [ref=e292]
+    - button "Open Tanstack query devtools" [ref=e360] [cursor=pointer]:
+      - img [ref=e361] [cursor=pointer]
+  - region "Notifications alt+T"
+  - generic:
+    - contentinfo:
+      - button "Open TanStack Router Devtools" [ref=e429] [cursor=pointer]:
+        - generic [ref=e430] [cursor=pointer]:
+          - img [ref=e432] [cursor=pointer]
+          - img [ref=e487] [cursor=pointer]
+        - generic [ref=e541] [cursor=pointer]: "-"
+        - generic [ref=e542] [cursor=pointer]: TanStack Router
+  - generic [ref=e543]:
+    - img [ref=e545]
+    - button "Open Tanstack query devtools" [ref=e613] [cursor=pointer]:
+      - img [ref=e614] [cursor=pointer]
+```

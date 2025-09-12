@@ -58,7 +58,12 @@
     "test:edge:coverage": "cd supabase/functions && deno test --allow-all --coverage=cov_profile && deno coverage cov_profile",
     "test:all": "npm run test && npm run test:edge",
     "test:comparison": "vitest run src/services/comparison/__tests__/",
-    "test:comparison:watch": "vitest watch src/services/comparison/__tests__/"
+    "test:comparison:watch": "vitest watch src/services/comparison/__tests__/",
+    "mcp:playwright": "mcp-server-playwright --headless --browser=chrome --port=3344",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",
@@ -118,6 +123,8 @@
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@faker-js/faker": "^9.9.0",
+    "@playwright/mcp": "^0.0.37",
+    "@playwright/test": "^1.55.0",
     "@tailwindcss/postcss": "^4.1.8",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

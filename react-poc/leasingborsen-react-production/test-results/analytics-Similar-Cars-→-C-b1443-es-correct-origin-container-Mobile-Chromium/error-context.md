@@ -1,0 +1,133 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - alert [ref=e5]:
+      - img [ref=e6]
+      - generic [ref=e8]: 🚧 STAGING ENVIRONMENT - Using Staging Database - Safe for Testing - No Production Impact 🚧
+    - banner [ref=e9]:
+      - link "Leasingbuddy" [ref=e12]:
+        - /url: /
+        - generic [ref=e13]: Leasingbuddy
+    - main [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - img "Bil billede" [ref=e20]
+          - button "Gå tilbage til resultater (37)" [ref=e21]:
+            - img
+          - 'button "Åbn information om LeaseScore: 90, Exceptionelt tilbud" [ref=e23] [cursor=pointer]':
+            - generic [ref=e24] [cursor=pointer]:
+              - img [ref=e25] [cursor=pointer]
+              - generic [ref=e28] [cursor=pointer]: "90"
+            - generic [ref=e29] [cursor=pointer]:
+              - generic [ref=e30] [cursor=pointer]:
+                - text: LeaseScore
+                - button "Få mere information om LeaseScore" [ref=e31]:
+                  - img [ref=e32]
+              - generic [ref=e35] [cursor=pointer]: Exceptionelt tilbud
+        - paragraph [ref=e37]: Billede kun til illustration
+      - generic [ref=e38]:
+        - generic [ref=e40]:
+          - generic [ref=e42]:
+            - heading "Toyota Yaris" [level=1] [ref=e43]
+            - paragraph [ref=e44]: Style Comfort 116HK
+          - generic [ref=e49]:
+            - generic [ref=e50]:
+              - img [ref=e52]
+              - generic [ref=e55]:
+                - generic [ref=e56]: Drivmiddel
+                - generic [ref=e57]: Hybrid Benzin
+            - generic [ref=e58]:
+              - img [ref=e60]
+              - generic [ref=e63]:
+                - generic [ref=e64]: Gearkasse
+                - generic [ref=e65]: Automatisk
+            - generic [ref=e66]:
+              - img [ref=e68]
+              - generic [ref=e72]:
+                - generic [ref=e73]: Karrosseri
+                - generic [ref=e74]: Hatchback
+          - generic [ref=e76]:
+            - heading "Leasingdetaljer" [level=3] [ref=e77]
+            - generic [ref=e78]:
+              - generic [ref=e79]:
+                - generic [ref=e80]:
+                  - text: Inkl. km/år
+                  - generic [ref=e81]: · 1 mulighed
+                - generic [ref=e82]: "15.000"
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - text: Leasingperiode
+                  - generic [ref=e85]: · 1 mulighed
+                - generic [ref=e86]: 36 mdr
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - text: Udbetaling
+                  - generic [ref=e89]: · 1 mulighed
+                - generic [ref=e90]: 4.999 kr
+              - generic [ref=e91]:
+                - generic [ref=e92]: Samlet pris i perioden
+                - generic [ref=e93]: 141.763 kr
+          - generic [ref=e95]:
+            - heading "Specifikationer" [level=2] [ref=e96]
+            - generic [ref=e98]:
+              - generic [ref=e99]:
+                - generic [ref=e100]: Mærke
+                - generic [ref=e101]: Toyota
+              - generic [ref=e102]:
+                - generic [ref=e103]: Model
+                - generic [ref=e104]: Yaris
+              - generic [ref=e105]:
+                - generic [ref=e106]: Variant
+                - generic [ref=e107]: Style Comfort 116HK
+              - generic [ref=e108]:
+                - generic [ref=e109]: Karrosseri
+                - generic [ref=e110]: Hatchback
+              - generic [ref=e111]:
+                - generic [ref=e112]: Drivmiddel
+                - generic [ref=e113]: Hybrid Benzin
+              - generic [ref=e114]:
+                - generic [ref=e115]: Gearkasse
+                - generic [ref=e116]: Automatisk
+        - heading "Lignende annoncer" [level=2] [ref=e120]
+        - paragraph [ref=e298]: "Listing ID: 7afd0b7c-2327-4018-9177-703069505588"
+      - generic [ref=e300]:
+        - button "Åbn prisindstillinger" [ref=e301]:
+          - generic [ref=e302]:
+            - generic [ref=e303]:
+              - paragraph [ref=e304]: 3.799 kr./md.
+              - generic [ref=e305]:
+                - generic [ref=e306]: 15.000 km/år
+                - generic [ref=e307]: •
+                - generic [ref=e308]: 36 mdr
+                - generic [ref=e309]: •
+                - generic [ref=e310]: "Udb: 4.999 kr"
+            - img [ref=e311]
+        - button "Gå til tilbud" [ref=e312]
+    - contentinfo [ref=e313]:
+      - generic [ref=e315]:
+        - link "Leasingbuddy" [ref=e316]:
+          - /url: /
+          - generic [ref=e317]: Leasingbuddy
+        - paragraph [ref=e318]: Få overblik over hele markedets privatleasingtilbud, sammenlign priser og vilkår, og vælg den bil, der passer perfekt til dine behov.
+        - paragraph [ref=e319]: © 2025 Leasingbuddy. Alle rettigheder forbeholdes.
+    - button "🔧 STAGING" [ref=e320]
+  - generic [ref=e321]:
+    - img [ref=e323]
+    - button "Open Tanstack query devtools" [ref=e391] [cursor=pointer]:
+      - img [ref=e392] [cursor=pointer]
+  - region "Notifications alt+T"
+  - generic:
+    - contentinfo:
+      - button "Open TanStack Router Devtools" [ref=e460] [cursor=pointer]:
+        - generic [ref=e461] [cursor=pointer]:
+          - img [ref=e463] [cursor=pointer]
+          - img [ref=e518] [cursor=pointer]
+        - generic [ref=e572] [cursor=pointer]: "-"
+        - generic [ref=e573] [cursor=pointer]: TanStack Router
+  - generic [ref=e574]:
+    - img [ref=e576]
+    - button "Open Tanstack query devtools" [ref=e644] [cursor=pointer]:
+      - img [ref=e645] [cursor=pointer]
+```
