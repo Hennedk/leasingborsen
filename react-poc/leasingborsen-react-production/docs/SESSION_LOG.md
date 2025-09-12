@@ -1,5 +1,33 @@
 # Session Log
 
+## 2025-09-12: LeaseScore Consistency – Cards vs Detail ✅
+
+### Overview
+Aligned the LeaseScore displayed on listing cards with the LeaseScore shown on `/listing/:id`. The detail page now prefers the per-offer score for the selected offer, eliminating mismatches with the card.
+
+### Changes
+- Backend detail fetch now computes `selected_lease_score` for the chosen offer in `getListingById` (same v2.1 EML calc used in listings grid).
+- Detail UI components prefer score fallback: `selectedLeaseScore → selected_lease_score → lease_score`.
+- Added unit tests to assert the fallback order on detail components.
+
+### Files Modified
+- `src/lib/supabase.ts` — compute and attach `selected_lease_score` for selected offer in `getListingById`.
+- `src/components/listing/ListingImage.tsx` — use updated fallback order for `LeaseScorePill`.
+- `src/components/listing/LeaseCalculatorCard.tsx` — same fallback order.
+- `src/components/MobilePriceDrawer.tsx` — same fallback order.
+- `src/components/listing/__tests__/LeaseScoreFallback.test.tsx` — new tests for fallback order.
+
+### Commits
+- fix: align LeaseScore between cards and detail — compute `selected_lease_score` and update UI fallbacks.
+- test: assert LeaseScore fallback order on detail components.
+
+### Validation
+- Manual: Clicking a card on `/listings` shows the same LeaseScore on `/listing/:id`.
+- Detail interactions: Changing km/mdr/udb updates score and remains consistent.
+
+### Next Steps
+- Optional: Add an integration test that navigates from `/listings` → `/listing/:id` to verify end-to-end parity under router.
+
 ## 2025-01-20: Lease Calculator Navigation Issue Complete Resolution ✅
 
 ### Overview
