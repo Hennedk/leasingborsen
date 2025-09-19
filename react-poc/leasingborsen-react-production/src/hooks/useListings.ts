@@ -1,7 +1,8 @@
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { CarListingQueries, type FilterOptions } from '@/lib/supabase'
+import { CarListingQueries, selectBestOffer, type FilterOptions } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { SortOrder } from '@/types'
+import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 
 export function useListings(filters: Partial<FilterOptions> = {}, limit = 20, sortOrder: SortOrder = 'lease_score_desc') {
   return useQuery({
@@ -72,6 +73,54 @@ export function useListing(
             listing.listing_id === id || listing.id === id
           )
           if (foundListing) {
+            // Align cached listing with current offer settings so the initial render
+            // reflects the same configuration as the upcoming detail fetch.
+            if (foundListing?.all_lease_pricing && Array.isArray(foundListing.all_lease_pricing)) {
+              const targetMileage = offerSettings?.selectedMileage
+              const targetDeposit = offerSettings?.selectedDeposit
+              const targetTerm = offerSettings?.selectedTerm
+              const hasUserPreferences =
+                targetMileage != null || targetDeposit != null || targetTerm != null
+
+              const selectedOffer = selectBestOffer(
+                foundListing.all_lease_pricing,
+                targetMileage ?? 15000,
+                targetDeposit ?? 35000,
+                targetTerm ?? undefined,
+                true,
+                hasUserPreferences
+              )
+
+              if (selectedOffer) {
+                const leaseScore = foundListing.retail_price && selectedOffer.monthly_price
+                  ? calculateLeaseScoreSimple({
+                      monthlyPrice: selectedOffer.monthly_price,
+                      retailPrice: foundListing.retail_price,
+                      mileagePerYear: selectedOffer.mileage_per_year,
+                      firstPayment: selectedOffer.first_payment || 0,
+                      contractMonths: selectedOffer.period_months,
+                    })
+                  : foundListing.selected_lease_score ?? null
+
+                return {
+                  data: {
+                    ...foundListing,
+                    monthly_price: selectedOffer.monthly_price,
+                    mileage_per_year: selectedOffer.mileage_per_year,
+                    period_months: selectedOffer.period_months,
+                    first_payment: selectedOffer.first_payment,
+                    selected_mileage: selectedOffer.mileage_per_year,
+                    selected_term: selectedOffer.period_months,
+                    selected_deposit: selectedOffer.first_payment,
+                    selected_monthly_price: selectedOffer.monthly_price,
+                    selected_lease_score: leaseScore,
+                    offer_selection_method: selectedOffer.selection_method,
+                  },
+                  error: null,
+                }
+              }
+            }
+
             return { data: foundListing, error: null }
           }
         }

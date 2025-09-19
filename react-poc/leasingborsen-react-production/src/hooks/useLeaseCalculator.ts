@@ -65,9 +65,9 @@ export interface LeaseCalculatorData {
 }
 
 export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculatorData => {
-  const [selectedMileage, setSelectedMileage] = useState<number | null>(null)
-  const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null)
-  const [selectedUpfront, setSelectedUpfront] = useState<number | null>(null)
+  const [selectedMileage, setSelectedMileageState] = useState<number | null>(null)
+  const [selectedPeriod, setSelectedPeriodState] = useState<number | null>(null)
+  const [selectedUpfront, setSelectedUpfrontState] = useState<number | null>(null)
   const [hoveredOption, setHoveredOption] = useState<HoveredOption | null>(null)
   
   // New: Initialization status state machine
@@ -76,6 +76,35 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   // Enhanced refs for explicit initialization tracking
   const initializedForCarRef = useRef<string | null>(null)
   const initSourceRef = useRef<'url' | 'car' | 'default' | 'recovery' | 'fallback' | null>(null)
+  const userOverrideRef = useRef(false)
+  const serverSelectionRef = useRef<string | null>(null)
+
+  const composeSelectionKey = useCallback((
+    mileage: number | null,
+    period: number | null,
+    upfront: number | null
+  ) => `${mileage ?? 'null'}|${period ?? 'null'}|${upfront ?? 'null'}`, [])
+
+  const setSelectedMileageInternal = useCallback((value: number | null, source: 'user' | 'system') => {
+    if (source === 'user') {
+      userOverrideRef.current = true
+    }
+    setSelectedMileageState(value)
+  }, [])
+
+  const setSelectedPeriodInternal = useCallback((value: number | null, source: 'user' | 'system') => {
+    if (source === 'user') {
+      userOverrideRef.current = true
+    }
+    setSelectedPeriodState(value)
+  }, [])
+
+  const setSelectedUpfrontInternal = useCallback((value: number | null, source: 'user' | 'system') => {
+    if (source === 'user') {
+      userOverrideRef.current = true
+    }
+    setSelectedUpfrontState(value)
+  }, [])
 
   // SSR-safe layout effect for preventing flicker
   const useIsomorphicLayoutEffect = 
@@ -293,19 +322,19 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
   const resetToCheapest = useCallback(() => {
     if (!cheapestOption) return
     
-    setSelectedMileage(cheapestOption.mileage_per_year)
-    setSelectedPeriod(cheapestOption.period_months)
-    setSelectedUpfront(cheapestOption.first_payment)
-  }, [cheapestOption])
+    setSelectedMileageInternal(cheapestOption.mileage_per_year, 'user')
+    setSelectedPeriodInternal(cheapestOption.period_months, 'user')
+    setSelectedUpfrontInternal(cheapestOption.first_payment, 'user')
+  }, [cheapestOption, setSelectedMileageInternal, setSelectedPeriodInternal, setSelectedUpfrontInternal])
 
   // Select best score option
   const selectBestScore = useCallback(() => {
     if (!bestScoreOption) return
     
-    setSelectedMileage(bestScoreOption.mileage_per_year)
-    setSelectedPeriod(bestScoreOption.period_months)
-    setSelectedUpfront(bestScoreOption.first_payment)
-  }, [bestScoreOption])
+    setSelectedMileageInternal(bestScoreOption.mileage_per_year, 'user')
+    setSelectedPeriodInternal(bestScoreOption.period_months, 'user')
+    setSelectedUpfrontInternal(bestScoreOption.first_payment, 'user')
+  }, [bestScoreOption, setSelectedMileageInternal, setSelectedPeriodInternal, setSelectedUpfrontInternal])
 
   // Enhanced Solution C: Deterministic initialization with explicit tracking
   useIsomorphicLayoutEffect(() => {
@@ -334,11 +363,13 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     if (initializedForCarRef.current !== carKey) {
       // Reset state for genuinely new car (not first mount)
       if (initializedForCarRef.current !== null) {
-        setSelectedMileage(null)
-        setSelectedPeriod(null)
-        setSelectedUpfront(null)
+        setSelectedMileageInternal(null, 'system')
+        setSelectedPeriodInternal(null, 'system')
+        setSelectedUpfrontInternal(null, 'system')
         initSourceRef.current = null
       }
+      userOverrideRef.current = false
+      serverSelectionRef.current = null
       
       // Handle loading state - wait for offers
       if (isLoading) {
@@ -371,12 +402,17 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           (targetUpfront == null || o.first_payment === targetUpfront)
         )
         if (exact) {
-          setSelectedMileage(exact.mileage_per_year)
-          setSelectedPeriod(exact.period_months)
-          setSelectedUpfront(exact.first_payment)
+          setSelectedMileageInternal(exact.mileage_per_year, 'system')
+          setSelectedPeriodInternal(exact.period_months, 'system')
+          setSelectedUpfrontInternal(exact.first_payment, 'system')
           initializedForCarRef.current = carKey
           setInitStatus('initialized')
           initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+          serverSelectionRef.current = composeSelectionKey(
+            exact.mileage_per_year,
+            exact.period_months,
+            exact.first_payment
+          )
           return
         }
 
@@ -399,24 +435,34 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
             best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
           }
 
-          setSelectedMileage(best.mileage_per_year)
-          setSelectedPeriod(best.period_months)
-          setSelectedUpfront(best.first_payment)
+          setSelectedMileageInternal(best.mileage_per_year, 'system')
+          setSelectedPeriodInternal(best.period_months, 'system')
+          setSelectedUpfrontInternal(best.first_payment, 'system')
           initializedForCarRef.current = carKey
           setInitStatus('initialized')
           initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+          serverSelectionRef.current = composeSelectionKey(
+            best.mileage_per_year,
+            best.period_months,
+            best.first_payment
+          )
           return
         }
       }
 
       // 3) Final fallback: cheapest overall
       if (cheapestOption) {
-        setSelectedMileage(cheapestOption.mileage_per_year)
-        setSelectedPeriod(cheapestOption.period_months)
-        setSelectedUpfront(cheapestOption.first_payment)
+        setSelectedMileageInternal(cheapestOption.mileage_per_year, 'system')
+        setSelectedPeriodInternal(cheapestOption.period_months, 'system')
+        setSelectedUpfrontInternal(cheapestOption.first_payment, 'system')
         initializedForCarRef.current = carKey
         setInitStatus('initialized')
         initSourceRef.current = 'default'
+        serverSelectionRef.current = composeSelectionKey(
+          cheapestOption.mileage_per_year,
+          cheapestOption.period_months,
+          cheapestOption.first_payment
+        )
       }
     } else {
       // Recovery logic for previously initialized car
@@ -435,12 +481,17 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
             (targetUpfront == null || o.first_payment === targetUpfront)
           )
           if (exact) {
-            setSelectedMileage(exact.mileage_per_year)
-            setSelectedPeriod(exact.period_months)
-            setSelectedUpfront(exact.first_payment)
+            setSelectedMileageInternal(exact.mileage_per_year, 'system')
+            setSelectedPeriodInternal(exact.period_months, 'system')
+            setSelectedUpfrontInternal(exact.first_payment, 'system')
             initializedForCarRef.current = carKey
             setInitStatus('initialized')
             initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+            serverSelectionRef.current = composeSelectionKey(
+              exact.mileage_per_year,
+              exact.period_months,
+              exact.first_payment
+            )
             return
           }
 
@@ -461,34 +512,105 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
               best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
             }
 
-            setSelectedMileage(best.mileage_per_year)
-            setSelectedPeriod(best.period_months)
-            setSelectedUpfront(best.first_payment)
+            setSelectedMileageInternal(best.mileage_per_year, 'system')
+            setSelectedPeriodInternal(best.period_months, 'system')
+            setSelectedUpfrontInternal(best.first_payment, 'system')
             initializedForCarRef.current = carKey
             setInitStatus('initialized')
             initSourceRef.current = car?.selected_mileage ? 'url' : 'car'
+            serverSelectionRef.current = composeSelectionKey(
+              best.mileage_per_year,
+              best.period_months,
+              best.first_payment
+            )
             return
           }
         }
 
         // Final fallback: cheapest overall
         if (cheapestOption) {
-          setSelectedMileage(cheapestOption.mileage_per_year)
-          setSelectedPeriod(cheapestOption.period_months)
-          setSelectedUpfront(cheapestOption.first_payment)
+          setSelectedMileageInternal(cheapestOption.mileage_per_year, 'system')
+          setSelectedPeriodInternal(cheapestOption.period_months, 'system')
+          setSelectedUpfrontInternal(cheapestOption.first_payment, 'system')
           initializedForCarRef.current = carKey
           setInitStatus('initialized')
           initSourceRef.current = 'recovery'
+          serverSelectionRef.current = composeSelectionKey(
+            cheapestOption.mileage_per_year,
+            cheapestOption.period_months,
+            cheapestOption.first_payment
+          )
+        }
+      }
+
+      // Synchronize with server-provided selection when no user overrides exist
+      if (!userOverrideRef.current && initStatus === 'initialized' && leaseOptions.length > 0) {
+        const serverMileage = car?.selected_mileage ?? car?.mileage_per_year ?? null
+        const serverPeriod = car?.selected_term ?? car?.period_months ?? null
+        const serverUpfront = car?.selected_deposit ?? car?.first_payment ?? null
+        const serverKey = composeSelectionKey(serverMileage, serverPeriod, serverUpfront)
+        const emptyKey = composeSelectionKey(null, null, null)
+
+        if (serverKey !== serverSelectionRef.current && serverKey !== emptyKey && serverMileage != null) {
+          const sameMileage = leaseOptions.filter(o => o.mileage_per_year === serverMileage)
+
+          if (sameMileage.length) {
+            let next = sameMileage.find(o =>
+              (serverPeriod == null || o.period_months === serverPeriod) &&
+              (serverUpfront == null || o.first_payment === serverUpfront)
+            )
+
+            if (!next) {
+              const periodPref = Array.from(new Set([
+                serverPeriod,
+                36,
+                24,
+                48,
+              ].filter((value): value is number => value != null)))
+
+              if (periodPref.length) {
+                next = sameMileage
+                  .filter(o => periodPref.includes(o.period_months))
+                  .sort((a, b) => {
+                    const ai = periodPref.indexOf(a.period_months)
+                    const bi = periodPref.indexOf(b.period_months)
+                    if (ai !== bi) return ai - bi
+                    if (serverUpfront != null) {
+                      const ad = Math.abs((a.first_payment ?? 0) - serverUpfront)
+                      const bd = Math.abs((b.first_payment ?? 0) - serverUpfront)
+                      if (ad !== bd) return ad - bd
+                    }
+                    return a.monthly_price - b.monthly_price
+                  })[0]
+              }
+            }
+
+            if (!next) {
+              next = sameMileage.reduce((prev, curr) => (prev.monthly_price <= curr.monthly_price ? prev : curr))
+            }
+
+            if (next) {
+              setSelectedMileageInternal(next.mileage_per_year, 'system')
+              setSelectedPeriodInternal(next.period_months, 'system')
+              setSelectedUpfrontInternal(next.first_payment, 'system')
+              serverSelectionRef.current = serverKey
+            }
+          }
         }
       }
 
       // Mismatch fallback: Handle invalid selections
       if (initStatus === 'initialized' && leaseOptions.length > 0 && !selectedLease) {
         if (cheapestOption) {
-          setSelectedMileage(cheapestOption.mileage_per_year)
-          setSelectedPeriod(cheapestOption.period_months)
-          setSelectedUpfront(cheapestOption.first_payment)
+          setSelectedMileageInternal(cheapestOption.mileage_per_year, 'system')
+          setSelectedPeriodInternal(cheapestOption.period_months, 'system')
+          setSelectedUpfrontInternal(cheapestOption.first_payment, 'system')
           initSourceRef.current = 'fallback'
+          serverSelectionRef.current = composeSelectionKey(
+            cheapestOption.mileage_per_year,
+            cheapestOption.period_months,
+            cheapestOption.first_payment
+          )
         }
       }
     }
@@ -501,9 +623,26 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
     car?.selected_term, car?.period_months,
     car?.selected_deposit, car?.first_payment,
     selectedLease, // Needed for mismatch fallback logic
-    initStatus // Needed for recovery logic
+    initStatus, // Needed for recovery logic
+    composeSelectionKey,
+    setSelectedMileageInternal,
+    setSelectedPeriodInternal,
+    setSelectedUpfrontInternal,
+    leaseOptions
     // Do NOT include selected* states to avoid loops (except selectedLease for fallback)
   ])
+
+  const setSelectedMileage = useCallback((value: number) => {
+    setSelectedMileageInternal(value, 'user')
+  }, [setSelectedMileageInternal])
+
+  const setSelectedPeriod = useCallback((value: number) => {
+    setSelectedPeriodInternal(value, 'user')
+  }, [setSelectedPeriodInternal])
+
+  const setSelectedUpfront = useCallback((value: number) => {
+    setSelectedUpfrontInternal(value, 'user')
+  }, [setSelectedUpfrontInternal])
 
   return {
     selectedMileage,

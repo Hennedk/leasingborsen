@@ -31,3 +31,8 @@ dist-ssr
 .serena/cache/
 .serena/index/
 .serena/*.log
+
+# Caches and reports
+.tanstack/
+test-results/
+playwright-report/

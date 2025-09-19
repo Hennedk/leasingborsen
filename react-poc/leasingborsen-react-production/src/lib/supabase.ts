@@ -128,7 +128,7 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
 }
 
 // Helper function for selecting the best offer based on mileage and term preferences
-function selectBestOffer(
+export function selectBestOffer(
   leasePricing: any,
   targetMileage: number,
   targetDeposit: number = 35000, // Changed from 0 to 35000 kr as balanced middle-ground

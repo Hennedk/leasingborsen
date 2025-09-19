@@ -63,7 +63,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "cleanup:archive": "bash scripts/cleanup-archive.sh",
+    "cleanup:archive:dry": "bash scripts/cleanup-archive.sh --dry-run"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",
