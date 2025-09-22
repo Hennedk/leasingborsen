@@ -52,16 +52,28 @@ Replace `findMatchingOffer` in `supabase/functions/get-similar-cars/index.ts`:
 import { selectBestOffer } from '../_shared/offerSelection'
 
 // Replace findMatchingOffer usage with:
-const selectedOffer = selectBestOffer(
-  leasePricing,
-  currentMileage || 15000,
-  currentDeposit || 35000,
-  currentTerm,
-  true, // strict mode
-  !!(currentMileage || currentDeposit || currentTerm) // isUserSpecified
+const hasUserConfig = [currentMileage, currentDeposit, currentTerm].some(
+  (value) => value !== undefined
 )
 
-// Calculate lease score for selected offer
+const selectedOffer =
+  selectBestOffer(
+    leasePricing,
+    currentMileage ?? 15000,
+    currentDeposit ?? 35000,
+    currentTerm,
+    true, // strict mode for user-aligned selection
+    hasUserConfig
+  ) ??
+  selectBestOffer(
+    leasePricing,
+    currentMileage ?? 15000,
+    currentDeposit ?? 35000,
+    currentTerm,
+    false, // flexible fallback mirrors previous behaviour
+    hasUserConfig
+  )
+
 if (selectedOffer && selectedOffer.monthly_price) {
   dynamicLeaseScore = calculateLeaseScoreSimple({
     monthlyPrice: selectedOffer.monthly_price,
@@ -98,6 +110,8 @@ if (selectedOffer && selectedOffer.monthly_price) {
 #### 5. Add Validation Tests
 - Verify score consistency between listings → detail navigation
 - Test similar cars show same scores as main listings
+- Cover zero-deposit and missing-term paths to ensure defaults never override intentional 0 selections
+- Backstop cheapest-offer fallback so strict-mode misses still render cards
 - Ensure URL parameters properly preserved
 
 ## Expected Results
@@ -110,11 +124,13 @@ if (selectedOffer && selectedOffer.monthly_price) {
 ## Implementation Checklist
 
 - [ ] Extract `selectBestOffer` to shared module
-- [ ] Update Similar Cars Edge Function to use shared logic
+- [ ] Update Similar Cars Edge Function to use shared logic with strict+flex fallback
 - [ ] Verify consistent default parameters across contexts
+- [ ] Add temporary logging/monitoring for null/fallback selections post-release
 - [ ] Test score alignment in all navigation flows
-- [ ] Add unit tests for offer selection consistency
-- [ ] Document the unified scoring approach
+- [ ] Add unit tests for offer selection consistency (zero deposit, fallback parity)
+- [ ] Run Supabase bundler/type checks to confirm shared module compatibility
+- [ ] Document the unified scoring approach in code + docs
 
 ## Files to Modify
 

@@ -138,6 +138,13 @@ When a listing has multiple lease offers, the system:
 2. **Selects Best Score**: The highest total score becomes the listing's official score
 3. **Stores Winner Details**: The winning offer's pricing_id and breakdown are stored
 
+### Unified Offer Selection (2025-02 Refresh)
+- **Single source of truth**: `supabase/functions/_shared/offerSelection.ts` exports `selectBestOffer` and `selectOfferWithFallback`; the web app consumes them via `src/lib/offerSelection.ts`.
+- **Default alignment**: Mileage defaults to 15,000 km and deposit to 35,000 kr when a user has not supplied values; lease terms prefer `[userTerm, 36, 24, 48]` in that order.
+- **User intent detection**: Zero-deposit selections now count as user input because `isUserSpecified` only checks for `undefined`, preventing defaults from overriding real campaign offers.
+- **Fallback behaviour**: Similar cars and other derived views call `selectOfferWithFallback`, which runs strict matching first, then flexible mileage matching, and finally falls back to the cheapest offer if no structured match exists.
+- **Telemetry**: Edge functions log whenever flexible or cheapest fallbacks are used, helping track mismatches during rollout.
+
 ### Implementation Example (v2.1)
 ```typescript
 // Multiple offers processing with v2.1 EML formula

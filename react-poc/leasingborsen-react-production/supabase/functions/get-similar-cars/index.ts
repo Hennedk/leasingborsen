@@ -1,10 +1,14 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
-import { 
-  calculateLeaseScoreSimple, 
-  type LeaseScoreInput 
+import {
+  calculateLeaseScoreSimple,
+  type LeaseScoreInput,
 } from '../_shared/leaseScore.ts'
+import {
+  selectOfferWithFallback,
+  type SelectBestOfferResult,
+} from '../_shared/offerSelection.ts'
 
 interface SimilarCarsRequest {
   listing_id: string
@@ -372,35 +376,6 @@ serve(async (req) => {
 })
 
 
-// Find matching lease offer for given configuration
-function findMatchingOffer(leasePricing: any[], mileage?: number, term?: number, deposit?: number) {
-  if (!leasePricing || leasePricing.length === 0) return null
-  
-  // Try exact match first
-  if (mileage && term && deposit !== undefined) {
-    const exactMatch = leasePricing.find(offer => 
-      offer.mileage_per_year === mileage &&
-      offer.period_months === term &&
-      offer.first_payment === deposit
-    )
-    if (exactMatch) return exactMatch
-  }
-  
-  // Try partial matches (prioritize mileage and term)
-  if (mileage && term) {
-    const partialMatch = leasePricing.find(offer => 
-      offer.mileage_per_year === mileage &&
-      offer.period_months === term
-    )
-    if (partialMatch) return partialMatch
-  }
-  
-  // Fall back to cheapest option
-  return leasePricing.reduce((prev, curr) => 
-    prev.monthly_price < curr.monthly_price ? prev : curr
-  )
-}
-
 // Helper function for model matching with variant handling
 function isSameModel(model1: string, model2: string): boolean {
   const normalize = (model: string) => model
@@ -473,23 +448,70 @@ function scoreCar(
 
   // Calculate dynamic lease score based on current configuration
   let dynamicLeaseScore: number | undefined = undefined
-  let selectedOffer = null
-  
-  if (car.lease_pricing && car.retail_price && currentMileage && currentTerm) {
+  let selectedOffer: SelectBestOfferResult = null
+
+  if (car.lease_pricing && car.retail_price) {
     try {
-      const leasePricing = typeof car.lease_pricing === 'string' 
-        ? JSON.parse(car.lease_pricing) 
+      const leasePricing = typeof car.lease_pricing === 'string'
+        ? JSON.parse(car.lease_pricing)
         : car.lease_pricing
-      
-      selectedOffer = findMatchingOffer(leasePricing, currentMileage, currentTerm, currentDeposit)
-      
-      if (selectedOffer && selectedOffer.monthly_price) {
+
+      const hasUserConfig = [currentMileage, currentTerm, currentDeposit].some(
+        (value) => value !== undefined
+      )
+
+      const targetMileage = currentMileage ?? 15000
+      const targetDeposit = currentDeposit ?? 35000
+
+      const { offer, stage } = selectOfferWithFallback({
+        leasePricing,
+        targetMileage,
+        targetDeposit,
+        targetTerm: currentTerm,
+        isUserSpecified: hasUserConfig,
+      })
+
+      selectedOffer = offer
+
+      if (stage === 'flexible') {
+        console.warn('similar-cars: flexible fallback used', {
+          listingId: car.id,
+          targetMileage,
+          currentTerm,
+          targetDeposit,
+          hasUserConfig,
+        })
+      } else if (stage === 'cheapest') {
+        if (offer) {
+          console.warn('similar-cars: cheapest fallback used', {
+            listingId: car.id,
+            cheapestMonthlyPrice: offer.monthly_price,
+            targetMileage,
+            currentTerm,
+            targetDeposit,
+            hasUserConfig,
+          })
+        } else {
+          console.error('similar-cars: no offer could be selected', {
+            listingId: car.id,
+            leasePricingLength: Array.isArray(leasePricing)
+              ? leasePricing.length
+              : 0,
+            targetMileage,
+            currentTerm,
+            targetDeposit,
+            hasUserConfig,
+          })
+        }
+      }
+
+      if (selectedOffer?.monthly_price) {
         dynamicLeaseScore = calculateLeaseScoreSimple({
           monthlyPrice: selectedOffer.monthly_price,
           retailPrice: car.retail_price,
           mileagePerYear: selectedOffer.mileage_per_year,
           firstPayment: selectedOffer.first_payment || 0,
-          contractMonths: selectedOffer.period_months // Included for compatibility but ignored in v2
+          contractMonths: selectedOffer.period_months,
         })
       }
     } catch (error) {

@@ -13,6 +13,9 @@ import type {
 } from '@/types'
 import { getEnvironmentConfig } from '@/config/environments'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
+import { selectBestOffer } from '@/lib/offerSelection'
+
+export { selectBestOffer }
 
 const config = getEnvironmentConfig()
 
@@ -127,148 +130,6 @@ function applyFilters(query: any, filters: Partial<FilterOptions>) {
   return query
 }
 
-// Helper function for selecting the best offer based on mileage and term preferences
-export function selectBestOffer(
-  leasePricing: any,
-  targetMileage: number,
-  targetDeposit: number = 35000, // Changed from 0 to 35000 kr as balanced middle-ground
-  targetTerm?: number, // NEW: Allow specifying preferred term
-  strictMode: boolean = true,
-  isUserSpecified: boolean = true // NEW: Whether these are user selections or defaults
-): any {
-  if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
-    return null
-  }
-  
-  let matchingOffers: any[]
-  let isExactMileageFlexible = false
-  
-  if (strictMode) {
-    // Original strict behavior - only exact matches
-    if (targetMileage === 35000) {
-      // 35k+ group - accept any of these mileages
-      const acceptableMileages = [35000, 40000, 45000, 50000]
-      matchingOffers = leasePricing.filter(offer => 
-        acceptableMileages.includes(offer.mileage_per_year)
-      )
-    } else {
-      // Exact match for other mileage options
-      matchingOffers = leasePricing.filter(offer => 
-        offer.mileage_per_year === targetMileage
-      )
-    }
-    
-    if (matchingOffers.length === 0) {
-      return null // No offers at target mileage - exclude listing in strict mode
-    }
-  } else {
-    // Flexible mode - find closest mileage to target
-    const availableMileages = [...new Set(leasePricing.map(offer => offer.mileage_per_year))]
-    
-    if (availableMileages.length === 0) {
-      return null
-    }
-    
-    // Find the closest mileage(s) to target
-    const closestDistance = Math.min(...availableMileages.map(mileage => 
-      Math.abs(mileage - targetMileage)
-    ))
-    
-    const closestMileages = availableMileages.filter(mileage => 
-      Math.abs(mileage - targetMileage) === closestDistance
-    )
-    
-    // If multiple equally close, prefer the lower one
-    const selectedMileage = Math.min(...closestMileages)
-    isExactMileageFlexible = selectedMileage === targetMileage
-    
-    // Filter to offers with the selected mileage
-    matchingOffers = leasePricing.filter(offer => 
-      offer.mileage_per_year === selectedMileage
-    )
-  }
-  
-  // Term preference order: prioritize user's targetTerm, then fallback to [36, 24, 48]
-  const termPreference = Array.from(
-    new Set(
-      targetTerm ? [targetTerm, 36, 24, 48] : [36, 24, 48]
-    )
-  )
-  
-  for (const preferredTerm of termPreference) {
-    const termOffers = matchingOffers.filter(offer => 
-      offer.period_months === preferredTerm
-    )
-    
-    if (termOffers.length > 0) {
-      // NEW LOGIC: Find offer closest to target deposit (35k kr)
-      let selectedOffer = termOffers.find(offer => 
-        offer.first_payment === targetDeposit
-      )
-      
-      if (!selectedOffer) {
-        // Find deposit closest to target (35k kr)
-        const depositDistances = termOffers.map(offer => ({
-          offer,
-          distance: Math.abs(offer.first_payment - targetDeposit)
-        }))
-        
-        // Sort by distance to target deposit, then by monthly price if tied
-        depositDistances.sort((a, b) => {
-          if (a.distance !== b.distance) {
-            return a.distance - b.distance // Closest to target first
-          }
-          return a.offer.monthly_price - b.offer.monthly_price // Lower monthly if tied
-        })
-        
-        selectedOffer = depositDistances[0].offer
-      }
-      
-      if (strictMode) {
-        return {
-          ...selectedOffer,
-          selection_method: !isUserSpecified ? 'default' : (preferredTerm === targetTerm ? 'exact' : 'fallback')
-        }
-      } else {
-        return {
-          ...selectedOffer,
-          selection_method: !isUserSpecified ? 'default' : (isExactMileageFlexible ? (preferredTerm === targetTerm ? 'exact' : 'fallback') : 'closest')
-        }
-      }
-    }
-  }
-  
-  // Fallback: no offers with preferred terms
-  if (strictMode) {
-    return null // Exclude listing in strict mode
-  } else {
-    // In flexible mode, find any offer with the closest mileage
-    // Sort by deposit distance to target, then by monthly price
-    const bestOffer = matchingOffers
-      .map(offer => ({
-        offer,
-        depositDistance: Math.abs(offer.first_payment - targetDeposit)
-      }))
-      .sort((a, b) => {
-        // First, prefer 36 months if available
-        if (a.offer.period_months === 36 && b.offer.period_months !== 36) return -1
-        if (b.offer.period_months === 36 && a.offer.period_months !== 36) return 1
-        
-        // Then sort by deposit distance to target
-        if (a.depositDistance !== b.depositDistance) {
-          return a.depositDistance - b.depositDistance
-        }
-        
-        // Finally by monthly price
-        return a.offer.monthly_price - b.offer.monthly_price
-      })[0]?.offer
-    
-    return {
-      ...bestOffer,
-      selection_method: !isUserSpecified ? 'default' : (isExactMileageFlexible ? 'exact' : 'closest')
-    }
-  }
-}
 
 // Export types for external use
 export type { CarListing, FilterOptions, Make, Model, BodyType, FuelType, Transmission, Colour, SupabaseResponse, SupabaseSingleResponse }
