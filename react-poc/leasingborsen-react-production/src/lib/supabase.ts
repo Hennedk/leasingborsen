@@ -13,9 +13,9 @@ import type {
 } from '@/types'
 import { getEnvironmentConfig } from '@/config/environments'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
-import { selectBestOffer } from '@/lib/offerSelection'
+import { selectBestOffer, selectOfferWithFallback } from '@/lib/offerSelection'
 
-export { selectBestOffer }
+export { selectBestOffer, selectOfferWithFallback }
 
 const config = getEnvironmentConfig()
 
@@ -326,15 +326,14 @@ export class CarListingQueries {
       
       // Only consider it user-specified if at least one parameter was explicitly set
       const isUserSpecified = isMileageUserSpecified || isDepositUserSpecified || isTermUserSpecified
-      
-      const selectedOffer = selectBestOffer(
-        leasePricingArray,
-        offerSettings.targetMileage ?? 15000, // Default to 15k if not specified
-        offerSettings.targetDeposit ?? 35000,  // Default to 35k if not specified
-        offerSettings.targetTerm,              // Pass through user's target term
-        true, // strict mode
-        isUserSpecified // Whether these are user selections or defaults
-      )
+
+      const { offer: selectedOffer, stage: selectionStage } = selectOfferWithFallback({
+        leasePricing: leasePricingArray,
+        targetMileage: offerSettings.targetMileage ?? 15000,
+        targetDeposit: offerSettings.targetDeposit ?? 35000,
+        targetTerm: offerSettings.targetTerm,
+        isUserSpecified
+      })
 
       if (selectedOffer) {
         // Calculate lease score for the specifically selected offer (aligns with listings grid)
@@ -362,7 +361,8 @@ export class CarListingQueries {
           selected_deposit: selectedOffer.first_payment,
           selected_monthly_price: selectedOffer.monthly_price,
           selected_lease_score: selectedLeaseScore,
-          offer_selection_method: selectedOffer.selection_method
+          offer_selection_method: selectedOffer.selection_method,
+          offer_selection_stage: selectionStage
         }
       }
     }

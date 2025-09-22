@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { CarListingQueries, selectBestOffer, type FilterOptions } from '@/lib/supabase'
+import { CarListingQueries, selectBestOffer, selectOfferWithFallback, type FilterOptions } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { SortOrder } from '@/types'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
@@ -82,14 +82,13 @@ export function useListing(
               const hasUserPreferences =
                 targetMileage != null || targetDeposit != null || targetTerm != null
 
-              const selectedOffer = selectBestOffer(
-                foundListing.all_lease_pricing,
-                targetMileage ?? 15000,
-                targetDeposit ?? 35000,
-                targetTerm ?? undefined,
-                true,
-                hasUserPreferences
-              )
+              const { offer: selectedOffer, stage: selectionStage } = selectOfferWithFallback({
+                leasePricing: foundListing.all_lease_pricing,
+                targetMileage: targetMileage ?? 15000,
+                targetDeposit: targetDeposit ?? 35000,
+                targetTerm: targetTerm ?? undefined,
+                isUserSpecified: hasUserPreferences
+              })
 
               if (selectedOffer) {
                 const leaseScore = foundListing.retail_price && selectedOffer.monthly_price
@@ -115,6 +114,7 @@ export function useListing(
                     selected_monthly_price: selectedOffer.monthly_price,
                     selected_lease_score: leaseScore,
                     offer_selection_method: selectedOffer.selection_method,
+                    offer_selection_stage: selectionStage,
                   },
                   error: null,
                 }

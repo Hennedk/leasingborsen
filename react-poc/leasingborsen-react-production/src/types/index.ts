@@ -204,6 +204,7 @@ export interface CarListing extends
   selected_monthly_price?: number
   selected_lease_score?: number | null
   offer_selection_method?: 'exact' | 'fallback' | 'closest' | 'none' | 'default'
+  offer_selection_stage?: 'strict' | 'flexible' | 'cheapest'
   
   // Preserve original pricing for reference
   all_lease_pricing?: unknown[]
