@@ -547,7 +547,7 @@ function scoreCar(
     selected_mileage: displayedOffer.mileage_per_year,
     selected_term: displayedOffer.period_months,
     selected_deposit: displayedOffer.first_payment,
-    selected_lease_score: dynamicLeaseScore || car.lease_score, // Use dynamic score or fallback
+    selected_lease_score: dynamicLeaseScore, // Always use dynamic score for consistency
     retail_price: car.retail_price
   }
 }
