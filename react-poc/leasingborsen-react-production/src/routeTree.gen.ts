@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WhyPrivateLeasingRouteImport } from './routes/why-private-leasing'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListingsRouteImport } from './routes/listings'
 import { Route as DesignSystemRouteImport } from './routes/design-system'
 import { Route as BackgroundRemovalPocRouteImport } from './routes/background-removal-poc'
@@ -40,6 +41,11 @@ import { Route as AdminBatchesBatchIdReviewRouteImport } from './routes/admin/ba
 const WhyPrivateLeasingRoute = WhyPrivateLeasingRouteImport.update({
   id: '/why-private-leasing',
   path: '/why-private-leasing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ListingsRoute = ListingsRouteImport.update({
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/background-removal-poc': typeof BackgroundRemovalPocRoute
   '/design-system': typeof DesignSystemRoute
   '/listings': typeof ListingsRoute
+  '/login': typeof LoginRoute
   '/why-private-leasing': typeof WhyPrivateLeasingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/extraction': typeof AdminExtractionRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/background-removal-poc': typeof BackgroundRemovalPocRoute
   '/design-system': typeof DesignSystemRoute
   '/listings': typeof ListingsRoute
+  '/login': typeof LoginRoute
   '/why-private-leasing': typeof WhyPrivateLeasingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/extraction': typeof AdminExtractionRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/background-removal-poc': typeof BackgroundRemovalPocRoute
   '/design-system': typeof DesignSystemRoute
   '/listings': typeof ListingsRoute
+  '/login': typeof LoginRoute
   '/why-private-leasing': typeof WhyPrivateLeasingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/extraction': typeof AdminExtractionRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/background-removal-poc'
     | '/design-system'
     | '/listings'
+    | '/login'
     | '/why-private-leasing'
     | '/admin/dashboard'
     | '/admin/extraction'
@@ -298,6 +308,7 @@ export interface FileRouteTypes {
     | '/background-removal-poc'
     | '/design-system'
     | '/listings'
+    | '/login'
     | '/why-private-leasing'
     | '/admin/dashboard'
     | '/admin/extraction'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/background-removal-poc'
     | '/design-system'
     | '/listings'
+    | '/login'
     | '/why-private-leasing'
     | '/admin/dashboard'
     | '/admin/extraction'
@@ -354,6 +366,7 @@ export interface RootRouteChildren {
   BackgroundRemovalPocRoute: typeof BackgroundRemovalPocRoute
   DesignSystemRoute: typeof DesignSystemRoute
   ListingsRoute: typeof ListingsRoute
+  LoginRoute: typeof LoginRoute
   WhyPrivateLeasingRoute: typeof WhyPrivateLeasingRoute
   ListingIdRoute: typeof ListingIdRoute
 }
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/why-private-leasing'
       fullPath: '/why-private-leasing'
       preLoaderRoute: typeof WhyPrivateLeasingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/listings': {
@@ -637,6 +657,7 @@ const rootRouteChildren: RootRouteChildren = {
   BackgroundRemovalPocRoute: BackgroundRemovalPocRoute,
   DesignSystemRoute: DesignSystemRoute,
   ListingsRoute: ListingsRoute,
+  LoginRoute: LoginRoute,
   WhyPrivateLeasingRoute: WhyPrivateLeasingRoute,
   ListingIdRoute: ListingIdRoute,
 }

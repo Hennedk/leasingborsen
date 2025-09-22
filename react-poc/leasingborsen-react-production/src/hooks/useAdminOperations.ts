@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import { errorMessages } from '@/lib/utils'
 import { queryKeys } from '@/lib/queryKeys'
 // Type imports for Edge Function interfaces
@@ -139,32 +140,39 @@ interface AdminOperationResponse {
 
 export const useAdminOperations = () => {
   const queryClient = useQueryClient()
+  const { getAccessToken, isAdminAuthenticated } = useAuth()
 
   // Create listing mutation
   const createListingMutation = useMutation({
     mutationFn: async ({ listingData, offers }: CreateListingParams): Promise<AdminOperationResponse> => {
-      console.log('🔄 Creating listing via Edge Function:', { 
+      // Check authentication first
+      if (!isAdminAuthenticated) {
+        throw new Error('Du skal være logget ind som administrator for at udføre denne handling')
+      }
+
+      const accessToken = getAccessToken()
+      if (!accessToken) {
+        throw new Error('Manglende adgangstoken - log venligst ind igen')
+      }
+
+      console.log('🔄 Creating listing via Edge Function:', {
         seller_id: listingData.seller_id,
         make_id: listingData.make_id,
         model_id: listingData.model_id,
         offers_count: offers?.length || 0
       })
 
-      // Use direct fetch to get better error details
+      // Use direct fetch with user's access token
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-      
-      console.log('🔄 Calling Edge Function directly with payload:', {
-        operation: 'create',
-        listingData,
-        offers
-      })
-      
+
+      console.log('🔄 Calling Edge Function with user authentication')
+
       const response = await fetch(`${supabaseUrl}/functions/v1/admin-listing-operations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
+          'Authorization': `Bearer ${accessToken}`, // Use user's access token
           'apikey': supabaseKey
         },
         body: JSON.stringify({

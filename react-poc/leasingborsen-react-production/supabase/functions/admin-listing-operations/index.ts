@@ -1,13 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { withAdminAuth, type AuthResult } from '../_shared/authMiddleware.ts'
 import { rateLimiters } from '../_shared/rateLimitMiddleware.ts'
-
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
 
 // Danish error messages (matching frontend patterns)
 const errorMessages = {
@@ -528,42 +521,29 @@ async function deleteListing(supabase: any, listingId: string): Promise<AdminLis
   }
 }
 
-// Main handler
-serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  return rateLimiters.general(req, async (req) => {
+// Main handler with admin authentication
+const adminListingHandler = async (req: Request, authResult: AuthResult): Promise<Response> => {
+  return rateLimiters.general(req, async (req: Request) => {
     try {
-      // Initialize Supabase with service role
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-      
-      if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Missing Supabase configuration')
-      }
-      
-      const supabase = createClient(supabaseUrl, supabaseServiceKey)
+      const { supabase, user } = authResult
       
       // Parse request
       const request: AdminListingRequest = await req.json()
       const { operation, listingData, listingId, offers } = request
       
-      console.log(`[admin-listing-operations] Processing ${operation} operation`)
+      console.log(`[admin-listing-operations] Processing ${operation} operation for user: ${user.email}`)
       
       // Validate request
       if (!operation) {
         return new Response(
-          JSON.stringify({ 
-            success: false, 
+          JSON.stringify({
+            success: false,
             error: errorMessages.validationError,
             validationErrors: ['Operation er påkrævet']
           }),
-          { 
-            status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
           }
         )
       }
@@ -575,14 +555,14 @@ serve(async (req) => {
         case 'create': {
           if (!listingData) {
             return new Response(
-              JSON.stringify({ 
-                success: false, 
+              JSON.stringify({
+                success: false,
                 error: errorMessages.validationError,
                 validationErrors: ['Listing data er påkrævet for oprettelse']
               }),
-              { 
-                status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              {
+                status: 400,
+                headers: { 'Content-Type': 'application/json' }
               }
             )
           }
@@ -601,7 +581,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -620,7 +600,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -634,7 +614,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -653,7 +633,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -672,7 +652,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -691,7 +671,7 @@ serve(async (req) => {
               }),
               { 
                 status: 400, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+                headers: { 'Content-Type': 'application/json' } 
               }
             )
           }
@@ -708,7 +688,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
       }
@@ -719,7 +699,7 @@ serve(async (req) => {
         JSON.stringify(result),
         { 
           status: statusCode, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 'Content-Type': 'application/json' } 
         }
       )
       
@@ -732,9 +712,12 @@ serve(async (req) => {
         }),
         { 
           status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 'Content-Type': 'application/json' } 
         }
       )
     }
   })
-})
+}
+
+// Wrap the handler with admin authentication middleware
+serve(withAdminAuth(adminListingHandler))

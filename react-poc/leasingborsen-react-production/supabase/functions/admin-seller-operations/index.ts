@@ -1,12 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-}
+import { withAdminAuth, type AuthResult } from '../_shared/authMiddleware.ts'
 
 // Danish error messages
 const errorMessages = {
@@ -309,29 +302,16 @@ async function bulkDeleteSellers(supabase: any, sellerIds: string[]): Promise<Ad
   }
 }
 
-// Main handler
-serve(async (req) => {
-  // Handle CORS
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
+// Main handler with admin authentication
+const adminSellerHandler = async (req: Request, authResult: AuthResult): Promise<Response> => {
   try {
-    // Initialize Supabase with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing Supabase configuration')
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const { supabase, user } = authResult
     
     // Parse request
     const request: AdminSellerRequest = await req.json()
     const { operation, sellerData, sellerId, sellerIds } = request
     
-    console.log(`[admin-seller-operations] Processing ${operation} operation`)
+    console.log(`[admin-seller-operations] Processing ${operation} operation for user: ${user.email}`)
     
     // Validate request
     if (!operation) {
@@ -343,7 +323,7 @@ serve(async (req) => {
         }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { 'Content-Type': 'application/json' } 
         }
       )
     }
@@ -362,7 +342,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -378,7 +358,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -397,7 +377,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -411,7 +391,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -427,7 +407,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -446,7 +426,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -465,7 +445,7 @@ serve(async (req) => {
             }),
             { 
               status: 400, 
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+              headers: { 'Content-Type': 'application/json' } 
             }
           )
         }
@@ -482,7 +462,7 @@ serve(async (req) => {
           }),
           { 
             status: 400, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+            headers: { 'Content-Type': 'application/json' } 
           }
         )
     }
@@ -493,7 +473,7 @@ serve(async (req) => {
       JSON.stringify(result),
       { 
         status: statusCode, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json' } 
       }
     )
     
@@ -506,8 +486,11 @@ serve(async (req) => {
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { 'Content-Type': 'application/json' } 
       }
     )
   }
-})
+}
+
+// Wrap the handler with admin authentication middleware
+serve(withAdminAuth(adminSellerHandler))
