@@ -23,6 +23,7 @@ interface AuthResult {
   success: true;
   user: AuthUser;
   supabase: SupabaseClient;
+  serviceSupabase?: SupabaseClient;
 }
 
 interface AuthError {
@@ -39,7 +40,8 @@ const errorMessages = {
   invalidToken: 'Ugyldig adgangstoken',
   expiredToken: 'Udløbet adgangstoken',
   insufficientPermissions: 'Utilstrækkelige tilladelser - kun administratorer har adgang',
-  internalError: 'Intern serverfejl ved godkendelse'
+  internalError: 'Intern serverfejl ved godkendelse',
+  roleSyncError: 'Autentificeringsfejl - kunne ikke synkronisere roller'
 } as const;
 
 // CORS headers with restricted origins (following ADMIN_AUTH_PLAN.md)
@@ -81,26 +83,22 @@ function extractBearerToken(req: Request): string | null {
 /**
  * Sync user roles from app_metadata to public.user_roles table
  * This enables RLS policies to efficiently check roles
+ * Uses pure service client to avoid Authorization header conflicts
  */
 async function syncUserRoles(
-  supabase: SupabaseClient,
+  serviceSupabase: SupabaseClient,
   userId: string,
   roles: string[]
 ): Promise<void> {
-  try {
-    const { error } = await supabase
-      .rpc('sync_user_roles', {
-        user_uuid: userId,
-        new_roles: roles
-      });
+  const { error } = await serviceSupabase
+    .rpc('sync_user_roles', {
+      user_uuid: userId,
+      new_roles: roles
+    });
 
-    if (error) {
-      console.error('Error syncing user roles:', error);
-      // Don't throw - this is not critical for the auth flow
-    }
-  } catch (err) {
-    console.error('Failed to sync user roles:', err);
-    // Don't throw - this is not critical for the auth flow
+  if (error) {
+    console.error('Failed to sync user roles:', error);
+    throw new Error('Role synchronization failed');
   }
 }
 
@@ -165,9 +163,11 @@ export async function verifyAdminAccess(req: Request): Promise<AuthMiddlewareRes
       };
     }
 
-    // Create service-role client with user context for RLS
-    // This allows the service role to act on behalf of the authenticated user
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    // Create pure service client for privileged operations (NO Authorization header)
+    const serviceSupabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Create user-context client for RLS-protected operations
+    const userSupabase = createClient(supabaseUrl, supabaseServiceKey, {
       global: {
         headers: {
           Authorization: `Bearer ${token}`
@@ -175,8 +175,17 @@ export async function verifyAdminAccess(req: Request): Promise<AuthMiddlewareRes
       }
     });
 
-    // Sync roles to public.user_roles table for RLS policies
-    await syncUserRoles(supabase, user.id, roles);
+    // Sync roles using pure service client (critical for RLS to work)
+    try {
+      await syncUserRoles(serviceSupabase, user.id, roles);
+    } catch (syncError) {
+      console.error(`Role sync failed for ${user.email}:`, syncError);
+      return {
+        success: false,
+        error: errorMessages.roleSyncError,
+        status: 500
+      };
+    }
 
     // Log successful admin access
     console.log(`✅ Admin access verified for user: ${user.email} (${user.id})`);
@@ -184,7 +193,8 @@ export async function verifyAdminAccess(req: Request): Promise<AuthMiddlewareRes
     return {
       success: true,
       user: user as AuthUser,
-      supabase
+      supabase: userSupabase,
+      serviceSupabase
     };
 
   } catch (error) {

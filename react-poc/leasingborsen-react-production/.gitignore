@@ -14,7 +14,14 @@ dist-ssr
 
 # Environment files
 .env
-.env*.local
+.env*
+!.env.example
+
+# SECURITY: Prevent credential exposure in test files
+test-*.js
+*-auth.js
+scripts/create-*-user.js
+**/admin-auth.spec.ts
 
 # Editor directories and files
 .vscode/*
