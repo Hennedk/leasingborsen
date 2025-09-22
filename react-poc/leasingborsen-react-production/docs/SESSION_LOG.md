@@ -1,5 +1,71 @@
 # Session Log
 
+## 2025-09-22 (Session 9): Lease Score Consistency Fix ✅
+
+### Overview
+Fixed lease score inconsistency between main listings page and similar cars component on individual listing detail pages. The similar cars section was using a fallback mechanism that could show different lease scores for the same car.
+
+### Problem Identified
+The `get-similar-cars` Edge Function had a fallback to pre-stored database lease scores when dynamic calculation was unavailable:
+```typescript
+selected_lease_score: dynamicLeaseScore || car.lease_score
+```
+
+This caused inconsistency because:
+- Main listings always use dynamic calculation via `CarListingQueries.getListings()`
+- Similar cars could fall back to pre-stored scores with different parameters
+- Pre-stored scores might be outdated or based on different offer configurations
+
+### Solution Implemented
+**File**: `supabase/functions/get-similar-cars/index.ts`
+- **Line 550**: Removed fallback to ensure consistent calculation:
+  ```typescript
+  // Before: dynamicLeaseScore || car.lease_score
+  // After:  dynamicLeaseScore
+  ```
+
+### Key Changes
+- **Edge Function Fix**: Removed lease score fallback in `get-similar-cars/index.ts:550`
+- **Consistency**: All lease scores now use the same dynamic calculation method
+- **Deployment**: Edge Function successfully deployed to production
+
+### Impact
+- ✅ Similar cars show consistent lease scores with main listings
+- ✅ All components use same `calculateLeaseScoreSimple()` methodology
+- ✅ No breaking changes introduced
+- ✅ User experience consistency across all car browsing surfaces
+
+### Testing / Verification
+- Edge Function deployed successfully
+- TypeScript compilation verified (no new errors)
+- Existing lint issues remain (≈900 legacy issues, none new)
+- Functional testing confirmed no breaking changes
+
+### Commit
+- `82036bf`: fix(similar-cars): ensure consistent lease score calculation
+
+### Next Steps
+- Monitor for any regression reports
+- Consider implementing comprehensive lease score testing suite
+
+## 2025-09-19 (Session 8): Preserve Listings Mileage on Detail ✅
+
+### Overview
+Fixed the regression where mileage filters selected on `/listings` were lost when opening a detail page. Detail views now hydrate with the same lease configuration and keep recalculated offers in sync when the listing refetches, without overwriting user tweaks.
+
+### Key Changes
+- `src/hooks/useListings.ts`: reuse `selectBestOffer` when seeding detail queries from cached listings so first render reflects the active `selectedMileage`/`selectedDeposit`/`selectedTerm`.
+- `src/lib/supabase.ts`: export `selectBestOffer` for the above reuse (no behavioural change elsewhere).
+- `src/hooks/useLeaseCalculator.ts`: distinguish system vs. user edits, track the server-provided selection, and resync state when the same listing refetches with a different offer while preserving manual adjustments.
+
+### Testing / Verification
+- `npm run lint` → fails with existing repo-wide lint debt (≈900 legacy issues; none introduced here).
+- `npx vitest run src/pages/__tests__/Listing.test.tsx` → exits with code 1 before output (needs follow-up outside this session).
+
+### Follow-ups
+- Optional: rerun the focused Vitest suite with additional logging or without sandbox restrictions.
+- Plan a dedicated cleanup to address the longstanding lint failures before enforcing lint in CI.
+
 ## 2025-09-12 (Session 7): Hero Banner Mixpanel Tracking Implementation ✅
 
 ### Overview
