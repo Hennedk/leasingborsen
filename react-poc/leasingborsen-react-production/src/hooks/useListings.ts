@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { CarListingQueries, selectBestOffer, selectOfferWithFallback, type FilterOptions } from '@/lib/supabase'
+import { CarListingQueries, selectOfferWithFallback, type FilterOptions } from '@/lib/supabase'
 import { queryKeys } from '@/lib/queryKeys'
 import type { SortOrder } from '@/types'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
