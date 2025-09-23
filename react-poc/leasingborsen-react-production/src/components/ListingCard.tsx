@@ -23,7 +23,7 @@ import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
 import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
-import { trackListingClick, trackListingView, shouldTrackListingView } from '@/analytics/listing'
+import { trackListingClick, trackListingView, shouldTrackListingView, trackPriceCapNoteClick } from '@/analytics/listing'
 
 type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
 type OriginSurface = 'listings' | 'detail' | 'home'
@@ -664,11 +664,34 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
               {displayPrice}
             </p>
 
-            {/* Price cap note */}
+            {/* Price cap note - actionable CTA */}
             {priceCap?.shouldShow && (
-              <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded border border-border/40">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation() // Prevent card navigation
+
+                  // Track analytics event
+                  trackPriceCapNoteClick({
+                    listing_id: car.listing_id,
+                    display_reason: car.display_price_reason as 'price_cap_best_fit' | 'price_cap_cheapest',
+                    ideal_price: priceCap.idealPrice,
+                    ideal_deposit: priceCap.idealDeposit,
+                    display_price: car.display_monthly_price ?? car.monthly_price,
+                    price_cap_delta: car.price_cap_delta
+                  })
+
+                  // TODO: Implement offer selector opening with ideal deposit pre-selected
+                  console.log('Open offer selector with:', {
+                    idealDeposit: priceCap.idealDeposit,
+                    idealPrice: priceCap.idealPrice
+                  })
+                }}
+                className="text-xs text-muted-foreground bg-muted/30 hover:bg-muted/50 px-2 py-1 rounded border border-border/40 hover:border-border/60 transition-colors cursor-pointer text-left w-full"
+                aria-label={`Skift til ${priceCap.text}`}
+              >
                 <span className="font-medium">{priceCap.text}</span>
-              </div>
+                <span className="ml-1 text-xs opacity-70">→</span>
+              </button>
             )}
 
             <div className="flex items-center gap-2 text-xs sm:text-[11px] text-muted-foreground leading-relaxed">

@@ -465,3 +465,32 @@ export function validateFiltersOverlayCloseOrWarn(payload: unknown): asserts pay
     }
   }
 }
+
+// ===== PRICE CAP ANALYTICS SCHEMAS =====
+
+// Price cap note click event
+export const PriceCapNoteClickSchema = ListingBaseSchema.extend({
+  listing_id: z.string().min(1),
+  display_reason: z.enum(['price_cap_best_fit', 'price_cap_cheapest']),
+  ideal_price: z.number().int().min(0).max(100000),
+  ideal_deposit: z.number().int().min(0).max(500000),
+  display_price: z.number().int().min(0).max(100000),
+  price_cap_delta: z.number().int().min(0).max(100000).optional(),
+  results_session_id: z.string().regex(/^rs_\d+_[a-z0-9]+$/, 'Invalid results session ID format').optional()
+})
+
+export type PriceCapNoteClickEvent = z.infer<typeof PriceCapNoteClickSchema>
+
+export function validatePriceCapNoteClickOrWarn(payload: unknown): asserts payload is PriceCapNoteClickEvent {
+  const isDev = typeof import.meta !== 'undefined' && import.meta.env?.DEV
+  if (isDev) {
+    const result = PriceCapNoteClickSchema.safeParse(payload)
+    if (!result.success) {
+      console.warn('[Analytics] Invalid price_cap_note_click payload:', {
+        issues: result.error.issues,
+        payload
+      })
+      throw new Error(`Invalid price_cap_note_click payload: ${result.error.issues.map(i => i.message).join(', ')}`)
+    }
+  }
+}

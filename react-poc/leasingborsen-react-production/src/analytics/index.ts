@@ -15,13 +15,15 @@ export type { PageViewEvent, PageViewContext, PageType, PageLoad } from './pagev
 export type { Device } from './mp'
 
 // Listing events (Phase 2)
-export { 
-  trackListingView, 
-  trackListingClick, 
+export {
+  trackListingView,
+  trackListingClick,
   trackLeaseTermsOpen,
   trackLeaseTermsApply,
   newConfigSession,
+  trackPriceCapNoteClick,
 } from './listing'
+export type { TrackPriceCapNoteClickParams } from './listing'
 
 // Filter tracking events (Phase 3)
 export { 

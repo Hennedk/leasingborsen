@@ -6,15 +6,17 @@
 
 import { analytics } from './mp'
 import { getCurrentResultsSessionId } from './pageview'
-import { 
-  validateListingViewOrWarn, 
-  validateListingClickOrWarn, 
-  type ListingViewEvent, 
+import {
+  validateListingViewOrWarn,
+  validateListingClickOrWarn,
+  type ListingViewEvent,
   type ListingClickEvent,
   validateLeaseTermsOpenOrWarn,
   validateLeaseTermsApplyOrWarn,
   type LeaseTermsOpenEvent,
   type LeaseTermsApplyEvent,
+  validatePriceCapNoteClickOrWarn,
+  type PriceCapNoteClickEvent,
 } from './schema'
 
 // ===== LISTING IMPRESSION DEDUPLICATION =====
@@ -476,5 +478,46 @@ export function trackLeaseTermsApply(p: LeaseTermsApplyPayload): void {
     applyDebouncers.set(key, timeout)
   } catch (error) {
     console.error('[Analytics] lease_terms_apply schedule failed:', error)
+  }
+}
+
+// ===== PRICE CAP ANALYTICS =====
+
+export interface TrackPriceCapNoteClickParams {
+  listing_id: string
+  display_reason: 'price_cap_best_fit' | 'price_cap_cheapest'
+  ideal_price: number
+  ideal_deposit: number
+  display_price: number
+  price_cap_delta?: number
+}
+
+/**
+ * Track price cap note click events.
+ * Called when user clicks on the actionable price cap note on listing cards.
+ */
+export function trackPriceCapNoteClick(params: TrackPriceCapNoteClickParams): void {
+  if (!analytics.hasConsent()) return
+
+  try {
+    const event: PriceCapNoteClickEvent = {
+      schema_version: '1',
+      session_id: analytics.getSessionId() || `s_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+      device_type: analytics.getDeviceType() || 'desktop',
+      path: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      referrer_host: analytics.getReferrerHost(),
+      listing_id: params.listing_id,
+      display_reason: params.display_reason,
+      ideal_price: Math.round(params.ideal_price),
+      ideal_deposit: Math.round(params.ideal_deposit),
+      display_price: Math.round(params.display_price),
+      price_cap_delta: params.price_cap_delta != null ? Math.round(params.price_cap_delta) : undefined,
+      results_session_id: getCurrentResultsSessionId() || undefined
+    }
+
+    validatePriceCapNoteClickOrWarn(event)
+    analytics.track('price_cap_note_click', event)
+  } catch (error) {
+    console.error('[Analytics] price_cap_note_click failed:', error)
   }
 }

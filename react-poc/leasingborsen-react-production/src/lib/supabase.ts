@@ -285,11 +285,17 @@ export class CarListingQueries {
         // Tie-breaker: lower display price
         const priceDiff = (a.display_price_numeric || 0) - (b.display_price_numeric || 0)
         if (priceDiff !== 0) return priceDiff
-        
-        // Final tie-breaker: alphabetical by make+model
-        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
-        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
-        return makeModelA.localeCompare(makeModelB, 'da-DK')
+
+        // Secondary tie-breaker: lease score descending
+        if (a.selected_lease_score != null && b.selected_lease_score != null) {
+          const scoreDiff = b.selected_lease_score - a.selected_lease_score
+          if (scoreDiff !== 0) return scoreDiff
+        }
+
+        // Final tie-breaker: updated_at descending for stable pagination
+        const updatedAtA = new Date(a.updated_at || 0).getTime()
+        const updatedAtB = new Date(b.updated_at || 0).getTime()
+        return updatedAtB - updatedAtA
       })
     } else if (sortOrder === 'price_asc' || sortOrder === 'asc') {
       sortedData = sortedData.sort((a, b) => {
@@ -302,11 +308,11 @@ export class CarListingQueries {
           const scoreDiff = b.selected_lease_score - a.selected_lease_score
           if (scoreDiff !== 0) return scoreDiff
         }
-        
-        // Final tie-breaker: alphabetical by make+model
-        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
-        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
-        return makeModelA.localeCompare(makeModelB, 'da-DK')
+
+        // Final tie-breaker: updated_at descending for stable pagination
+        const updatedAtA = new Date(a.updated_at || 0).getTime()
+        const updatedAtB = new Date(b.updated_at || 0).getTime()
+        return updatedAtB - updatedAtA
       })
     } else {
       // Default sort: display price descending
@@ -319,11 +325,11 @@ export class CarListingQueries {
           const scoreDiff = b.selected_lease_score - a.selected_lease_score
           if (scoreDiff !== 0) return scoreDiff
         }
-        
-        // Final tie-breaker: alphabetical by make+model
-        const makeModelA = `${a.make} ${a.model}`.toLowerCase()
-        const makeModelB = `${b.make} ${b.model}`.toLowerCase()
-        return makeModelA.localeCompare(makeModelB, 'da-DK')
+
+        // Final tie-breaker: updated_at descending for stable pagination
+        const updatedAtA = new Date(a.updated_at || 0).getTime()
+        const updatedAtB = new Date(b.updated_at || 0).getTime()
+        return updatedAtB - updatedAtA
       })
     }
     

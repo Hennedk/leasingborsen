@@ -257,7 +257,23 @@ export function selectBestOfferWithPriceCap(
   )
 
   if (!cappedOffer) {
-    // Fallback to cheapest offer within cap
+    // CRITICAL: When strict mode constraints cannot be satisfied within price cap,
+    // we should NOT fall back to arbitrary offers that violate user filters.
+    // This maintains filter integrity - if user selected 15k km and price cap,
+    // we should not show 20k km offers just because they're cheaper.
+
+    if (strictMode) {
+      // In strict mode, if no offers match constraints within cap, exclude the listing
+      return {
+        displayOffer: null,
+        displayReason: 'cheapest',
+        idealOffer: idealOffer || undefined,
+        deltaToIdeal: idealOffer ? idealOffer.monthly_price - options.maxPrice : undefined,
+        selection_method: 'default'
+      }
+    }
+
+    // In flexible mode, we can fall back to cheapest within cap
     const cheapestCapped = cappedOffers.reduce((prev, current) =>
       current.monthly_price < prev.monthly_price ? current : prev
     )
