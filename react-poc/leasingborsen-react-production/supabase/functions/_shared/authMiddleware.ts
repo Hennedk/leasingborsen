@@ -44,16 +44,27 @@ const errorMessages = {
   roleSyncError: 'Autentificeringsfejl - kunne ikke synkronisere roller'
 } as const;
 
-// CORS headers with restricted origins (following ADMIN_AUTH_PLAN.md)
+// CORS headers with environment-driven configuration (following ADMIN_AUTH_PLAN.md)
 const getAllowedOrigins = () => {
-  // In production, this should be restricted to specific domains
-  const allowedOrigins = [
+  // Get allowed origins from environment variable
+  const envOrigins = Deno.env.get('CORS_ALLOWED_ORIGINS');
+
+  if (envOrigins) {
+    // Parse comma-separated list of origins and trim whitespace
+    return envOrigins.split(',').map(origin => origin.trim()).filter(Boolean);
+  }
+
+  // Fallback to default origins if env var not set
+  const defaultOrigins = [
     'http://localhost:5173', // Local development
+    'http://localhost:5174', // Local development (alternate port)
     'https://leasingborsen.dk', // Production domain
     'https://www.leasingborsen.dk', // Production www subdomain
     'https://staging.leasingborsen.dk' // Staging domain
   ];
-  return allowedOrigins;
+
+  console.log('CORS_ALLOWED_ORIGINS not set, using default origins:', defaultOrigins);
+  return defaultOrigins;
 };
 
 const getCorsHeaders = (origin?: string | null) => {
