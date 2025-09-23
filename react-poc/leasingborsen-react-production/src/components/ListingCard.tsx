@@ -261,11 +261,38 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   
   // Memoized computed values
   const displayPrice = useMemo(() => {
-    const price = formatPrice(car?.monthly_price)
+    // Use display_monthly_price if available (for price cap functionality), otherwise fall back to monthly_price
+    const price = formatPrice(car?.display_monthly_price ?? car?.monthly_price)
     // Remove the "fra" prefix logic completely - show actual offer price
     return price
-  }, [car?.monthly_price, formatPrice])
+  }, [car?.display_monthly_price, car?.monthly_price, formatPrice])
   const displayMileage = useMemo(() => formatMileage(car?.mileage_per_year), [car?.mileage_per_year, formatMileage])
+
+  // Price cap note logic
+  const priceCap = useMemo(() => {
+    if (!car?.display_price_reason || car.display_price_reason === 'best_fit') {
+      return null
+    }
+
+    const idealPrice = car.ideal_monthly_price
+    const idealDeposit = car.ideal_deposit
+
+    if (!idealPrice) {
+      return null
+    }
+
+    const formattedIdealPrice = formatPrice(idealPrice)
+    const formattedIdealDeposit = idealDeposit
+      ? `${idealDeposit.toLocaleString('da-DK')} kr`
+      : '0 kr'
+
+    return {
+      shouldShow: true,
+      text: `Ved ${formattedIdealDeposit} udbetaling: ${formattedIdealPrice}`,
+      idealPrice,
+      idealDeposit
+    }
+  }, [car?.display_price_reason, car?.ideal_monthly_price, car?.ideal_deposit, formatPrice])
   
   // Calculate lease score for the cheapest option (displayed price)
   const calculatedLeaseScore = useMemo(() => {
@@ -636,6 +663,14 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
             <p className="text-xl font-bold text-foreground group-hover:text-foreground/80 transition-colors duration-200 leading-none">
               {displayPrice}
             </p>
+
+            {/* Price cap note */}
+            {priceCap?.shouldShow && (
+              <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded border border-border/40">
+                <span className="font-medium">{priceCap.text}</span>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 text-xs sm:text-[11px] text-muted-foreground leading-relaxed">
               {car.selected_mileage && (
                 <>

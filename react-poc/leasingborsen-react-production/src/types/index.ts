@@ -208,6 +208,14 @@ export interface CarListing extends
   
   // Preserve original pricing for reference
   all_lease_pricing?: unknown[]
+
+  // Price cap metadata (added for price filter enhancement)
+  display_monthly_price?: number
+  display_price_reason?: 'best_fit' | 'price_cap_best_fit' | 'price_cap_cheapest' | 'cheapest'
+  display_price_numeric?: number
+  ideal_monthly_price?: number
+  ideal_deposit?: number
+  price_cap_delta?: number
 }
 
 // API Response Types

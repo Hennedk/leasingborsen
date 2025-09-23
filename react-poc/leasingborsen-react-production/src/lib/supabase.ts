@@ -13,9 +13,9 @@ import type {
 } from '@/types'
 import { getEnvironmentConfig } from '@/config/environments'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
-import { selectBestOffer, selectOfferWithFallback } from '@/lib/offerSelection'
+import { selectBestOffer, selectOfferWithFallback, selectBestOfferWithPriceCap } from '@/lib/offerSelection'
 
-export { selectBestOffer, selectOfferWithFallback }
+export { selectBestOffer, selectOfferWithFallback, selectBestOfferWithPriceCap }
 
 const config = getEnvironmentConfig()
 
@@ -173,15 +173,53 @@ export class CarListingQueries {
 
     // Process each unique listing to select appropriate offer
     const processedData = uniqueListings.map((listing: any) => {
-      const selectedOffer = selectBestOffer(
-        listing.lease_pricing,
-        selectedMileage,
-        35000, // Target 35k kr deposit for balanced rates
-        undefined, // No specific term preference in listings view
-        strictMode,
-        strictMode // In listings, user-specified = mileage filter was applied
-      )
-      
+      // Check if price cap should be enforced
+      const shouldEnforcePriceCap = filters.price_max !== null && filters.price_max !== undefined
+
+      let offerResult: any
+      let selectedOffer: any
+      let displayPrice: number
+      let displayReason: string | undefined
+      let idealOffer: any
+      let deltaToIdeal: number | undefined
+
+      if (shouldEnforcePriceCap) {
+        // Use new price cap functionality
+        offerResult = selectBestOfferWithPriceCap(
+          listing.lease_pricing,
+          selectedMileage,
+          35000, // Target 35k kr deposit for balanced rates
+          undefined, // No specific term preference in listings view
+          strictMode,
+          strictMode, // In listings, user-specified = mileage filter was applied
+          {
+            maxPrice: filters.price_max!,
+            enforcePriceCap: true
+          }
+        )
+
+        selectedOffer = offerResult.displayOffer
+        displayPrice = selectedOffer?.monthly_price || 0
+        displayReason = offerResult.displayReason
+        idealOffer = offerResult.idealOffer
+        deltaToIdeal = offerResult.deltaToIdeal
+      } else {
+        // Use original functionality
+        selectedOffer = selectBestOffer(
+          listing.lease_pricing,
+          selectedMileage,
+          35000, // Target 35k kr deposit for balanced rates
+          undefined, // No specific term preference in listings view
+          strictMode,
+          strictMode // In listings, user-specified = mileage filter was applied
+        )
+
+        displayPrice = selectedOffer?.monthly_price || 0
+        displayReason = 'best_fit'
+        idealOffer = selectedOffer
+        deltaToIdeal = 0
+      }
+
       if (!selectedOffer) {
         return null // Exclude listings without matching offers
       }
@@ -199,13 +237,13 @@ export class CarListingQueries {
       
       return {
         ...listing,
-        // Override with selected offer values
-        monthly_price: selectedOffer.monthly_price,
+        // Override with selected offer values (display values)
+        monthly_price: displayPrice,
         mileage_per_year: selectedOffer.mileage_per_year,
         period_months: selectedOffer.period_months,
         first_payment: selectedOffer.first_payment,
         lease_score: leaseScore,
-        
+
         // Add metadata about selection
         selected_mileage: selectedOffer.mileage_per_year,
         selected_term: selectedOffer.period_months,
@@ -213,7 +251,15 @@ export class CarListingQueries {
         selected_monthly_price: selectedOffer.monthly_price,
         selected_lease_score: leaseScore,
         offer_selection_method: selectedOffer.selection_method,
-        
+
+        // New price cap metadata
+        display_monthly_price: displayPrice,
+        display_price_reason: displayReason,
+        display_price_numeric: displayPrice, // For sorting
+        ideal_monthly_price: idealOffer?.monthly_price,
+        ideal_deposit: idealOffer?.first_payment,
+        price_cap_delta: deltaToIdeal,
+
         // Preserve original pricing array for reference
         all_lease_pricing: listing.lease_pricing,
         offer_count: Array.isArray(listing.lease_pricing) ? listing.lease_pricing.length : 0,
@@ -236,8 +282,8 @@ export class CarListingQueries {
           if (scoreDiff !== 0) return scoreDiff
         }
         
-        // Tie-breaker: lower monthly price
-        const priceDiff = (a.selected_monthly_price || 0) - (b.selected_monthly_price || 0)
+        // Tie-breaker: lower display price
+        const priceDiff = (a.display_price_numeric || 0) - (b.display_price_numeric || 0)
         if (priceDiff !== 0) return priceDiff
         
         // Final tie-breaker: alphabetical by make+model
@@ -247,8 +293,8 @@ export class CarListingQueries {
       })
     } else if (sortOrder === 'price_asc' || sortOrder === 'asc') {
       sortedData = sortedData.sort((a, b) => {
-        // Sort by price ascending
-        const priceDiff = (a.selected_monthly_price || 0) - (b.selected_monthly_price || 0)
+        // Sort by display price ascending
+        const priceDiff = (a.display_price_numeric || 0) - (b.display_price_numeric || 0)
         if (priceDiff !== 0) return priceDiff
         
         // Tie-breaker: higher lease score
@@ -263,9 +309,9 @@ export class CarListingQueries {
         return makeModelA.localeCompare(makeModelB, 'da-DK')
       })
     } else {
-      // Default sort: price descending
+      // Default sort: display price descending
       sortedData = sortedData.sort((a, b) => {
-        const priceDiff = (b.selected_monthly_price || 0) - (a.selected_monthly_price || 0)
+        const priceDiff = (b.display_price_numeric || 0) - (a.display_price_numeric || 0)
         if (priceDiff !== 0) return priceDiff
         
         // Tie-breaker: higher lease score
@@ -411,17 +457,40 @@ export class CarListingQueries {
     
     const uniqueListings = Array.from(deduplicatedMap.values())
     
-    // Count listings that have matching offers
+    // Count listings that have matching offers (use same logic as getListings)
     const validListings = uniqueListings.filter((listing: any) => {
-      const selectedOffer = selectBestOffer(
-        listing.lease_pricing,
-        selectedMileage,
-        35000, // Target 35k kr deposit for balanced rates
-        undefined, // No specific term preference in listings view
-        strictMode,
-        strictMode // In listings count, user-specified = mileage filter was applied
-      )
-      return selectedOffer !== null
+      // Check if price cap should be enforced
+      const shouldEnforcePriceCap = filters.price_max !== null && filters.price_max !== undefined
+
+      if (shouldEnforcePriceCap) {
+        // Use new price cap functionality for counting
+        const offerResult = selectBestOfferWithPriceCap(
+          listing.lease_pricing,
+          selectedMileage,
+          35000, // Target 35k kr deposit for balanced rates
+          undefined, // No specific term preference in listings view
+          strictMode,
+          strictMode, // In listings count, user-specified = mileage filter was applied
+          {
+            maxPrice: filters.price_max!,
+            enforcePriceCap: true
+          }
+        )
+
+        return offerResult.displayOffer !== null
+      } else {
+        // Use original functionality for counting
+        const selectedOffer = selectBestOffer(
+          listing.lease_pricing,
+          selectedMileage,
+          35000, // Target 35k kr deposit for balanced rates
+          undefined, // No specific term preference in listings view
+          strictMode,
+          strictMode // In listings count, user-specified = mileage filter was applied
+        )
+
+        return selectedOffer !== null
+      }
     })
     
     return { data: validListings.length, error: null }

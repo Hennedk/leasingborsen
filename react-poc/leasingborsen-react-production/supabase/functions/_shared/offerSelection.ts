@@ -10,6 +10,20 @@ export type SelectBestOfferResult = (LeasePricingOffer & {
   selection_method?: 'default' | 'exact' | 'fallback' | 'closest'
 }) | null
 
+// New interfaces for price cap functionality
+export interface OfferSelectionOptions {
+  maxPrice?: number
+  enforcePriceCap?: boolean
+}
+
+export interface OfferSelectionResult {
+  displayOffer: LeasePricingOffer | null
+  displayReason: 'best_fit' | 'price_cap_best_fit' | 'price_cap_cheapest' | 'cheapest'
+  idealOffer?: LeasePricingOffer
+  deltaToIdeal?: number
+  selection_method?: 'default' | 'exact' | 'fallback' | 'closest'
+}
+
 export type OfferSelectionStage = 'strict' | 'flexible' | 'cheapest'
 
 export interface OfferSelectionWithFallback {
@@ -169,6 +183,122 @@ export function selectBestOffer(
       : isExactMileageFlexible
       ? 'exact'
       : 'closest',
+  }
+}
+
+/**
+ * Enhanced offer selection with optional price cap support.
+ * Returns both display offer (within price cap) and ideal offer (without cap) for UI context.
+ */
+export function selectBestOfferWithPriceCap(
+  leasePricing: LeasePricingOffer[] | null | undefined,
+  targetMileage: number,
+  targetDeposit: number = 35000,
+  targetTerm?: number,
+  strictMode = true,
+  isUserSpecified = true,
+  options?: OfferSelectionOptions
+): OfferSelectionResult {
+  if (!Array.isArray(leasePricing) || leasePricing.length === 0) {
+    return {
+      displayOffer: null,
+      displayReason: 'cheapest',
+      idealOffer: undefined,
+      deltaToIdeal: undefined,
+      selection_method: 'default'
+    }
+  }
+
+  // First, get the ideal offer without price cap constraints
+  const idealOffer = selectBestOffer(
+    leasePricing,
+    targetMileage,
+    targetDeposit,
+    targetTerm,
+    strictMode,
+    isUserSpecified
+  )
+
+  // If no price cap is enforced, return ideal offer as display offer
+  if (!options?.enforcePriceCap || !options.maxPrice) {
+    return {
+      displayOffer: idealOffer,
+      displayReason: 'best_fit',
+      idealOffer: idealOffer || undefined,
+      deltaToIdeal: idealOffer ? 0 : undefined,
+      selection_method: idealOffer?.selection_method || 'default'
+    }
+  }
+
+  // Apply price cap filtering
+  const cappedOffers = leasePricing.filter(
+    (offer) => offer.monthly_price <= options.maxPrice!
+  )
+
+  if (cappedOffers.length === 0) {
+    // No offers within price cap
+    return {
+      displayOffer: null,
+      displayReason: 'cheapest',
+      idealOffer: idealOffer || undefined,
+      deltaToIdeal: idealOffer ? idealOffer.monthly_price - options.maxPrice : undefined,
+      selection_method: 'default'
+    }
+  }
+
+  // Try to find best fit within price cap
+  const cappedOffer = selectBestOffer(
+    cappedOffers,
+    targetMileage,
+    targetDeposit,
+    targetTerm,
+    strictMode,
+    isUserSpecified
+  )
+
+  if (!cappedOffer) {
+    // Fallback to cheapest offer within cap
+    const cheapestCapped = cappedOffers.reduce((prev, current) =>
+      current.monthly_price < prev.monthly_price ? current : prev
+    )
+
+    const deltaToIdeal = idealOffer
+      ? idealOffer.monthly_price - cheapestCapped.monthly_price
+      : 0
+
+    return {
+      displayOffer: {
+        ...cheapestCapped,
+        selection_method: 'fallback'
+      },
+      displayReason: 'price_cap_cheapest',
+      idealOffer: idealOffer || undefined,
+      deltaToIdeal: deltaToIdeal > 0 ? deltaToIdeal : undefined,
+      selection_method: 'fallback'
+    }
+  }
+
+  // Determine display reason
+  let displayReason: OfferSelectionResult['displayReason'] = 'price_cap_best_fit'
+
+  if (idealOffer &&
+      cappedOffer.monthly_price === idealOffer.monthly_price &&
+      cappedOffer.first_payment === idealOffer.first_payment &&
+      cappedOffer.period_months === idealOffer.period_months &&
+      cappedOffer.mileage_per_year === idealOffer.mileage_per_year) {
+    displayReason = 'best_fit' // Ideal offer happens to be within cap
+  }
+
+  const deltaToIdeal = idealOffer
+    ? idealOffer.monthly_price - cappedOffer.monthly_price
+    : 0
+
+  return {
+    displayOffer: cappedOffer,
+    displayReason,
+    idealOffer: idealOffer || undefined,
+    deltaToIdeal: deltaToIdeal > 0 ? deltaToIdeal : (idealOffer ? 0 : undefined),
+    selection_method: cappedOffer.selection_method || 'default'
   }
 }
 
