@@ -1,5 +1,101 @@
 # Session Log
 
+## 2025-09-23 (Session 11): CORS & Railway Deployment Fixes ✅
+
+### Overview
+Resolved critical deployment issues preventing admin operations on Vercel and Railway PDF service deployment failures. Implemented dynamic CORS configuration and fixed Railway project path resolution through symlink solution.
+
+### Problems Identified
+1. **CORS Policy Error**: Admin operations failing on Vercel deployment with error:
+   ```
+   Access to fetch at 'admin-listing-operations' blocked by CORS policy:
+   The 'Access-Control-Allow-Origin' header has a value 'http://localhost:5173'
+   that is not equal to the supplied origin 'https://leasingborsen-react-production.vercel.app'
+   ```
+
+2. **Railway Deployment Error**: PDF processing service failing to deploy with error:
+   ```
+   Could not find root directory: /react-poc/leasingborsen-react-production/railway-pdfplumber-poc
+   ```
+
+### Solutions Implemented
+
+#### 1. Dynamic CORS Configuration ✅
+**Problem**: Hardcoded CORS origins in `authMiddleware.ts` didn't include Vercel deployment URLs
+
+**Solution**: Environment-driven CORS configuration
+- **File**: `supabase/functions/_shared/authMiddleware.ts`
+- **Changed**: `getAllowedOrigins()` function to read from `CORS_ALLOWED_ORIGINS` env var
+- **Added**: Fallback to default origins for backward compatibility
+- **Feature**: Parse comma-separated list of allowed origins
+
+**Environment Configuration**:
+- **Set**: `CORS_ALLOWED_ORIGINS` in Supabase secrets via CLI
+- **Value**: `"https://leasingborsen-react-production.vercel.app,http://localhost:5173,http://localhost:5174"`
+- **Documentation**: Updated `supabase/functions/.env.example`
+
+**Deployment**:
+- **Deployed**: `admin-listing-operations` Edge Function
+- **Deployed**: `admin-seller-operations` Edge Function
+- **Verified**: CORS headers working for all deployment URLs
+
+#### 2. Railway Path Resolution ✅
+**Problem**: Railway expected project at `/react-poc/leasingborsen-react-production/railway-pdfplumber-poc` but actual location was `archive/projects/railway-pdfplumber-poc`
+
+**Solution**: Symlink to preserve archive structure
+- **Created**: Symlink `railway-pdfplumber-poc -> archive/projects/railway-pdfplumber-poc`
+- **Verified**: All files accessible through symlink (requirements.txt, app.py, etc.)
+- **Added**: Symlink to git as mode 120000 object
+
+### Testing & Verification
+
+#### CORS Testing ✅
+```bash
+# Vercel deployment - SUCCESS ✅
+curl -I -X OPTIONS "...admin-listing-operations" -H "Origin: https://leasingborsen-react-production.vercel.app"
+# Response: access-control-allow-origin: https://leasingborsen-react-production.vercel.app
+
+# Localhost - SUCCESS ✅
+curl -I -X OPTIONS "...admin-listing-operations" -H "Origin: http://localhost:5173"
+# Response: access-control-allow-origin: http://localhost:5173
+
+# Unauthorized origin - BLOCKED ✅
+curl -I -X OPTIONS "...admin-listing-operations" -H "Origin: https://malicious-site.com"
+# Response: access-control-allow-origin: https://leasingborsen-react-production.vercel.app (fallback)
+```
+
+#### Railway Deployment ✅
+- Symlink resolves correctly: `ls -l railway-pdfplumber-poc`
+- All project files accessible through symlink
+- Deployment successful after symlink creation
+
+### Files Modified
+**CORS Configuration**:
+- `supabase/functions/_shared/authMiddleware.ts` - Dynamic CORS implementation
+- `supabase/functions/.env.example` - Added CORS documentation
+
+**Railway Fix**:
+- `railway-pdfplumber-poc` - Created symlink to archive location
+
+### Benefits Achieved
+- ✅ **Deployment Flexibility**: Each environment can configure its own allowed origins
+- ✅ **Security Maintained**: Only explicitly configured origins allowed
+- ✅ **Archive Structure Preserved**: Railway fix doesn't disrupt project organization
+- ✅ **Zero Downtime**: Backward compatible with existing configurations
+- ✅ **Scalable**: Easy to add new deployment URLs without code changes
+
+### Commits Created
+- `02dcb74`: fix(cors): implement dynamic CORS configuration for Edge Functions
+- `01eaff5`: fix(railway): add symlink to resolve deployment path issue
+
+### Impact
+- ✅ Admin operations now working on Vercel deployment
+- ✅ Railway PDF processing service deploying successfully
+- ✅ All deployment environments operational
+- ✅ Secure CORS configuration maintained across environments
+
+---
+
 ## 2025-01-22 (Session 10): Complete Admin Authentication System Implementation + TypeScript Fix ✅
 
 ### Overview
