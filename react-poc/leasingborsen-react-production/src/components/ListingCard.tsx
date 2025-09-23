@@ -672,7 +672,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
                   // Track analytics event
                   trackPriceCapNoteClick({
-                    listing_id: car.listing_id,
+                    listing_id: car.id ?? car.listing_id,
                     display_reason: car.display_price_reason as 'price_cap_best_fit' | 'price_cap_cheapest',
                     ideal_price: priceCap.idealPrice,
                     ideal_deposit: priceCap.idealDeposit,
@@ -680,10 +680,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                     price_cap_delta: car.price_cap_delta
                   })
 
-                  // TODO: Implement offer selector opening with ideal deposit pre-selected
-                  console.log('Open offer selector with:', {
-                    idealDeposit: priceCap.idealDeposit,
-                    idealPrice: priceCap.idealPrice
+                  // Navigate to detail page with ideal deposit pre-selected
+                  navigate({
+                    to: '/listing/$id',
+                    params: { id: car.id || car.listing_id || '' },
+                    search: {
+                      selectedDeposit: priceCap.idealDeposit,
+                      selectedMileage: car.mileage_per_year || 15000, // Use current mileage
+                      selectedTerm: car.period_months || 36 // Use current term
+                    }
                   })
                 }}
                 className="text-xs text-muted-foreground bg-muted/30 hover:bg-muted/50 px-2 py-1 rounded border border-border/40 hover:border-border/60 transition-colors cursor-pointer text-left w-full"
