@@ -93,8 +93,8 @@ const Listing: React.FC = () => {
     hasSyncedPreferredConfig.current = true
 
     navigate({
-      search: (prev) => {
-        const next = { ...prev } as Record<string, number | undefined>
+      search: (prev: Record<string, number | undefined>) => {
+        const next: Record<string, number | undefined> = { ...prev }
         const desired = {
           ...mapToLegacyParams(offerSettings),
           ...offerSettings,
