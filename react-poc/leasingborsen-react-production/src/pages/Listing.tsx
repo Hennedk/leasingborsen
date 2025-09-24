@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useListingParams } from '@/hooks/useTypedRouter'
 import { Button } from '@/components/ui/button'
@@ -24,8 +24,9 @@ import MobileHeroImage from '@/components/listing/MobileHeroImage'
 import { MobileListingDetailSkeleton } from '@/components/ListingsSkeleton'
 import { ErrorBoundary, CompactErrorFallback } from '@/components/ui/error-boundary'
 import { cn } from '@/lib/utils'
-import type { CarListing } from '@/types'
-import { normalizeLeaseParams, validateLeaseConfig } from '@/lib/leaseConfigMapping'
+import type { CarListing, LeaseConfigSearchParams } from '@/types'
+import { normalizeLeaseParams, validateLeaseConfig, mapToLegacyParams } from '@/lib/leaseConfigMapping'
+import { consumePreferredLeaseConfig } from '@/lib/leaseConfigPreference'
 
 const Listing: React.FC = () => {
   const { id } = useListingParams()
@@ -35,8 +36,83 @@ const Listing: React.FC = () => {
   // Extract offer settings from search params using centralized normalization
   // Support both new (selectedX) and legacy (km/mdr/udb) parameter formats
   // Normalize and clamp offer settings (no defaults to preserve unset semantics)
-  const rawOfferParams = normalizeLeaseParams(search, false)
-  const offerSettings = validateLeaseConfig(rawOfferParams, false)
+  const preferredLeaseConfigRef = useRef<Partial<LeaseConfigSearchParams> | null>(null)
+  const preferredConfigListingIdRef = useRef<string | null>(null)
+  const hasSyncedPreferredConfig = useRef(false)
+
+  if (preferredConfigListingIdRef.current !== (id ?? null)) {
+    preferredLeaseConfigRef.current = id ? consumePreferredLeaseConfig(id) : null
+    preferredConfigListingIdRef.current = id ?? null
+    hasSyncedPreferredConfig.current = false
+  }
+  const preferredLeaseConfig = preferredLeaseConfigRef.current
+
+  const rawOfferParams = useMemo(
+    () => normalizeLeaseParams(search, false),
+    [search]
+  )
+
+  const mergedOfferParams = useMemo(() => {
+    if (!preferredLeaseConfig) {
+      return rawOfferParams
+    }
+
+    return {
+      selectedMileage: preferredLeaseConfig.selectedMileage ?? rawOfferParams.selectedMileage,
+      selectedTerm: preferredLeaseConfig.selectedTerm ?? rawOfferParams.selectedTerm,
+      selectedDeposit: preferredLeaseConfig.selectedDeposit ?? rawOfferParams.selectedDeposit,
+    }
+  }, [preferredLeaseConfig, rawOfferParams])
+
+  const offerSettings = useMemo(
+    () => validateLeaseConfig(mergedOfferParams, false),
+    [mergedOfferParams]
+  )
+
+  const shouldSyncPreferredConfig = useMemo(() => {
+    if (!preferredLeaseConfig) return false
+
+    const diffMileage =
+      preferredLeaseConfig.selectedMileage != null &&
+      preferredLeaseConfig.selectedMileage !== rawOfferParams.selectedMileage
+    const diffTerm =
+      preferredLeaseConfig.selectedTerm != null &&
+      preferredLeaseConfig.selectedTerm !== rawOfferParams.selectedTerm
+    const diffDeposit =
+      preferredLeaseConfig.selectedDeposit != null &&
+      preferredLeaseConfig.selectedDeposit !== rawOfferParams.selectedDeposit
+
+    return diffMileage || diffTerm || diffDeposit
+  }, [preferredLeaseConfig, rawOfferParams])
+
+  useEffect(() => {
+    if (!preferredLeaseConfig || !shouldSyncPreferredConfig || hasSyncedPreferredConfig.current) {
+      return
+    }
+
+    hasSyncedPreferredConfig.current = true
+
+    navigate({
+      search: (prev) => {
+        const next = { ...prev } as Record<string, number | undefined>
+        const desired = {
+          ...mapToLegacyParams(offerSettings),
+          ...offerSettings,
+        }
+
+        for (const [key, value] of Object.entries(desired)) {
+          if (value == null) {
+            delete next[key]
+          } else {
+            next[key] = value
+          }
+        }
+
+        return next
+      },
+      replace: true,
+    })
+  }, [preferredLeaseConfig, shouldSyncPreferredConfig, navigate, offerSettings])
   
   const { data: listingResponse, isLoading, isFetching, error } = useListing(id || '', offerSettings)
   // Forward marker guard: ensure forward detail→detail always scrolls to top

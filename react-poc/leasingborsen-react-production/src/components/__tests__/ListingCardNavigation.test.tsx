@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import React from 'react'
 import type { CarListing } from '@/types'
 
@@ -11,6 +11,10 @@ vi.mock('@/hooks/useImageLazyLoading', () => ({
     retryImage: vi.fn(),
     canRetry: true,
   }),
+}))
+
+vi.mock('@/lib/leaseConfigPreference', () => ({
+  storePreferredLeaseConfig: vi.fn(),
 }))
 
 // Mock navigation context to avoid relying on router/session
@@ -32,6 +36,7 @@ vi.mock('@tanstack/react-router', () => ({
 }))
 
 import ListingCard from '../ListingCard'
+import { storePreferredLeaseConfig } from '@/lib/leaseConfigPreference'
 
 const baseCar: CarListing = {
   id: 'car-1',
@@ -56,6 +61,13 @@ const baseCar: CarListing = {
 describe('ListingCard navigation carries selected offer', () => {
   beforeEach(() => {
     navigateFn.mockClear()
+    vi.useFakeTimers()
+    vi.mocked(storePreferredLeaseConfig).mockClear()
+  })
+
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
   })
 
   it('forwards card selected_mileage/term/deposit to listing detail when URL has no overrides', () => {
@@ -71,6 +83,10 @@ describe('ListingCard navigation carries selected offer', () => {
     // Click the card (role="link")
     fireEvent.click(screen.getByRole('link'))
 
+    act(() => {
+      vi.runAllTimers()
+    })
+
     // Assert navigate was called with selectedX reflecting the card's selection
     expect(navigateFn).toHaveBeenCalled()
     const callArg = navigateFn.mock.calls.at(-1)?.[0]
@@ -82,5 +98,11 @@ describe('ListingCard navigation carries selected offer', () => {
       selectedTerm: 36,
       selectedDeposit: 0,
     })
+
+    expect(storePreferredLeaseConfig).toHaveBeenCalledWith('car-1', expect.objectContaining({
+      selectedMileage: 20000,
+      selectedTerm: 36,
+      selectedDeposit: 0,
+    }))
   })
 })

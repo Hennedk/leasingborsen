@@ -23,6 +23,7 @@ import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
 import { normalizeLeaseParams, mapToLegacyParams } from '@/lib/leaseConfigMapping'
+import { storePreferredLeaseConfig } from '@/lib/leaseConfigPreference'
 import { trackListingClick, trackListingView, shouldTrackListingView, trackPriceCapNoteClick } from '@/analytics/listing'
 
 type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
@@ -202,6 +203,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
     // Navigate with selected offer settings to maintain context
     setTimeout(() => {
       const resolvedConfig = resolveLeaseConfig()
+
+      const targetId = car.id || car.listing_id || ''
+      storePreferredLeaseConfig(targetId, resolvedConfig)
       const searchPayload = {
         ...mapToLegacyParams(resolvedConfig),
         ...resolvedConfig,
@@ -723,6 +727,9 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                     selectedMileage: car.selected_mileage ?? car.mileage_per_year ?? undefined,
                     selectedTerm: car.selected_term ?? car.period_months ?? undefined,
                   })
+
+                  const targetId = car.id || car.listing_id || ''
+                  storePreferredLeaseConfig(targetId, resolvedConfig)
 
                   const searchPayload = {
                     ...mapToLegacyParams(resolvedConfig),
