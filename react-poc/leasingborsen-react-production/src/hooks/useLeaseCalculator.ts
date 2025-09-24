@@ -419,21 +419,40 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
         // 2) Try best option with same mileage
         const sameMileage = leaseOptions.filter(o => o.mileage_per_year === targetMileage)
         if (sameMileage.length) {
-          // Prefer common periods 36 -> 24 -> 48, then lowest monthly price
           const periodPref = [36, 24, 48]
-          let best = sameMileage
-            .filter(o => periodPref.includes(o.period_months))
+
+          const prioritized = [...sameMileage]
             .sort((a, b) => {
+              // 1. Prefer deposits closest to the requested value when known
+              const requestedDeposit = targetUpfront ?? car?.selected_deposit ?? car?.first_payment ?? null
+              if (requestedDeposit != null) {
+                const diffA = Math.abs(a.first_payment - requestedDeposit)
+                const diffB = Math.abs(b.first_payment - requestedDeposit)
+                if (diffA !== diffB) {
+                  return diffA - diffB
+                }
+              }
+
+              // 2. Honour period preferences
               const ai = periodPref.indexOf(a.period_months)
               const bi = periodPref.indexOf(b.period_months)
-              if (ai !== bi) return ai - bi
-              return a.monthly_price - b.monthly_price
-            })[0]
+              if (ai !== bi) {
+                // Treat terms outside preference list as lower priority
+                if (ai === -1) return 1
+                if (bi === -1) return -1
+                return ai - bi
+              }
 
-          if (!best) {
-            // Fallback: lowest monthly among same mileage
-            best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
-          }
+              // 3. Tie-breaker: lower monthly price
+              if (a.monthly_price !== b.monthly_price) {
+                return a.monthly_price - b.monthly_price
+              }
+
+              // 4. Final tie-breaker: higher deposit (less risk of over-selecting 0)
+              return b.first_payment - a.first_payment
+            })
+
+          const best = prioritized[0]
 
           setSelectedMileageInternal(best.mileage_per_year, 'system')
           setSelectedPeriodInternal(best.period_months, 'system')
@@ -499,18 +518,34 @@ export const useLeaseCalculator = (car: CarListing | undefined): LeaseCalculator
           const sameMileage = leaseOptions.filter(o => o.mileage_per_year === targetMileage)
           if (sameMileage.length) {
             const periodPref = [36, 24, 48]
-            let best = sameMileage
-              .filter(o => periodPref.includes(o.period_months))
+
+            const prioritized = [...sameMileage]
               .sort((a, b) => {
+                const requestedDeposit = targetUpfront ?? car?.selected_deposit ?? car?.first_payment ?? null
+                if (requestedDeposit != null) {
+                  const diffA = Math.abs(a.first_payment - requestedDeposit)
+                  const diffB = Math.abs(b.first_payment - requestedDeposit)
+                  if (diffA !== diffB) {
+                    return diffA - diffB
+                  }
+                }
+
                 const ai = periodPref.indexOf(a.period_months)
                 const bi = periodPref.indexOf(b.period_months)
-                if (ai !== bi) return ai - bi
-                return a.monthly_price - b.monthly_price
-              })[0]
+                if (ai !== bi) {
+                  if (ai === -1) return 1
+                  if (bi === -1) return -1
+                  return ai - bi
+                }
 
-            if (!best) {
-              best = sameMileage.reduce((p, c) => (p.monthly_price <= c.monthly_price ? p : c))
-            }
+                if (a.monthly_price !== b.monthly_price) {
+                  return a.monthly_price - b.monthly_price
+                }
+
+                return b.first_payment - a.first_payment
+              })
+
+            const best = prioritized[0]
 
             setSelectedMileageInternal(best.mileage_per_year, 'system')
             setSelectedPeriodInternal(best.period_months, 'system')

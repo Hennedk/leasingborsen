@@ -22,7 +22,7 @@ import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 import type { CarListing } from '@/types'
 
 import type { LeaseConfigSearchParams } from '@/types'
-import { normalizeLeaseParams } from '@/lib/leaseConfigMapping'
+import { normalizeLeaseParams, mapToLegacyParams } from '@/lib/leaseConfigMapping'
 import { trackListingClick, trackListingView, shouldTrackListingView, trackPriceCapNoteClick } from '@/analytics/listing'
 
 type Container = 'results_grid' | 'similar_grid' | 'carousel' | 'home_grid' | 'home_carousel'
@@ -201,26 +201,17 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
     // Navigate with selected offer settings to maintain context
     setTimeout(() => {
-      navigate({ 
-        to: '/listing/$id', 
+      const resolvedConfig = resolveLeaseConfig()
+      const searchPayload = {
+        ...mapToLegacyParams(resolvedConfig),
+        ...resolvedConfig,
+        ...(clickId ? { source_event_id: clickId } : {}),
+      }
+
+      navigate({
+        to: '/listing/$id',
         params: { id: car.id || car.listing_id || '' },
-        search: {
-          /**
-           * FALLBACK CHAIN STRATEGY
-           * Priority: URL config → car selection → car defaults
-           * 
-           * 1. currentLeaseConfig: Real-time URL params from MobilePriceBar
-           * 2. car.selected_*: Pre-calculated values from server (may be stale)
-           * 3. car defaults: Original listing values (mileage_per_year, etc.)
-           * 
-           * This ensures users always see the config they selected, not stale data.
-           */
-          selectedDeposit: currentLeaseConfig.selectedDeposit ?? car.selected_deposit ?? car.first_payment,
-          selectedMileage: currentLeaseConfig.selectedMileage ?? car.selected_mileage ?? car.mileage_per_year,
-          selectedTerm: currentLeaseConfig.selectedTerm ?? car.selected_term ?? car.period_months,
-          // Provide click correlation id for page_view on detail
-          ...(clickId ? { source_event_id: clickId } : {})
-        }
+        search: searchPayload,
       })
     }, 0)
     
@@ -304,6 +295,30 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       displayReason,
     }
   }, [car?.display_price_reason, car?.ideal_monthly_price, car?.ideal_deposit, formatPrice])
+
+  const resolveLeaseConfig = useCallback(
+    (overrides?: Partial<LeaseConfigSearchParams>): LeaseConfigSearchParams => {
+      const fallbackMileage = car?.selected_mileage ?? car?.mileage_per_year ?? 15000
+      const fallbackTerm = car?.selected_term ?? car?.period_months ?? 36
+      const fallbackDeposit = car?.selected_deposit ?? car?.first_payment ?? 0
+
+      return {
+        selectedMileage:
+          overrides?.selectedMileage ??
+          currentLeaseConfig.selectedMileage ??
+          fallbackMileage,
+        selectedTerm:
+          overrides?.selectedTerm ??
+          currentLeaseConfig.selectedTerm ??
+          fallbackTerm,
+        selectedDeposit:
+          overrides?.selectedDeposit ??
+          currentLeaseConfig.selectedDeposit ??
+          fallbackDeposit,
+      }
+    },
+    [car?.selected_mileage, car?.mileage_per_year, car?.selected_term, car?.period_months, car?.selected_deposit, car?.first_payment, currentLeaseConfig]
+  )
   
   // Calculate lease score for the cheapest option (displayed price)
   const calculatedLeaseScore = useMemo(() => {
@@ -683,23 +698,42 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
                   // Track analytics event
                   trackPriceCapNoteClick({
-                    listing_id: car.id ?? car.listing_id ?? '',
+                    listing_id: (car.id ?? car.listing_id) || '',
                     display_reason: priceCap.displayReason,
                     ideal_price: priceCap.idealPrice,
                     ideal_deposit: priceCap.idealDeposit,
                     display_price: (car.display_monthly_price ?? car.monthly_price) ?? 0,
-                    price_cap_delta: car.price_cap_delta
+                    price_cap_delta: car.price_cap_delta,
                   })
+
+                  const pathname = window.location.pathname
+                  const isFromListings = pathname === '/listings'
+                  const isFromDetail = pathname.startsWith('/listing/')
+
+                  if (isFromListings) {
+                    const fullSearch = new URLSearchParams(window.location.search)
+                    prepareListingNavigation(window.scrollY, currentPage, fullSearch)
+                  } else if (isFromDetail) {
+                    const currentId = pathname.split('/listing/')[1] || undefined
+                    prepareDetailNavigation(currentId, window.scrollY)
+                  }
+
+                  const resolvedConfig = resolveLeaseConfig({
+                    selectedDeposit: priceCap.idealDeposit,
+                    selectedMileage: car.selected_mileage ?? car.mileage_per_year ?? undefined,
+                    selectedTerm: car.selected_term ?? car.period_months ?? undefined,
+                  })
+
+                  const searchPayload = {
+                    ...mapToLegacyParams(resolvedConfig),
+                    ...resolvedConfig,
+                  }
 
                   // Navigate to detail page with ideal deposit pre-selected
                   navigate({
                     to: '/listing/$id',
                     params: { id: car.id || car.listing_id || '' },
-                    search: {
-                      selectedDeposit: priceCap.idealDeposit,
-                      selectedMileage: car.mileage_per_year || 15000, // Use current mileage
-                      selectedTerm: car.period_months || 36 // Use current term
-                    }
+                    search: searchPayload,
                   })
                 }}
                 className="text-xs text-muted-foreground bg-muted/30 hover:bg-muted/50 px-2 py-1 rounded border border-border/40 hover:border-border/60 transition-colors cursor-pointer text-left w-full"
