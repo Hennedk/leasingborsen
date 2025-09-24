@@ -269,28 +269,39 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   const displayMileage = useMemo(() => formatMileage(car?.mileage_per_year), [car?.mileage_per_year, formatMileage])
 
   // Price cap note logic
-  const priceCap = useMemo(() => {
+  type PriceCapMeta = {
+    shouldShow: true
+    text: string
+    idealPrice: number
+    idealDeposit: number
+    displayReason: 'price_cap_best_fit' | 'price_cap_cheapest'
+  }
+
+  const priceCap = useMemo<PriceCapMeta | null>(() => {
     if (!car?.display_price_reason || car.display_price_reason === 'best_fit') {
       return null
     }
 
     const idealPrice = car.ideal_monthly_price
-    const idealDeposit = car.ideal_deposit
-
-    if (!idealPrice) {
+    if (idealPrice == null) {
       return null
     }
 
+    const normalizedDeposit = car.ideal_deposit ?? 0
     const formattedIdealPrice = formatPrice(idealPrice)
-    const formattedIdealDeposit = idealDeposit
-      ? `${idealDeposit.toLocaleString('da-DK')} kr`
-      : '0 kr'
+    const formattedIdealDeposit = `${normalizedDeposit.toLocaleString('da-DK')} kr`
+
+    const displayReason: PriceCapMeta['displayReason'] =
+      car.display_price_reason === 'price_cap_cheapest'
+        ? 'price_cap_cheapest'
+        : 'price_cap_best_fit'
 
     return {
       shouldShow: true,
       text: `Ved ${formattedIdealDeposit} udbetaling: ${formattedIdealPrice}`,
       idealPrice,
-      idealDeposit
+      idealDeposit: normalizedDeposit,
+      displayReason,
     }
   }, [car?.display_price_reason, car?.ideal_monthly_price, car?.ideal_deposit, formatPrice])
   
@@ -672,11 +683,11 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
 
                   // Track analytics event
                   trackPriceCapNoteClick({
-                    listing_id: car.id ?? car.listing_id,
-                    display_reason: car.display_price_reason as 'price_cap_best_fit' | 'price_cap_cheapest',
+                    listing_id: car.id ?? car.listing_id ?? '',
+                    display_reason: priceCap.displayReason,
                     ideal_price: priceCap.idealPrice,
                     ideal_deposit: priceCap.idealDeposit,
-                    display_price: car.display_monthly_price ?? car.monthly_price,
+                    display_price: (car.display_monthly_price ?? car.monthly_price) ?? 0,
                     price_cap_delta: car.price_cap_delta
                   })
 
