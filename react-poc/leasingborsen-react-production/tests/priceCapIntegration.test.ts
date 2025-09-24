@@ -1,362 +1,330 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import { CarListingQueries } from '../src/lib/supabase'
+import { describe, expect, it, vi, beforeEach, afterAll } from 'vitest'
+import { CarListingQueries, supabase } from '../src/lib/supabase'
 
-// Mock Supabase client
-const mockSupabaseQuery = {
-  from: vi.fn(),
-  select: vi.fn(),
-  not: vi.fn(),
-  eq: vi.fn(),
-  gte: vi.fn(),
-  lte: vi.fn(),
-  in: vi.fn(),
-  ilike: vi.fn(),
-  order: vi.fn(),
-  limit: vi.fn(),
-  range: vi.fn()
+// --- Supabase mock helpers -------------------------------------------------
+
+const deepClone = <T>(value: T): T => (value == null ? value : JSON.parse(JSON.stringify(value)))
+
+type MockResponse = {
+  data: any
+  error: Error | null
 }
 
-// Create a chainable mock that returns itself for most methods
-Object.keys(mockSupabaseQuery).forEach(key => {
-  if (key !== 'from') {
-    mockSupabaseQuery[key as keyof typeof mockSupabaseQuery] = vi.fn().mockReturnValue(mockSupabaseQuery)
-  }
-})
+let defaultResponse: MockResponse = { data: [], error: null }
+let responseQueue: MockResponse[] = []
 
-const mockSupabase = {
-  from: vi.fn().mockReturnValue(mockSupabaseQuery)
+const shiftResponse = (): MockResponse => {
+  if (responseQueue.length > 0) {
+    const next = responseQueue.shift()!
+    return { data: deepClone(next.data), error: next.error }
+  }
+  return { data: deepClone(defaultResponse.data), error: defaultResponse.error }
 }
 
-// Mock the entire supabase module
-vi.mock('../src/lib/supabase', async () => {
-  const actual = await vi.importActual('../src/lib/supabase')
-  return {
-    ...actual,
-    supabase: mockSupabase
+const createQueryBuilder = () => {
+  const response = shiftResponse()
+  const produce = () => ({ data: deepClone(response.data), error: response.error })
+
+  const builder: any = {
+    select: vi.fn(() => builder),
+    not: vi.fn(() => builder),
+    in: vi.fn(() => builder),
+    ilike: vi.fn(() => builder),
+    gte: vi.fn(() => builder),
+    lte: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
+    order: vi.fn(() => Promise.resolve(produce())),
+    range: vi.fn(() => builder),
+    then: (onFulfilled?: (value: MockResponse) => unknown, onRejected?: (reason: unknown) => unknown) =>
+      Promise.resolve(produce()).then(onFulfilled, onRejected),
   }
+
+  return builder
+}
+
+const setSupabaseDefaultResponse = (data: any, error: Error | null = null) => {
+  defaultResponse = { data: deepClone(data), error }
+  responseQueue = []
+}
+
+const queueSupabaseResponses = (...responses: MockResponse[]) => {
+  responseQueue = responses.map(({ data, error }) => ({
+    data: deepClone(data),
+    error: error ?? null,
+  }))
+}
+
+// --- Shared mock data -------------------------------------------------------
+
+const baseListings = [
+  {
+    id: 'listing-1',
+    listing_id: 'listing-1',
+    make: 'Toyota',
+    model: 'Corolla',
+    retail_price: 220000,
+    mileage_per_year: 15000,
+    period_months: 36,
+    first_payment: 35000,
+    updated_at: '2025-01-01T00:00:00Z',
+    lease_pricing: [
+      {
+        mileage_per_year: 15000,
+        period_months: 36,
+        first_payment: 35000,
+        monthly_price: 4500, // Ideal (above cap)
+      },
+      {
+        mileage_per_year: 15000,
+        period_months: 36,
+        first_payment: 0,
+        monthly_price: 4200, // Within cap, different deposit
+      },
+    ],
+  },
+  {
+    id: 'listing-2',
+    listing_id: 'listing-2',
+    make: 'Honda',
+    model: 'Civic',
+    retail_price: 200000,
+    mileage_per_year: 15000,
+    period_months: 36,
+    first_payment: 35000,
+    updated_at: '2025-01-02T00:00:00Z',
+    lease_pricing: [
+      {
+        mileage_per_year: 15000,
+        period_months: 36,
+        first_payment: 35000,
+        monthly_price: 3500,
+      },
+    ],
+  },
+  {
+    id: 'listing-3',
+    listing_id: 'listing-3',
+    make: 'BMW',
+    model: 'X3',
+    retail_price: 350000,
+    mileage_per_year: 15000,
+    period_months: 36,
+    first_payment: 35000,
+    updated_at: '2025-01-03T00:00:00Z',
+    lease_pricing: [
+      {
+        mileage_per_year: 15000,
+        period_months: 36,
+        first_payment: 35000,
+        monthly_price: 5000,
+      },
+    ],
+  },
+]
+
+const listingIds = (result: Awaited<ReturnType<typeof CarListingQueries.getListings>>) =>
+  result.data?.map((listing) => listing.id) ?? []
+
+const originalSupabaseFrom = supabase.from
+let supabaseFromMock: ReturnType<typeof vi.fn> | null = null
+
+beforeEach(() => {
+  supabaseFromMock = vi.fn(() => createQueryBuilder())
+  ;(supabase as unknown as { from: typeof supabase.from }).from = supabaseFromMock as unknown as typeof supabase.from
+  setSupabaseDefaultResponse(baseListings)
 })
 
-describe('Price Cap Integration Tests', () => {
-  const mockListingData = [
-    {
-      id: 'listing-1',
-      listing_id: 'listing-1',
-      make: 'Toyota',
-      model: 'Corolla',
-      monthly_price: 4000,
-      retail_price: 200000,
-      mileage_per_year: 15000,
-      period_months: 36,
-      first_payment: 35000,
-      updated_at: '2025-01-01T00:00:00Z',
-      lease_pricing: [
-        {
-          mileage_per_year: 15000,
-          period_months: 36,
-          first_payment: 35000,
-          monthly_price: 4000
-        },
-        {
-          mileage_per_year: 15000,
-          period_months: 36,
-          first_payment: 0,
-          monthly_price: 4400 // Zero deposit option
-        }
-      ]
-    },
-    {
-      id: 'listing-2',
-      listing_id: 'listing-2',
-      make: 'Honda',
-      model: 'Civic',
-      monthly_price: 3500,
-      retail_price: 180000,
-      mileage_per_year: 15000,
-      period_months: 36,
-      first_payment: 35000,
-      updated_at: '2025-01-02T00:00:00Z',
-      lease_pricing: [
-        {
-          mileage_per_year: 15000,
-          period_months: 36,
-          first_payment: 35000,
-          monthly_price: 3500
-        }
-      ]
-    },
-    {
-      id: 'listing-3',
-      listing_id: 'listing-3',
-      make: 'BMW',
-      model: 'X3',
-      monthly_price: 5000,
-      retail_price: 350000,
-      mileage_per_year: 15000,
-      period_months: 36,
-      first_payment: 35000,
-      updated_at: '2025-01-03T00:00:00Z',
-      lease_pricing: [
-        {
-          mileage_per_year: 15000,
-          period_months: 36,
-          first_payment: 35000,
-          monthly_price: 5000
-        }
-      ]
-    }
-  ]
+afterAll(() => {
+  ;(supabase as unknown as { from: typeof supabase.from }).from = originalSupabaseFrom
+})
 
-  beforeEach(() => {
-    vi.clearAllMocks()
-    // Default mock response
-    mockSupabaseQuery.from.mockResolvedValue({
-      data: mockListingData,
-      error: null
-    })
+// --- Tests ------------------------------------------------------------------
+
+describe('CarListingQueries.getListings – price cap integration', () => {
+  it('filters out listings that only have offers above the price cap', async () => {
+    const filters = { price_max: 4200, mileage_selected: 15000 }
+
+    const result = await CarListingQueries.getListings(filters, 20, 'price_asc', 0)
+
+    expect(result.error).toBeNull()
+    expect(result.data).toBeDefined()
+    expect(listingIds(result)).toContain('listing-1')
+    expect(listingIds(result)).toContain('listing-2')
+    expect(listingIds(result)).not.toContain('listing-3')
   })
 
-  afterEach(() => {
-    vi.restoreAllMocks()
+  it('exposes price cap metadata when display and ideal offers differ', async () => {
+    const filters = { price_max: 4200, mileage_selected: 15000 }
+
+    const result = await CarListingQueries.getListings(filters, 20, 'price_asc', 0)
+    const toyota = result.data?.find((listing) => listing.id === 'listing-1')
+
+    expect(result.error).toBeNull()
+    expect(toyota).toBeDefined()
+    expect(toyota?.display_price_reason).toBe('price_cap_best_fit')
+    expect(toyota?.display_monthly_price).toBe(4200)
+    expect(toyota?.ideal_monthly_price).toBe(4500)
+    expect(toyota?.ideal_deposit).toBe(35000)
+    expect(toyota?.price_cap_delta).toBe(300)
   })
 
-  describe('getListings with price cap', () => {
-    it('should filter out listings above price cap', async () => {
-      // Mock the final query result
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: mockListingData,
-        error: null
-      })
+  it('uses updated_at as final tie-breaker for identical prices', async () => {
+    const samePriceListings = [
+      {
+        id: 'listing-a',
+        listing_id: 'listing-a',
+        make: 'Ford',
+        model: 'Focus',
+        retail_price: 180000,
+        updated_at: '2025-01-01T00:00:00Z',
+        lease_pricing: [
+          {
+            mileage_per_year: 15000,
+            period_months: 36,
+            first_payment: 35000,
+            monthly_price: 4000,
+          },
+        ],
+      },
+      {
+        id: 'listing-b',
+        listing_id: 'listing-b',
+        make: 'Ford',
+        model: 'Puma',
+        retail_price: 185000,
+        updated_at: '2025-01-03T00:00:00Z',
+        lease_pricing: [
+          {
+            mileage_per_year: 15000,
+            period_months: 36,
+            first_payment: 35000,
+            monthly_price: 4000,
+          },
+        ],
+      },
+      {
+        id: 'listing-c',
+        listing_id: 'listing-c',
+        make: 'Ford',
+        model: 'Fiesta',
+        retail_price: 175000,
+        updated_at: '2025-01-02T00:00:00Z',
+        lease_pricing: [
+          {
+            mileage_per_year: 15000,
+            period_months: 36,
+            first_payment: 35000,
+            monthly_price: 4000,
+          },
+        ],
+      },
+    ]
 
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
+    setSupabaseDefaultResponse(samePriceListings)
 
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 20 })
+    const result = await CarListingQueries.getListings({ price_max: 4500, mileage_selected: 15000 }, 20, 'price_asc', 0)
 
-      expect(result.error).toBeNull()
-      expect(result.data).toBeDefined()
-
-      // Should include listings 1 and 2 but exclude listing 3 (5000 > 4200)
-      const returnedIds = result.data!.map(listing => listing.id)
-      expect(returnedIds).toContain('listing-1')
-      expect(returnedIds).toContain('listing-2')
-      expect(returnedIds).not.toContain('listing-3')
-    })
-
-    it('should include price cap metadata for affected listings', async () => {
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: mockListingData,
-        error: null
-      })
-
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
-
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 20 })
-
-      expect(result.error).toBeNull()
-      expect(result.data).toBeDefined()
-
-      const toyotaListing = result.data!.find(listing => listing.make === 'Toyota')
-      expect(toyotaListing).toBeDefined()
-
-      // Toyota should show the zero-deposit option (4400) but ideal should be 35k deposit (4000)
-      expect(toyotaListing!.display_price_reason).toMatch(/price_cap/)
-      expect(toyotaListing!.ideal_monthly_price).toBe(4000)
-      expect(toyotaListing!.ideal_deposit).toBe(35000)
-    })
-
-    it('should apply stable sorting with updated_at as tie-breaker', async () => {
-      // Create listings with same price but different updated_at
-      const samePrice = [
-        {
-          id: 'listing-a',
-          monthly_price: 4000,
-          updated_at: '2025-01-01T00:00:00Z',
-          lease_pricing: [{ mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 4000 }]
-        },
-        {
-          id: 'listing-b',
-          monthly_price: 4000,
-          updated_at: '2025-01-02T00:00:00Z',
-          lease_pricing: [{ mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 4000 }]
-        }
-      ]
-
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: samePrice,
-        error: null
-      })
-
-      const filters = {
-        price_max: 4500,
-        mileage_selected: 15000
-      }
-
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 20 }, 'price_asc')
-
-      expect(result.error).toBeNull()
-      expect(result.data).toBeDefined()
-
-      // Should be sorted by updated_at desc (newer first) when prices are equal
-      expect(result.data![0].id).toBe('listing-b') // More recent
-      expect(result.data![1].id).toBe('listing-a') // Older
-    })
-
-    it('should handle pagination correctly after filtering', async () => {
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: mockListingData.slice(0, 1), // Only first listing
-        error: null
-      })
-
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
-
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 1 })
-
-      expect(result.error).toBeNull()
-      expect(result.data).toBeDefined()
-      expect(result.data!.length).toBe(1)
-
-      // Should have called range with correct pagination
-      expect(mockSupabaseQuery.range).toHaveBeenCalledWith(0, 0) // limit 1 = range(0, 0)
-    })
+    expect(result.error).toBeNull()
+    expect(result.data?.map((listing) => listing.id)).toEqual(['listing-b', 'listing-c', 'listing-a'])
   })
 
-  describe('getListingCount with price cap', () => {
-    it('should return correct count excluding listings above price cap', async () => {
-      mockSupabaseQuery.from.mockResolvedValue({
-        data: mockListingData,
-        error: null
-      })
+  it('respects pagination after filtering and sorting', async () => {
+    const filters = { price_max: 6000, mileage_selected: 15000 }
 
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
+    const result = await CarListingQueries.getListings(filters, 1, 'price_asc', 1)
 
-      const result = await CarListingQueries.getListingCount(filters)
+    expect(result.error).toBeNull()
+    expect(result.data).toHaveLength(1)
+    expect(result.data?.[0].id).toBe('listing-1')
+  })
+})
 
-      expect(result.error).toBeNull()
-      expect(result.data).toBe(2) // Only listings 1 and 2 should count (listing 3 excluded by price cap)
-    })
+describe('CarListingQueries.getListingCount – price cap integration', () => {
+  it('matches visible listings when a price cap is applied', async () => {
+    const filters = { price_max: 4200, mileage_selected: 15000 }
 
-    it('should handle empty results gracefully', async () => {
-      mockSupabaseQuery.from.mockResolvedValue({
-        data: [],
-        error: null
-      })
+    const result = await CarListingQueries.getListingCount(filters)
 
-      const filters = {
-        price_max: 1000, // Very low price cap
-        mileage_selected: 15000
-      }
-
-      const result = await CarListingQueries.getListingCount(filters)
-
-      expect(result.error).toBeNull()
-      expect(result.data).toBe(0)
-    })
-
-    it('should match getListings count for consistency', async () => {
-      mockSupabaseQuery.from.mockResolvedValue({
-        data: mockListingData,
-        error: null
-      })
-
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: mockListingData,
-        error: null
-      })
-
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
-
-      const [countResult, listingsResult] = await Promise.all([
-        CarListingQueries.getListingCount(filters),
-        CarListingQueries.getListings(filters, { offset: 0, limit: 100 })
-      ])
-
-      expect(countResult.error).toBeNull()
-      expect(listingsResult.error).toBeNull()
-      expect(countResult.data).toBe(listingsResult.data!.length)
-    })
+    expect(result.error).toBeNull()
+    expect(result.data).toBe(2)
   })
 
-  describe('deduplication logic', () => {
-    it('should deduplicate listings by ID correctly', async () => {
-      // Mock data with duplicate listing IDs (can happen with multiple lease options)
-      const duplicateData = [
-        {
-          id: 'listing-1',
-          monthly_price: 4000,
-          lease_pricing: [{ mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 4000 }]
-        },
-        {
-          id: 'listing-1', // Duplicate
-          monthly_price: 4000,
-          lease_pricing: [{ mileage_per_year: 15000, period_months: 24, first_payment: 35000, monthly_price: 4200 }]
-        },
-        {
-          id: 'listing-2',
-          monthly_price: 3500,
-          lease_pricing: [{ mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 3500 }]
-        }
-      ]
+  it('returns zero when no listings match the cap', async () => {
+    setSupabaseDefaultResponse([])
 
-      mockSupabaseQuery.from.mockResolvedValue({
-        data: duplicateData,
-        error: null
-      })
+    const result = await CarListingQueries.getListingCount({ price_max: 1000, mileage_selected: 15000 })
 
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: duplicateData,
-        error: null
-      })
-
-      const filters = {
-        price_max: 5000,
-        mileage_selected: 15000
-      }
-
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 20 })
-
-      expect(result.error).toBeNull()
-      expect(result.data).toBeDefined()
-
-      // Should only have 2 unique listings despite 3 rows in data
-      expect(result.data!.length).toBe(2)
-      const uniqueIds = new Set(result.data!.map(listing => listing.id))
-      expect(uniqueIds.size).toBe(2)
-      expect(uniqueIds.has('listing-1')).toBe(true)
-      expect(uniqueIds.has('listing-2')).toBe(true)
-    })
+    expect(result.error).toBeNull()
+    expect(result.data).toBe(0)
   })
 
-  describe('error handling', () => {
-    it('should handle Supabase errors gracefully', async () => {
-      const mockError = new Error('Database connection failed')
-      mockSupabaseQuery.range = vi.fn().mockResolvedValue({
-        data: null,
-        error: mockError
-      })
+  it('stays in sync with getListings results', async () => {
+    queueSupabaseResponses(
+      { data: baseListings, error: null },
+      { data: baseListings, error: null }
+    )
 
-      const filters = {
-        price_max: 4200,
-        mileage_selected: 15000
-      }
+    const filters = { price_max: 4200, mileage_selected: 15000 }
 
-      const result = await CarListingQueries.getListings(filters, { offset: 0, limit: 20 })
+    const [countResult, listResult] = await Promise.all([
+      CarListingQueries.getListingCount(filters),
+      CarListingQueries.getListings(filters, 100, 'price_asc', 0),
+    ])
 
-      expect(result.data).toBeNull()
-      expect(result.error).toBe(mockError)
-    })
+    expect(countResult.error).toBeNull()
+    expect(listResult.error).toBeNull()
+    expect(countResult.data).toBe(listResult.data?.length)
+  })
+})
+
+describe('CarListingQueries price cap edge cases', () => {
+  it('deduplicates listings returned with multiple rows', async () => {
+    const duplicateRows = [
+      {
+        id: 'listing-1',
+        listing_id: 'listing-1',
+        updated_at: '2025-01-01T00:00:00Z',
+        retail_price: 220000,
+        lease_pricing: [
+          { mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 4000 },
+        ],
+      },
+      {
+        id: 'listing-1',
+        listing_id: 'listing-1',
+        updated_at: '2025-01-02T00:00:00Z',
+        retail_price: 220000,
+        lease_pricing: [
+          { mileage_per_year: 15000, period_months: 24, first_payment: 20000, monthly_price: 3800 },
+        ],
+      },
+      {
+        id: 'listing-2',
+        listing_id: 'listing-2',
+        updated_at: '2025-01-03T00:00:00Z',
+        retail_price: 200000,
+        lease_pricing: [
+          { mileage_per_year: 15000, period_months: 36, first_payment: 35000, monthly_price: 3500 },
+        ],
+      },
+    ]
+
+    setSupabaseDefaultResponse(duplicateRows)
+
+    const result = await CarListingQueries.getListings({ price_max: 5000, mileage_selected: 15000 }, 20, 'price_desc', 0)
+
+    expect(result.error).toBeNull()
+    expect(result.data).toHaveLength(2)
+    expect(new Set(result.data?.map((listing) => listing.id))).toEqual(new Set(['listing-1', 'listing-2']))
+  })
+
+  it('propagates Supabase errors to the caller', async () => {
+    const mockError = new Error('Supabase connection failed')
+    setSupabaseDefaultResponse([], mockError)
+
+    const result = await CarListingQueries.getListings({ price_max: 4200, mileage_selected: 15000 }, 20, 'price_asc', 0)
+
+    expect(result.data).toBeNull()
+    expect(result.error).toBe(mockError)
   })
 })
