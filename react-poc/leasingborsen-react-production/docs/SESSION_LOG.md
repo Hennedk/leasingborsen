@@ -1,5 +1,23 @@
 # Session Log
 
+## 2025-09-24 (Session 12): Price Cap Offer Alignment 🚧
+
+### Overview
+Listings filtered by price cap were navigating to detail views that defaulted to a different first payment than the card displayed (e.g. card showed 30 000 kr but detail landed on 15 000 kr). The URL still carried `udb=0`, so the detail page couldn’t find an exact offer match and fell back to the lowest-price option.
+
+### Changes Implemented
+1. **Deposit-aware fallback** – updated `src/hooks/useLeaseCalculator.ts` so that when the exact (mileage, term, deposit) combo is missing we now sort candidates by proximity to the requested deposit before considering monthly price (`tests/leaseCalculator.test.ts`).
+2. **Consistent navigation payload** – `src/components/ListingCard.tsx` now resolves a single lease config helper and sends both legacy (`udb/km/mdr`) and `selected*` params for the offer shown on the card (including the price-cap CTA).
+3. **Regression tests** – added `tests/leaseCalculator.test.ts` plus reran price-cap suites to ensure no regressions (`tests/priceCapUnit.test.ts`, `tests/priceCapIntegration.test.ts`).
+
+### Remaining Work
+- When upstream filter URLs still contain conflicting values (e.g. `udb=0` from the active price cap), detail navigation can still drift away from the card’s displayed offer. We need to ensure we overwrite legacy params with the card’s chosen offer before navigation (or pass the offer id directly) so detail views stay in sync.
+- Follow-up: remove redundant query params and confirm analytics capture the curated configuration.
+
+### Status: 🔄 In Progress
+
+---
+
 ## 2025-09-23 (Session 11): CORS & Railway Deployment Fixes ✅
 
 ### Overview
