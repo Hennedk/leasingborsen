@@ -212,6 +212,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         ...(clickId ? { source_event_id: clickId } : {}),
       }
 
+      if (import.meta.env.DEV) {
+        console.debug('[ListingCard] Navigating to detail', {
+          targetId,
+          resolvedConfig,
+          searchPayload,
+          origin: window.location.pathname,
+        })
+      }
+
       navigate({
         to: '/listing/$id',
         params: { id: car.id || car.listing_id || '' },
@@ -734,6 +743,15 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
                   const searchPayload = {
                     ...mapToLegacyParams(resolvedConfig),
                     ...resolvedConfig,
+                  }
+
+                  if (import.meta.env.DEV) {
+                    console.debug('[ListingCard] Navigating via price-cap CTA', {
+                      targetId,
+                      resolvedConfig,
+                      searchPayload,
+                      origin: window.location.pathname,
+                    })
                   }
 
                   // Navigate to detail page with ideal deposit pre-selected

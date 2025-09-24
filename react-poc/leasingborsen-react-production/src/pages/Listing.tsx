@@ -86,11 +86,34 @@ const Listing: React.FC = () => {
   }, [preferredLeaseConfig, rawOfferParams])
 
   useEffect(() => {
+    if (!import.meta.env.DEV) return
+
+    console.debug('[ListingDetail] Lease config debug', {
+      listingId: id,
+      search,
+      preferredLeaseConfig,
+      rawOfferParams,
+      mergedOfferParams,
+      offerSettings,
+      shouldSyncPreferredConfig,
+      hasSyncedPreferredConfig: hasSyncedPreferredConfig.current,
+    })
+  }, [id, search, preferredLeaseConfig, rawOfferParams, mergedOfferParams, offerSettings, shouldSyncPreferredConfig])
+
+  useEffect(() => {
     if (!preferredLeaseConfig || !shouldSyncPreferredConfig || hasSyncedPreferredConfig.current) {
       return
     }
 
     hasSyncedPreferredConfig.current = true
+
+    if (import.meta.env.DEV) {
+      console.debug('[ListingDetail] Syncing preferred lease config to URL', {
+        listingId: id,
+        preferredLeaseConfig,
+        offerSettings,
+      })
+    }
 
     navigate({
       search: (prev: Record<string, number | undefined>) => {
