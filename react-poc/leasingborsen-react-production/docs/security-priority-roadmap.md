@@ -1,92 +1,103 @@
 # LeasingBuddy Security Remediation Roadmap
 
-_Last updated: $(date +%Y-%m-%d)_
+_Last updated: 2025-09-23_
 
-This document consolidates the latest production risks, recommended fixes, and sequencing guidance. Tackle work in priority order; each item lists the goal, rationale, and concrete next steps.
+This document consolidates the latest production risks, recommended fixes, and sequencing guidance. Tackle work in priority order; each item lists the current status, rationale, and concrete next steps.
 
 ## 🚨 Urgent (Blocker)
 
 ### 1. Lock Down Edge Functions & Admin API Surface
-- **Risk**: All critical Supabase Edge Functions (`ai-extract-vehicles`, `admin-*`, `apply-extraction-changes`, `remove-bg`, `pdf-proxy`) trust the service-role key, skip JWT validation, and allow `Access-Control-Allow-Origin: *`. Any attacker can invoke admin capabilities or burn AI spend.
-- **Fix**:
-  1. Set `verify_jwt = true` in `supabase/config.toml` for every function.
-  2. Add a shared auth helper (e.g., `supabase/functions/_shared/auth.ts`) that validates the bearer token via `supabase.auth.getUser()` and checks `app_metadata.role`.
-  3. Replace wildcard CORS with an allow-list (`https://leasingborsen.dk`, staging, preview) and respond `403` if the `Origin` is not approved.
-  4. Ensure all responses reuse the validated CORS headers.
+- **Status**: Partially mitigated — `admin-listing-operations` and `admin-seller-operations` now run behind `withAdminAuth`, but the remaining admin and AI functions still trust the service-role key, emit `Access-Control-Allow-Origin: *`, and do not verify JWTs. The Supabase config only enables `verify_jwt` for `manage-prompts`, and the React admin flows continue to hit several functions with the anon key.
+- **Evidence**: `supabase/functions/admin-reference-operations/index.ts:5`, `supabase/functions/admin-image-operations/index.ts:6`, `supabase/functions/apply-extraction-changes/index.ts:4`, `supabase/functions/compare-extracted-listings/index.ts:5`, `supabase/functions/ai-extract-vehicles/index.ts:84`, `supabase/functions/remove-bg/index.ts:34`, `supabase/functions/pdf-proxy/index.ts:5`, `supabase/functions/batch-calculate-lease-scores/index.ts:10`, and `supabase/functions/manage-prompts/index.ts:1` instantiate service-role clients with wildcard CORS and no role check; `supabase/config.toml:324` limits `verify_jwt = true` to `manage-prompts`; UI components still send `Authorization: Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}` in `src/components/admin/sellers/GenericBatchUploadDialog.tsx:194`, `src/components/admin/sellers/SellerBulkPDFExtractionModal.tsx:159/374`, and `src/components/admin/sellers/SellerPDFUploadModal.tsx:630`.
+- **Actions**:
+  1. Add `verify_jwt = true` blocks for every deployed Edge Function in `supabase/config.toml` and redeploy.
+  2. Wrap `admin-image-operations`, `admin-reference-operations`, `apply-extraction-changes`, `compare-extracted-listings`, `pdf-proxy`, `remove-bg`, `ai-extract-vehicles`, `batch-calculate-lease-scores`, and `manage-prompts` in `withAdminAuth`, ensuring the middleware’s allow-listed CORS headers are reused.
+  3. Replace direct `fetch` calls that send the anon key with `supabase.functions.invoke` (or manual fetches signed with the session access token) and delete the unused `process-pdf` client flow or reintroduce it behind the new middleware.
+  4. Rotate the service-role key after rollout and move any per-function secrets into Supabase Edge Function secrets so leaked anon keys cannot escalate to admin access.
 
 ### 2. Protect AI Extraction Change Data
-- **Risk**: `extraction_listing_changes` never had RLS enabled; policies target a dropped `listing_changes` table. Authenticated actors can read/write every dealer’s pending AI changes.
-- **Fix**:
-  - `ALTER TABLE extraction_listing_changes ENABLE ROW LEVEL SECURITY;`
-  - Admin policy: `USING (is_admin())` / `WITH CHECK (is_admin())`.
-  - Seller SELECT policy: allow rows where the parent session matches `get_current_user_id()`.
-  - Service-role policy for edge functions.
+- **Status**: Not mitigated — the `apply-extraction-changes` Edge Function still runs with the service-role key and no auth, so RLS policies can be bypassed remotely; the migrations do not enable RLS on `extraction_listing_changes`, even though new policies reference `public.user_roles`.
+- **Evidence**: `supabase/functions/apply-extraction-changes/index.ts:4` uses a global service-role client with wildcard CORS; `supabase/migrations/20250122_admin_authentication_system.sql:96` adds policies but there is no `ALTER TABLE extraction_listing_changes ENABLE ROW LEVEL SECURITY` anywhere in the migration set.
+- **Actions**:
+  1. Enable RLS on `extraction_listing_changes` and confirm policies cover admin, seller, and service-role use cases.
+  2. Migrate `apply-extraction-changes` (and other extraction helpers) to `withAdminAuth`, keeping the user-context client for RLS evaluation.
+  3. Add automated regression tests that fail if an unauthenticated request can apply pending changes.
 
 ### 3. Harden Storage Bucket Permissions
-- **Risk**: `storage.objects` policies allow any authenticated user to insert/update/delete all content in the public `images` bucket.
-- **Fix**:
-  - Drop the blanket policies in `setup-staging-storage.sql`.
-  - Add owner-aware policies (`owner = auth.uid()`) for INSERT/UPDATE/DELETE and keep `SELECT` public.
-  - Provide a service-role override for automated jobs.
+- **Status**: Not started — storage policies still grant every authenticated user full write permissions on the public `images` bucket.
+- **Evidence**: `setup-staging-storage.sql:11`–`23` create permissive INSERT/UPDATE/DELETE policies with no owner checks or role gating.
+- **Actions**:
+  1. Drop the blanket storage policies and replace them with owner-aware rules (`owner = auth.uid()`) for write paths, plus explicit admin overrides.
+  2. Re-run the SQL in staging/production and verify only intended principals can modify assets.
+  3. Update documentation so future bucket creations inherit the tighter defaults.
 
 ### 4. Remove Real Secrets From Git & Rotate Keys
-- **Risk**: `.env`, `.env.local`, `.env.staging` include live Supabase anon keys and Mixpanel token.
-- **Fix**:
-  1. Remove sensitive values from tracked files (keep `.env.example` placeholders only).
-  2. Rotate Supabase anon keys and Mixpanel token; update Vercel/Supabase config directly.
-  3. Add git hooks or lint checks to block future secret commits.
+- **Status**: Not started — live Supabase anon keys and the Mixpanel token remain in tracked env files.
+- **Evidence**: `.env:1`–`8`, `.env.local:1`–`8`, and `.env.staging:1`–`8` contain active keys committed to the repo.
+- **Actions**:
+  1. Replace secrets with placeholders in tracked files and rely on environment-specific secret stores.
+  2. Rotate the exposed Supabase anon keys and Mixpanel token across all environments.
+  3. Add a lint check or pre-commit hook to block future secret commits.
 
 ## ⚠️ High Priority
 
 ### 5. Apply RLS to Remaining Tables
-- **Targets**: `dealers`, `colours`, `body_type_mapping`.
-- **Motivation**: These tables still expose configuration data or allow unauthorized writes via PostgREST.
+- **Status**: Not started — there is no migration enabling RLS on `dealers`, `colours`, or `body_type_mapping`, so PostgREST still exposes the raw tables.
+- **Evidence**: No `ALTER TABLE dealers ENABLE ROW LEVEL SECURITY` (or equivalent) exists in the migration set; legacy policies still rely on JWT `role` claims instead of `public.user_roles`.
 - **Actions**:
-  - `ALTER TABLE <table> ENABLE ROW LEVEL SECURITY;`
-  - Grant anon/authenticated read only where business requires it (`is_active = true` for dealers).
-  - Restrict write operations to `is_admin()` and service-role.
+  1. Enable RLS on each table and create policies that allow public reads (where required) and restrict writes to admin/service-role contexts.
+  2. Migrate any remaining `is_admin()` checks to use `public.user_roles`.
+  3. Add automated `verify_rls_security` coverage for these tables.
 
 ### 6. Fix Admin Frontend Auth Flow
-- **Risk**: Admin React hooks call edge functions with `fetch(... Authorization: Bearer ANON_KEY ...)`, so possession of the anon key equals full admin access.
-- **Fix**:
-  - Replace raw fetches with `supabase.functions.invoke(...)` so the browser sends the user’s session JWT.
-  - Introduce route guards (e.g., TanStack loader + Supabase session check) around `/admin/*`.
+- **Status**: Partially mitigated — the TanStack `beforeLoad` guard and `useAuth` hook block `/admin/*`, but several admin flows still bypass Supabase session signing by calling Edge Functions with the anon key.
+- **Evidence**: Guard exists in `src/routes/admin.tsx:40`, yet the seller PDF workflows still post with the anon key in `src/components/admin/sellers/GenericBatchUploadDialog.tsx:194`, `src/components/admin/sellers/SellerBulkPDFExtractionModal.tsx:159/374`, and `src/components/admin/sellers/SellerPDFUploadModal.tsx:630/874`.
+- **Actions**:
+  1. Refactor these flows to depend on `useAuth().getAccessToken()` (or leverage `supabase.functions.invoke`) and surface 401/403 errors to the UI.
+  2. Delete the fallback code that tolerates missing tokens and add integration tests ensuring fetch requests include the user JWT.
 
 ### 7. Update Supabase Auth Configuration
-- **Risk**: `supabase/config.toml` still points `site_url` to `http://127.0.0.1:3000` and leaves cookie flags unset; production cookies won’t be `Secure`, and redirect allow-lists miss real domains.
-- **Fix**:
-  - Set `site_url = "https://leasingborsen.dk"`.
-  - Populate `additional_redirect_urls` with staging/preview domains.
-  - Add `[auth.cookies] secure = true, same_site = "lax", domain = ".leasingborsen.dk"`.
+- **Status**: Not started — auth still references localhost URLs and lacks secure cookie flags.
+- **Evidence**: `supabase/config.toml:110` keeps `site_url = "http://127.0.0.1:3000"` and does not configure `auth.cookies`.
+- **Actions**:
+  1. Set `site_url` and `additional_redirect_urls` to production, staging, and preview domains.
+  2. Configure secure cookie flags (`secure = true`, `same_site = "lax"`, `domain = ".leasingborsen.dk"`).
+  3. Disable public signups if admin invites are the only supported path.
 
 ## 🛡 Medium Priority
 
 ### 8. Ship Security Headers for Frontend
-- **Risk**: Vercel deploys with default headers—no CSP, X-Frame-Options, etc.
-- **Fix**: Extend `vercel.json` (or add `public/_headers`) with:
-  - `Content-Security-Policy: default-src 'self'; connect-src 'self' https://*.supabase.co ...`
-  - `X-Frame-Options: DENY`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Permissions-Policy` restricting sensors, camera, microphone.
+- **Status**: Not started — Vercel still serves default headers.
+- **Evidence**: `vercel.json` lacks `headers` or `_headers` configuration.
+- **Actions**:
+  1. Add CSP, X-Frame-Options, Referrer-Policy, and Permissions-Policy headers.
+  2. Include a regression check in CI to ensure headers persist across deploys.
 
 ### 9. Pin CDN Dependencies for Edge Functions
-- **Risk**: Functions import `openai@latest` and `@supabase/supabase-js@2` from CDN, inheriting supply-chain changes instantly.
-- **Fix**: Replace with explicit versions (e.g., `openai@5.5.1`, `@supabase/supabase-js@2.39.3`) and manage upgrades deliberately.
+- **Status**: Not started — production functions fetch latest builds at runtime.
+- **Evidence**: `supabase/functions/ai-extract-vehicles/index.ts:12` imports `openai@latest`; `supabase/functions/admin-reference-operations/index.ts:2`, `admin-image-operations/index.ts:2`, and `manage-prompts/index.ts:3` import `@supabase/supabase-js@2` without pinning.
+- **Actions**:
+  1. Pin exact versions in every Edge Function import and add a dependency update checklist.
+  2. Monitor the bundle size after pinning and adjust build tooling if needed.
 
 ### 10. Rate-Limiter Persistence
-- **Risk**: `_shared/rateLimitMiddleware.ts` stores counters in memory; multi-instance deployments disable limits.
-- **Fix**: Port to a shared backend (Redis, Supabase table) or Supabase Functions rate limiting once JWT auth is in place.
+- **Status**: Not started — the shared middleware stores counters in memory, so horizontal scaling disables the limits.
+- **Evidence**: `supabase/functions/_shared/rateLimitMiddleware.ts:32` uses process-local `Map` instances with no external store.
+- **Actions**:
+  1. Persist counters in Redis or Supabase tables (or adopt Supabase’s function-level rate limiting once auth is enforced).
+  2. Tag rate-limited responses with structured telemetry for monitoring.
 
 ## ✅ Completed / Newly Mitigated
 
-- PDF proxy now enforces HTTPS, dealer allow-list, MIME/size limits (`supabase/functions/pdf-proxy/index.ts`).
-- `listings`, `sellers`, `lease_pricing`, and most AI configuration tables have RLS policies from the July migrations—verify after applying the remaining gaps above.
+- Admin routes now require a validated Supabase session via the TanStack `beforeLoad` guard (`src/routes/admin.tsx:40`) and `useAuth` hook.
+- Shared middleware (`supabase/functions/_shared/authMiddleware.ts`) verifies admin roles, syncs `public.user_roles`, and is live on `admin-listing-operations` and `admin-seller-operations` (`supabase/functions/admin-listing-operations/index.ts:2`, `supabase/functions/admin-seller-operations/index.ts:2`).
+- The `public.user_roles` table and supporting policies are deployed (`supabase/migrations/20250122_admin_authentication_system.sql`).
 
 ## Verification Checklist
 
 After each sprint of remediation:
 1. Run `SELECT * FROM verify_rls_security();` to ensure no table regressed.
-2. Hit each edge function from an unauthorized origin; expect CORS failure.
+2. Hit each Edge Function from an unauthorized origin; expect CORS failure.
 3. Use valid/invalid JWTs to confirm auth gating.
 4. Smoke-test admin workflows via browser to ensure new guards don’t block legitimate users.
 5. Re-run automated tests (`npm run test`, edge function suites) and stage deploy before promoting to production.
