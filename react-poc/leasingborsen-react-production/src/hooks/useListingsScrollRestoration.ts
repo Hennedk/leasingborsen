@@ -3,7 +3,136 @@ import { useLocation } from "@tanstack/react-router";
 import { LEASE_DEFAULTS } from '@/lib/leaseConfigMapping';
 
 const KEY_PREFIX = "listings-scroll:";
-const MAX_AGE = 30 * 60 * 1000; // 30 minutes
+const STALE_MS = 60 * 1000; // 60 seconds freshness window for exact restore
+const MAX_RESUME_MS = 45 * 60 * 1000; // 45 minutes max resume window
+
+type ListingsSnapshotMetadata = {
+  loadedPageCount?: number;
+  firstId?: string;
+  lastId?: string;
+};
+
+type NavSnapshot = {
+  searchKey: string;
+  position: number;
+  timestamp: number;
+  loadedPageCount?: number;
+  firstId?: string;
+  lastId?: string;
+  signature?: string;
+};
+
+type RestoreDecision =
+  | { action: 'top' }
+  | { action: 'pixel'; y: number }
+  | { action: 'anchor'; anchorId: string };
+
+const buildSignature = (meta?: ListingsSnapshotMetadata | null) => {
+  if (!meta) return '';
+  return `${meta.firstId ?? ''}|${meta.lastId ?? ''}|${meta.loadedPageCount ?? 0}`;
+};
+
+const parseSnapshotFromRaw = (raw: string | null, normalizedSearch: string): NavSnapshot | null => {
+  if (!raw) return null;
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (typeof parsed === 'number') {
+      return {
+        searchKey: normalizedSearch,
+        position: parsed | 0,
+        timestamp: Date.now()
+      };
+    }
+
+    if (typeof parsed === 'object' && parsed) {
+      const searchKey = typeof parsed.searchKey === 'string' && parsed.searchKey.length > 0
+        ? parsed.searchKey
+        : (typeof parsed.filters === 'string' ? parsed.filters : normalizedSearch);
+
+      const numericPosition = typeof parsed.position === 'number'
+        ? parsed.position
+        : parseInt(parsed.position ?? '0', 10);
+
+      const timestamp = typeof parsed.timestamp === 'number'
+        ? parsed.timestamp
+        : Date.now();
+
+      const loadedPageCount = typeof parsed.loadedPageCount === 'number'
+        ? parsed.loadedPageCount
+        : (typeof parsed.loadedPages === 'number' ? parsed.loadedPages : undefined);
+
+      const firstId = typeof parsed.firstId === 'string' ? parsed.firstId : undefined;
+      const lastId = typeof parsed.lastId === 'string' ? parsed.lastId : undefined;
+      const signature = typeof parsed.signature === 'string' ? parsed.signature : undefined;
+
+      return {
+        searchKey,
+        position: Number.isFinite(numericPosition) ? numericPosition : 0,
+        timestamp,
+        loadedPageCount,
+        firstId,
+        lastId,
+        signature
+      };
+    }
+  } catch (error) {
+    // Legacy format (plain number string)
+  }
+
+  const legacyPosition = parseInt(raw, 10);
+  if (!Number.isNaN(legacyPosition)) {
+    return {
+      searchKey: normalizedSearch,
+      position: legacyPosition,
+      timestamp: Date.now()
+    };
+  }
+
+  return null;
+};
+
+const determineRestoreDecision = (
+  snapshot: NavSnapshot | null,
+  currentSignature: string | null
+): RestoreDecision => {
+  if (!snapshot) {
+    return { action: 'top' };
+  }
+
+  const age = Date.now() - snapshot.timestamp;
+  const snapshotSignature = snapshot.signature ?? buildSignature(snapshot);
+  const hasCurrentSignature = Boolean(currentSignature && currentSignature.length > 0);
+
+  if (age > MAX_RESUME_MS) {
+    return { action: 'top' };
+  }
+
+  if (!snapshotSignature || !hasCurrentSignature) {
+    // Without a signature match we fall back to pixel restore while within resume window
+    return { action: 'pixel', y: snapshot.position };
+  }
+
+  const signaturesMatch = snapshotSignature === currentSignature;
+
+  if (signaturesMatch && age <= STALE_MS) {
+    return { action: 'pixel', y: snapshot.position };
+  }
+
+  if (signaturesMatch) {
+    // Still the same data but older than the stale threshold – restore pixel but refetch will update
+    return { action: 'pixel', y: snapshot.position };
+  }
+
+  // Data changed but still within resume window – attempt anchor fallback
+  const anchorId = snapshot.lastId ?? snapshot.firstId;
+  if (anchorId) {
+    return { action: 'anchor', anchorId };
+  }
+
+  return { action: 'top' };
+};
 
 const normalizeSearch = (search: string | undefined) => {
   if (!search) return '';
@@ -40,12 +169,24 @@ const normalizeSearch = (search: string | undefined) => {
   }
 };
 
-export function useListingsScrollRestoration(ready = true) {
+export function useListingsScrollRestoration(
+  ready = true,
+  metadata?: ListingsSnapshotMetadata | null
+) {
   const location = useLocation();
   const lastRestoredRef = useRef<string>("");
   const navigationStartRef = useRef<number>(0);
   const hasRestoredRef = useRef<boolean>(false);
   const isRestoringRef = useRef<boolean>(false);
+  const metadataRef = useRef<(ListingsSnapshotMetadata & { signature: string }) | null>(null);
+
+  if (metadata) {
+    const signature = buildSignature(metadata);
+    metadataRef.current = {
+      ...metadata,
+      signature
+    };
+  }
 
   // Enhanced helper function to check if this is a filter change vs navigation
   const isFilterChange = useCallback(() => {
@@ -137,7 +278,7 @@ export function useListingsScrollRestoration(ready = true) {
         }
         
         // Check if we came from listings recently with scroll position
-        if (state.from === 'listings' && state.scrollPosition > 0 && state.timestamp && (Date.now() - state.timestamp) < 3000) {
+        if (state.from === 'listings' && state.scrollPosition > 0 && state.timestamp && (Date.now() - state.timestamp) < MAX_RESUME_MS) {
           debugInfo.reason = 'recent-from-listings';
           debugInfo.result = 'back';
           debugInfo.scrollPosition = state.scrollPosition;
@@ -177,53 +318,61 @@ export function useListingsScrollRestoration(ready = true) {
     const searchString = typeof location.search === 'string' ? location.search : new URLSearchParams(location.search as any).toString();
     const normalizedSearch = normalizeSearch(searchString);
     const key = KEY_PREFIX + normalizedSearch;
-    const saved = sessionStorage.getItem(key);
-    
-    // Try to parse consolidated storage format first
-    let savedPosition: number | null = null;
-    let savedData: any = null;
-    
-    if (saved) {
-      try {
-        // Check if it's the new consolidated JSON format
-        const parsed = JSON.parse(saved);
-        if (typeof parsed === 'object' && parsed.position !== undefined) {
-          savedData = parsed;
-          savedPosition = parsed.position;
-          console.log('[ScrollRestore] Found consolidated storage data:', savedData);
-        } else {
-          // Fallback: old simple number format
-          savedPosition = parseInt(saved, 10) || 0;
-          console.log('[ScrollRestore] Found legacy position:', savedPosition);
-        }
-      } catch (e) {
-        // Fallback: treat as old simple number format
-        savedPosition = parseInt(saved, 10) || 0;
-        console.log('[ScrollRestore] Parsing fallback, position:', savedPosition);
-      }
+    const savedSnapshot = parseSnapshotFromRaw(sessionStorage.getItem(key), normalizedSearch);
+    if (savedSnapshot) {
+      console.log('[ScrollRestore] Loaded snapshot', { key, snapshot: savedSnapshot });
     }
-    
-    console.log('[ScrollRestore] Checking saved position for key:', key, 'parsed position:', savedPosition);
-    
-    // Fallback: also consider navigation context storage if list-specific key is missing
-    let fallbackPos: number | null = null;
-    if (!savedPosition) {
-      try {
-        const raw = sessionStorage.getItem('leasingborsen-navigation');
-        if (raw) {
-          const st = JSON.parse(raw) as { from?: string; scrollPosition?: number; filters?: string; timestamp?: number };
-          if (st && st.from === 'listings' && typeof st.scrollPosition === 'number' && st.timestamp && (Date.now() - st.timestamp) <= MAX_AGE) {
-            const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
-            const normalizedCurrent = normalizeSearch(searchString);
-            if (normalizedStored === normalizedCurrent) {
-              fallbackPos = st.scrollPosition | 0;
-              console.log('[ScrollRestore] Found fallback position:', fallbackPos);
-            }
+
+    let navigationSnapshot: NavSnapshot | null = null;
+    try {
+      const raw = sessionStorage.getItem('leasingborsen-navigation');
+      if (raw) {
+        const st = JSON.parse(raw) as {
+          from?: string;
+          scrollPosition?: number;
+          filters?: string;
+          timestamp?: number;
+          loadedPages?: number;
+          firstId?: string;
+          lastId?: string;
+          signature?: string;
+        };
+
+        if (
+          st &&
+          st.from === 'listings' &&
+          typeof st.scrollPosition === 'number' &&
+          st.timestamp &&
+          (Date.now() - st.timestamp) <= MAX_RESUME_MS
+        ) {
+          const normalizedStored = normalizeSearch(st.filters ? '?' + st.filters : '');
+          const normalizedCurrent = normalizeSearch(searchString);
+
+          if (normalizedStored === normalizedCurrent) {
+            navigationSnapshot = {
+              searchKey: normalizedStored,
+              position: st.scrollPosition | 0,
+              timestamp: st.timestamp,
+              loadedPageCount: st.loadedPages,
+              firstId: st.firstId,
+              lastId: st.lastId,
+              signature: typeof st.signature === 'string' ? st.signature : undefined
+            };
+
+            console.log('[ScrollRestore] Loaded navigation snapshot', navigationSnapshot);
           }
         }
-      } catch (e) {
-        console.log('[ScrollRestore] Fallback position error:', e instanceof Error ? e.message : 'Unknown error');
       }
+    } catch (e) {
+      console.log('[ScrollRestore] Navigation snapshot parse error:', e instanceof Error ? e.message : 'Unknown error');
+    }
+
+    let candidateSnapshot: NavSnapshot | null = savedSnapshot;
+    if (
+      navigationSnapshot &&
+      (!candidateSnapshot || navigationSnapshot.timestamp > candidateSnapshot.timestamp)
+    ) {
+      candidateSnapshot = navigationSnapshot;
     }
     
     const navigationType = detectNavigationType();
@@ -307,23 +456,9 @@ export function useListingsScrollRestoration(ready = true) {
       }
       
       const scrollY = window.scrollY || 0;
-      const currentSaved = sessionStorage.getItem(key);
-      let currentSavedNum: number | null = null;
-      
-      if (currentSaved) {
-        try {
-          // Try to parse as consolidated JSON format first
-          const parsed = JSON.parse(currentSaved);
-          if (typeof parsed === 'object' && parsed.position !== undefined) {
-            currentSavedNum = parsed.position;
-          } else {
-            currentSavedNum = parseInt(currentSaved) || null;
-          }
-        } catch (e) {
-          // Fallback: treat as legacy number format
-          currentSavedNum = parseInt(currentSaved) || null;
-        }
-      }
+      const currentSavedRaw = sessionStorage.getItem(key);
+      const existingSnapshot = parseSnapshotFromRaw(currentSavedRaw, normalizedSearch);
+      const currentSavedNum = existingSnapshot?.position ?? null;
       
       console.log('[ScrollRestore] Save attempt - scrollY:', scrollY, 'currentSaved:', currentSavedNum);
       
@@ -347,18 +482,35 @@ export function useListingsScrollRestoration(ready = true) {
         return;
       }
       
-      // Only save if we have a meaningful scroll position or if there's no saved value
-      if (scrollY > 0 || currentSaved === null) {
-        // Save in consolidated format with metadata
-        const scrollData = {
+      // Only save if we have a meaningful scroll position or if there's no saved value yet
+      if (scrollY > 0 || !currentSavedRaw) {
+        const latestMetadata = metadataRef.current ?? null;
+        const mergedSnapshot: NavSnapshot = {
+          searchKey: normalizedSearch,
           position: scrollY | 0,
           timestamp: Date.now(),
-          filters: normalizedSearch,
-          version: 2,
-          navigationType: 'scroll' // Indicates this was saved during scrolling
+          loadedPageCount: latestMetadata?.loadedPageCount ?? existingSnapshot?.loadedPageCount,
+          firstId: latestMetadata?.firstId ?? existingSnapshot?.firstId,
+          lastId: latestMetadata?.lastId ?? existingSnapshot?.lastId,
+          signature: latestMetadata?.signature ?? existingSnapshot?.signature
         };
-        sessionStorage.setItem(key, JSON.stringify(scrollData));
-        console.log('[ScrollRestore] Saved position:', scrollY, 'to key:', key);
+
+        const payload = {
+          version: 3,
+          navigationType: 'scroll',
+          position: mergedSnapshot.position,
+          timestamp: mergedSnapshot.timestamp,
+          searchKey: mergedSnapshot.searchKey,
+          filters: mergedSnapshot.searchKey,
+          loadedPageCount: mergedSnapshot.loadedPageCount,
+          loadedPages: mergedSnapshot.loadedPageCount,
+          firstId: mergedSnapshot.firstId,
+          lastId: mergedSnapshot.lastId,
+          signature: mergedSnapshot.signature
+        };
+
+        sessionStorage.setItem(key, JSON.stringify(payload));
+        console.log('[ScrollRestore] Saved snapshot', payload);
       }
     };
     
@@ -409,19 +561,47 @@ export function useListingsScrollRestoration(ready = true) {
       requestAnimationFrame(loop);
     };
 
-    // Always attempt to restore if we have a saved position and it's back navigation
-    if ((savedPosition !== null || fallbackPos !== null) && isBackLike) {
-      const pos = savedPosition !== null ? savedPosition : (fallbackPos as number);
-      
-      // Skip if we just restored this exact same thing (prevents double restoration)
-      if (lastRestoredRef.current === `${key}-${pos}`) {
-        console.log('[ScrollRestore] Skipping restoration - already restored this position');
+    const restoreAnchor = (anchorId: string) => {
+      const anchorEl = document.querySelector(`[data-listing-id="${anchorId}"]`) as HTMLElement | null;
+      if (!anchorEl) {
+        console.log('[ScrollRestore] Anchor element not found, defaulting to top restore', anchorId);
+        restoreInstant(0);
         return;
       }
-      
-      lastRestoredRef.current = `${key}-${pos}`;
-      console.log('[ScrollRestore] Restoring back navigation to position:', pos);
-      restoreInstant(pos);
+
+      const rect = anchorEl.getBoundingClientRect();
+      const targetY = Math.max(0, rect.top + window.scrollY);
+      console.log('[ScrollRestore] Restoring via anchor', { anchorId, targetY });
+      restoreInstant(targetY);
+    };
+
+    if (isBackLike) {
+      const currentSignature = metadataRef.current?.signature ?? null;
+      const decision = determineRestoreDecision(candidateSnapshot, currentSignature);
+      console.log('[ScrollRestore] Restore decision', { decision, candidateSnapshot, currentSignature });
+
+      if (decision.action === 'pixel') {
+        const pos = decision.y;
+        if (lastRestoredRef.current === `${key}-${pos}`) {
+          console.log('[ScrollRestore] Skipping restoration - already restored this position');
+          return;
+        }
+
+        lastRestoredRef.current = `${key}-${pos}`;
+        restoreInstant(pos);
+      } else if (decision.action === 'anchor') {
+        const cacheKey = `${key}-anchor-${decision.anchorId}`;
+        if (lastRestoredRef.current === cacheKey) {
+          console.log('[ScrollRestore] Skipping restoration - already restored anchor', decision.anchorId);
+          return;
+        }
+
+        lastRestoredRef.current = cacheKey;
+        restoreAnchor(decision.anchorId);
+      } else {
+        lastRestoredRef.current = `${key}-0`;
+        restoreInstant(0);
+      }
     } else if (navigationType === 'forward') {
       // Only clear and go to top for explicit forward navigation
       sessionStorage.removeItem(key);
@@ -429,7 +609,7 @@ export function useListingsScrollRestoration(ready = true) {
       console.log('[ScrollRestore] Forward navigation - scrolling to top');
       restoreInstant(0);
     } else {
-      console.log('[ScrollRestore] No restoration - navigation type:', navigationType, 'savedPosition:', savedPosition, 'fallbackPos:', fallbackPos);
+      console.log('[ScrollRestore] No restoration - navigation type:', navigationType, 'snapshot:', candidateSnapshot);
       // Allow saving to resume after initial mount
       setTimeout(() => {
         isRestoringRef.current = false;
@@ -445,5 +625,15 @@ export function useListingsScrollRestoration(ready = true) {
       window.removeEventListener("pagehide", save);
       save();
     };
-  }, [location.pathname, location.search, location.state, ready, isFilterChange, detectNavigationType]);
+  }, [
+    location.pathname,
+    location.search,
+    location.state,
+    ready,
+    isFilterChange,
+    detectNavigationType,
+    metadata?.firstId,
+    metadata?.lastId,
+    metadata?.loadedPageCount
+  ]);
 }

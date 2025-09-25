@@ -12,10 +12,123 @@ interface NavigationState {
   isNavigatingAway?: boolean
   isNavigatingBack?: boolean
   version?: number
+  firstId?: string
+  lastId?: string
+  signature?: string
+}
+
+interface ListingsSnapshotMetadata {
+  loadedPageCount: number
+  firstId?: string | null
+  lastId?: string | null
+}
+
+interface ParsedSnapshot {
+  searchKey: string
+  position: number
+  timestamp: number
+  loadedPageCount?: number
+  firstId?: string
+  lastId?: string
+  signature?: string
 }
 
 const STORAGE_KEY = 'leasingborsen-navigation'
-const MAX_AGE = 30 * 60 * 1000 // 30 minutes
+const SCROLL_KEY_PREFIX = 'listings-scroll:'
+const MAX_AGE = 45 * 60 * 1000 // 45 minutes matches scroll restoration resume window
+
+const buildSignature = (meta?: ListingsSnapshotMetadata | null) => {
+  if (!meta) return ''
+  return `${meta.firstId ?? ''}|${meta.lastId ?? ''}|${meta.loadedPageCount ?? 0}`
+}
+
+const normalizeSearch = (search: string) => {
+  try {
+    const p = new URLSearchParams(search)
+
+    if (p.get('udb') === String(LEASE_DEFAULTS.deposit)) {
+      p.delete('udb')
+    }
+    if (p.get('selectedDeposit') === String(LEASE_DEFAULTS.deposit)) {
+      p.delete('selectedDeposit')
+    }
+
+    if (p.get('mdr') === String(LEASE_DEFAULTS.term)) {
+      p.delete('mdr')
+    }
+    if (p.get('selectedTerm') === String(LEASE_DEFAULTS.term)) {
+      p.delete('selectedTerm')
+    }
+
+    if (p.get('km') === String(LEASE_DEFAULTS.mileage)) {
+      p.delete('km')
+    }
+    if (p.get('selectedMileage') === String(LEASE_DEFAULTS.mileage)) {
+      p.delete('selectedMileage')
+    }
+
+    const entries = [...p.entries()].sort(([a], [b]) => a.localeCompare(b))
+    return new URLSearchParams(entries).toString()
+  } catch (error) {
+    console.error('Error normalizing search params:', error)
+    return ''
+  }
+}
+
+const parseSnapshotFromRaw = (raw: string | null, normalizedSearch: string): ParsedSnapshot | null => {
+  if (!raw) return null
+
+  try {
+    const parsed = JSON.parse(raw)
+
+    if (typeof parsed === 'number') {
+      return {
+        searchKey: normalizedSearch,
+        position: parsed | 0,
+        timestamp: Date.now()
+      }
+    }
+
+    if (typeof parsed === 'object' && parsed) {
+      const searchKey = typeof parsed.searchKey === 'string' && parsed.searchKey.length > 0
+        ? parsed.searchKey
+        : (typeof parsed.filters === 'string' ? parsed.filters : normalizedSearch)
+
+      const numericPosition = typeof parsed.position === 'number'
+        ? parsed.position
+        : parseInt(parsed.position ?? '0', 10)
+
+      const timestamp = typeof parsed.timestamp === 'number'
+        ? parsed.timestamp
+        : Date.now()
+
+      return {
+        searchKey,
+        position: Number.isFinite(numericPosition) ? numericPosition : 0,
+        timestamp,
+        loadedPageCount: typeof parsed.loadedPageCount === 'number'
+          ? parsed.loadedPageCount
+          : (typeof parsed.loadedPages === 'number' ? parsed.loadedPages : undefined),
+        firstId: typeof parsed.firstId === 'string' ? parsed.firstId : undefined,
+        lastId: typeof parsed.lastId === 'string' ? parsed.lastId : undefined,
+        signature: typeof parsed.signature === 'string' ? parsed.signature : undefined
+      }
+    }
+  } catch (error) {
+    // Legacy format falls through
+  }
+
+  const legacyPosition = parseInt(raw, 10)
+  if (!Number.isNaN(legacyPosition)) {
+    return {
+      searchKey: normalizedSearch,
+      position: legacyPosition,
+      timestamp: Date.now()
+    }
+  }
+
+  return null
+}
 
 /**
  * Hook for tracking navigation context and enabling smart navigation behavior
@@ -68,71 +181,93 @@ export function useNavigationContext() {
   
   // Set navigation source before navigating to listing detail
   const prepareListingNavigation = useCallback((scrollPosition: number, loadedPages: number, filters: URLSearchParams | null) => {
-    const timestamp = Date.now();
-    
-    // Normalize search params for consistent storage key
-    const normalizeSearch = (search: string) => {
-      try {
-        const p = new URLSearchParams(search);
+    const timestamp = Date.now()
+    const searchString = filters?.toString() || ''
+    const normalizedSearchValue = normalizeSearch(searchString)
+    const scrollKey = `${SCROLL_KEY_PREFIX}${normalizedSearchValue}`
 
-        if (p.get('udb') === String(LEASE_DEFAULTS.deposit)) {
-          p.delete('udb');
+    const existingSnapshot = parseSnapshotFromRaw(sessionStorage.getItem(scrollKey), normalizedSearchValue)
+    const mergedMetadata: ListingsSnapshotMetadata | null = existingSnapshot
+      ? {
+          loadedPageCount: existingSnapshot.loadedPageCount ?? loadedPages,
+          firstId: existingSnapshot.firstId ?? null,
+          lastId: existingSnapshot.lastId ?? null
         }
-        if (p.get('selectedDeposit') === String(LEASE_DEFAULTS.deposit)) {
-          p.delete('selectedDeposit');
-        }
+      : null
 
-        if (p.get('mdr') === String(LEASE_DEFAULTS.term)) {
-          p.delete('mdr');
-        }
-        if (p.get('selectedTerm') === String(LEASE_DEFAULTS.term)) {
-          p.delete('selectedTerm');
-        }
+    const effectiveLoadedPages = mergedMetadata?.loadedPageCount ?? loadedPages
+    const signature = existingSnapshot?.signature ?? buildSignature(mergedMetadata)
 
-        if (p.get('km') === String(LEASE_DEFAULTS.mileage)) {
-          p.delete('km');
-        }
-        if (p.get('selectedMileage') === String(LEASE_DEFAULTS.mileage)) {
-          p.delete('selectedMileage');
-        }
-
-        const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
-        return new URLSearchParams(entries).toString();
-      } catch (error) {
-        console.error('Error normalizing search params:', error);
-        return '';
-      }
-    };
-    
-    const searchString = filters?.toString() || '';
-    const normalizedSearch = normalizeSearch(searchString);
-    
-    // Consolidated storage format with metadata
-    const scrollData = {
+    const snapshotPayload = {
+      version: 3,
+      navigationType: 'prepare' as const,
       position: scrollPosition | 0,
       timestamp,
-      filters: normalizedSearch,
-      loadedPages,
-      version: 2, // For future compatibility
-      navigationType: 'prepare' // Indicates this was set during navigation preparation
-    };
-    
-    // Primary storage: filter-specific scroll position with metadata
-    const scrollKey = `listings-scroll:${normalizedSearch}`;
-    sessionStorage.setItem(scrollKey, JSON.stringify(scrollData));
-    
-    // Save to navigation context for immediate access and backward compatibility
+      searchKey: normalizedSearchValue,
+      filters: normalizedSearchValue,
+      loadedPageCount: effectiveLoadedPages,
+      loadedPages: effectiveLoadedPages,
+      firstId: mergedMetadata?.firstId ?? undefined,
+      lastId: mergedMetadata?.lastId ?? undefined,
+      signature: signature || undefined
+    }
+
+    sessionStorage.setItem(scrollKey, JSON.stringify(snapshotPayload))
+
     saveNavigationState({
       from: 'listings',
       scrollPosition,
-      loadedPages,
+      loadedPages: effectiveLoadedPages,
       filters: searchString,
       timestamp,
-      isNavigatingAway: true,  // Flag to prevent saving during scroll animation
-      version: 2
-    });
-    
-    console.log('[NavigationContext] Prepared navigation - position:', scrollPosition, 'key:', scrollKey);
+      isNavigatingAway: true,
+      version: 2,
+      firstId: snapshotPayload.firstId,
+      lastId: snapshotPayload.lastId,
+      signature: snapshotPayload.signature
+    })
+
+    console.log('[NavigationContext] Prepared navigation - position:', scrollPosition, 'key:', scrollKey, 'metadata:', snapshotPayload)
+  }, [saveNavigationState])
+
+  const updateListingSnapshotMetadata = useCallback((metadata: ListingsSnapshotMetadata, filters: URLSearchParams | null) => {
+    if (!metadata) return
+
+    const searchString = filters?.toString() || ''
+    const normalizedSearchValue = normalizeSearch(searchString)
+    const scrollKey = `${SCROLL_KEY_PREFIX}${normalizedSearchValue}`
+
+    const existingSnapshot = parseSnapshotFromRaw(sessionStorage.getItem(scrollKey), normalizedSearchValue)
+    const timestamp = existingSnapshot?.timestamp ?? Date.now()
+
+    const payload = {
+      version: 3,
+      navigationType: existingSnapshot ? 'update' : 'initial',
+      position: existingSnapshot?.position ?? 0,
+      timestamp,
+      searchKey: normalizedSearchValue,
+      filters: normalizedSearchValue,
+      loadedPageCount: metadata.loadedPageCount,
+      loadedPages: metadata.loadedPageCount,
+      firstId: metadata.firstId ?? undefined,
+      lastId: metadata.lastId ?? undefined,
+      signature: buildSignature(metadata)
+    }
+
+    sessionStorage.setItem(scrollKey, JSON.stringify(payload))
+
+    saveNavigationState({
+      from: 'listings',
+      scrollPosition: payload.position,
+      loadedPages: metadata.loadedPageCount,
+      filters: searchString,
+      timestamp,
+      firstId: payload.firstId,
+      lastId: payload.lastId,
+      signature: payload.signature
+    })
+
+    console.log('[NavigationContext] Updated listing snapshot metadata', { scrollKey, metadata: payload })
   }, [saveNavigationState])
 
   // Prepare navigation when leaving a detail page (detail -> detail or detail -> listings)
@@ -235,6 +370,7 @@ export function useNavigationContext() {
   
   return {
     prepareListingNavigation,
+    updateListingSnapshotMetadata,
     prepareDetailNavigation,
     getNavigationInfo,
     smartBack,

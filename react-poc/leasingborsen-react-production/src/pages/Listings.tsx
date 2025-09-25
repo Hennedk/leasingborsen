@@ -3,6 +3,7 @@ import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 import { useInfiniteListings, useListingCount } from '@/hooks/useListings'
+import { useNavigationContext } from '@/hooks/useNavigationContext'
 import { useInfiniteScroll, useLoadMore } from '@/hooks/useInfiniteScroll'
 import { usePersistentFilterStore } from '@/stores/consolidatedFilterStore'
 import { useFilterManagement } from '@/hooks/useFilterManagement'
@@ -37,6 +38,7 @@ const listingsRoute = getRouteApi('/listings')
 
 const Listings: React.FC = () => {
   const navigate = useNavigate({ from: '/listings' })
+  const { updateListingSnapshotMetadata } = useNavigationContext()
   const search = listingsRoute.useSearch()
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
   
@@ -82,6 +84,30 @@ const Listings: React.FC = () => {
   // Get total count for display
   const { data: countResponse } = useListingCount(currentFilters, sortOrder)
   
+  const listMetadata = useMemo(() => {
+    const pages = infiniteData?.pages
+    if (!pages || pages.length === 0) return null
+
+    const pagesWithData = pages.filter((page) => Array.isArray(page.data) && page.data?.length)
+    if (pagesWithData.length === 0) return null
+
+    const firstPage = pagesWithData[0]
+    const lastPage = pagesWithData[pagesWithData.length - 1]
+
+    const firstEntry = firstPage.data?.[0]
+    const lastEntries = lastPage.data
+    const lastEntry = lastEntries ? lastEntries[lastEntries.length - 1] : undefined
+
+    const firstId = firstEntry?.id ?? firstEntry?.listing_id ?? null
+    const lastId = lastEntry?.id ?? lastEntry?.listing_id ?? null
+
+    return {
+      loadedPageCount: pagesWithData.length,
+      firstId,
+      lastId
+    }
+  }, [infiniteData?.pages])
+
   // Analytics: Track when results settle
   useEffect(() => {
     if (infiniteData && !isFetchingNextPage && !isLoading) {
@@ -103,8 +129,16 @@ const Listings: React.FC = () => {
     }
   }, [infiniteData, isFetchingNextPage, isLoading, countResponse, handleResultsSettled])
   
+  useEffect(() => {
+    if (!listMetadata) return
+    if (typeof window === 'undefined') return
+
+    const filters = new URLSearchParams(window.location.search)
+    updateListingSnapshotMetadata(listMetadata, filters)
+  }, [listMetadata, updateListingSnapshotMetadata])
+
   // Enable scroll restoration for this page with enhanced settings for better UX
-  useListingsScrollRestoration(true)
+  useListingsScrollRestoration(true, listMetadata)
   
   // Memoize expensive calculations for performance
   const listings = useMemo(

@@ -601,6 +601,7 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   return (
     <div
       ref={cardRef}
+      data-listing-id={car.id || car.listing_id ? String(car.id || car.listing_id) : undefined}
       className="block group no-underline relative cursor-pointer"
       onClick={onCardClick}
       onPointerEnter={preloadDetailImage}
