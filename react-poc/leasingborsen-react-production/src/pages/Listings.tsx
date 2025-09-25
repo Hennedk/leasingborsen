@@ -98,15 +98,6 @@ const Listings: React.FC = () => {
     const lastEntries = lastPage.data
     const lastEntry = lastEntries ? lastEntries[lastEntries.length - 1] : undefined
 
-<<<<<<< HEAD
-    const firstId = firstEntry?.id ?? firstEntry?.listing_id ?? null
-    const lastId = lastEntry?.id ?? lastEntry?.listing_id ?? null
-
-    return {
-      loadedPageCount: pagesWithData.length,
-      firstId,
-      lastId
-=======
     const firstIdValue = firstEntry?.id ?? firstEntry?.listing_id ?? undefined
     const lastIdValue = lastEntry?.id ?? lastEntry?.listing_id ?? undefined
 
@@ -114,7 +105,6 @@ const Listings: React.FC = () => {
       loadedPageCount: pagesWithData.length,
       firstId: firstIdValue,
       lastId: lastIdValue
->>>>>>> 0f7f0db (Improve listings scroll restoration resilience)
     }
   }, [infiniteData?.pages])
 
