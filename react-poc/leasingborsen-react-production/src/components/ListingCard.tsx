@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { useSearch, useNavigate } from '@tanstack/react-router'
+import { useSearch, useNavigate, useLocation } from '@tanstack/react-router'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -17,6 +17,7 @@ import {
 import { useImageLazyLoading } from '@/hooks/useImageLazyLoading'
 import { useFilterTranslationFunctions } from '@/hooks/useFilterTranslations'
 import { useNavigationContext } from '@/hooks/useNavigationContext'
+import { LEASE_CONFIG_OVERRIDE_STORAGE_KEY } from '@/hooks/useLeaseConfigUrlSync'
 import { LeaseScorePill } from '@/components/ui/LeaseScorePill'
 import { calculateLeaseScoreSimple } from '@/lib/leaseScore'
 import type { CarListing } from '@/types'
@@ -70,6 +71,45 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
   // - If parent passed initialLeaseConfig (e.g., Listing page's similar cars), prefer it.
   // - Else, read from URL search params (km/mdr/udb) with strict:false so it's safe off-route.
   const searchParams = useSearch({ strict: false }) as Record<string, unknown>
+  const location = useLocation()
+  const locationSearchStr = typeof location?.searchStr === 'string' ? location.searchStr : ''
+  const locationSearchParams = useMemo(() => new URLSearchParams(locationSearchStr), [locationSearchStr])
+
+  const normalizedLeaseParams = useMemo(
+    () => normalizeLeaseParams(searchParams as Record<string, unknown>, false),
+    [searchParams]
+  )
+
+  const leaseOverrideFlags = useMemo(() => {
+    if (typeof window === 'undefined') return {}
+    try {
+      const raw = window.sessionStorage.getItem(LEASE_CONFIG_OVERRIDE_STORAGE_KEY)
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {}
+    } catch {
+      return {}
+    }
+  }, [locationSearchStr])
+
+  const leaseUrlOverrides = useMemo(() => {
+    const fallbackSearchStr =
+      locationSearchStr || (typeof window !== 'undefined' ? window.location.search : '')
+
+    if (!fallbackSearchStr) {
+      return {
+        mileage: false,
+        term: false,
+        deposit: false,
+      }
+    }
+
+    const params = new URLSearchParams(fallbackSearchStr)
+    return {
+      mileage: params.has('selectedMileage') || params.has('km'),
+      term: params.has('selectedTerm') || params.has('mdr'),
+      deposit: params.has('selectedDeposit') || params.has('udb'),
+    }
+  }, [locationSearchStr])
+
   const currentLeaseConfig: LeaseConfigSearchParams = useMemo(() => {
     if (initialLeaseConfig) {
       // When parent provides a config (e.g., from Listing page), do not coerce to defaults here.
@@ -80,11 +120,19 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
         selectedDeposit: initialLeaseConfig.selectedDeposit ?? undefined,
       }
     }
-    
+
     // Use centralized parameter normalization without defaults
-    // This preserves the original logic of not defaulting values here
-    return normalizeLeaseParams(searchParams as Record<string, unknown>, false)
-  }, [initialLeaseConfig, searchParams])
+    // Only treat URL parameters as overrides when the user has intentionally changed them
+    const useMileageOverride = leaseUrlOverrides.mileage && (leaseOverrideFlags.km || leaseOverrideFlags.selectedMileage || locationSearchParams.has('selectedMileage'))
+    const useTermOverride = leaseUrlOverrides.term && (leaseOverrideFlags.mdr || leaseOverrideFlags.selectedTerm || locationSearchParams.has('selectedTerm'))
+    const useDepositOverride = leaseUrlOverrides.deposit && (leaseOverrideFlags.udb || leaseOverrideFlags.selectedDeposit || locationSearchParams.has('selectedDeposit'))
+
+    return {
+      selectedMileage: useMileageOverride ? normalizedLeaseParams.selectedMileage : undefined,
+      selectedTerm: useTermOverride ? normalizedLeaseParams.selectedTerm : undefined,
+      selectedDeposit: useDepositOverride ? normalizedLeaseParams.selectedDeposit : undefined,
+    }
+  }, [initialLeaseConfig, normalizedLeaseParams, leaseUrlOverrides, leaseOverrideFlags, locationSearchParams])
   const { prepareListingNavigation, prepareDetailNavigation } = useNavigationContext()
   const navigate = useNavigate()
   
@@ -315,19 +363,39 @@ const ListingCardComponent: React.FC<ListingCardProps> = ({ car, loading = false
       const fallbackTerm = car?.selected_term ?? car?.period_months ?? 36
       const fallbackDeposit = car?.selected_deposit ?? car?.first_payment ?? 0
 
+      const hasOverrideMileage = overrides?.selectedMileage != null
+      const hasOverrideTerm = overrides?.selectedTerm != null
+      const hasOverrideDeposit = overrides?.selectedDeposit != null
+
+      const appliedMileage = hasOverrideMileage ? overrides?.selectedMileage : currentLeaseConfig.selectedMileage
+      const appliedTerm = hasOverrideTerm ? overrides?.selectedTerm : currentLeaseConfig.selectedTerm
+      const appliedDeposit = hasOverrideDeposit ? overrides?.selectedDeposit : currentLeaseConfig.selectedDeposit
+
+      const resolvedMileage = hasOverrideMileage
+        ? overrides?.selectedMileage
+        : appliedMileage ?? fallbackMileage
+
+      const resolvedTerm = hasOverrideTerm
+        ? overrides?.selectedTerm
+        : appliedTerm ?? fallbackTerm
+
+      let resolvedDeposit: number | undefined
+      if (hasOverrideDeposit) {
+        resolvedDeposit = overrides?.selectedDeposit
+      } else if (
+        appliedDeposit != null &&
+        fallbackDeposit != null &&
+        appliedDeposit !== fallbackDeposit
+      ) {
+        resolvedDeposit = fallbackDeposit
+      } else {
+        resolvedDeposit = appliedDeposit ?? fallbackDeposit
+      }
+
       return {
-        selectedMileage:
-          overrides?.selectedMileage ??
-          currentLeaseConfig.selectedMileage ??
-          fallbackMileage,
-        selectedTerm:
-          overrides?.selectedTerm ??
-          currentLeaseConfig.selectedTerm ??
-          fallbackTerm,
-        selectedDeposit:
-          overrides?.selectedDeposit ??
-          currentLeaseConfig.selectedDeposit ??
-          fallbackDeposit,
+        selectedMileage: resolvedMileage,
+        selectedTerm: resolvedTerm,
+        selectedDeposit: resolvedDeposit,
       }
     },
     [car?.selected_mileage, car?.mileage_per_year, car?.selected_term, car?.period_months, car?.selected_deposit, car?.first_payment, currentLeaseConfig]

@@ -440,11 +440,6 @@ const Listing: React.FC = () => {
                 ctaLink="/listings"
                 showCta={false}
                 maxCards={6}
-                leaseConfig={{
-                  selectedMileage: selectedMileage ?? null,
-                  selectedTerm: selectedPeriod ?? null,
-                  selectedDeposit: selectedUpfront ?? null
-                }}
                 container="similar_grid"
                 origin={{ surface: 'detail', type: 'module', name: 'similar_cars', module_id: 'similar_cars' }}
               />

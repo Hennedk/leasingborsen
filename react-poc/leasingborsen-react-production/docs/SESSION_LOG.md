@@ -1,5 +1,22 @@
 # Session Log
 
+## 2025-09-26 (Session 13): Listing Offer Hand-off & Scroll Restore 🔄
+
+### Overview
+Aligned the offer selection between listings cards, detail pages, and similar-cars navigation. tightened lease-config override handling so each card carries the offer it renders, while detail views respect user-driven overrides only when present. Investigated scroll restoration regressions introduced by new lease defaults normalization.
+
+### Key Changes
+1. **Lease override tracking** – `ListingCard` now reads session-scoped flags from `useLeaseConfigUrlSync`, ensuring query params only override mileage/term/deposit when the user explicitly changed them.
+2. **Similar cars navigation** – Similar-car grids stop injecting the current detail selection, letting each card route with its own offer payload.
+3. **Scroll-key normalization** – Both `useNavigationContext` and `useListingsScrollRestoration` drop default lease params (`udb=0`, `mdr=36`, `km=15000`) when building storage keys so back navigation lands on the saved position even if the URL omits defaults.
+
+### Follow-up / Open Questions
+- **Back-navigation window too short**: Scroll restoration still misses if the detail view stays open >3 s because `detectNavigationType` treats the return as a fresh load. Need to extend or remove the 3 s freshness check so real back navigations continue to restore. Revisit with a broader timeout (e.g. 10–15 s) or a state-based signal from `prepareListingNavigation`.
+
+### Status: ✅ Shipped (scroll window tweak pending)
+
+---
+
 ## 2025-09-24 (Session 12): Price Cap Offer Alignment 🚧
 
 ### Overview

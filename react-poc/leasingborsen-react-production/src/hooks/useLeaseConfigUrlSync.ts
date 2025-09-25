@@ -6,6 +6,54 @@ import { useMemo, useCallback, useRef, useEffect } from 'react'
 import type { LeaseConfigState } from '@/types'
 import { LEASE_DEFAULTS, clampLeaseValue } from '@/lib/leaseConfigMapping'
 
+const LEASE_CONFIG_OVERRIDE_KEY = 'leasingborsen:lease-config-overrides'
+
+const getOverrideStorage = () => {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.sessionStorage
+  } catch {
+    return null
+  }
+}
+
+const readOverrideMap = (): Partial<Record<keyof LeaseConfigState, boolean>> => {
+  const storage = getOverrideStorage()
+  if (!storage) return {}
+  try {
+    const raw = storage.getItem(LEASE_CONFIG_OVERRIDE_KEY)
+    return raw ? (JSON.parse(raw) as Partial<Record<keyof LeaseConfigState, boolean>>) : {}
+  } catch {
+    return {}
+  }
+}
+
+const writeOverrideMap = (map: Partial<Record<keyof LeaseConfigState, boolean>>) => {
+  const storage = getOverrideStorage()
+  if (!storage) return
+  try {
+    if (Object.keys(map).length === 0) {
+      storage.removeItem(LEASE_CONFIG_OVERRIDE_KEY)
+    } else {
+      storage.setItem(LEASE_CONFIG_OVERRIDE_KEY, JSON.stringify(map))
+    }
+  } catch {
+    // Ignore quota errors
+  }
+}
+
+const updateOverrideFlag = (key: keyof LeaseConfigState, isActive: boolean) => {
+  const map = { ...readOverrideMap() }
+  if (isActive) {
+    map[key] = true
+  } else {
+    delete map[key]
+  }
+  writeOverrideMap(map)
+}
+
+export { LEASE_CONFIG_OVERRIDE_KEY as LEASE_CONFIG_OVERRIDE_STORAGE_KEY }
+
 /**
  * Synchronizes lease configuration with URL search parameters
  * 
@@ -47,6 +95,7 @@ export function useLeaseConfigUrlSync(options: UseLeaseConfigUrlSyncOptions = {}
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { [key]: _removed, ...cleanSearch } = search
           navigate({ search: cleanSearch, replace: true })
+          updateOverrideFlag(key, false)
           return
         }
 
@@ -64,6 +113,7 @@ export function useLeaseConfigUrlSync(options: UseLeaseConfigUrlSyncOptions = {}
           },
           replace: true 
         })
+        updateOverrideFlag(key, true)
       } catch (err) {
         onError?.(err)
         if (!onError) {

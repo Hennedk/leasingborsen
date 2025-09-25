@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useCallback } from "react";
 import { useLocation } from "@tanstack/react-router";
+import { LEASE_DEFAULTS } from '@/lib/leaseConfigMapping';
 
 const KEY_PREFIX = "listings-scroll:";
 const MAX_AGE = 30 * 60 * 1000; // 30 minutes
@@ -8,6 +9,29 @@ const normalizeSearch = (search: string | undefined) => {
   if (!search) return '';
   try {
     const p = new URLSearchParams(search);
+
+    // Normalize away default lease config parameters to keep keys stable
+    if (p.get('udb') === String(LEASE_DEFAULTS.deposit)) {
+      p.delete('udb');
+    }
+    if (p.get('selectedDeposit') === String(LEASE_DEFAULTS.deposit)) {
+      p.delete('selectedDeposit');
+    }
+
+    if (p.get('mdr') === String(LEASE_DEFAULTS.term)) {
+      p.delete('mdr');
+    }
+    if (p.get('selectedTerm') === String(LEASE_DEFAULTS.term)) {
+      p.delete('selectedTerm');
+    }
+
+    if (p.get('km') === String(LEASE_DEFAULTS.mileage)) {
+      p.delete('km');
+    }
+    if (p.get('selectedMileage') === String(LEASE_DEFAULTS.mileage)) {
+      p.delete('selectedMileage');
+    }
+
     const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
     return new URLSearchParams(entries).toString();
   } catch (error) {

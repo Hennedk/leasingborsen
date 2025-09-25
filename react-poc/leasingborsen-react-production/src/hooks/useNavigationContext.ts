@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
+import { LEASE_DEFAULTS } from '@/lib/leaseConfigMapping'
 
 interface NavigationState {
   from: 'listings' | 'direct' | 'other'
@@ -73,6 +74,28 @@ export function useNavigationContext() {
     const normalizeSearch = (search: string) => {
       try {
         const p = new URLSearchParams(search);
+
+        if (p.get('udb') === String(LEASE_DEFAULTS.deposit)) {
+          p.delete('udb');
+        }
+        if (p.get('selectedDeposit') === String(LEASE_DEFAULTS.deposit)) {
+          p.delete('selectedDeposit');
+        }
+
+        if (p.get('mdr') === String(LEASE_DEFAULTS.term)) {
+          p.delete('mdr');
+        }
+        if (p.get('selectedTerm') === String(LEASE_DEFAULTS.term)) {
+          p.delete('selectedTerm');
+        }
+
+        if (p.get('km') === String(LEASE_DEFAULTS.mileage)) {
+          p.delete('km');
+        }
+        if (p.get('selectedMileage') === String(LEASE_DEFAULTS.mileage)) {
+          p.delete('selectedMileage');
+        }
+
         const entries = [...p.entries()].sort(([a],[b]) => a.localeCompare(b));
         return new URLSearchParams(entries).toString();
       } catch (error) {
